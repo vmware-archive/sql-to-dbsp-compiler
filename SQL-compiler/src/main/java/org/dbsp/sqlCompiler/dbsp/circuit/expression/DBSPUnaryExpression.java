@@ -34,11 +34,10 @@ public class DBSPUnaryExpression extends DBSPExpression {
     private final DBSPExpression left;
     private final String operation;
 
-    public DBSPUnaryExpression(@Nullable Object node, DBSPType type, String operation, DBSPExpression... operands) {
+    public DBSPUnaryExpression(@Nullable Object node, DBSPType type, String operation, DBSPExpression operand) {
         super(node, type);
         this.operation = operation;
-        assert operands.length == 1 : "Expected 1 operand, not " + operands.length;
-        this.left = operands[0];
+        this.left = operand;
         assert this.left != null : "Null operand";
     }
 

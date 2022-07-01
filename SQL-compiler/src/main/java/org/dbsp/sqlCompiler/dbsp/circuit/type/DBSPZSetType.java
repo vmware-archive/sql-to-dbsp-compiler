@@ -29,6 +29,6 @@ import javax.annotation.Nullable;
 
 public class DBSPZSetType extends DBSPTypeUser {
     public DBSPZSetType(@Nullable Object node, DBSPType elementType, DBSPType weightType) {
-        super(node, "ZSetHashMap", false, elementType, weightType);
+        super(node, "OrdZSet", false, elementType, weightType);
     }
 }

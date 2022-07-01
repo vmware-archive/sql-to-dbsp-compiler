@@ -29,7 +29,7 @@ import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeDouble extends DBSPType implements IsNumericType, IDBSPBaseType {
+public class DBSPTypeDouble extends DBSPType implements IsNumericType, IDBSPBaseType, IIsFloat {
     public DBSPTypeDouble(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
 
     @Override
@@ -52,5 +52,10 @@ public class DBSPTypeDouble extends DBSPType implements IsNumericType, IDBSPBase
         if (!super.same(type))
             return false;
         return type.is(DBSPTypeDouble.class);
+    }
+
+    @Override
+    public int getWidth() {
+        return 64;
     }
 }

@@ -37,11 +37,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DBSPCircuit extends DBSPNode {
-    static String rustPreamble = "use dbsp::{\n" +
-            "    algebra::{FiniteMap, HasZero, ZSetHashMap},\n" +
-            "    circuit::{Root, Runtime, Stream},\n" +
-            "    operator::{CsvSource, DelayedFeedback},\n" +
+    static String rustPreamble = "#![allow(dead_code)]\n" +
+            "#![allow(non_snake_case)]\n\n" +
+            "use dbsp::{\n" +
+            "    circuit::{Root, Stream},\n" +
+            "    operator::Generator,\n" +
+            "    trace::ord::OrdZSet,\n" +
             "};\n" +
+            "use std::cell::RefCell;\n" +
+            "use std::rc::Rc;\n" +
             "use ordered_float::OrderedFloat;\n" +
             "type Weight = isize;\n";
 
