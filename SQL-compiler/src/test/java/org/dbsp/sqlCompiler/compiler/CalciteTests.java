@@ -1,8 +1,7 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
-import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
+mport org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
