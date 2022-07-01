@@ -23,37 +23,36 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.type;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.IIsFloat;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeFloat extends DBSPType implements IsNumericType, IDBSPBaseType, IIsFloat {
-    public DBSPTypeFloat(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
+public class DBSPCastExpression extends DBSPExpression {
+    final DBSPExpression argument;
+
+    public DBSPCastExpression(@Nullable Object node, DBSPType type, DBSPExpression argument) {
+        super(node, type);
+        this.argument = argument;
+    }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder,"OrderedFloat<f32>"); }
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        if (this.mayBeNull == mayBeNull)
-            return this;
-        return new DBSPTypeFloat(this.getNode(), mayBeNull);
-    }
-
-    public static DBSPTypeFloat instance = new DBSPTypeFloat(null,false);
-
-    @Override
-    public boolean same(DBSPType type) {
-        if (!super.same(type))
-            return false;
-        return type.is(DBSPTypeFloat.class);
-    }
-
-    @Override
-    public int getWidth() {
-        return 32;
+        DBSPType type = this.getType();
+        if (type.is(IIsFloat.class)) {
+            IIsFloat ft = type.to(IIsFloat.class);
+            return builder
+                    .append("OrderedFloat(")
+                    .append(this.argument)
+                    .append(" as ")
+                    .append(ft.getRustString())
+                    .append(")");
+        }
+        return builder.append(this.argument)
+                .append(" as ")
+                .append(this.getType());
     }
 }

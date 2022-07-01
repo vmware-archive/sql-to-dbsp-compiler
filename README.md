@@ -31,12 +31,12 @@ CREATE TABLE T
 ```
 
 The compiler must be given the table definition first, and then the view definition.
-The compiler generates a library which will incrementally maintain the view `V` when 
+The compiler generates a library which will incrementally maintain the view `V` when
 presented with changes to table `T`.
 
 ```
                                            table changes
-                                                V 
+                                                V
 tables -----> SQL-to-DBSP compiler ------> DBSP circuit
 views                                           V
                                            view changes
@@ -48,18 +48,16 @@ Compilation proceeds in several stages:
 
 - the SQL DDL statements are parsed using the calcite SQL parser (function `CalciteCompiler.compile`),
   generating an IR representation using the Calcite `SqlNode` data types
-- the SQL IR tree is validated, optimized, and converted to the Calcite IR representation using `RelNode`  
+- the SQL IR tree is validated, optimized, and converted to the Calcite IR representation using `RelNode`
   (function CaciteCompiler.compile)
 - The result of this stage is a `CalciteProgram` data structure, which packages together the definition
   of all tables and views that are being compiled
-- The `CalciteToDBSPCompiler.compile` converts a `CalciteProgram` data structure into a `DBSPCircuit` 
+- The `CalciteToDBSPCompiler.compile` converts a `CalciteProgram` data structure into a `DBSPCircuit`
   data structure.
 - The `circuit.toRustString()` method of a circuit can be used to generate Rust.
 - The CalciteToDBSPCompiler makes use of two additional compilers:
   - `ExpressionCompiler` converts Calcite row expressions (`RexNode`) into DBSP expressions (`DBSPExpression`)
   - `TypeCompiler` converts Calcite types (`RelDataType`) into DBSP types (`DBSPType`)
 
-In the future we will insert an additional IR in the CalciteToDBSP compiler which will be 
+In the future we will insert an additional IR in the CalciteToDBSP compiler which will be
 used to incrementalize and optimize the generated circuits.
-
-We will insert a new compilation IR 

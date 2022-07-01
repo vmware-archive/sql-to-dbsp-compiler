@@ -93,6 +93,7 @@ public class CalciteCompiler {
 
         SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
                 .withLenientOperatorLookup(connectionConfig.lenientOperatorLookup())
+                .withTypeCoercionEnabled(true)
                 .withConformance(connectionConfig.conformance())
                 .withDefaultNullCollation(connectionConfig.defaultNullCollation())
                 .withIdentifierExpansion(true);

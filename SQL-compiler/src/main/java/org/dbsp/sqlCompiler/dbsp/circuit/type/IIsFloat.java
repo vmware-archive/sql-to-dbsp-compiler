@@ -25,35 +25,16 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
-import org.dbsp.util.IndentStringBuilder;
-
-import javax.annotation.Nullable;
-
-public class DBSPTypeFloat extends DBSPType implements IsNumericType, IDBSPBaseType, IIsFloat {
-    public DBSPTypeFloat(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder,"OrderedFloat<f32>"); }
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        if (this.mayBeNull == mayBeNull)
-            return this;
-        return new DBSPTypeFloat(this.getNode(), mayBeNull);
-    }
-
-    public static DBSPTypeFloat instance = new DBSPTypeFloat(null,false);
-
-    @Override
-    public boolean same(DBSPType type) {
-        if (!super.same(type))
-            return false;
-        return type.is(DBSPTypeFloat.class);
-    }
-
-    @Override
-    public int getWidth() {
-        return 32;
-    }
+/**
+ * interface implemented by float types.
+ */
+public interface IIsFloat {
+    /**
+     * Width in bits.
+     */
+    int getWidth();
+    /**
+     * Rust string describing this type, e.g., f32.
+     */
+    default String getRustString() { return "f" + this.getWidth(); }
 }

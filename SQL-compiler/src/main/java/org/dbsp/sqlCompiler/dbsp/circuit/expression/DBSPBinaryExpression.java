@@ -35,12 +35,12 @@ public class DBSPBinaryExpression extends DBSPExpression {
     private final DBSPExpression right;
     private final String operation;
 
-    public DBSPBinaryExpression(@Nullable Object node, DBSPType type, String operation, DBSPExpression... operands) {
+    public DBSPBinaryExpression(@Nullable Object node, DBSPType type, String operation,
+                                DBSPExpression left, DBSPExpression right) {
         super(node, type);
         this.operation = operation;
-        assert operands.length == 2 : "Expected 2 operands, not " + operands.length;
-        this.left = operands[0];
-        this.right = operands[1];
+        this.left = left;
+        this.right = right;
         assert this.left != null : "Null left operand";
         assert this.right != null : "Null right operand";
     }

@@ -28,10 +28,13 @@ package org.dbsp.sqlCompiler.dbsp;
 import org.apache.calcite.rex.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.IIsFloat;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Unimplemented;
 
 import java.util.List;
+import java.util.Objects;
 
 public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     private final TypeCompiler typeCompiler = new TypeCompiler();
@@ -48,7 +51,53 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     @Override
     public DBSPExpression visitLiteral(RexLiteral literal) {
         DBSPType type = this.typeCompiler.convertType(literal.getType());
-        return new DBSPLiteralExpression(literal, type, literal.getValue().toString());
+        @SuppressWarnings("rawtypes")
+        Comparable comp = literal.getValue();
+        return new DBSPLiteralExpression(literal, type, Objects.requireNonNull(comp).toString());
+    }
+
+    private static DBSPType castType(String operation, DBSPType left, DBSPType right) {
+        if (left.same(right))
+            return left;
+        DBSPTypeInteger li = left.as(DBSPTypeInteger.class);
+        DBSPTypeInteger ri = right.as(DBSPTypeInteger.class);
+        IIsFloat lf = left.as(IIsFloat.class);
+        IIsFloat rf = right.as(IIsFloat.class);
+        if (li != null) {
+            if (ri != null) {
+                return new DBSPTypeInteger(null, Math.max(li.getWidth(), ri.getWidth()), left.mayBeNull || right.mayBeNull);
+            }
+            if (rf != null) {
+                return right;
+            }
+        }
+        if (lf != null) {
+            if (ri != null)
+                return left;
+            if (rf != null) {
+                if (lf.getWidth() < rf.getWidth())
+                    return right;
+                else
+                    return left;
+            }
+        }
+        throw new Unimplemented();
+    }
+
+    private static DBSPExpression makeBinaryExpression(
+            RexNode node, DBSPType resultType, String op, List<DBSPExpression> operands) {
+        // Why doesn't Calcite do this?
+        assert operands.size() == 2;
+        DBSPExpression left = operands.get(0);
+        DBSPType leftType = left.getType();
+        DBSPExpression right = operands.get(1);
+        DBSPType rightType = right.getType();
+        DBSPType common = castType(op, leftType, rightType);
+        if (!leftType.same(common))
+            left = new DBSPCastExpression(node, common, left);
+        if (!rightType.same(common))
+            right = new DBSPCastExpression(node, common, right);
+        return new DBSPBinaryExpression(node, resultType, op, left, right);
     }
 
     @Override
@@ -57,54 +106,55 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPType type = this.typeCompiler.convertType(call.getType());
         switch (call.op.kind) {
             case TIMES:
-                return new DBSPBinaryExpression(call, type, "*", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "*", ops);
             case DIVIDE:
-                return new DBSPBinaryExpression(call, type, "/", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "/", ops);
             case MOD:
-                return new DBSPBinaryExpression(call, type, "%", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "%", ops);
             case PLUS:
-                return new DBSPBinaryExpression(call, type, "+", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "+", ops);
             case MINUS:
-                return new DBSPBinaryExpression(call, type, "-", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "-", ops);
             case LESS_THAN:
-                return new DBSPBinaryExpression(call, type, "<", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "<", ops);
             case GREATER_THAN:
-                return new DBSPBinaryExpression(call, type, ">", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, ">", ops);
             case LESS_THAN_OR_EQUAL:
-                return new DBSPBinaryExpression(call, type, "<=", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "<=", ops);
             case GREATER_THAN_OR_EQUAL:
-                return new DBSPBinaryExpression(call, type, ">=", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, ">=", ops);
             case EQUALS:
-                return new DBSPBinaryExpression(call, type, "==", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "==", ops);
             case NOT_EQUALS:
-                return new DBSPBinaryExpression(call, type, "!=", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "!=", ops);
             case OR:
-                return new DBSPBinaryExpression(call, type, "||", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "||", ops);
             case AND:
-                return new DBSPBinaryExpression(call, type, "&&", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "&&", ops);
             case DOT:
-                return new DBSPBinaryExpression(call, type, ".", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, ".", ops);
             case NOT:
             case IS_FALSE:
             case IS_NOT_TRUE:
-                return new DBSPUnaryExpression(call, type, "!", ops.toArray(new DBSPExpression[1]));
+                return new DBSPUnaryExpression(call, type, "!", ops.get(0));
             case PLUS_PREFIX:
-                return new DBSPUnaryExpression(call, type, "+", ops.toArray(new DBSPExpression[1]));
+                return new DBSPUnaryExpression(call, type, "+", ops.get(0));
             case MINUS_PREFIX:
-                return new DBSPUnaryExpression(call, type, "-", ops.toArray(new DBSPExpression[1]));
+                return new DBSPUnaryExpression(call, type, "-", ops.get(0));
             case IS_TRUE:
             case IS_NOT_FALSE:
                 assert ops.size() == 1 : "Expected 1 operand " + ops;
                 return ops.get(0);
             case BIT_AND:
-                return new DBSPBinaryExpression(call, type, "&", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "&", ops);
             case BIT_OR:
-                return new DBSPBinaryExpression(call, type, "|", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "|", ops);
             case BIT_XOR:
-                return new DBSPBinaryExpression(call, type, "^", ops.toArray(new DBSPExpression[2]));
+                return makeBinaryExpression(call, type, "^", ops);
+            case CAST:
+                return new DBSPCastExpression(call, type, ops.get(0));
             case IS_NULL:
             case IS_NOT_NULL:
-            case CAST:
             case FLOOR:
             case CEIL:default:
                 throw new Unimplemented(call);
