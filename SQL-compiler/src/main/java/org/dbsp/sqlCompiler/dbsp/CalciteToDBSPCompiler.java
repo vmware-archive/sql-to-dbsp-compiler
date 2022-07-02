@@ -61,7 +61,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     }
 
     private final DBSPCircuit circuit;
-    boolean debug = true;
+    boolean debug = false;
     // The path in the IR tree used to reach the current node.
     final List<Context> stack;
     // Map an input or output name to the corresponding operator
@@ -163,7 +163,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         boolean first = true;
         for (RelNode input : minus.getInputs()) {
             DBSPOperator opin = this.getOperator(input);
-
             if (!first) {
                 DBSPNegateOperator neg = new DBSPNegateOperator(minus, type);
                 this.circuit.addOperator(neg);
@@ -172,6 +171,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             } else {
                 sum.addInput(opin);
             }
+            first = false;
         }
 
         if (minus.all) {

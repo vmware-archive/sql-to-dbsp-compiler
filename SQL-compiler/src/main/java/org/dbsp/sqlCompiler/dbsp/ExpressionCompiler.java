@@ -53,7 +53,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPType type = this.typeCompiler.convertType(literal.getType());
         @SuppressWarnings("rawtypes")
         Comparable comp = literal.getValue();
-        return new DBSPLiteralExpression(literal, type, Objects.requireNonNull(comp).toString());
+        return new DBSPLiteral(literal, type, Objects.requireNonNull(comp).toString());
     }
 
     private static DBSPType castType(String operation, DBSPType left, DBSPType right) {

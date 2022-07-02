@@ -67,6 +67,7 @@ public class CalciteCompiler {
     private final Catalog simple;
     private final DDLSimulator simulator;
     public final RelOptCluster cluster;
+    private boolean debug = false;
 
     private final CalciteProgram program = new CalciteProgram();
 
@@ -167,10 +168,11 @@ public class CalciteCompiler {
             if (view != null) {
                 RelRoot relRoot = this.converter.convertQuery(view.query, true, true);
                 // Dump plan
-                System.out.println(
-                    RelOptUtil.dumpPlan("[Logical plan]", relRoot.rel,
-                        SqlExplainFormat.TEXT,
-                        SqlExplainLevel.NON_COST_ATTRIBUTES));
+                if (this.debug)
+                    System.out.println(
+                        RelOptUtil.dumpPlan("[Logical plan]", relRoot.rel,
+                            SqlExplainFormat.TEXT,
+                            SqlExplainLevel.NON_COST_ATTRIBUTES));
                 view.setCompiledQuery(relRoot);
                 if (!relRoot.collation.getKeys().isEmpty()) {
                     throw new UnsupportedException("ORDER BY", relRoot);

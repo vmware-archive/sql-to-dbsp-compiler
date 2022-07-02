@@ -26,42 +26,52 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.IIsFloat;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPZSetType;
 import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 
-public class DBSPCastExpression extends DBSPExpression {
-    final DBSPExpression argument;
+/**
+ * Represents a (constant) ZSet described by its elements.
+ */
+public class DBSPZSetLiteral extends DBSPExpression {
+    private final Map<DBSPExpression, Integer> data;
 
-    public DBSPCastExpression(@Nullable Object node, DBSPType type, DBSPExpression argument) {
-        super(node, type);
-        this.argument = argument;
+    public DBSPZSetLiteral(DBSPType type, Map<DBSPExpression, Integer> data) {
+        super(null, type);
+        this.data = data;
+        assert type.is(DBSPZSetType.class);
+        DBSPZSetType zt = type.to(DBSPZSetType.class);
+        for (DBSPExpression e: data.keySet()) {
+            assert e.getType().same(zt.elementType);
+        }
+    }
+
+    public DBSPZSetLiteral(DBSPExpression... data) {
+        super(null, new DBSPZSetType(null, data[0].getType(), DBSPTypeInteger.signed32));
+        this.data = new HashMap<>();
+        for (DBSPExpression e: data) {
+            assert e.getType().same(data[0].getType());
+            this.data.put(e, 1);
+        }
+    }
+
+    public DBSPZSetLiteral(DBSPType type) {
+        super(null, type);
+        this.data = new HashMap<>();
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        DBSPType type = this.getType();
-        if (type.is(IIsFloat.class)) {
-            IIsFloat ft = type.to(IIsFloat.class);
-            if (this.argument.getType().is(IIsFloat.class)) {
-                return builder
-                        .append("OrderedFloat(")
-                        .append(this.argument)
-                        .append(".into_inner()")
-                        .append(" as ")
-                        .append(ft.getRustString())
-                        .append(")");
-            }
-            return builder
-                    .append("OrderedFloat(")
-                    .append(this.argument)
-                    .append(" as ")
-                    .append(ft.getRustString())
-                    .append(")");
+        builder.append("zset!(");
+        for (Map.Entry<DBSPExpression, Integer> e: data.entrySet()) {
+            builder.append(e.getKey())
+                    .append(" => ")
+                    .append(e.getValue())
+                    .append(",\n");
         }
-        return builder.append(this.argument)
-                .append(" as ")
-                .append(this.getType());
+        return builder.append(")");
     }
 }
