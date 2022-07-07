@@ -35,22 +35,16 @@ import java.util.Map;
 
 /**
  * Represents a (constant) ZSet described by its elements.
+ * A ZSet is a map from tuples to integer weights.
+ * In general weights should not be zero.
  */
 public class DBSPZSetLiteral extends DBSPExpression {
     private final Map<DBSPExpression, Integer> data;
-
-    public DBSPZSetLiteral(DBSPType type, Map<DBSPExpression, Integer> data) {
-        super(null, type);
-        this.data = data;
-        assert type.is(DBSPZSetType.class);
-        DBSPZSetType zt = type.to(DBSPZSetType.class);
-        for (DBSPExpression e: data.keySet()) {
-            assert e.getType().same(zt.elementType);
-        }
-    }
+    private final DBSPZSetType zsetType;
 
     public DBSPZSetLiteral(DBSPExpression... data) {
         super(null, new DBSPZSetType(null, data[0].getType(), DBSPTypeInteger.signed32));
+        this.zsetType = this.getType().to(DBSPZSetType.class);
         this.data = new HashMap<>();
         for (DBSPExpression e: data) {
             assert e.getType().same(data[0].getType());
@@ -60,7 +54,27 @@ public class DBSPZSetLiteral extends DBSPExpression {
 
     public DBSPZSetLiteral(DBSPType type) {
         super(null, type);
+        this.zsetType = this.getType().to(DBSPZSetType.class);
         this.data = new HashMap<>();
+    }
+
+    public DBSPType getElementType() {
+        return this.zsetType.elementType;
+    }
+
+    public void add(DBSPExpression expression) {
+        assert expression.getType().same(this.getElementType());
+        this.data.put(expression, 1);
+    }
+
+    public void add(DBSPExpression expression, int weight) {
+        assert expression.getType().same(this.getElementType());
+        this.data.put(expression, weight);
+    }
+
+    public void add(DBSPZSetLiteral other) {
+        assert this.getType().same(other.getType());
+        other.data.forEach(this::add);
     }
 
     @Override
@@ -73,5 +87,25 @@ public class DBSPZSetLiteral extends DBSPExpression {
                     .append(",\n");
         }
         return builder.append(")");
+    }
+
+    public int size() {
+        return this.data.size();
+    }
+
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{ ");
+        boolean first = true;
+        for (Map.Entry<DBSPExpression, Integer> e: data.entrySet()) {
+            if (!first)
+                builder.append(", ");
+            first = false;
+            builder.append(e.getKey())
+                    .append(" => ")
+                    .append(e.getValue());
+        }
+        builder.append("}");
+        return builder.toString();
     }
 }

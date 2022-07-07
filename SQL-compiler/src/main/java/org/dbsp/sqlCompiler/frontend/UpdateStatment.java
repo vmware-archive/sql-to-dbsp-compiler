@@ -23,32 +23,37 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.expression;
+package org.dbsp.sqlCompiler.frontend;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.sql.SqlNode;
 
 import javax.annotation.Nullable;
 
 /**
- * An expression that is a closure of the current row.  The current row is a variable named 't'.
- * In particular, FieldExpressions can refer to the row using this variable.
+ * Describes a SQL statements that updates a table
+ * (e.g., an INSERT statement).
  */
-public class DBSPClosureExpression extends DBSPExpression {
-    private final DBSPExpression expression;
+public class UpdateStatment implements SimulatorResult {
+    public final SqlNode node;
+    public final String table;
+    public final SqlNode data;
+    @Nullable
+    public RelNode rel;
 
-    public DBSPClosureExpression(@Nullable Object node, DBSPType type, DBSPExpression expression) {
-        super(node, type);
-        this.expression = expression;
+    public UpdateStatment(SqlNode node, String table, SqlNode data) {
+        this.node = node;
+        this.table = table;
+        this.data = data;
+        this.rel = null;
+    }
+
+    public void setTranslation(RelNode rel) {
+        this.rel = rel;
     }
 
     @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("|t| ").append(this.expression);
-    }
-
-    @Override
-    public String toString() {
-        return "|t| " + this.expression;
+    public SqlNode getNode() {
+        return this.node;
     }
 }

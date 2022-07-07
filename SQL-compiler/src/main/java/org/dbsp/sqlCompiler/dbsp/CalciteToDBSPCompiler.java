@@ -25,23 +25,23 @@
 
 package org.dbsp.sqlCompiler.dbsp;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.logical.*;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPClosureExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPTupleExpression;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.*;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeTuple;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeUser;
-import org.dbsp.sqlCompiler.frontend.CalciteProgram;
-import org.dbsp.sqlCompiler.frontend.ColumnInfo;
-import org.dbsp.sqlCompiler.frontend.TableDDL;
-import org.dbsp.sqlCompiler.frontend.ViewDDL;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
+import org.dbsp.sqlCompiler.frontend.*;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
@@ -187,10 +187,30 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public void visitFilter(LogicalFilter filter) {
         DBSPType type = this.convertType(filter.getRowType());
         DBSPExpression condition = this.expressionCompiler.compile(filter.getCondition());
+        condition = new DBSPClosureExpression(filter.getCondition(), condition.getType(), condition);
         DBSPFilterOperator fop = new DBSPFilterOperator(filter, condition, type);
         DBSPOperator input = this.getOperator(filter.getInput());
         fop.addInput(input);
         this.assignOperator(filter, fop);
+    }
+
+    @Nullable
+    private DBSPZSetLiteral logicalValueTranslation = null;
+
+    public void visitLogicalValues(LogicalValues values) {
+        DBSPType type = this.convertType(values.getRowType());
+        DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPZSetType(null, type, DBSPTypeInteger.signed32));
+        for (ImmutableList<RexLiteral> t: values.getTuples()) {
+            List<DBSPExpression> exprs = new ArrayList<>();
+            for (RexLiteral rl : t) {
+                DBSPExpression expr = this.expressionCompiler.compile(rl);
+                exprs.add(expr);
+            }
+            DBSPTupleExpression expression = new DBSPTupleExpression(t, exprs, type);
+            result.add(expression);
+        }
+        assert this.logicalValueTranslation == null;
+        this.logicalValueTranslation = result;
     }
 
     @Override public void visit(
@@ -207,7 +227,8 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 this.visitIfMatches(node, LogicalProject.class, this::visitProject) ||
                 this.visitIfMatches(node, LogicalUnion.class, this::visitUnion) ||
                 this.visitIfMatches(node, LogicalMinus.class, this::visitMinus) ||
-                this.visitIfMatches(node, LogicalFilter.class, this::visitFilter);
+                this.visitIfMatches(node, LogicalFilter.class, this::visitFilter) ||
+                this.visitIfMatches(node, LogicalValues.class, this::visitLogicalValues);
         if (!success)
             throw new Unimplemented(node);
         assert stack.size() > 0 : "Empty stack";
@@ -230,6 +251,13 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             o.addInput(op);
         }
         return this.getProgram();
+    }
+
+    public void extendTransaction(DBSPTransaction transaction, UpdateStatment statement) {
+        this.go(statement.rel);
+        assert this.logicalValueTranslation != null;
+        transaction.addSet(statement.table, this.logicalValueTranslation);
+        this.logicalValueTranslation = null;
     }
 
     static DBSPType weightType = new DBSPTypeUser(null, "Weight", false);

@@ -52,4 +52,19 @@ public class DBSPTupleExpression extends DBSPExpression {
                 .join(", ", this.fields)
                 .append(")");
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("(");
+        boolean first = true;
+        for (DBSPExpression e: this.fields) {
+            if (!first)
+                builder.append(", ");
+            first = false;
+            builder.append(e);
+        }
+        builder.append(")");
+        return builder.toString();
+    }
 }

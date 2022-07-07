@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.frontend;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,5 +53,13 @@ public class CalciteProgram {
 
     public void addInput(TableDDL table) {
         this.inputTables.add(table);
+    }
+
+    @Nullable
+    public TableDDL getInputTable(String table) {
+        for (TableDDL t : this.inputTables)
+            if (t.name.equals(table))
+                return t;
+        return null;
     }
 }

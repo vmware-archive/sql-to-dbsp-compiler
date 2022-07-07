@@ -23,32 +23,16 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.expression;
-
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
-
-import javax.annotation.Nullable;
-
 /**
- * An expression that is a closure of the current row.  The current row is a variable named 't'.
- * In particular, FieldExpressions can refer to the row using this variable.
+ * Package that doesn't allow null values as method parameters.
  */
-public class DBSPClosureExpression extends DBSPExpression {
-    private final DBSPExpression expression;
 
-    public DBSPClosureExpression(@Nullable Object node, DBSPType type, DBSPExpression expression) {
-        super(node, type);
-        this.expression = expression;
-    }
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqllogictest;
 
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("|t| ").append(this.expression);
-    }
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
 
-    @Override
-    public String toString() {
-        return "|t| " + this.expression;
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

@@ -40,13 +40,13 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Simulate the execution of a SQL DDL statement.
+ * Simulate the execution of a SQL DDL or DML statement.
  */
-public class DDLSimulator {
+public class SqlSimulator {
     final Catalog schema;
     RelDataTypeSystem system = RelDataTypeSystem.DEFAULT;
 
-    public DDLSimulator(Catalog schema) {
+    public SqlSimulator(Catalog schema) {
         this.schema = schema;
     }
 
@@ -101,6 +101,13 @@ public class DDLSimulator {
         } else if (kind == SqlKind.CREATE_VIEW) {
             SqlCreateView cv = (SqlCreateView) node;
             return new ViewDDL(node, Catalog.identifierToString(cv.name), cv.query);
+        } else if (kind == SqlKind.INSERT) {
+            SqlInsert insert = (SqlInsert)node;
+            SqlNode table = insert.getTargetTable();
+            if (!(table instanceof SqlIdentifier))
+                throw new Unimplemented(table);
+            SqlIdentifier id = (SqlIdentifier)table;
+            return new UpdateStatment(node, id.toString(), insert.getSource());
         }
         throw new Unimplemented(node);
     }

@@ -34,7 +34,6 @@ import org.dbsp.util.Linq;
 import org.dbsp.util.Unimplemented;
 
 import java.util.List;
-import java.util.Objects;
 
 public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     private final TypeCompiler typeCompiler = new TypeCompiler();
@@ -51,9 +50,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     @Override
     public DBSPExpression visitLiteral(RexLiteral literal) {
         DBSPType type = this.typeCompiler.convertType(literal.getType());
-        @SuppressWarnings("rawtypes")
-        Comparable comp = literal.getValue();
-        return new DBSPLiteral(literal, type, Objects.requireNonNull(comp).toString());
+        return new DBSPLiteral(literal, type, literal.toString());
     }
 
     private static DBSPType castType(String operation, DBSPType left, DBSPType right) {
@@ -162,7 +159,6 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     }
 
     DBSPExpression compile(RexNode expression) {
-        DBSPExpression compile = expression.accept(this);
-        return new DBSPClosureExpression(expression, compile.getType(), compile);
+        return expression.accept(this);
     }
 }

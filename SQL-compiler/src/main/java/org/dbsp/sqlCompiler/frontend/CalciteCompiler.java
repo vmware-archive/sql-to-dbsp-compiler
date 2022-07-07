@@ -60,14 +60,16 @@ import java.util.Properties;
  * including a complete set of Data Definition Language statements,
  * it returns a Calcite representation for each statement.
  */
+@SuppressWarnings("FieldCanBeLocal")
 public class CalciteCompiler {
     private final SqlParser.Config parserConfig;
     private final SqlValidator validator;
-    private final SqlToRelConverter converter;
     private final Catalog simple;
-    private final DDLSimulator simulator;
+    private final boolean debug = true;
+    private final SqlToRelConverter converter;
+    private final SqlSimulator simulator;
     public final RelOptCluster cluster;
-    private boolean debug = false;
+    public final RelDataTypeFactory typeFactory;
 
     private final CalciteProgram program = new CalciteProgram();
 
@@ -80,13 +82,13 @@ public class CalciteCompiler {
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
         // Add support for DDL language
         this.parserConfig = SqlParser.config().withParserFactory(SqlDdlParserImpl.FACTORY);
-        RelDataTypeFactory typeFactory = new JavaTypeFactoryImpl();
+        this.typeFactory = new JavaTypeFactoryImpl();
         this.simple = new Catalog("schema");
-        this.simulator = new DDLSimulator(this.simple);
+        this.simulator = new SqlSimulator(this.simple);
         CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
         rootSchema.add(simple.schemaName, this.simple);
         Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
-                rootSchema, Collections.singletonList(simple.schemaName), typeFactory, connectionConfig);
+                rootSchema, Collections.singletonList(simple.schemaName), this.typeFactory, connectionConfig);
 
         SqlOperatorTable operatorTable = SqlOperatorTables.chain(
                 SqlStdOperatorTable.instance()
@@ -102,7 +104,7 @@ public class CalciteCompiler {
         this.validator = SqlValidatorUtil.newValidator(
                 operatorTable,
                 catalogReader,
-                typeFactory,
+                this.typeFactory,
                 validatorConfig
         );
         RelOptPlanner planner = new VolcanoPlanner(
@@ -112,7 +114,7 @@ public class CalciteCompiler {
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
         this.cluster = RelOptCluster.create(
                 planner,
-                new RexBuilder(typeFactory)
+                new RexBuilder(this.typeFactory)
         );
 
         SqlToRelConverter.Config converterConfig = SqlToRelConverter.config()
@@ -148,21 +150,25 @@ public class CalciteCompiler {
     }
 
     /**
-     * Given a SQL query statement it compiles it and adds it to the generated "program".
+     * Given a SQL query statement it compiles.
+     * If the statement is a DDL statement (CREATE TABLE, CREATE VIEW),
+     * the result is added to the generated "program".
      * This function can be invoked multiple times to produce a program that computes
      * multiple views.  It should be invoked for both
      * - the table definition statements (CREATE TABLE X AS ...), one for each input table
-     * - the view definition statements (CREATE VIEW V AS ...), one for each output view.
+     * - the view definition statements (CREATE VIEW V AS ...), one for each output view
+     * If the statement is a DML statement (INSERT), this returns a representation
+     * of the statement, but does *not* execute it.
      * @param sqlStatement  SQL statement to compile.
      */
-    public void compile(String sqlStatement) throws SqlParseException {
+    public SimulatorResult compile(String sqlStatement) throws SqlParseException {
         SqlNode node = this.parse(sqlStatement);
         if (SqlKind.DDL.contains(node.getKind())) {
             SimulatorResult result = this.simulate(node);
             TableDDL table = result.as(TableDDL.class);
             if (table != null) {
                 this.program.addInput(table);
-                return;
+                return table;
             }
             ViewDDL view = result.as(ViewDDL.class);
             if (view != null) {
@@ -178,7 +184,19 @@ public class CalciteCompiler {
                     throw new UnsupportedException("ORDER BY", relRoot);
                 }
                 this.program.addView(view);
-                return;
+                return view;
+            }
+        }
+
+        if (SqlKind.DML.contains(node.getKind())) {
+            SimulatorResult result = this.simulate(node);
+            UpdateStatment stat = result.as(UpdateStatment.class);
+            if (stat != null) {
+                TableDDL tbl = this.program.getInputTable(stat.table);
+                assert tbl != null;
+                RelRoot values = this.converter.convertQuery(stat.data, true, true);
+                stat.setTranslation(values.rel);
+                return stat;
             }
         }
 

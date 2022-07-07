@@ -23,32 +23,16 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.expression;
+package org.dbsp.sqllogictest;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
-
-import javax.annotation.Nullable;
+import org.apache.calcite.sql.parser.SqlParseException;
 
 /**
- * An expression that is a closure of the current row.  The current row is a variable named 't'.
- * In particular, FieldExpressions can refer to the row using this variable.
+ * Interface implemented by a class that knows how to execute a test.
  */
-public class DBSPClosureExpression extends DBSPExpression {
-    private final DBSPExpression expression;
-
-    public DBSPClosureExpression(@Nullable Object node, DBSPType type, DBSPExpression expression) {
-        super(node, type);
-        this.expression = expression;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("|t| ").append(this.expression);
-    }
-
-    @Override
-    public String toString() {
-        return "|t| " + this.expression;
-    }
+public interface ISqlTestExecutor {
+    void reset();
+    void prepare(SqlTestPrepare prepare) throws SqlParseException;
+    // TODO: add validator argument
+    void executeAndValidate(String query) throws SqlParseException;
 }

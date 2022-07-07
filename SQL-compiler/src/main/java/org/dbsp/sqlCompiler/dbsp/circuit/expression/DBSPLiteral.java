@@ -63,4 +63,8 @@ public class DBSPLiteral extends DBSPExpression {
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append(this.value);
     }
+
+    public String toString() {
+        return this.value;
+    }
 }

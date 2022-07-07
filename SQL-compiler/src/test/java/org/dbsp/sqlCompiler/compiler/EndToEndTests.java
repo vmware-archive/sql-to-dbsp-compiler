@@ -15,7 +15,13 @@ import org.junit.Test;
 import javax.annotation.Nullable;
 import java.io.*;
 
-public class CalciteTests {
+/**
+ * Test end-to-end by compiling some DDL statements and view
+ * queries by compiling them to rust and executing them
+ * by inserting data in the input tables and reading data
+ * from the declared views.
+ */
+public class EndToEndTests {
     private CalciteCompiler compileDef() throws SqlParseException {
         CalciteCompiler calcite = new CalciteCompiler();
         String ddl = "CREATE TABLE T (\n" +
@@ -39,9 +45,7 @@ public class CalciteTests {
 
         CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
         DBSPCircuit dbsp = compiler.compile(program);
-        IndentStringBuilder builder = new IndentStringBuilder();
-        dbsp.toRustString(builder);
-        return builder.toString();
+        return dbsp.toRustString();
     }
 
     private PrintWriter writeToFile(String file, String contents) throws FileNotFoundException, UnsupportedEncodingException {
