@@ -27,6 +27,7 @@ package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
 import org.apache.calcite.rex.RexNode;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeString;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -41,6 +42,9 @@ public class DBSPFieldExpression extends DBSPExpression {
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("t.").append(this.fieldNo);
+        IndentStringBuilder result = builder.append("t.").append(this.fieldNo);
+        if (this.getType().is(DBSPTypeString.class))
+            result.append(".clone()");
+        return result;
     }
 }

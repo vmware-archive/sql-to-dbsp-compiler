@@ -43,6 +43,7 @@ public class DBSPCircuit extends DBSPNode {
             "    circuit::{Root, Stream},\n" +
             "    operator::Generator,\n" +
             "    trace::ord::OrdZSet,\n" +
+            "    zset,\n" +
             "};\n" +
             "use std::cell::RefCell;\n" +
             "use std::rc::Rc;\n" +

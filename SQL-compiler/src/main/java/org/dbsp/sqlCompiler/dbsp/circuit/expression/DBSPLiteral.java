@@ -23,15 +23,44 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
+import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 
-public class DBSPNegateOperator extends DBSPOperator {
-    public DBSPNegateOperator(@Nullable Object node, DBSPType elementType) {
-        super(node, "neg", "", TypeCompiler.makeZSet(elementType));
+public class DBSPLiteral extends DBSPExpression {
+    private final String value;
+
+    public DBSPLiteral(@Nullable Object node, DBSPType type, String value) {
+        super(node, type);
+        this.value = value;
+    }
+
+    public DBSPLiteral(int value) {
+        this(null, DBSPTypeInteger.signed32, String.valueOf(value));
+    }
+
+    public DBSPLiteral(String value) {
+        this(null, DBSPTypeString.instance, "String::from(" + Utilities.escapeString(value) + ")");
+    }
+
+    public DBSPLiteral(float value) {
+        this(null, DBSPTypeFloat.instance, "OrderedFloat::<f32>(" + value + ")");
+    }
+
+    public DBSPLiteral(double value) {
+        this(null, DBSPTypeDouble.instance, "OrderedFloat::<f64>(" + value + ")");
+    }
+
+    public DBSPLiteral(boolean b) {
+        this(null, DBSPTypeBool.instance, String.valueOf(b));
+    }
+
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append(this.value);
     }
 }

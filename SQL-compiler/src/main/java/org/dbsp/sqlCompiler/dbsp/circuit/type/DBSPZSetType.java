@@ -28,7 +28,12 @@ package org.dbsp.sqlCompiler.dbsp.circuit.type;
 import javax.annotation.Nullable;
 
 public class DBSPZSetType extends DBSPTypeUser {
+    public final DBSPType elementType;
+    public final DBSPType weightType;
+
     public DBSPZSetType(@Nullable Object node, DBSPType elementType, DBSPType weightType) {
         super(node, "OrdZSet", false, elementType, weightType);
+        this.elementType = elementType;
+        this.weightType = weightType;
     }
 }

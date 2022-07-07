@@ -64,8 +64,10 @@ public class DDLSimulator {
                 return new BasicSqlType(system, SqlTypeName.BOOLEAN);
             if (str.startsWith("VARCHAR"))
                 return new BasicSqlType(system, SqlTypeName.VARCHAR);
-            if (str.equals("FLOAT"))
+            if (str.equals("FLOAT") || str.equals("REAL"))
                 return new BasicSqlType(system, SqlTypeName.FLOAT);
+            if (str.equals("DOUBLE"))
+                return new BasicSqlType(system, SqlTypeName.DOUBLE);
         }
         throw new Unimplemented("Unknown SQL type: " + str, true);
     }

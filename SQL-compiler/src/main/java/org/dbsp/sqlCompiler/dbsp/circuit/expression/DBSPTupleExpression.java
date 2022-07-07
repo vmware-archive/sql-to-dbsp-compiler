@@ -26,20 +26,30 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeTuple;
 import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
-public class DBSPLiteralExpression extends DBSPExpression {
-    private final String value;
+public class DBSPTupleExpression extends DBSPExpression {
+    private final List<DBSPExpression> fields;
 
-    public DBSPLiteralExpression(@Nullable Object node, DBSPType type, String value) {
-        super(node, type);
-        this.value = value;
+    public DBSPTupleExpression(@Nullable Object object, List<DBSPExpression> fields, DBSPType tupleType) {
+        super(object, tupleType);
+        this.fields = fields;
+    }
+
+    public DBSPTupleExpression(DBSPExpression... expressions) {
+        this(null, Linq.list(expressions),
+                new DBSPTypeTuple(null, Linq.map(Linq.list(expressions), DBSPExpression::getType)));
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.value);
+        return builder.append("(")
+                .join(", ", this.fields)
+                .append(")");
     }
 }
