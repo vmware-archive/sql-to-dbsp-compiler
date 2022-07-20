@@ -31,6 +31,6 @@ import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 
 public class DBSPFilterOperator extends DBSPOperator {
     public DBSPFilterOperator(Object filter, DBSPExpression condition, DBSPType type) {
-        super(filter, "filter_keys", condition.toRustString(), TypeCompiler.makeZSet(type));
+        super(filter, "filter", condition.toRustString(), TypeCompiler.makeZSet(type));
     }
 }

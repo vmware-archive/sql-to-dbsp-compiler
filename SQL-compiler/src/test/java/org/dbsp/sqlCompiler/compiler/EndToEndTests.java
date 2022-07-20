@@ -25,10 +25,10 @@ public class EndToEndTests {
     private CalciteCompiler compileDef() throws SqlParseException {
         CalciteCompiler calcite = new CalciteCompiler();
         String ddl = "CREATE TABLE T (\n" +
-                "COL1 INT" +
-                ", COL2 DOUBLE" +
-                ", COL3 BOOLEAN" +
-                ", COL4 VARCHAR" +
+                "COL1 INT NOT NULL" +
+                ", COL2 DOUBLE NOT NULL" +
+                ", COL3 BOOLEAN NOT NULL" +
+                ", COL4 VARCHAR NOT NULL" +
                 ")";
 
         calcite.compile(ddl);

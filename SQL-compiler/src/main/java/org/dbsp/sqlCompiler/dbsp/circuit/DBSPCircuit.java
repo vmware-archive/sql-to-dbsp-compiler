@@ -42,7 +42,7 @@ public class DBSPCircuit extends DBSPNode {
             "#![allow(non_snake_case)]\n\n" +
             "use dbsp::{\n" +
             "    circuit::{Root, Stream},\n" +
-            "    operator::Generator,\n" +
+            "    operator::{Generator, FilterMap},\n" +
             "    trace::ord::OrdZSet,\n" +
             "    zset,\n" +
             "};\n" +

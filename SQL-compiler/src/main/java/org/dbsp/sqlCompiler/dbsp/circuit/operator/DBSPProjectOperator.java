@@ -59,7 +59,7 @@ public class DBSPProjectOperator extends DBSPOperator {
 
     public DBSPProjectOperator(@Nullable Object node, List<Integer> projectIndexes,
                                DBSPType resultType) {
-        super(node, "map_keys", projectFunction(projectIndexes, resultType),
+        super(node, "map", projectFunction(projectIndexes, resultType),
                 TypeCompiler.makeZSet(resultType));
     }
 }
