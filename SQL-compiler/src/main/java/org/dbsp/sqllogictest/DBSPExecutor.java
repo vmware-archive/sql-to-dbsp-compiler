@@ -32,9 +32,11 @@ import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 
+/**
+ * Sql test executor that uses DBSP as a SQL runtime.
+ * Does not support arbitrary tests: only tests that can be recast as a standing query will work.
+ */
 public class DBSPExecutor implements ISqlTestExecutor {
     @Nullable
     private CalciteCompiler calcite;

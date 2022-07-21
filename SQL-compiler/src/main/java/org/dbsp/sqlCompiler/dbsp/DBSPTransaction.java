@@ -42,7 +42,7 @@ public class DBSPTransaction {
      */
     public final DBSPCircuit circuit;
     /**
-     * A Map from input name to value.
+     * A Map from input (table) name to a ZSet value that will be used to update the table.
      */
     public final Map<String, DBSPZSetLiteral> perInputChange;
 

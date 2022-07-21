@@ -33,7 +33,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
 import org.dbsp.sqlCompiler.frontend.SimulatorResult;
-import org.dbsp.sqlCompiler.frontend.UpdateStatment;
+import org.dbsp.sqlCompiler.frontend.TableModifyStatement;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -77,9 +77,9 @@ public class DBSPCompilerTests {
         String insert = "INSERT INTO T VALUES(0, 0.0, true, 'Hi')";
         SimulatorResult i = calcite.compile(insert);
         Assert.assertNotNull(i);
-        Assert.assertTrue(i instanceof UpdateStatment);
+        Assert.assertTrue(i instanceof TableModifyStatement);
         DBSPTransaction transaction = dbsp.createTransaction();
-        compiler.extendTransaction(transaction, (UpdateStatment)i);
+        compiler.extendTransaction(transaction, (TableModifyStatement)i);
         DBSPZSetLiteral t = transaction.perInputChange.get("T");
         Assert.assertNotNull(t);
         Assert.assertEquals(1, t.size());

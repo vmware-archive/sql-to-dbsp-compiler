@@ -194,9 +194,13 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         this.assignOperator(filter, fop);
     }
 
+    /// Stores result for the next visitor
     @Nullable
     private DBSPZSetLiteral logicalValueTranslation = null;
 
+    /**
+     * Visit a logicalvalue: a SQL literal, as produced by a VALUES expression
+     */
     public void visitLogicalValues(LogicalValues values) {
         DBSPType type = this.convertType(values.getRowType());
         DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPZSetType(null, type, DBSPTypeInteger.signed32));
@@ -253,7 +257,12 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         return this.getProgram();
     }
 
-    public void extendTransaction(DBSPTransaction transaction, UpdateStatment statement) {
+    /**
+     * Translate the specified statement and add to the given transaction.
+     * @param transaction  A transaction that will contain the translation of 'statement'
+     * @param statement A statement that updates a table.
+     */
+    public void extendTransaction(DBSPTransaction transaction, TableModifyStatement statement) {
         this.go(statement.rel);
         assert this.logicalValueTranslation != null;
         transaction.addSet(statement.table, this.logicalValueTranslation);

@@ -31,17 +31,17 @@ import org.apache.calcite.sql.SqlNode;
 import javax.annotation.Nullable;
 
 /**
- * Describes a SQL statements that updates a table
+ * Describes a SQL statements that modifies a table
  * (e.g., an INSERT statement).
  */
-public class UpdateStatment implements SimulatorResult {
+public class TableModifyStatement implements SimulatorResult {
     public final SqlNode node;
     public final String table;
     public final SqlNode data;
     @Nullable
     public RelNode rel;
 
-    public UpdateStatment(SqlNode node, String table, SqlNode data) {
+    public TableModifyStatement(SqlNode node, String table, SqlNode data) {
         this.node = node;
         this.table = table;
         this.data = data;

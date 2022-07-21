@@ -190,7 +190,7 @@ public class CalciteCompiler {
 
         if (SqlKind.DML.contains(node.getKind())) {
             SimulatorResult result = this.simulate(node);
-            UpdateStatment stat = result.as(UpdateStatment.class);
+            TableModifyStatement stat = result.as(TableModifyStatement.class);
             if (stat != null) {
                 TableDDL tbl = this.program.getInputTable(stat.table);
                 assert tbl != null;

@@ -107,7 +107,7 @@ public class SqlSimulator {
             if (!(table instanceof SqlIdentifier))
                 throw new Unimplemented(table);
             SqlIdentifier id = (SqlIdentifier)table;
-            return new UpdateStatment(node, id.toString(), insert.getSource());
+            return new TableModifyStatement(node, id.toString(), insert.getSource());
         }
         throw new Unimplemented(node);
     }

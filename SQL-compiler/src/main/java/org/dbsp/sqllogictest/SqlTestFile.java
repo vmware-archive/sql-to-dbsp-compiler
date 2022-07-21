@@ -33,6 +33,10 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents the data from a .test file from the
+ * SqlLogicTest test framework.
+ */
 public class SqlTestFile {
     /**
      * Current line number in test file.
@@ -102,6 +106,9 @@ public class SqlTestFile {
         }
     }
 
+    /**
+     * Parse the beginning of a SqlLogicTest .test file, which prepares the test data
+     */
     private SqlTestPrepare parsePrepare() throws IOException {
         SqlTestPrepare result = new SqlTestPrepare();
         String line;
@@ -117,8 +124,8 @@ public class SqlTestFile {
                 line = this.nextLine(false);
                 if (ok)
                     result.add(line);
-                // Should we ignore the  statements where the statement should produce an error
-                // or ignore the whole test?
+                // Should we ignore the statements that should produce an error when executed,
+                // or ignore the whole test?  Right now we ignore such statements.
             }
 
             if (line.startsWith("query")) {
@@ -129,6 +136,9 @@ public class SqlTestFile {
         return result;
     }
 
+    /**
+     * Parse a query that executes a SqlLogicTest test.
+     */
     @Nullable
     private SqlTestQuery parseTestQuery() throws IOException {
         String line = this.nextLine(true);
@@ -141,12 +151,13 @@ public class SqlTestFile {
             this.error("Unexpected line: " + Utilities.singleQuote(line));
         }
         @Nullable SqlTestQuery result = new SqlTestQuery();
-        line = line.substring(5).trim();
+        line = line.substring("query".length()).trim();
         if (line.isEmpty())
             this.error("Malformed query description " + line);
 
         boolean done = false;
         for (int i = 0; !done && i < line.length(); i++) {
+            // Type of result encoded as characters.
             char c = line.charAt(i);
             switch (c) {
                 case ' ':

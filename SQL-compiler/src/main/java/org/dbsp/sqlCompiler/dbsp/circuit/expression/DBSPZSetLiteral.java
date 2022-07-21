@@ -63,11 +63,13 @@ public class DBSPZSetLiteral extends DBSPExpression {
     }
 
     public void add(DBSPExpression expression) {
+        // We expect the expression to be a constant value (a literal)
         assert expression.getType().same(this.getElementType());
         this.data.put(expression, 1);
     }
 
     public void add(DBSPExpression expression, int weight) {
+        // We expect the expression to be a constant value (a literal)
         assert expression.getType().same(this.getElementType());
         this.data.put(expression, weight);
     }
