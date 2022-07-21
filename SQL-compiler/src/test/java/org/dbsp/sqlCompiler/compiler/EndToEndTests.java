@@ -131,6 +131,15 @@ public class EndToEndTests {
     }
 
     @Test
+    public void projectNullTest() {
+        String query = "CREATE VIEW V AS SELECT T.COL5 FROM T";
+        this.testQuery(query,
+                new DBSPZSetLiteral(
+                        new DBSPTupleExpression(new DBSPLiteral(1, true)),
+                        new DBSPTupleExpression(new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test
     public void unionTest() {
         String query = "CREATE VIEW V AS (SELECT * FROM T) UNION (SELECT * FROM T)";
         this.testQuery(query, this.createInput());
