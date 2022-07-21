@@ -25,7 +25,6 @@
 
 package org.dbsp.sqlCompiler.dbsp;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.logical.*;
@@ -204,7 +203,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public void visitLogicalValues(LogicalValues values) {
         DBSPType type = this.convertType(values.getRowType());
         DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPZSetType(null, type, DBSPTypeInteger.signed32));
-        for (ImmutableList<RexLiteral> t: values.getTuples()) {
+        for (List<RexLiteral> t: values.getTuples()) {
             List<DBSPExpression> exprs = new ArrayList<>();
             for (RexLiteral rl : t) {
                 DBSPExpression expr = this.expressionCompiler.compile(rl);
