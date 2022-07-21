@@ -23,14 +23,37 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+package org.dbsp.sqlCompiler.frontend;
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.sql.SqlNode;
 
-public class DBSPFilterOperator extends DBSPOperator {
-    public DBSPFilterOperator(Object filter, DBSPExpression condition, DBSPType type) {
-        super(filter, "filter", condition.toRustString(), TypeCompiler.makeZSet(type));
+import javax.annotation.Nullable;
+
+/**
+ * Describes a SQL statements that modifies a table
+ * (e.g., an INSERT statement).
+ */
+public class TableModifyStatement implements SimulatorResult {
+    public final SqlNode node;
+    public final String table;
+    public final SqlNode data;
+    @Nullable
+    public RelNode rel;
+
+    public TableModifyStatement(SqlNode node, String table, SqlNode data) {
+        this.node = node;
+        this.table = table;
+        this.data = data;
+        this.rel = null;
+    }
+
+    public void setTranslation(RelNode rel) {
+        this.rel = rel;
+    }
+
+    @Override
+    public SqlNode getNode() {
+        return this.node;
     }
 }

@@ -23,14 +23,16 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+package org.dbsp.sqllogictest;
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.apache.calcite.sql.parser.SqlParseException;
 
-public class DBSPFilterOperator extends DBSPOperator {
-    public DBSPFilterOperator(Object filter, DBSPExpression condition, DBSPType type) {
-        super(filter, "filter", condition.toRustString(), TypeCompiler.makeZSet(type));
-    }
+/**
+ * Interface implemented by a class that knows how to execute a test.
+ */
+public interface ISqlTestExecutor {
+    void reset();
+    void prepare(SqlTestPrepare prepare) throws SqlParseException;
+    // TODO: add validator argument
+    void executeAndValidate(String query) throws SqlParseException;
 }

@@ -23,14 +23,25 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+package org.dbsp.sqllogictest;
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import java.util.ArrayList;
+import java.util.List;
 
-public class DBSPFilterOperator extends DBSPOperator {
-    public DBSPFilterOperator(Object filter, DBSPExpression condition, DBSPType type) {
-        super(filter, "filter", condition.toRustString(), TypeCompiler.makeZSet(type));
+/**
+ * A set of SQL statements that prepare a test.
+ */
+public class SqlTestPrepare {
+    /**
+     * List of SQL statements that are used to prepare the data.
+     */
+    public final List<String> statements;
+
+    public SqlTestPrepare() {
+        this.statements = new ArrayList<>();
+    }
+
+    public void add(String statement) {
+        this.statements.add(statement);
     }
 }

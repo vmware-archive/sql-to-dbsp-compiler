@@ -46,4 +46,9 @@ public class DBSPClosureExpression extends DBSPExpression {
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append("|t| ").append(this.expression);
     }
+
+    @Override
+    public String toString() {
+        return "|t| " + this.expression;
+    }
 }

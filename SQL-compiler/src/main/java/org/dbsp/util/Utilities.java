@@ -117,4 +117,12 @@ public class Utilities {
         assert result != null : "Key " + key + " does not exist in map";
         return result;
     }
+
+    @Nullable
+    public static String getFileExtension(String filename) {
+        int i = filename.lastIndexOf('.');
+        if (i > 0)
+            return filename.substring(i+1);
+        return null;
+    }
 }

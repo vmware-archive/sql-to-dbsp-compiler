@@ -23,14 +23,16 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+/**
+ * Package that doesn't allow null values as method parameters.
+ */
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqllogictest;
 
-public class DBSPFilterOperator extends DBSPOperator {
-    public DBSPFilterOperator(Object filter, DBSPExpression condition, DBSPType type) {
-        super(filter, "filter", condition.toRustString(), TypeCompiler.makeZSet(type));
-    }
-}
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
+
+import javax.annotation.ParametersAreNonnullByDefault;
