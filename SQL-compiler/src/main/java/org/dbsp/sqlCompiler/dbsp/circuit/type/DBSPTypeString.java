@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 public class DBSPTypeString extends DBSPType implements IDBSPBaseType {
     public static DBSPTypeString instance = new DBSPTypeString(null,false);
 
-    public DBSPTypeString(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
+    protected DBSPTypeString(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {

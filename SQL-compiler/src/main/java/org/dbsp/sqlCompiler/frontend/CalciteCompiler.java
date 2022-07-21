@@ -65,7 +65,7 @@ public class CalciteCompiler {
     private final SqlParser.Config parserConfig;
     private final SqlValidator validator;
     private final Catalog simple;
-    private final boolean debug = true;
+    private final boolean debug = false;
     private final SqlToRelConverter converter;
     private final SqlSimulator simulator;
     public final RelOptCluster cluster;
@@ -84,7 +84,7 @@ public class CalciteCompiler {
         this.parserConfig = SqlParser.config().withParserFactory(SqlDdlParserImpl.FACTORY);
         this.typeFactory = new JavaTypeFactoryImpl();
         this.simple = new Catalog("schema");
-        this.simulator = new SqlSimulator(this.simple);
+        this.simulator = new SqlSimulator(this.simple, this.typeFactory);
         CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
         rootSchema.add(simple.schemaName, this.simple);
         Prepare.CatalogReader catalogReader = new CalciteCatalogReader(

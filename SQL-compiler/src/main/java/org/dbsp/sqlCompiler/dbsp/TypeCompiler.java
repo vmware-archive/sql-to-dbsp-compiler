@@ -66,12 +66,12 @@ public class TypeCompiler {
                     return new DBSPTypeInteger(tn, 64, nullable);
                 case FLOAT:
                 case REAL:
-                    return new DBSPTypeFloat(tn, nullable);
+                    return DBSPTypeFloat.instance.setMayBeNull(nullable);
                 case DOUBLE:
-                    return new DBSPTypeDouble(tn, nullable);
+                    return DBSPTypeDouble.instance.setMayBeNull(nullable);
                 case CHAR:
                 case VARCHAR:
-                    return new DBSPTypeString(tn, nullable);
+                    return DBSPTypeString.instance.setMayBeNull(nullable);
                 case BINARY:
                 case VARBINARY:
                 case NULL:

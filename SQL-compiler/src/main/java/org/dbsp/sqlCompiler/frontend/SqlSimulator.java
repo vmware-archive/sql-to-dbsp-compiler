@@ -26,6 +26,7 @@
 package org.dbsp.sqlCompiler.frontend;
 
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.ddl.SqlColumnDeclaration;
@@ -45,9 +46,11 @@ import java.util.Objects;
 public class SqlSimulator {
     final Catalog schema;
     RelDataTypeSystem system = RelDataTypeSystem.DEFAULT;
+    RelDataTypeFactory typeFactory;
 
-    public SqlSimulator(Catalog schema) {
+    public SqlSimulator(Catalog schema, RelDataTypeFactory typeFactory) {
         this.schema = schema;
+        this.typeFactory = typeFactory;
     }
 
     // TODO: should use SqlTypeUtils.deriveType, but could not figure
@@ -56,20 +59,27 @@ public class SqlSimulator {
         SqlTypeNameSpec type = spec.getTypeNameSpec();
         String str = Catalog.toString(spec);
 
+        RelDataType result;
         if (type instanceof SqlBasicTypeNameSpec) {
             // This is just insane, there is no way to get to basic.sqlTypeName!
             if (str.equals("INTEGER"))
-                return new BasicSqlType(system, SqlTypeName.INTEGER);
-            if (str.equals("BOOLEAN"))
-                return new BasicSqlType(system, SqlTypeName.BOOLEAN);
-            if (str.startsWith("VARCHAR"))
-                return new BasicSqlType(system, SqlTypeName.VARCHAR);
-            if (str.equals("FLOAT") || str.equals("REAL"))
-                return new BasicSqlType(system, SqlTypeName.FLOAT);
-            if (str.equals("DOUBLE"))
-                return new BasicSqlType(system, SqlTypeName.DOUBLE);
+                result = new BasicSqlType(system, SqlTypeName.INTEGER);
+            else if (str.equals("BOOLEAN"))
+                result = new BasicSqlType(system, SqlTypeName.BOOLEAN);
+            else if (str.startsWith("VARCHAR"))
+                result = new BasicSqlType(system, SqlTypeName.VARCHAR);
+            else if (str.equals("FLOAT") || str.equals("REAL"))
+                result = new BasicSqlType(system, SqlTypeName.FLOAT);
+            else if (str.equals("DOUBLE"))
+                result = new BasicSqlType(system, SqlTypeName.DOUBLE);
+            else
+                throw new Unimplemented("Unknown SQL type: " + str, true);
+        } else {
+            throw new Unimplemented("Unknown SQL type: " + str, true);
         }
-        throw new Unimplemented("Unknown SQL type: " + str, true);
+        if (Objects.requireNonNull(spec.getNullable()))
+            result = this.typeFactory.createTypeWithNullability(result, true);
+        return result;
     }
 
     List<ColumnInfo> getColumnTypes(SqlNodeList list) {
