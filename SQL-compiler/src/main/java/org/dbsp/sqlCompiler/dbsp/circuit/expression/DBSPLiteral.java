@@ -32,38 +32,71 @@ import org.dbsp.util.Utilities;
 import javax.annotation.Nullable;
 
 public class DBSPLiteral extends DBSPExpression {
+    @Nullable
     private final String value;
 
     public DBSPLiteral(@Nullable Object node, DBSPType type, String value) {
         super(node, type);
-        this.value = value;
+        this.value = type.mayBeNull ? "Some(" + value + ")" : value;
+    }
+
+    public DBSPLiteral(int value, boolean nullable) {
+        this(null, DBSPTypeInteger.signed32.setMayBeNull(nullable), String.valueOf(value));
     }
 
     public DBSPLiteral(int value) {
-        this(null, DBSPTypeInteger.signed32, String.valueOf(value));
+        this(value, false);
+    }
+
+    public DBSPLiteral(String value, boolean nullable) {
+        this(null, DBSPTypeString.instance.setMayBeNull(nullable), "String::from(" + Utilities.escapeString(value) + ")");
     }
 
     public DBSPLiteral(String value) {
-        this(null, DBSPTypeString.instance, "String::from(" + Utilities.escapeString(value) + ")");
+        this(value, false);
     }
 
     public DBSPLiteral(float value) {
-        this(null, DBSPTypeFloat.instance, "OrderedFloat::<f32>(" + value + ")");
+        this(value, false);
     }
 
     public DBSPLiteral(double value) {
-        this(null, DBSPTypeDouble.instance, "OrderedFloat::<f64>(" + value + ")");
+        this(value, false);
     }
 
     public DBSPLiteral(boolean b) {
-        this(null, DBSPTypeBool.instance, String.valueOf(b));
+        this(b, false);
+    }
+
+    public DBSPLiteral(float value, boolean nullable) {
+        this(null, DBSPTypeFloat.instance.setMayBeNull(nullable), "OrderedFloat::<f32>(" + value + ")");
+    }
+
+    public DBSPLiteral(double value, boolean nullable) {
+        this(null, DBSPTypeDouble.instance.setMayBeNull(nullable), "OrderedFloat::<f64>(" + value + ")");
+    }
+
+    public DBSPLiteral(boolean b, boolean nullable) {
+        this(null, DBSPTypeBool.instance.setMayBeNull(nullable), String.valueOf(b));
+    }
+
+    /**
+     * Create a literal holding the value NULL with the specified type.
+     * @param type  Type of the literal.
+     */
+    public DBSPLiteral(DBSPType type) {
+        super(null, type);
+        if (!type.mayBeNull)
+            throw new RuntimeException("Type " + type + " cannot represent the NULL value");
+        this.value = "None";
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.value);
+        return builder.append(this.value != null ? this.value : "None");
     }
 
+    @Nullable @Override
     public String toString() {
         return this.value;
     }

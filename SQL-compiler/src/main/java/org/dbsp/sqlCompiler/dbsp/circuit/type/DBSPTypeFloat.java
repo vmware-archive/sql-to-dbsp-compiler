@@ -30,7 +30,7 @@ import org.dbsp.util.IndentStringBuilder;
 import javax.annotation.Nullable;
 
 public class DBSPTypeFloat extends DBSPType implements IsNumericType, IDBSPBaseType, IIsFloat {
-    public DBSPTypeFloat(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
+    protected DBSPTypeFloat(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {

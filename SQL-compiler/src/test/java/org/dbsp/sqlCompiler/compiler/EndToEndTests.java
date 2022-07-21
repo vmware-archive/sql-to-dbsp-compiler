@@ -7,6 +7,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPLiteral;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
 import org.dbsp.util.IndentStringBuilder;
@@ -29,6 +30,7 @@ public class EndToEndTests {
                 ", COL2 DOUBLE NOT NULL" +
                 ", COL3 BOOLEAN NOT NULL" +
                 ", COL4 VARCHAR NOT NULL" +
+                ", COL5 INT" +
                 ")";
 
         calcite.compile(ddl);
@@ -73,13 +75,15 @@ public class EndToEndTests {
             new DBSPLiteral(10),
             new DBSPLiteral(12.0),
             new DBSPLiteral(true),
-            new DBSPLiteral("Hi")
+            new DBSPLiteral("Hi"),
+            new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true))
     );
     private final DBSPExpression e1 = new DBSPTupleExpression(
             new DBSPLiteral(10),
             new DBSPLiteral(1.0),
             new DBSPLiteral(false),
-            new DBSPLiteral("Hi")
+            new DBSPLiteral("Hi"),
+            new DBSPLiteral(1, true)
     );
     private final DBSPZSetLiteral z0 = new DBSPZSetLiteral(e0);
     private final DBSPZSetLiteral z1 = new DBSPZSetLiteral(e1);
@@ -124,6 +128,15 @@ public class EndToEndTests {
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPLiteral(true)),
                         new DBSPTupleExpression(new DBSPLiteral(false))));
+    }
+
+    @Test
+    public void projectNullTest() {
+        String query = "CREATE VIEW V AS SELECT T.COL5 FROM T";
+        this.testQuery(query,
+                new DBSPZSetLiteral(
+                        new DBSPTupleExpression(new DBSPLiteral(1, true)),
+                        new DBSPTupleExpression(new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)))));
     }
 
     @Test
