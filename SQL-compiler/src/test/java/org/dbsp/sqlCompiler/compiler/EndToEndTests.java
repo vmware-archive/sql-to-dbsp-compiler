@@ -10,7 +10,6 @@ import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
-import org.dbsp.util.IndentStringBuilder;
 import org.junit.Test;
 
 import javax.annotation.Nullable;
@@ -68,7 +67,7 @@ public class EndToEndTests {
             System.out.println(line);
         }
         int exitCode = process.waitFor();
-        assert exitCode == 0;
+        assert exitCode == 0 : "Rust process failed with exit code " + exitCode;
     }
 
     private final DBSPExpression e0 = new DBSPTupleExpression(
@@ -128,6 +127,24 @@ public class EndToEndTests {
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPLiteral(true)),
                         new DBSPTupleExpression(new DBSPLiteral(false))));
+    }
+
+    @Test
+    public void plusNullTest() {
+        String query = "CREATE VIEW V AS SELECT T.COL1 + T.COL5 FROM T";
+        this.testQuery(query,
+                new DBSPZSetLiteral(
+                        new DBSPTupleExpression(new DBSPLiteral(11, true)),
+                        new DBSPTupleExpression(new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test
+    public void negateNullTest() {
+        String query = "CREATE VIEW V AS SELECT -T.COL5 FROM T";
+        this.testQuery(query,
+                new DBSPZSetLiteral(
+                        new DBSPTupleExpression(new DBSPLiteral(-1, true)),
+                        new DBSPTupleExpression(new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)))));
     }
 
     @Test

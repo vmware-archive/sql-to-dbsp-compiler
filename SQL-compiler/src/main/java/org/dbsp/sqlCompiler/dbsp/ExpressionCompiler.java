@@ -53,6 +53,14 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         return new DBSPLiteral(literal, type, literal.toString());
     }
 
+    /**
+     * Given operands for "operation" with left and right types,
+     * compute the type that both operands must be cast to.
+     * @param operation  Sql operation string.
+     * @param left       Left operand type.
+     * @param right      Right operand type.
+     * @return           Common type operands must be cast to.
+     */
     private static DBSPType castType(String operation, DBSPType left, DBSPType right) {
         if (left.same(right))
             return left;
@@ -60,22 +68,23 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPTypeInteger ri = right.as(DBSPTypeInteger.class);
         IIsFloat lf = left.as(IIsFloat.class);
         IIsFloat rf = right.as(IIsFloat.class);
+        boolean mustBeNull = left.mayBeNull || right.mayBeNull;
         if (li != null) {
             if (ri != null) {
                 return new DBSPTypeInteger(null, Math.max(li.getWidth(), ri.getWidth()), left.mayBeNull || right.mayBeNull);
             }
             if (rf != null) {
-                return right;
+                return right.setMayBeNull(mustBeNull);
             }
         }
         if (lf != null) {
             if (ri != null)
-                return left;
+                return left.setMayBeNull(mustBeNull);
             if (rf != null) {
                 if (lf.getWidth() < rf.getWidth())
-                    return right;
+                    return right.setMayBeNull(mustBeNull);
                 else
-                    return left;
+                    return left.setMayBeNull(mustBeNull);
             }
         }
         throw new Unimplemented();

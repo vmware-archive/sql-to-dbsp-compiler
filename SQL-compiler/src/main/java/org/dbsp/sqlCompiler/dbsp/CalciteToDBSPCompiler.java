@@ -60,7 +60,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     }
 
     private final DBSPCircuit circuit;
-    boolean debug = false;
+    boolean debug = true;
     // The path in the IR tree used to reach the current node.
     final List<Context> stack;
     // Map an input or output name to the corresponding operator
@@ -120,16 +120,18 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     }
 
     public void visitProject(LogicalProject project) {
+        // LogicalProject is not really SQL project, it is rather map.
         RelNode input = project.getInput();
         DBSPOperator opinput = this.getOperator(input);
         DBSPType type = this.convertType(project.getRowType());
-        List<Integer> projectColumns = new ArrayList<>();
+        List<DBSPExpression> resultColumns = new ArrayList<>();
         for (RexNode column : project.getProjects()) {
-            RexInputRef in = ICastable.as(column, RexInputRef.class);
-            assert in != null : "Unhandled columnn reference in project: " + column;
-            projectColumns.add(in.getIndex());
+            DBSPExpression exp = this.expressionCompiler.compile(column);
+            resultColumns.add(exp);
         }
-        DBSPProjectOperator op = new DBSPProjectOperator(project, projectColumns, type);
+        DBSPExpression exp = new DBSPTupleExpression(project, resultColumns, type);
+        DBSPExpression closure = new DBSPClosureExpression(project, type, exp);
+        DBSPMapOperator op = new DBSPMapOperator(project, closure, type);
         op.addInput(opinput);
         this.circuit.addOperator(op);
 

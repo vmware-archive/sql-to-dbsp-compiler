@@ -42,9 +42,10 @@ public class DBSPCastExpression extends DBSPExpression {
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         DBSPType type = this.getType();
+        DBSPType argtype = this.argument.getType();
         if (type.is(IIsFloat.class)) {
             IIsFloat ft = type.to(IIsFloat.class);
-            if (this.argument.getType().is(IIsFloat.class)) {
+            if (argtype.is(IIsFloat.class)) {
                 return builder
                         .append("OrderedFloat(")
                         .append(this.argument)
@@ -59,6 +60,27 @@ public class DBSPCastExpression extends DBSPExpression {
                     .append(" as ")
                     .append(ft.getRustString())
                     .append(")");
+        }
+        if (type.mayBeNull) {
+            if (argtype.mayBeNull) {
+                return builder
+                        .append("match ")
+                        .append(this.argument)
+                        .append(" {")
+                        .append("None => None,\n")
+                        .append("Some(x) => Some(x as ")
+                        .append(this.getType().setMayBeNull(false))
+                        .append("),\n")
+                        .decrease()
+                        .append("}");
+            } else {
+                return builder
+                        .append("Some(")
+                        .append(this.argument)
+                        .append(" as ")
+                        .append(this.getType().setMayBeNull(false))
+                        .append(")");
+            }
         }
         return builder.append(this.argument)
                 .append(" as ")

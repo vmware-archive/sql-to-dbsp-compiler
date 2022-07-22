@@ -34,6 +34,7 @@ public class DBSPUnaryExpression extends DBSPExpression {
     private final DBSPExpression left;
     private final String operation;
 
+    @SuppressWarnings("ConstantConditions")
     public DBSPUnaryExpression(@Nullable Object node, DBSPType type, String operation, DBSPExpression operand) {
         super(node, type);
         this.operation = operation;
@@ -43,9 +44,23 @@ public class DBSPUnaryExpression extends DBSPExpression {
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("(")
-                .append(this.operation)
-                .append(this.left)
-                .append(")");
+        if (this.left.getType().mayBeNull) {
+            return builder.append("(")
+                    .append("match ")
+                    .append(this.left)
+                    .append(" {").increase()
+                    .append("Some(x) => Some(")
+                    .append(this.operation)
+                    .append("(x)),\n")
+                    .append("_ => None,\n")
+                    .decrease()
+                    .append("}")
+                    .append(")");
+        } else {
+            return builder.append("(")
+                    .append(this.operation)
+                    .append(this.left)
+                    .append(")");
+        }
     }
 }
