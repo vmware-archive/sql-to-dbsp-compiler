@@ -39,7 +39,9 @@ import java.util.List;
 
 public class DBSPCircuit extends DBSPNode {
     static String rustPreamble = "#![allow(dead_code)]\n" +
-            "#![allow(non_snake_case)]\n\n" +
+            "#![allow(non_snake_case)]\n" +
+            "#![allow(unused_imports)]\n\n" +
+            "#![allow(unused_parens)]\n" +
             "use dbsp::{\n" +
             "    circuit::{Root, Stream},\n" +
             "    operator::{Generator, FilterMap},\n" +
@@ -49,6 +51,8 @@ public class DBSPCircuit extends DBSPNode {
             "use std::cell::RefCell;\n" +
             "use std::rc::Rc;\n" +
             "use ordered_float::OrderedFloat;\n" +
+            "mod sqllib;\n" +
+            "use crate::test::sqllib::*;\n" +
             "type Weight = isize;\n";
 
     private final List<DBSPOperator> inputOperators = new ArrayList<>();

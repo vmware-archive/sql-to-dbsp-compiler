@@ -25,7 +25,9 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
 
@@ -44,6 +46,16 @@ public class DBSPTypeString extends DBSPType implements IDBSPBaseType {
         if (this.mayBeNull == mayBeNull)
             return this;
         return new DBSPTypeString(this.getNode(), mayBeNull);
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        throw new Unimplemented();
+    }
+
+    @Override
+    public String shortName() {
+        return "s";
     }
 
     @Override

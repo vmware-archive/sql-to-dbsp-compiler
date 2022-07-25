@@ -23,29 +23,29 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.dbsp.util.IdGen;
-
-import javax.annotation.Nullable;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.util.IndentStringBuilder;
 
 /**
- * Base interface for all DBSP nodes.
+ * Function application expression.
  */
-public abstract class DBSPNode
-        extends IdGen
-        implements IDBSPNode {
+public class DBSPApplyExpression extends DBSPExpression {
+    public final String function;
+    public final DBSPExpression[] arguments;
 
-    /**
-     * Original query Sql node that produced this node.
-     */
-    private final @Nullable
-    Object node;
-
-    protected DBSPNode(@Nullable Object node) {
-        this.node = node;
+    public DBSPApplyExpression(String function, DBSPType returnType, DBSPExpression... arguments) {
+        super(null, returnType);
+        this.function = function;
+        this.arguments = arguments;
     }
 
-    @Nullable
-    public Object getNode() { return this.node; }
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append(this.function)
+                .append("(")
+                .join(", ", this.arguments)
+                .append(")");
+    }
 }

@@ -26,10 +26,9 @@
 package org.dbsp.sqlCompiler.dbsp;
 
 import org.apache.calcite.rex.*;
+import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.IIsFloat;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Unimplemented;
 
@@ -53,32 +52,44 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         return new DBSPLiteral(literal, type, literal.toString());
     }
 
-    private static DBSPType castType(String operation, DBSPType left, DBSPType right) {
+    /**
+     * Given operands for "operation" with left and right types,
+     * compute the type that both operands must be cast to.
+     * Note: this ignores nullability of types.
+     * @param operation  Sql operation string.
+     * @param left       Left operand type.
+     * @param right      Right operand type.
+     * @return           Common type operands must be cast to.
+     */
+    public static DBSPType reduceType(String operation, DBSPType left, DBSPType right) {
+        left = left.setMayBeNull(false);
+        right = right.setMayBeNull(false);
         if (left.same(right))
             return left;
+
         DBSPTypeInteger li = left.as(DBSPTypeInteger.class);
         DBSPTypeInteger ri = right.as(DBSPTypeInteger.class);
-        IIsFloat lf = left.as(IIsFloat.class);
-        IIsFloat rf = right.as(IIsFloat.class);
+        DBSPTypeFP lf = left.as(DBSPTypeFP.class);
+        DBSPTypeFP rf = right.as(DBSPTypeFP.class);
         if (li != null) {
             if (ri != null) {
-                return new DBSPTypeInteger(null, Math.max(li.getWidth(), ri.getWidth()), left.mayBeNull || right.mayBeNull);
+                return new DBSPTypeInteger(null, Math.max(li.getWidth(), ri.getWidth()), false);
             }
             if (rf != null) {
-                return right;
+                return right.setMayBeNull(false);
             }
         }
         if (lf != null) {
             if (ri != null)
-                return left;
+                return left.setMayBeNull(false);
             if (rf != null) {
                 if (lf.getWidth() < rf.getWidth())
-                    return right;
+                    return right.setMayBeNull(false);
                 else
-                    return left;
+                    return left.setMayBeNull(false);
             }
         }
-        throw new Unimplemented();
+        throw new Unimplemented("Cast from " + right + " to " + left);
     }
 
     private static DBSPExpression makeBinaryExpression(
@@ -89,12 +100,14 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPType leftType = left.getType();
         DBSPExpression right = operands.get(1);
         DBSPType rightType = right.getType();
-        DBSPType common = castType(op, leftType, rightType);
-        if (!leftType.same(common))
-            left = new DBSPCastExpression(node, common, left);
-        if (!rightType.same(common))
-            right = new DBSPCastExpression(node, common, right);
-        return new DBSPBinaryExpression(node, resultType, op, left, right);
+        DBSPType commonBase = reduceType(op, leftType, rightType);
+        if (!leftType.setMayBeNull(false).same(commonBase))
+            left = new DBSPCastExpression(node, commonBase.setMayBeNull(leftType.mayBeNull), left);
+        if (!rightType.setMayBeNull(false).same(commonBase))
+            right = new DBSPCastExpression(node, commonBase.setMayBeNull(rightType.mayBeNull), right);
+        SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
+                op, commonBase.setMayBeNull(leftType.mayBeNull), commonBase.setMayBeNull(rightType.mayBeNull));
+        return new DBSPApplyExpression(function.function, function.returnType, left, right);
     }
 
     @Override

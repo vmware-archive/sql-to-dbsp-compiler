@@ -30,36 +30,39 @@ import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType, IDBSPBaseType {
-    protected DBSPTypeFloat(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
+/**
+ * Base class for floating-point types.
+ */
+public abstract class DBSPTypeFP extends DBSPType {
+    protected DBSPTypeFP(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
+
+    /**
+     * Width in bits.
+     */
+    public abstract int getWidth();
+    /**
+     * Rust string describing this type, e.g., f32.
+     */
+    public String getRustString() { return "f" + this.getWidth(); }
 
     @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder,"OrderedFloat<f32>"); }
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        if (this.mayBeNull == mayBeNull)
-            return this;
-        return new DBSPTypeFloat(this.getNode(), mayBeNull);
-    }
-
-    @Override
-    public String shortName() {
-        return "f";
-    }
-
-    public static DBSPTypeFloat instance = new DBSPTypeFloat(null,false);
-
-    @Override
-    public boolean same(DBSPType type) {
-        if (!super.same(type))
-            return false;
-        return type.is(DBSPTypeFloat.class);
-    }
-
-    @Override
-    public int getWidth() {
-        return 32;
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        DBSPType argtype = source.getType();
+        if (argtype.is(DBSPTypeFP.class)) {
+            return builder
+                    .append("OrderedFloat(")
+                    .append(source)
+                    .append(".into_inner()")
+                    .append(" as ")
+                    .append(this.getRustString())
+                    .append(")");
+        } else {
+            return builder
+                    .append("OrderedFloat(")
+                    .append(source)
+                    .append(" as ")
+                    .append(this.getRustString())
+                    .append(")");
+        }
     }
 }

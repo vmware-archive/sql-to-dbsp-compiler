@@ -25,7 +25,15 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.util.IndentStringBuilder;
+
 /**
  * Interface implemented by DBSP base types.
  */
-public interface IDBSPBaseType { }
+public interface IDBSPBaseType {
+    /**
+     * Used when generating names for library functions that depend on argument types.
+     */
+    String shortName();
+}

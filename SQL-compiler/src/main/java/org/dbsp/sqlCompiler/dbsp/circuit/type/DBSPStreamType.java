@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPStreamType extends DBSPType {
@@ -37,6 +38,11 @@ public class DBSPStreamType extends DBSPType {
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
         throw new UnsupportedOperationException();
     }
 

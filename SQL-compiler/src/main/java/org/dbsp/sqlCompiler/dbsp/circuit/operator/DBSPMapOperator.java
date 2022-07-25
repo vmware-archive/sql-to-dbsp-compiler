@@ -32,34 +32,14 @@ import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPFieldExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeTuple;
-import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Relational projection operator.  Projects a tuple on a set of columns.
- */
-public class DBSPProjectOperator extends DBSPOperator {
-    static String projectFunction(List<Integer> projectIndexes, DBSPType tupleType) {
-        List<DBSPExpression> fields = new ArrayList<>();
-        DBSPTypeTuple tuple = tupleType.to(DBSPTypeTuple.class);
-        assert tuple.size() == projectIndexes.size();
-        for (int i = 0; i < projectIndexes.size(); i++) {
-            int index = projectIndexes.get(i);
-            DBSPType etype = tuple.component(i);
-            DBSPFieldExpression exp = new DBSPFieldExpression(null, index, etype);
-            fields.add(exp);
-        }
-        DBSPTupleExpression exp = new DBSPTupleExpression(null, fields, tupleType);
-        DBSPClosureExpression clo = new DBSPClosureExpression(null, tupleType, exp);
-        return clo.toRustString();
-    }
-
-    public DBSPProjectOperator(@Nullable Object node, List<Integer> projectIndexes,
-                               DBSPType resultType) {
-        super(node, "map", projectFunction(projectIndexes, resultType),
-                TypeCompiler.makeZSet(resultType));
+public class DBSPMapOperator extends DBSPOperator {
+    public DBSPMapOperator(@Nullable Object node, DBSPExpression expression,
+                           DBSPType resultType) {
+        super(node, "map", expression.toRustString(), TypeCompiler.makeZSet(resultType));
     }
 }

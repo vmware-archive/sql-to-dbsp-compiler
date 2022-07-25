@@ -3,14 +3,16 @@ package org.dbsp.sqlCompiler.compiler;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPLiteral;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
-import org.dbsp.util.IndentStringBuilder;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.annotation.Nullable;
@@ -23,6 +25,14 @@ import java.io.*;
  * from the declared views.
  */
 public class EndToEndTests {
+    static String rustDirectory = "../temp";
+    static String testFilePath = rustDirectory + "/src/test.rs";
+
+    @Before
+    public void generateLib() throws IOException {
+        SqlRuntimeLibrary.instance.writeSqlLibrary(rustDirectory + "/src/test/sqllib.rs");
+    }
+
     private CalciteCompiler compileDef() throws SqlParseException {
         CalciteCompiler calcite = new CalciteCompiler();
         String ddl = "CREATE TABLE T (\n" +
@@ -31,14 +41,12 @@ public class EndToEndTests {
                 ", COL3 BOOLEAN NOT NULL" +
                 ", COL4 VARCHAR NOT NULL" +
                 ", COL5 INT" +
+                ", COL6 DOUBLE" +
                 ")";
 
         calcite.compile(ddl);
         return calcite;
     }
-
-    static String rustDirectory = "../temp";
-    static String testFilePath = rustDirectory + "/src/test.rs";
 
     private String compileQuery(String query) throws SqlParseException {
         CalciteCompiler calcite = this.compileDef();
@@ -60,15 +68,10 @@ public class EndToEndTests {
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command("cargo", "test");
         processBuilder.directory(new File(directory));
+        processBuilder.inheritIO();
         Process process = processBuilder.start();
-        BufferedReader reader =
-                new BufferedReader(new InputStreamReader(process.getErrorStream()));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            System.out.println(line);
-        }
         int exitCode = process.waitFor();
-        assert exitCode == 0;
+        assert exitCode == 0 : "Rust process failed with exit code " + exitCode;
     }
 
     private final DBSPExpression e0 = new DBSPTupleExpression(
@@ -76,17 +79,20 @@ public class EndToEndTests {
             new DBSPLiteral(12.0),
             new DBSPLiteral(true),
             new DBSPLiteral("Hi"),
-            new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true))
+            new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)),
+            new DBSPLiteral(DBSPTypeDouble.instance.setMayBeNull(true))
     );
     private final DBSPExpression e1 = new DBSPTupleExpression(
             new DBSPLiteral(10),
             new DBSPLiteral(1.0),
             new DBSPLiteral(false),
             new DBSPLiteral("Hi"),
-            new DBSPLiteral(1, true)
+            new DBSPLiteral(1, true),
+            new DBSPLiteral(0.0, true)
     );
     private final DBSPZSetLiteral z0 = new DBSPZSetLiteral(e0);
     private final DBSPZSetLiteral z1 = new DBSPZSetLiteral(e1);
+    private final DBSPZSetLiteral empty = new DBSPZSetLiteral(z0.getType());
 
     private DBSPExpression createInput() {
         return new DBSPZSetLiteral(e0, e1);
@@ -131,6 +137,24 @@ public class EndToEndTests {
     }
 
     @Test
+    public void plusNullTest() {
+        String query = "CREATE VIEW V AS SELECT T.COL1 + T.COL5 FROM T";
+        this.testQuery(query,
+                new DBSPZSetLiteral(
+                        new DBSPTupleExpression(new DBSPLiteral(11, true)),
+                        new DBSPTupleExpression(new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test
+    public void negateNullTest() {
+        String query = "CREATE VIEW V AS SELECT -T.COL5 FROM T";
+        this.testQuery(query,
+                new DBSPZSetLiteral(
+                        new DBSPTupleExpression(new DBSPLiteral(-1, true)),
+                        new DBSPTupleExpression(new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test
     public void projectNullTest() {
         String query = "CREATE VIEW V AS SELECT T.COL5 FROM T";
         this.testQuery(query,
@@ -164,9 +188,21 @@ public class EndToEndTests {
     }
 
     @Test
+    public void whereExplicitCastTestNull() {
+        String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL2 < CAST(COL5 AS DOUBLE)";
+        this.testQuery(query, this.empty);
+    }
+
+    @Test
     public void whereExplicitImplicitCastTest() {
         String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL2 < CAST(COL1 AS FLOAT)";
         this.testQuery(query, this.z1);
+    }
+
+    @Test
+    public void whereExplicitImplicitCastTestNull() {
+        String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL2 < CAST(COL5 AS FLOAT)";
+        this.testQuery(query, this.empty);
     }
 
     @Test

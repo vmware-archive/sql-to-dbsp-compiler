@@ -86,6 +86,14 @@ public class IndentStringBuilder {
         return this;
     }
 
+    public <T extends ToRustString> IndentStringBuilder intercalate(String separator, List<T> data) {
+        for (ToRustString d: data) {
+            this.append(d);
+            this.append(separator);
+        }
+        return this;
+    }
+
     public IndentStringBuilder newline() {
         return this.append("\n");
     }

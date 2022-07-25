@@ -35,6 +35,7 @@ public class DBSPBinaryExpression extends DBSPExpression {
     private final DBSPExpression right;
     private final String operation;
 
+    @SuppressWarnings("ConstantConditions")
     public DBSPBinaryExpression(@Nullable Object node, DBSPType type, String operation,
                                 DBSPExpression left, DBSPExpression right) {
         super(node, type);
@@ -47,12 +48,28 @@ public class DBSPBinaryExpression extends DBSPExpression {
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("(")
-                .append(this.left)
-                .append(" ")
-                .append(this.operation)
-                .append(" ")
-                .append(this.right)
-                .append(")");
+        if (this.left.getType().mayBeNull) {
+            return builder.append("(")
+                    .append("match (")
+                    .append(this.left)
+                    .append(", ")
+                    .append(this.right)
+                    .append(") {").increase()
+                    .append("(Some(x), Some(y)) => Some(x ")
+                    .append(this.operation)
+                    .append(" y),\n")
+                    .append("_ => None,\n")
+                    .decrease()
+                    .append("}")
+                    .append(")");
+        } else {
+            return builder.append("(")
+                    .append(this.left)
+                    .append(" ")
+                    .append(this.operation)
+                    .append(" ")
+                    .append(this.right)
+                    .append(")");
+        }
     }
 }

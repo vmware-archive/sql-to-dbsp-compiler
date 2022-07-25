@@ -25,27 +25,8 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit;
 
-import org.dbsp.util.IdGen;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.IHasType;
 
-import javax.annotation.Nullable;
-
-/**
- * Base interface for all DBSP nodes.
- */
-public abstract class DBSPNode
-        extends IdGen
-        implements IDBSPNode {
-
-    /**
-     * Original query Sql node that produced this node.
-     */
-    private final @Nullable
-    Object node;
-
-    protected DBSPNode(@Nullable Object node) {
-        this.node = node;
-    }
-
-    @Nullable
-    public Object getNode() { return this.node; }
+public interface IDBSPDeclaration extends IDBSPNode {
+    String getName();
 }

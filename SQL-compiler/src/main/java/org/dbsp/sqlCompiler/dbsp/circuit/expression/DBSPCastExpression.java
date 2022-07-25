@@ -26,7 +26,6 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.IIsFloat;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -42,26 +41,8 @@ public class DBSPCastExpression extends DBSPExpression {
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         DBSPType type = this.getType();
-        if (type.is(IIsFloat.class)) {
-            IIsFloat ft = type.to(IIsFloat.class);
-            if (this.argument.getType().is(IIsFloat.class)) {
-                return builder
-                        .append("OrderedFloat(")
-                        .append(this.argument)
-                        .append(".into_inner()")
-                        .append(" as ")
-                        .append(ft.getRustString())
-                        .append(")");
-            }
-            return builder
-                    .append("OrderedFloat(")
-                    .append(this.argument)
-                    .append(" as ")
-                    .append(ft.getRustString())
-                    .append(")");
-        }
-        return builder.append(this.argument)
-                .append(" as ")
-                .append(this.getType());
+        if (type.same(this.argument.getType()))
+            return builder.append(this.argument);
+        return type.standardCastFrom(builder, this.argument);
     }
 }

@@ -23,18 +23,12 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.type;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-/**
- * interface implemented by float types.
- */
-public interface IIsFloat {
-    /**
-     * Width in bits.
-     */
-    int getWidth();
-    /**
-     * Rust string describing this type, e.g., f32.
-     */
-    default String getRustString() { return "f" + this.getWidth(); }
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+
+public class DBSPDontCare extends DBSPVariableReference {
+    public DBSPDontCare(DBSPType type) {
+        super("_", type);
+    }
 }
