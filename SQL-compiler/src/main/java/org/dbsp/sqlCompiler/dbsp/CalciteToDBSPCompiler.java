@@ -34,10 +34,7 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPClosureExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
 import org.dbsp.sqlCompiler.frontend.*;
@@ -188,6 +185,9 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public void visitFilter(LogicalFilter filter) {
         DBSPType type = this.convertType(filter.getRowType());
         DBSPExpression condition = this.expressionCompiler.compile(filter.getCondition());
+        if (condition.getType().mayBeNull) {
+            condition = new DBSPApplyExpression("wrap_bool", condition.getType(), condition);
+        }
         condition = new DBSPClosureExpression(filter.getCondition(), condition.getType(), condition);
         DBSPFilterOperator fop = new DBSPFilterOperator(filter, condition, type);
         DBSPOperator input = this.getOperator(filter.getInput());

@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -67,6 +68,11 @@ public class DBSPTypeTuple extends DBSPType {
         if (mayBeNull == this.mayBeNull)
             return this;
         return new DBSPTypeTuple(this.getNode(), mayBeNull, this.tupArgs);
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

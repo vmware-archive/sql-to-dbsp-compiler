@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -68,6 +69,11 @@ public class DBSPTypeUser extends DBSPType {
         if (this.mayBeNull == mayBeNull)
             return this;
         return new DBSPTypeUser(this.getNode(), this.name, mayBeNull, this.typeArgs);
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

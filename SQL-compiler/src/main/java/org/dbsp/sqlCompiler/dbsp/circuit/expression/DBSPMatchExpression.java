@@ -25,24 +25,49 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
+import java.util.List;
 
-public class DBSPCastExpression extends DBSPExpression {
-    final DBSPExpression argument;
+public class DBSPMatchExpression extends DBSPExpression {
+    public static class DBSPMatchCase extends DBSPNode {
+        public final DBSPExpression against;
+        public final DBSPExpression result;
 
-    public DBSPCastExpression(@Nullable Object node, DBSPType type, DBSPExpression argument) {
-        super(node, type);
-        this.argument = argument;
+        public DBSPMatchCase(DBSPExpression against, DBSPExpression result) {
+            super(null);
+            this.against = against;
+            this.result = result;
+        }
+
+        @Override
+        public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+            return builder.append(this.against)
+                    .append(" => ")
+                    .append(this.result);
+        }
+    }
+
+    public final DBSPExpression matched;
+    public final List<DBSPMatchCase> cases;
+
+    public DBSPMatchExpression(DBSPExpression matched, List<DBSPMatchCase> cases, DBSPType type) {
+        super(null, type);
+        this.matched = matched;
+        this.cases = cases;
+        if (cases.isEmpty())
+            throw new RuntimeException("Empty list of cases for match");
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        DBSPType type = this.getType();
-        if (type.same(this.argument.getType()))
-            return builder.append(this.argument);
-        return type.standardCastFrom(builder, this.argument);
+        return builder.append("(match ")
+                .append(this.matched)
+                .append(" {").increase()
+                .intercalate(",\n", this.cases)
+                .decrease()
+                .append("})");
     }
 }

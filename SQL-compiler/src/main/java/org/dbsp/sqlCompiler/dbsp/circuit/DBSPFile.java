@@ -25,27 +25,21 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit;
 
-import org.dbsp.util.IdGen;
+import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
-/**
- * Base interface for all DBSP nodes.
- */
-public abstract class DBSPNode
-        extends IdGen
-        implements IDBSPNode {
+public class DBSPFile extends DBSPNode {
+    public final List<IDBSPDeclaration> declarations;
 
-    /**
-     * Original query Sql node that produced this node.
-     */
-    private final @Nullable
-    Object node;
-
-    protected DBSPNode(@Nullable Object node) {
-        this.node = node;
+    public DBSPFile(@Nullable Object node, List<IDBSPDeclaration> declarations) {
+        super(node);
+        this.declarations = declarations;
     }
 
-    @Nullable
-    public Object getNode() { return this.node; }
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.join("\n\n", this.declarations);
+    }
 }

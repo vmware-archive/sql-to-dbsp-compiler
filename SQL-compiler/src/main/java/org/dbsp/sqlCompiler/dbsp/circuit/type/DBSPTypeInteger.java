@@ -25,7 +25,9 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -56,6 +58,30 @@ public class DBSPTypeInteger extends DBSPType
         if (mayBeNull == this.mayBeNull)
             return this;
         return new DBSPTypeInteger(this.getNode(), this.width, mayBeNull);
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        DBSPType argtype = source.getType();
+        if (argtype.is(DBSPTypeFP.class)) {
+            return builder
+                    .append(source)
+                    .append(".into_inner()")
+                    .append(" as ")
+                    .append(this);
+        } else if (argtype.is(DBSPTypeInteger.class)){
+            return builder
+                    .append(source)
+                    .append(" as ")
+                    .append(this);
+        } else {
+            throw new Unimplemented();
+        }
+    }
+
+    @Override
+    public String shortName() {
+        return "i" + this.width;
     }
 
     public int getWidth() {

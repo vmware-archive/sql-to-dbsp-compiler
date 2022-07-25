@@ -26,6 +26,8 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPVariableReference;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -75,14 +77,41 @@ public abstract class DBSPType extends DBSPNode {
         return type instanceof IsNumericType;
     }
 
-    /**
-     * Get the None{} value of the option type corresponding to this type.
-    public DBSPExpression getNone(@Nullable SqlNode node) {
-        return new DBSPENull(node, this.setMayBeNull(true));
-    }
-     */
-
     public boolean isBaseType() {
         return this.is(IDBSPBaseType.class);
     }
+
+    /**
+     * Typical implementation of castFrom, which handles nullable types.
+     */
+    public IndentStringBuilder standardCastFrom(IndentStringBuilder builder, DBSPExpression source) {
+        DBSPType type = source.getType();
+        if (type.mayBeNull) {
+            assert this.mayBeNull : "Unexpected nullable source and non-nullable result";
+            builder.append("(match ")
+                    .append(source)
+                    .append(" {\n").increase()
+                    .append("Some(x) => Some(");
+            DBSPExpression expr = new DBSPVariableReference("x", type.setMayBeNull(false));
+            return this.setMayBeNull(false).castFrom(builder, expr)
+                    .append("),\n")
+                    .append("_ => None,\n").decrease()
+                    .append("})");
+        } else {
+            if (this.mayBeNull) {
+                builder.append("(Some(");
+                this.setMayBeNull(false).castFrom(builder, source);
+                return builder.append("))");
+            } else {
+                return this.castFrom(builder, source);
+            }
+        }
+    }
+
+    /**
+     * Generate code for a cast from the specified expression to this type.
+     * This function does not need to handle nullable types, that's done in
+     * 'standardCastFrom'
+     */
+    public abstract IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source);
 }

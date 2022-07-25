@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -34,7 +35,7 @@ import java.util.List;
 public class DBSPTypeStruct extends DBSPType {
     private final String name;
     private final List<DBSPStructField> args;
-    private final HashSet<String> fields = new HashSet<String>();
+    private final HashSet<String> fields = new HashSet<>();
 
     public DBSPTypeStruct(@Nullable Object node, String name, List<DBSPStructField> args) {
         super(node,false);
@@ -53,6 +54,11 @@ public class DBSPTypeStruct extends DBSPType {
                 .append("{")
                 .join(", ", this.args)
                 .append("}");
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
