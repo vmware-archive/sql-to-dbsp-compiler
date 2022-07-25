@@ -33,6 +33,9 @@ import org.dbsp.util.IndentStringBuilder;
 
 import java.util.List;
 
+/**
+ * A (Rust) function.
+ */
 public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
     public static class DBSPArgument extends DBSPNode implements IHasType {
         public final String name;

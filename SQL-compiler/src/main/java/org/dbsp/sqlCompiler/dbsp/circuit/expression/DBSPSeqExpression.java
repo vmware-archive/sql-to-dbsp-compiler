@@ -29,6 +29,9 @@ import org.dbsp.util.IndentStringBuilder;
 
 import java.util.List;
 
+/**
+ * Sequential composition expression, represented by semicolon in Rust.
+ */
 public class DBSPSeqExpression extends DBSPExpression {
     public final List<DBSPExpression> contents;
 

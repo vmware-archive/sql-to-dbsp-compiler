@@ -30,6 +30,9 @@ import org.dbsp.util.IndentStringBuilder;
 import javax.annotation.Nullable;
 import java.util.List;
 
+/**
+ * Abstraction for a (Rust) file containing a series of DBSP declarations.
+ */
 public class DBSPFile extends DBSPNode {
     public final List<IDBSPDeclaration> declarations;
 

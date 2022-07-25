@@ -28,6 +28,9 @@ package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
+/**
+ * Function application expression.
+ */
 public class DBSPApplyExpression extends DBSPExpression {
     public final String function;
     public final DBSPExpression[] arguments;

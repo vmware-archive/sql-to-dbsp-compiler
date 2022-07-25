@@ -28,6 +28,9 @@ package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
+/**
+ * Invocation of a Rust constructor with some arguments.
+ */
 public class DBSPConstructorExpression extends DBSPExpression {
     public final String constructor;
     public final DBSPExpression[] arguments;

@@ -28,6 +28,9 @@ package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
+/**
+ * Reference to a variable by name.
+ */
 public class DBSPVariableReference extends DBSPExpression {
     public final String variable;
 

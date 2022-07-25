@@ -25,7 +25,6 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit;
 
-import org.dbsp.sqlCompiler.dbsp.ExpressionCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
 import org.dbsp.util.IndentStringBuilder;
@@ -169,13 +168,13 @@ public class SqlRuntimeLibrary {
                         new DBSPMatchExpression(
                                 new DBSPVariableReference("b", arg.getType()),
                                 Arrays.asList(
-                                    new DBSPMatchExpression.DBSPMatchCase(
+                                    new DBSPMatchExpression.Case(
                                             new DBSPConstructorExpression("Some",
                                                     arg.getType(),
                                                     new DBSPVariableReference("x", DBSPTypeBool.instance)),
                                             new DBSPVariableReference("x", arg.getType())
                                     ),
-                                    new DBSPMatchExpression.DBSPMatchCase(
+                                    new DBSPMatchExpression.Case(
                                             new DBSPConstructorExpression("_", arg.getType()),
                                             new DBSPLiteral(false)
                                     )
@@ -258,10 +257,10 @@ public class SqlRuntimeLibrary {
                                             new DBSPVariableReference("left", leftType),
                                             new DBSPVariableReference("right", rightType)),
                                     Arrays.asList(
-                                            new DBSPMatchExpression.DBSPMatchCase(
+                                            new DBSPMatchExpression.Case(
                                                     new DBSPTupleExpression(leftMatch, rightMatch),
                                                     wrapSome(def, type)),
-                                            new DBSPMatchExpression.DBSPMatchCase(
+                                            new DBSPMatchExpression.Case(
                                                     new DBSPTupleExpression(
                                                             new DBSPDontCare(leftType),
                                                             new DBSPDontCare(rightType)),

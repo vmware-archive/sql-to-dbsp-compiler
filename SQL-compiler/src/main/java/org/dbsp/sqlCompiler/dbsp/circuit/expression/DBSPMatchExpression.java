@@ -31,12 +31,15 @@ import org.dbsp.util.IndentStringBuilder;
 
 import java.util.List;
 
+/**
+ * A (Rust) match expression.
+ */
 public class DBSPMatchExpression extends DBSPExpression {
-    public static class DBSPMatchCase extends DBSPNode {
+    public static class Case extends DBSPNode {
         public final DBSPExpression against;
         public final DBSPExpression result;
 
-        public DBSPMatchCase(DBSPExpression against, DBSPExpression result) {
+        public Case(DBSPExpression against, DBSPExpression result) {
             super(null);
             this.against = against;
             this.result = result;
@@ -51,14 +54,17 @@ public class DBSPMatchExpression extends DBSPExpression {
     }
 
     public final DBSPExpression matched;
-    public final List<DBSPMatchCase> cases;
+    public final List<Case> cases;
 
-    public DBSPMatchExpression(DBSPExpression matched, List<DBSPMatchCase> cases, DBSPType type) {
+    public DBSPMatchExpression(DBSPExpression matched, List<Case> cases, DBSPType type) {
         super(null, type);
         this.matched = matched;
         this.cases = cases;
         if (cases.isEmpty())
             throw new RuntimeException("Empty list of cases for match");
+        for (Case c: cases) {
+            assert c.result.getType().same(type) : "Type mismatch in case " + c + " expected " + type;
+        }
     }
 
     @Override
