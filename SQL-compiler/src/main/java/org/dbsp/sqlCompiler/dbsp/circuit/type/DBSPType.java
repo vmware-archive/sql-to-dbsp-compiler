@@ -58,10 +58,6 @@ public abstract class DBSPType extends DBSPNode {
         return this.mayBeNull == other.mayBeNull;
     }
 
-    public IsNumericType toNumeric() {
-        return this.as(IsNumericType.class, "Expected as numeric type");
-    }
-
     /**
      * Return a copy of this type with the mayBeNull bit set to the specified value.
      * @param mayBeNull  Value for the mayBeNull bit.
@@ -69,25 +65,14 @@ public abstract class DBSPType extends DBSPNode {
     public abstract DBSPType setMayBeNull(boolean mayBeNull);
 
     /**
-     * True if the given type is a numeric type.
-     * @param type  Type to analyze.
-     */
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public static boolean isNumeric(DBSPType type) {
-        return type instanceof IsNumericType;
-    }
-
-    public boolean isBaseType() {
-        return this.is(IDBSPBaseType.class);
-    }
-
-    /**
      * Typical implementation of castFrom, which handles nullable types.
      */
     public IndentStringBuilder standardCastFrom(IndentStringBuilder builder, DBSPExpression source) {
         DBSPType type = source.getType();
         if (type.mayBeNull) {
-            assert this.mayBeNull : "Unexpected nullable source and non-nullable result";
+            if (!this.mayBeNull)
+                throw new RuntimeException("Unexpected nullable source " + source +
+                        " and non-nullable result " + this);
             builder.append("(match ")
                     .append(source)
                     .append(" {\n").increase()

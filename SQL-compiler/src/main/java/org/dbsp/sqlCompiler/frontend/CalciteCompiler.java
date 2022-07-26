@@ -48,6 +48,7 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
+import org.dbsp.util.TranslationException;
 import org.dbsp.util.Unimplemented;
 import org.dbsp.util.UnsupportedException;
 
@@ -65,7 +66,7 @@ public class CalciteCompiler {
     private final SqlParser.Config parserConfig;
     private final SqlValidator validator;
     private final Catalog simple;
-    private final boolean debug = false;
+    private final boolean debug = true;
     private final SqlToRelConverter converter;
     private final SqlSimulator simulator;
     public final RelOptCluster cluster;
@@ -193,7 +194,8 @@ public class CalciteCompiler {
             TableModifyStatement stat = result.as(TableModifyStatement.class);
             if (stat != null) {
                 TableDDL tbl = this.program.getInputTable(stat.table);
-                assert tbl != null;
+                if (tbl == null)
+                    throw new TranslationException("Could not find translation", stat.table);
                 RelRoot values = this.converter.convertQuery(stat.data, true, true);
                 stat.setTranslation(values.rel);
                 return stat;

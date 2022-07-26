@@ -31,7 +31,8 @@ import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import javax.annotation.Nullable;
 
 public class DBSPNegateOperator extends DBSPOperator {
-    public DBSPNegateOperator(@Nullable Object node, DBSPType elementType) {
-        super(node, "neg", "", TypeCompiler.makeZSet(elementType));
+    public DBSPNegateOperator(@Nullable Object node, DBSPType elementType, DBSPOperator input) {
+        super(node, "neg", null, TypeCompiler.makeZSet(elementType));
+        this.addInput(input);
     }
 }

@@ -39,6 +39,7 @@ import java.util.*;
  * runtime library: support functions that implement the
  * SQL semantics.
  */
+@SuppressWarnings({"FieldCanBeLocal", "MismatchedQueryAndUpdateOfCollection"})
 public class SqlRuntimeLibrary {
     @Nullable
     private DBSPFile program;
@@ -172,7 +173,7 @@ public class SqlRuntimeLibrary {
                                             new DBSPConstructorExpression("Some",
                                                     arg.getType(),
                                                     new DBSPVariableReference("x", DBSPTypeBool.instance)),
-                                            new DBSPVariableReference("x", arg.getType())
+                                            new DBSPVariableReference("x", DBSPTypeBool.instance)
                                     ),
                                     new DBSPMatchExpression.Case(
                                             new DBSPConstructorExpression("_", arg.getType()),
@@ -280,7 +281,8 @@ public class SqlRuntimeLibrary {
         File file = new File(filename);
         FileWriter writer = new FileWriter(file);
         IndentStringBuilder builder = new IndentStringBuilder();
-        assert this.program != null;
+        if (this.program == null)
+            throw new RuntimeException("No source program for writing the sql library");
         builder.append("#![allow(unused_parens)]\n");
         builder.append("use ordered_float::OrderedFloat;\n");
         builder.append("\n");

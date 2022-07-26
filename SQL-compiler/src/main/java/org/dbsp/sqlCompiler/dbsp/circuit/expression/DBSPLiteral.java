@@ -95,9 +95,4 @@ public class DBSPLiteral extends DBSPExpression {
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append(this.value != null ? this.value : "None");
     }
-
-    @Nullable @Override
-    public String toString() {
-        return this.value;
-    }
 }

@@ -31,32 +31,42 @@ import org.dbsp.util.Utilities;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.List;
 
 /**
  * Execute all SqlLogicTest tests.
  */
 public class Main {
+    static class NoMySql implements TestAcceptancePolicy {
+        @Override
+        public boolean accept(List<String> skip, List<String> only) {
+            return !only.contains("mysql");
+        }
+    }
+
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
         int tests = 0;
         ISqlTestExecutor executor = new DBSPExecutor();
 
         @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             String extension = Utilities.getFileExtension(file.toString());
             if (attrs.isRegularFile() && extension != null && extension.equals("test")) {
                 // validates the test
                 SqlTestFile test = null;
                 try {
-                    test = new SqlTestFile(file.toString());
+                    test = new SqlTestFile(file.toString(), new NoMySql());
                     this.tests += test.getTestCount();
                 } catch (Exception ex) {
                     // We can't yet parse all kinds of tests
+                    //noinspection UnnecessaryToStringCall
                     System.out.println(ex.toString());
                     this.errors++;
                 }
                 if (test != null) {
                     try {
+                        System.out.println(file);
                         test.execute(this.executor);
                     } catch (SqlParseException ex) {
                         throw new RuntimeException(ex);
@@ -69,10 +79,10 @@ public class Main {
     }
 
     public static void main(String[] argv) throws IOException {
-        String directory = "../../sqllogictest";
+        String directory = "../../sqllogictest/test/random/select";
         if (argv.length > 1)
             directory = argv[1];
-        Path path = Paths.get(directory, "test");
+        Path path = Paths.get(directory);
         TestLoader loader = new TestLoader();
         Files.walkFileTree(path, loader);
         System.out.println("Could not parse: " + loader.errors);

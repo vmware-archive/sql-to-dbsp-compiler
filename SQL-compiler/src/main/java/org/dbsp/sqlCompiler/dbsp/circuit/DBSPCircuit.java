@@ -40,12 +40,14 @@ import java.util.List;
 public class DBSPCircuit extends DBSPNode {
     static String rustPreamble = "#![allow(dead_code)]\n" +
             "#![allow(non_snake_case)]\n" +
-            "#![allow(unused_imports)]\n\n" +
+            "#![allow(unused_imports)]\n" +
             "#![allow(unused_parens)]\n" +
+            "#![allow(unused_variables)]\n" +
+            "\n" +
             "use dbsp::{\n" +
             "    circuit::{Root, Stream},\n" +
             "    operator::{Generator, FilterMap},\n" +
-            "    trace::ord::OrdZSet,\n" +
+            "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
             "    zset,\n" +
             "};\n" +
             "use std::cell::RefCell;\n" +

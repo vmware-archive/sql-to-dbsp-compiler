@@ -23,17 +23,20 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.type;
+package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+
+import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeIndexedZSet;
 
 import javax.annotation.Nullable;
 
-public class DBSPZSetType extends DBSPTypeUser {
-    public final DBSPType elementType;
-    public final DBSPType weightType;
-
-    public DBSPZSetType(@Nullable Object node, DBSPType elementType, DBSPType weightType) {
-        super(node, "OrdZSet", false, elementType, weightType);
-        this.elementType = elementType;
-        this.weightType = weightType;
+public class DBSPIndexOperator extends DBSPOperator {
+    public DBSPIndexOperator(@Nullable Object node, DBSPExpression indexFunction,
+                             DBSPType keyType, DBSPType resultType, DBSPOperator input) {
+        super(node, "index_with", indexFunction,
+                new DBSPTypeIndexedZSet(node, keyType, resultType, CalciteToDBSPCompiler.weightType));
+        this.addInput(input);
     }
 }

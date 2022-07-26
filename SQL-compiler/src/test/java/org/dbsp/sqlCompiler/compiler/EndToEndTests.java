@@ -12,6 +12,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
+import org.dbsp.util.Utilities;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -64,16 +65,6 @@ public class EndToEndTests {
         return writer;
     }
 
-    private void compileAndTestRust(String directory) throws IOException, InterruptedException {
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("cargo", "test");
-        processBuilder.directory(new File(directory));
-        processBuilder.inheritIO();
-        Process process = processBuilder.start();
-        int exitCode = process.waitFor();
-        assert exitCode == 0 : "Rust process failed with exit code " + exitCode;
-    }
-
     private final DBSPExpression e0 = new DBSPTupleExpression(
             new DBSPLiteral(10),
             new DBSPLiteral(12.0),
@@ -121,7 +112,7 @@ public class EndToEndTests {
             PrintWriter writer = this.writeToFile(testFilePath, rust);
             this.createTester(writer, expectedOutput);
             writer.close();
-            this.compileAndTestRust(rustDirectory);
+            Utilities.compileAndTestRust(rustDirectory);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -214,6 +205,12 @@ public class EndToEndTests {
     @Test
     public void exceptTest() {
         String query = "CREATE VIEW V AS SELECT * FROM T EXCEPT (SELECT * FROM T WHERE COL3)";
+        this.testQuery(query, this.z1);
+    }
+
+    @Test
+    public void joinTest() {
+        String query = "CREATE VIEW V AS SELECT * FROM T, T AS X";
         this.testQuery(query, this.z1);
     }
 }

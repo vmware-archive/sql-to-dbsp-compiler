@@ -36,19 +36,27 @@ import javax.annotation.Nullable;
  */
 public class DBSPClosureExpression extends DBSPExpression {
     private final DBSPExpression expression;
+    private final String varName;
 
-    public DBSPClosureExpression(@Nullable Object node, DBSPType type, DBSPExpression expression) {
+    public DBSPClosureExpression(@Nullable Object node, String varName, DBSPType type, DBSPExpression expression) {
         super(node, type);
         this.expression = expression;
+        this.varName = varName;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("|t| ").append(this.expression);
+        return builder.append("|")
+                .append(this.varName)
+                .append("| ")
+                .append(this.expression);
     }
 
-    @Override
-    public String toString() {
-        return "|t| " + this.expression;
+    public DBSPVariableReference getVarExpr() {
+        return new DBSPVariableReference(this.varName, this.getType());
+    }
+
+    public String variableName() {
+        return this.varName;
     }
 }

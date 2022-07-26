@@ -26,20 +26,15 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPClosureExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPFieldExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeTuple;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DBSPMapOperator extends DBSPOperator {
     public DBSPMapOperator(@Nullable Object node, DBSPExpression expression,
-                           DBSPType resultType) {
-        super(node, "map", expression.toRustString(), TypeCompiler.makeZSet(resultType));
+                           DBSPType resultType, DBSPOperator input) {
+        super(node, "map", expression, TypeCompiler.makeZSet(resultType));
+        this.addInput(input);
     }
 }

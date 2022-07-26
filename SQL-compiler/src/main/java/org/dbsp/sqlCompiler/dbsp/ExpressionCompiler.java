@@ -30,6 +30,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
 import org.dbsp.util.Linq;
+import org.dbsp.util.TranslationException;
 import org.dbsp.util.Unimplemented;
 
 import java.util.List;
@@ -95,10 +96,13 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     private static DBSPExpression makeBinaryExpression(
             RexNode node, DBSPType resultType, String op, List<DBSPExpression> operands) {
         // Why doesn't Calcite do this?
-        assert operands.size() == 2;
+        if (operands.size() != 2)
+            throw new TranslationException("Expected 2 operands", node);
         DBSPExpression left = operands.get(0);
-        DBSPType leftType = left.getType();
         DBSPExpression right = operands.get(1);
+        if (left == null || right == null)
+            throw new Unimplemented("Found unimplemented expression in " + node);
+        DBSPType leftType = left.getType();
         DBSPType rightType = right.getType();
         DBSPType commonBase = reduceType(op, leftType, rightType);
         if (!leftType.setMayBeNull(false).same(commonBase))
@@ -153,7 +157,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                 return new DBSPUnaryExpression(call, type, "-", ops.get(0));
             case IS_TRUE:
             case IS_NOT_FALSE:
-                assert ops.size() == 1 : "Expected 1 operand " + ops;
+                if (ops.size() != 1)
+                    throw new TranslationException("Expected 1 operand", call);
                 return ops.get(0);
             case BIT_AND:
                 return makeBinaryExpression(call, type, "&", ops);

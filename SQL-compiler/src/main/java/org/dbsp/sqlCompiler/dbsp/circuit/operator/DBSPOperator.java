@@ -27,6 +27,7 @@ package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPStreamType;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.IHasType;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
@@ -47,9 +48,10 @@ public class DBSPOperator extends DBSPNode implements IHasName, IHasType {
      */
     final String operation;
     /**
-     * Rust code that is passed to the DBSP operator name, usually a closure.
+     * Computation invoked by the operator, usually a closure.
      */
-    final String function;
+    @Nullable
+    final DBSPExpression function;
     /**
      * Output assigned to this variable.
      */
@@ -59,7 +61,8 @@ public class DBSPOperator extends DBSPNode implements IHasName, IHasType {
      */
     final DBSPType outputType;
 
-    public DBSPOperator(@Nullable Object node, String operation, String function, DBSPType outputType, String outputName) {
+    protected DBSPOperator(@Nullable Object node, String operation,
+                        @Nullable DBSPExpression function, DBSPType outputType, String outputName) {
         super(node);
         this.inputs = new ArrayList<>();
         this.operation = operation;
@@ -68,11 +71,15 @@ public class DBSPOperator extends DBSPNode implements IHasName, IHasType {
         this.outputType = outputType;
     }
 
-    public DBSPOperator(@Nullable Object node, String operation, String function, DBSPType outputType) {
+    public DBSPOperator(@Nullable Object node, String operation,
+                        @Nullable DBSPExpression function, DBSPType outputType) {
         this(node, operation, function, outputType, new NameGen().toString());
     }
 
-    public void addInput(DBSPOperator node) {
+    protected void addInput(DBSPOperator node) {
+        //noinspection ConstantConditions
+        if (node == null)
+            throw new RuntimeException("Null input to operator");
         this.inputs.add(node);
     }
 
@@ -93,10 +100,10 @@ public class DBSPOperator extends DBSPNode implements IHasName, IHasType {
                 builder.append(",");
             builder.append(this.inputs.get(i).getName());
         }
-        if (!this.function.isEmpty()) {
+        if (this.function != null) {
             if (this.inputs.size() > 1)
                 builder.append(",");
-            builder.append(this.function);
+            this.function.toRustString(builder);
         }
         return builder.append(");");
     }

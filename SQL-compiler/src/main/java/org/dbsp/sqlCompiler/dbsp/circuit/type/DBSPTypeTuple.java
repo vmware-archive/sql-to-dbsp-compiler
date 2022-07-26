@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class DBSPTypeTuple extends DBSPType {
-    final DBSPType[] tupArgs;
+    public final DBSPType[] tupArgs;
 
     public static DBSPTypeTuple emptyTupleType = new DBSPTypeTuple(null);
 

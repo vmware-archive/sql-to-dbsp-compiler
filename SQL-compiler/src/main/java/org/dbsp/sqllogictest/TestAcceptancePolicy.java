@@ -23,39 +23,15 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit;
+package org.dbsp.sqllogictest;
 
-import org.dbsp.util.ICastable;
-import org.dbsp.util.ToRustString;
-import org.dbsp.util.TranslationException;
+import java.util.List;
 
-import javax.annotation.Nullable;
-
-/**
- * An IR node that is used to represent DBSP circuits.
- */
-@SuppressWarnings("unused")
-public interface IDBSPNode extends ICastable, ToRustString {
-    default <T> T checkNull(@Nullable T value) {
-        if (value == null)
-            this.error("Null pointer");
-        if (value == null)
-            throw new RuntimeException("Did not expect a null value");
-        return value;
-    }
-
-    default <T> boolean is(Class<T> clazz) {
-        return this.as(clazz) != null;
-    }
-
-    default void error(String message) {
-        throw new TranslationException(message, this.getNode());
-    }
-
+public interface TestAcceptancePolicy {
     /**
-     * @return the SQL IR node that was compiled to produce
-     * this DDlogIR node.
+     * Returns true if a test is accepted.
+     * @param skip  List of dbs to skip.
+     * @param only  List of dbs to accept.
      */
-    @Nullable
-    Object getNode();
+    boolean accept(List<String> skip, List<String> only);
 }

@@ -27,7 +27,7 @@ package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPZSetType;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeZSet;
 import org.dbsp.util.IndentStringBuilder;
 
 import java.util.HashMap;
@@ -40,21 +40,30 @@ import java.util.Map;
  */
 public class DBSPZSetLiteral extends DBSPExpression {
     private final Map<DBSPExpression, Integer> data;
-    private final DBSPZSetType zsetType;
+    private final DBSPTypeZSet zsetType;
 
+    /**
+     * Create a ZSet literal from a set of data values.
+     * @param data Data to insert in zset - cannot be empty, since
+     *             it is used to extract the zset type.
+     *             To create empty zsets use the constructor
+     *             with just a type argument.
+     */
     public DBSPZSetLiteral(DBSPExpression... data) {
-        super(null, new DBSPZSetType(null, data[0].getType(), DBSPTypeInteger.signed32));
-        this.zsetType = this.getType().to(DBSPZSetType.class);
+        super(null, new DBSPTypeZSet(null, data[0].getType(), DBSPTypeInteger.signed32));
+        this.zsetType = this.getType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
         for (DBSPExpression e: data) {
-            assert e.getType().same(data[0].getType());
+            if (!e.getType().same(data[0].getType()))
+                throw new RuntimeException("Not all values of set have the same type:" +
+                    e.getType() + " vs " + data[0].getType());
             this.data.put(e, 1);
         }
     }
 
     public DBSPZSetLiteral(DBSPType type) {
         super(null, type);
-        this.zsetType = this.getType().to(DBSPZSetType.class);
+        this.zsetType = this.getType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
     }
 
@@ -64,18 +73,24 @@ public class DBSPZSetLiteral extends DBSPExpression {
 
     public void add(DBSPExpression expression) {
         // We expect the expression to be a constant value (a literal)
-        assert expression.getType().same(this.getElementType());
+        if (!expression.getType().same(this.getElementType()))
+            throw new RuntimeException("Added element does not match zset type " +
+                    expression.getType() + " vs " + this.getElementType());
         this.data.put(expression, 1);
     }
 
     public void add(DBSPExpression expression, int weight) {
         // We expect the expression to be a constant value (a literal)
-        assert expression.getType().same(this.getElementType());
+        if (!expression.getType().same(this.getElementType()))
+            throw new RuntimeException("Added element does not match zset type " +
+                    expression.getType() + " vs " + this.getElementType());
         this.data.put(expression, weight);
     }
 
     public void add(DBSPZSetLiteral other) {
-        assert this.getType().same(other.getType());
+        if (!this.getType().same(other.getType()))
+            throw new RuntimeException("Added zsets do not have the same type " +
+                    this.getElementType() + " vs " + other.getElementType());
         other.data.forEach(this::add);
     }
 

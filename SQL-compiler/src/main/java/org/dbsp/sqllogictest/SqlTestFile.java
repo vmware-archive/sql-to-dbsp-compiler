@@ -53,14 +53,14 @@ public class SqlTestFile {
     private final String testFile;
     private boolean done;
 
-    public SqlTestFile(String testFile) throws IOException {
+    public SqlTestFile(String testFile, TestAcceptancePolicy policy) throws IOException {
         this.tests = new ArrayList<>();
         File file = new File(testFile);
         this.reader = new BufferedReader(new FileReader(file));
         this.lineno = 0;
         this.testFile = testFile;
         this.done = false;
-        this.parse();
+        this.parse(policy);
     }
 
     void error(String message) {
@@ -140,12 +140,21 @@ public class SqlTestFile {
      * Parse a query that executes a SqlLogicTest test.
      */
     @Nullable
-    private SqlTestQuery parseTestQuery() throws IOException {
+    private SqlTestQuery parseTestQuery(TestAcceptancePolicy policy) throws IOException {
         String line = this.nextLine(true);
         if (this.done)
             return null;
-        while (line.startsWith("onlyif") || line.startsWith("skipif"))
+        List<String> skip = new ArrayList<>();
+        List<String> only = new ArrayList<>();
+        while (line.startsWith("onlyif") || line.startsWith("skipif")) {
+            boolean sk = line.startsWith("skipif");
+            String cond = line.substring("onlyif".length()).trim();
+            if (sk)
+                skip.add(cond);
+            else
+                only.add(cond);
             line = this.nextLine(false);
+        }
 
         if (!line.startsWith("query")) {
             this.error("Unexpected line: " + Utilities.singleQuote(line));
@@ -206,27 +215,32 @@ public class SqlTestFile {
             }
         }
         result.setQuery(query.toString());
-        if (this.done)
-            return result;
 
-        line = this.nextLine(true);
         if (!this.done) {
-            if (line.contains("values hashing to")) {
-                int vi = line.indexOf("values hashing to");
-                String number = line.substring(0, vi - 1);
-                int rows = Integer.parseInt(number);
-                result.setRowCount(rows);
-                line = line.substring(vi + "values hashing to".length()).trim();
-                result.setHash(line);
-                line = this.nextLine(true);
-                if (!this.done && !line.isEmpty())
-                    this.error("Expected an empty line between tests: " + Utilities.singleQuote(line));
-            } else {
-                while (!line.isEmpty()) {
-                    result.addResultLine(line);
-                    line = this.nextLine(false);
+            line = this.nextLine(true);
+            if (!this.done) {
+                if (line.contains("values hashing to")) {
+                    int vi = line.indexOf("values hashing to");
+                    String number = line.substring(0, vi - 1);
+                    int rows = Integer.parseInt(number);
+                    result.setRowCount(rows);
+                    line = line.substring(vi + "values hashing to".length()).trim();
+                    result.setHash(line);
+                    line = this.nextLine(true);
+                    if (!this.done && !line.isEmpty())
+                        this.error("Expected an empty line between tests: " + Utilities.singleQuote(line));
+                } else {
+                    while (!line.isEmpty()) {
+                        result.addResultLine(line);
+                        line = this.nextLine(false);
+                    }
                 }
             }
+        }
+
+        if (!policy.accept(skip, only)) {
+            // Invoke recursively to parse the next query.
+            return this.parseTestQuery(policy);
         }
         return result;
     }
@@ -255,11 +269,11 @@ public class SqlTestFile {
         ----
         30 values hashing to 3c13dee48d9356ae19af2515e05e6b54
      */
-    private void parse() throws IOException {
+    private void parse(TestAcceptancePolicy policy) throws IOException {
         this.prepare = this.parsePrepare();
         while (!this.done) {
             @Nullable
-            SqlTestQuery test = this.parseTestQuery();
+            SqlTestQuery test = this.parseTestQuery(policy);
             if (test != null)
                 this.tests.add(test);
         }

@@ -48,26 +48,12 @@ package org.dbsp.util;/*
  */
 
 import javax.annotation.Nullable;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class Utilities {
-    public static Set<String> makeSet(String... data) {
-        return new HashSet<String>(Arrays.asList(data));
-     }
-
-     @SafeVarargs
-     public static <T> List<T> concatenate(List<T>... lists) {
-        ArrayList<T> result = new ArrayList<T>();
-        for (List<T> l: lists)
-            result.addAll(l);
-        return result;
-     }
-
-    public static <K, V> void copyMap(Map<K, V> destination, Map<K, V> source) {
-         destination.putAll(source);
-     }
-
-     public static String escapeString(String value) {
+    public static String escapeString(String value) {
          StringBuilder builder = new StringBuilder();
          builder.append("\"");
          for (char c : value.toCharArray()) {
@@ -103,7 +89,8 @@ public class Utilities {
      */
     public static <K, V, VE extends V> VE putNew(@Nullable Map<K, V> map, K key, VE value) {
         V previous = Objects.requireNonNull(map).put(Objects.requireNonNull(key), Objects.requireNonNull(value));
-        assert previous == null : "Key " + key + " already mapped to " + previous + " when adding " + value;
+        if (previous != null)
+            throw new RuntimeException("Key " + key + " already mapped to " + previous + " when adding " + value);
         return value;
     }
 
@@ -114,7 +101,8 @@ public class Utilities {
      */
     public static <K, V> V getExists(Map<K, V> map, K key) {
         V result = map.get(key);
-        assert result != null : "Key " + key + " does not exist in map";
+        if (result == null)
+            throw new RuntimeException("Key " + key + " does not exist in map");
         return result;
     }
 
@@ -124,5 +112,16 @@ public class Utilities {
         if (i > 0)
             return filename.substring(i+1);
         return null;
+    }
+
+    public static void compileAndTestRust(String directory) throws IOException, InterruptedException {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        processBuilder.command("cargo", "test");
+        processBuilder.directory(new File(directory));
+        processBuilder.inheritIO();
+        Process process = processBuilder.start();
+        int exitCode = process.waitFor();
+        if (exitCode != 0)
+            throw new RuntimeException("Rust process failed with exit code " + exitCode);
     }
 }
