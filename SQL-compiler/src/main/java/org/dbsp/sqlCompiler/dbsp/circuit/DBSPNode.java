@@ -48,4 +48,9 @@ public abstract class DBSPNode
 
     @Nullable
     public Object getNode() { return this.node; }
+
+    @Override
+    public String toString() {
+        return this.toRustString();
+    }
 }

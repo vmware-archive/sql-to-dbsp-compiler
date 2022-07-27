@@ -25,8 +25,6 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.type.IHasType;
-
 public interface IDBSPDeclaration extends IDBSPNode {
     String getName();
 }

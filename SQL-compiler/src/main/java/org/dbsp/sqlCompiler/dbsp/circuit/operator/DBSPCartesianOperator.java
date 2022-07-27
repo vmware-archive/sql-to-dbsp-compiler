@@ -23,34 +23,21 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.type;
+package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
+import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 
-public class DBSPStreamType extends DBSPType {
-    public final DBSPType elementType;
+import javax.annotation.Nullable;
 
-    public DBSPStreamType(DBSPType elementType) {
-        super(elementType.getNode(), elementType.mayBeNull);
-        this.elementType = elementType;
-    }
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("Stream<")
-                .append("_, ") // Circuit type
-                .append(this.elementType)
-                .append(">");
+public class DBSPCartesianOperator extends DBSPOperator {
+    public DBSPCartesianOperator(@Nullable Object node, DBSPType resultType,
+                                 // Closure from key, valueLeft, valueRight to result type
+                                 DBSPExpression function,
+                                 DBSPOperator left, DBSPOperator right) {
+        super(node, "stream_join", function, TypeCompiler.makeZSet(resultType));
+        this.addInput(left);
+        this.addInput(right);
     }
 }

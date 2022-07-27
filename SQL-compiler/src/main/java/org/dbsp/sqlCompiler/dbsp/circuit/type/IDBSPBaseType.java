@@ -25,9 +25,6 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.util.IndentStringBuilder;
-
 /**
  * Interface implemented by DBSP base types.
  */

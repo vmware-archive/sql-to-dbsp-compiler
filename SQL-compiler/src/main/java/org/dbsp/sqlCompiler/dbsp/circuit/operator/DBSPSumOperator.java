@@ -26,15 +26,18 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPStreamType;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeStream;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class DBSPSumOperator extends DBSPOperator {
-    public DBSPSumOperator(@Nullable Object node, DBSPType elementType) {
-        super(node, "sum", "", TypeCompiler.makeZSet(elementType));
+    public DBSPSumOperator(@Nullable Object node, DBSPType elementType, List<DBSPOperator> inputs) {
+        super(node, "sum", null, TypeCompiler.makeZSet(elementType));
+        for (DBSPOperator op: inputs)
+            this.addInput(op);
     }
 
     @Override
@@ -42,7 +45,7 @@ public class DBSPSumOperator extends DBSPOperator {
         builder.append("let ")
                 .append(this.getName())
                 .append(": ")
-                .append(new DBSPStreamType(this.outputType))
+                .append(new DBSPTypeStream(this.outputType))
                 .append(" = ");
         if (!this.inputs.isEmpty())
             builder.append(this.inputs.get(0).getName())
@@ -53,11 +56,6 @@ public class DBSPSumOperator extends DBSPOperator {
             if (i > 1)
                 builder.append(",");
             builder.append(this.inputs.get(i).getName());
-        }
-        if (!this.function.isEmpty()) {
-            if (this.inputs.size() > 1)
-                builder.append(",");
-            builder.append(this.function);
         }
         return builder.append("]);");
     }

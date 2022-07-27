@@ -25,7 +25,6 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -49,7 +48,7 @@ public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType, IDBSPBas
         return "f";
     }
 
-    public static DBSPTypeFloat instance = new DBSPTypeFloat(null,false);
+    public static final DBSPTypeFloat instance = new DBSPTypeFloat(null,false);
 
     @Override
     public boolean same(DBSPType type) {

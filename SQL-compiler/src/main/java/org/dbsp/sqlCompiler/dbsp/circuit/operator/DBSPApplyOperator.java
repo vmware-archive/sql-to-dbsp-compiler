@@ -23,39 +23,21 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit;
+package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
-import org.dbsp.util.ICastable;
-import org.dbsp.util.ToRustString;
-import org.dbsp.util.TranslationException;
+import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 
 import javax.annotation.Nullable;
 
 /**
- * An IR node that is used to represent DBSP circuits.
+ * Apply a function to each value; like map, but works on non z-set values.
  */
-@SuppressWarnings("unused")
-public interface IDBSPNode extends ICastable, ToRustString {
-    default <T> T checkNull(@Nullable T value) {
-        if (value == null)
-            this.error("Null pointer");
-        if (value == null)
-            throw new RuntimeException("Did not expect a null value");
-        return value;
+public class DBSPApplyOperator extends DBSPOperator {
+    public DBSPApplyOperator(@Nullable Object node, DBSPExpression expression,
+                             DBSPType resultType, DBSPOperator input) {
+        super(node, "apply", expression, resultType);
+        this.addInput(input);
     }
-
-    default <T> boolean is(Class<T> clazz) {
-        return this.as(clazz) != null;
-    }
-
-    default void error(String message) {
-        throw new TranslationException(message, this.getNode());
-    }
-
-    /**
-     * @return the SQL IR node that was compiled to produce
-     * this DDlogIR node.
-     */
-    @Nullable
-    Object getNode();
 }

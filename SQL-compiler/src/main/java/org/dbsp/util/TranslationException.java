@@ -25,8 +25,6 @@
 
 package org.dbsp.util;
 
-import org.apache.calcite.sql.SqlNode;
-
 import javax.annotation.Nullable;
 
 public class TranslationException extends RuntimeException {

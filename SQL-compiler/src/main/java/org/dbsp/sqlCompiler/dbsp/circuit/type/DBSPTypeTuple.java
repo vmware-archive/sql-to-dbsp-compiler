@@ -33,13 +33,20 @@ import java.util.Arrays;
 import java.util.List;
 
 public class DBSPTypeTuple extends DBSPType {
-    final DBSPType[] tupArgs;
+    /**
+     * Keep track of the size of the maximum tuple size allocated.
+     */
+    public static int maxTupleSize = 0;
 
-    public static DBSPTypeTuple emptyTupleType = new DBSPTypeTuple(null);
+    public final DBSPType[] tupArgs;
+
+    public static final DBSPTypeTuple emptyTupleType = new DBSPTypeTuple(null);
 
     private DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupArgs) {
         super(node, mayBeNull);
         this.tupArgs = tupArgs;
+        if (this.tupArgs.length > maxTupleSize)
+            maxTupleSize = this.tupArgs.length;
     }
 
     public DBSPTypeTuple(@Nullable Object node, DBSPType... tupArgs) {
@@ -58,9 +65,13 @@ public class DBSPTypeTuple extends DBSPType {
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         if (this.tupArgs.length == 1)
             return builder.append(this.tupArgs[0]);
-        builder.append("(");
+        else if (this.tupArgs.length == 0)
+            return builder.append("()");
+        builder.append("Tuple")
+                .append(this.tupArgs.length)
+                .append("<");
         builder.join(", ", this.tupArgs);
-        return builder.append(")");
+        return builder.append(">");
     }
 
     @Override
@@ -101,9 +112,5 @@ public class DBSPTypeTuple extends DBSPType {
             if (!this.tupArgs[i].same(other.tupArgs[i]))
                 return false;
         return true;
-    }
-
-    public DBSPType component(int index) {
-        return this.tupArgs[index];
     }
 }

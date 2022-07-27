@@ -59,8 +59,23 @@ public class IndentStringBuilder {
         return this;
     }
 
+    public <T extends ToRustString> IndentStringBuilder append(T value) {
+        return value.toRustString(this);
+    }
+
     public IndentStringBuilder append(int value) {
         this.builder.append(value);
+        return this;
+    }
+
+    public IndentStringBuilder join(String separator, String[] data) {
+        boolean first = true;
+        for (String d: data) {
+            if (!first)
+                this.append(separator);
+            first = false;
+            this.append(d);
+        }
         return this;
     }
 
@@ -96,10 +111,6 @@ public class IndentStringBuilder {
 
     public IndentStringBuilder newline() {
         return this.append("\n");
-    }
-
-    public IndentStringBuilder append(ToRustString object) {
-        return object.toRustString(this);
     }
 
     public IndentStringBuilder increase() {

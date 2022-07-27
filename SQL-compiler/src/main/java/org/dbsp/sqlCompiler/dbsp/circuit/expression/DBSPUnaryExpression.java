@@ -27,6 +27,7 @@ package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.TranslationException;
 
 import javax.annotation.Nullable;
 
@@ -39,7 +40,8 @@ public class DBSPUnaryExpression extends DBSPExpression {
         super(node, type);
         this.operation = operation;
         this.left = operand;
-        assert this.left != null : "Null operand";
+        if (this.left == null)
+            throw new TranslationException("Null operand", node);
     }
 
     @Override

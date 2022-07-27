@@ -30,14 +30,23 @@ import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
+import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * Sql test executor that uses DBSP as a SQL runtime.
  * Does not support arbitrary tests: only tests that can be recast as a standing query will work.
  */
+@SuppressWarnings("FieldCanBeLocal")
 public class DBSPExecutor implements ISqlTestExecutor {
+    private final boolean debug = true;
+    private final boolean compile = true;
+    static final String rustDirectory = "../temp";
+    static final String testFilePath = rustDirectory + "/src/test.rs";
+
     @Nullable
     private CalciteCompiler calcite;
 
@@ -52,24 +61,41 @@ public class DBSPExecutor implements ISqlTestExecutor {
 
     @Override
     public void prepare(SqlTestPrepare prepare) throws SqlParseException {
-        assert this.calcite != null;
+        if (this.calcite == null)
+            throw new RuntimeException("Calcite compiler not initialized yet");
         for (String statement : prepare.statements)
             this.calcite.compile(statement);
     }
 
     @Override
     public void executeAndValidate(String query) throws SqlParseException {
-        assert this.calcite != null;
+        if (this.calcite == null)
+            throw new RuntimeException("Calcite compiler not initialized yet");
         // heuristic: add a "CREATE VIEW V AS" in front
         query = "CREATE VIEW V AS " + query;
+        if (this.debug)
+            System.out.println("Executing query:\n" + query);
         // Compile query to a Calcite representation
         this.calcite.compile(query);
         CalciteProgram program = calcite.getProgram();
         // Compile Calcite representation to DBSP
-        //CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
-        // DBSPCircuit dbsp = compiler.compile(program);
-        // TODO: Generate Rust code for program and inputs
-        // TODO: Generate Rust code for output validation
-        // TODO: execute the query and validate the output
+        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
+        DBSPCircuit dbsp = compiler.compile(program);
+        String rust = dbsp.toRustString();
+        if (!this.compile)
+            return;
+        PrintWriter writer;
+        try {
+            writer = new PrintWriter(testFilePath, "UTF-8");
+            writer.print(rust);
+            System.out.println(rust);
+            // TODO: Generate Rust code for input data
+            // TODO: Generate Rust code for output validation
+            writer.close();
+            Utilities.compileAndTestRust(rustDirectory);
+            // TODO: execute the query and validate the output
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

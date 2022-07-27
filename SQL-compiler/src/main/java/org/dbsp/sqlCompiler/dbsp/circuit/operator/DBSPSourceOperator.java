@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 
 public class DBSPSourceOperator extends DBSPOperator {
     public DBSPSourceOperator(@Nullable Object node, DBSPType outputType, String name) {
-        super(node, "", "", outputType, name);
+        super(node, "", null, outputType, name);
     }
 
     @Override

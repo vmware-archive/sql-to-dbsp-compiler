@@ -23,50 +23,25 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.type;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeRef;
 import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
-import java.util.Objects;
+/**
+ * An expression of the form &expression.
+ */
+public class DBSPRefExpression extends DBSPExpression {
+    private final DBSPExpression expression;
 
-public class DBSPStructField extends DBSPNode implements IHasType {
-    private final String name;
-    private final DBSPType type;
-
-    public DBSPStructField(@Nullable Object node, String name, DBSPType type) {
-        super(node);
-        this.name = name;
-        this.type = type;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public DBSPType getType() {
-        return type;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, type);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DBSPStructField that = (DBSPStructField) o;
-        return name.equals(that.name) &&
-                type.same(that.type);
+    public DBSPRefExpression(DBSPExpression expression) {
+        super(null, new DBSPTypeRef(expression.getType()));
+        this.expression = expression;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.name)
-                .append(":")
-                .append(this.type);
+        return builder.append("&")
+                .append(this.expression);
     }
 }

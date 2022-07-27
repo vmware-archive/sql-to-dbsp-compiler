@@ -63,7 +63,9 @@ public class DBSPMatchExpression extends DBSPExpression {
         if (cases.isEmpty())
             throw new RuntimeException("Empty list of cases for match");
         for (Case c: cases) {
-            assert c.result.getType().same(type) : "Type mismatch in case " + c + " expected " + type;
+            if (!c.result.getType().same(type))
+                throw new RuntimeException("Type mismatch in case " + c +
+                        " expected " + type + " got " + c.result.getType());
         }
     }
 

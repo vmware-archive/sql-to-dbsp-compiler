@@ -31,8 +31,9 @@ import org.dbsp.util.IndentStringBuilder;
 import javax.annotation.Nullable;
 
 public class DBSPSinkOperator extends DBSPOperator {
-    public DBSPSinkOperator(@Nullable Object node, DBSPType outputType, String outputName) {
-        super(node, "inspect", "", outputType, outputName);
+    public DBSPSinkOperator(@Nullable Object node, DBSPType outputType, String outputName, DBSPOperator input) {
+        super(node, "inspect", null, outputType, outputName);
+        this.addInput(input);
     }
 
     @Override

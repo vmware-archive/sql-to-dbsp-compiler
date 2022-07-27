@@ -23,39 +23,22 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.dbsp.util.ICastable;
-import org.dbsp.util.ToRustString;
-import org.dbsp.util.TranslationException;
-
-import javax.annotation.Nullable;
+import org.dbsp.util.IndentStringBuilder;
 
 /**
- * An IR node that is used to represent DBSP circuits.
+ * A Raw tuple expression generates a raw Rust tuple.
  */
-@SuppressWarnings("unused")
-public interface IDBSPNode extends ICastable, ToRustString {
-    default <T> T checkNull(@Nullable T value) {
-        if (value == null)
-            this.error("Null pointer");
-        if (value == null)
-            throw new RuntimeException("Did not expect a null value");
-        return value;
+public class DBSPRawTupleExpression extends DBSPTupleExpression {
+    public DBSPRawTupleExpression(DBSPExpression... fields) {
+        super(fields);
     }
 
-    default <T> boolean is(Class<T> clazz) {
-        return this.as(clazz) != null;
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("(")
+                .join(", ", this.fields)
+                .append(")");
     }
-
-    default void error(String message) {
-        throw new TranslationException(message, this.getNode());
-    }
-
-    /**
-     * @return the SQL IR node that was compiled to produce
-     * this DDlogIR node.
-     */
-    @Nullable
-    Object getNode();
 }

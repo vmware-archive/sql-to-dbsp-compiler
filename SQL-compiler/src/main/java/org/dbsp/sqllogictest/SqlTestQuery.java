@@ -28,7 +28,6 @@ package org.dbsp.sqllogictest;
 import org.apache.calcite.sql.parser.SqlParseException;
 
 import javax.annotation.Nullable;
-import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +39,7 @@ public class SqlTestQuery {
     /**
      * Types of columns expected in result.
      */
-    private List<ColumnType> columnTypes;
+    private final List<ColumnType> columnTypes;
     /**
      * How results are sorted.
      */
@@ -48,7 +47,7 @@ public class SqlTestQuery {
     @Nullable private String name;
     @Nullable private String hash;
     private int rowCount;
-    private List<String> queryResults;
+    private final List<String> queryResults;
 
     public void setName(String name) {
         this.name = name;
@@ -67,7 +66,7 @@ public class SqlTestQuery {
     }
 
     public void executeAndValidate(ISqlTestExecutor executor) throws SqlParseException {
-        if (!this.hash.isEmpty()) {
+        if (this.hash != null && !this.hash.isEmpty()) {
             // TODO: generate hash-based validator
         } else {
             // TODO: generate exact result validator
@@ -87,12 +86,13 @@ public class SqlTestQuery {
         Value
     }
 
-    SqlTestQuery() throws IOException {
+    SqlTestQuery() {
         this.query = "";
         this.columnTypes = new ArrayList<>();
         this.rowCount = 0;
         this.hash = "";
         this.queryResults = new ArrayList<>();
+        this.order = SortOrder.None;
     }
 
     void addColumn(ColumnType type) {

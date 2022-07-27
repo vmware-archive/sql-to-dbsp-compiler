@@ -25,15 +25,35 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
-import javax.annotation.Nullable;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPZSetType extends DBSPTypeUser {
+/**
+ * A type of the form 'Stream<_, elementType>'
+ */
+public class DBSPTypeStream extends DBSPType {
     public final DBSPType elementType;
-    public final DBSPType weightType;
 
-    public DBSPZSetType(@Nullable Object node, DBSPType elementType, DBSPType weightType) {
-        super(node, "OrdZSet", false, elementType, weightType);
+    public DBSPTypeStream(DBSPType elementType) {
+        super(elementType.getNode(), elementType.mayBeNull);
         this.elementType = elementType;
-        this.weightType = weightType;
+    }
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("Stream<")
+                .append("_, ") // Circuit type
+                .append(this.elementType)
+                .append(">");
     }
 }

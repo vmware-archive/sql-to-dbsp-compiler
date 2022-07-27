@@ -34,7 +34,7 @@ public class Unimplemented extends RuntimeException {
     }
 
     public Unimplemented(Object obj) {
-        super("Not yet implemented: " + obj.getClass().toString() + ":" + obj.toString());
+        super("Not yet implemented: " + obj.getClass().toString() + ":" + obj);
     }
 
     public Unimplemented(String msg, boolean ignored) {

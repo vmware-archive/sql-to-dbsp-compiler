@@ -23,39 +23,25 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.dbsp.util.ICastable;
-import org.dbsp.util.ToRustString;
-import org.dbsp.util.TranslationException;
-
-import javax.annotation.Nullable;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeRef;
+import org.dbsp.util.IndentStringBuilder;
 
 /**
- * An IR node that is used to represent DBSP circuits.
+ * An expression of the form *expression.
  */
-@SuppressWarnings("unused")
-public interface IDBSPNode extends ICastable, ToRustString {
-    default <T> T checkNull(@Nullable T value) {
-        if (value == null)
-            this.error("Null pointer");
-        if (value == null)
-            throw new RuntimeException("Did not expect a null value");
-        return value;
+public class DBSPDerefExpression extends DBSPExpression {
+    public final DBSPExpression expression;
+
+    public DBSPDerefExpression(DBSPExpression expression) {
+        super(null, expression.getType().to(DBSPTypeRef.class).type);
+        this.expression = expression;
     }
 
-    default <T> boolean is(Class<T> clazz) {
-        return this.as(clazz) != null;
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("*")
+                .append(this.expression);
     }
-
-    default void error(String message) {
-        throw new TranslationException(message, this.getNode());
-    }
-
-    /**
-     * @return the SQL IR node that was compiled to produce
-     * this DDlogIR node.
-     */
-    @Nullable
-    Object getNode();
 }

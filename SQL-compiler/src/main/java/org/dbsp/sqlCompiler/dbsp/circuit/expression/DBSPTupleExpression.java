@@ -31,40 +31,70 @@ import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DBSPTupleExpression extends DBSPExpression {
-    private final List<DBSPExpression> fields;
+    public final List<DBSPExpression> fields;
 
-    public DBSPTupleExpression(@Nullable Object object, List<DBSPExpression> fields, DBSPType tupleType) {
+    public static final DBSPTupleExpression emptyTuple = new DBSPTupleExpression();
+
+    public DBSPTupleExpression(@Nullable Object object, DBSPType tupleType, List<DBSPExpression> fields) {
         super(object, tupleType);
         this.fields = fields;
+        if (!tupleType.is(DBSPTypeTuple.class))
+            throw new RuntimeException("Expected a tuple type " + tupleType);
+        DBSPTypeTuple tuple = tupleType.to(DBSPTypeTuple.class);
+        if (tuple.size() != fields.size())
+            throw new RuntimeException("Tuple size does not match field size " + tuple + " vs " + fields);
+        int i = 0;
+        for (DBSPType fieldType: tuple.tupArgs) {
+            DBSPExpression field = fields.get(i);
+            if (!fieldType.same(field.getType()))
+                throw new RuntimeException("Tuple field " + i + " type " + fieldType +
+                        " does not match expression "+ fields.get(i) + " with type " + field.getType());
+            i++;
+        }
     }
 
     public DBSPTupleExpression(DBSPExpression... expressions) {
-        this(null, Linq.list(expressions),
-                new DBSPTypeTuple(null, Linq.map(Linq.list(expressions), DBSPExpression::getType)));
+        this(null, new DBSPTypeTuple(null,
+                Linq.map(Linq.list(expressions), DBSPExpression::getType)),
+                Linq.list(expressions)
+        );
+    }
+
+    /**
+     * @param expressions A list of expressions with tuple types.
+     * @return  A tuple expressions that concatenates all fields of these tuple expressions.
+     */
+    public static DBSPTupleExpression flatten(DBSPExpression... expressions) {
+        List<DBSPExpression> fields = new ArrayList<>();
+        List<DBSPType> fieldTypes = new ArrayList<>();
+        for (DBSPExpression expression: expressions) {
+            DBSPTypeTuple type = expression.getType().to(DBSPTypeTuple.class);
+            for (int i = 0; i < type.size(); i++) {
+                DBSPType fieldType = type.tupArgs[i];
+                DBSPExpression field = new DBSPFieldExpression(null, expression, i, fieldType).simplify();
+                fields.add(field);
+                fieldTypes.add(fieldType);
+            }
+        }
+        return new DBSPTupleExpression(null, new DBSPTypeTuple(null, fieldTypes), fields);
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("(")
-                .join(", ", this.fields)
-                .append(")");
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("(");
-        boolean first = true;
-        for (DBSPExpression e: this.fields) {
-            if (!first)
-                builder.append(", ");
-            first = false;
-            builder.append(e);
+        if (this.fields.isEmpty()) {
+            return builder.append("()");
+        } else if (this.fields.size() != 1)
+            return builder.append("Tuple")
+                    .append(this.fields.size())
+                    .append("::new(")
+                    .join(", ", this.fields)
+                    .append(")");
+        else {
+            return builder.append(this.fields.get(0));
         }
-        builder.append(")");
-        return builder.toString();
     }
 }

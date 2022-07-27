@@ -12,6 +12,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
+import org.dbsp.util.Utilities;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -25,8 +26,8 @@ import java.io.*;
  * from the declared views.
  */
 public class EndToEndTests {
-    static String rustDirectory = "../temp";
-    static String testFilePath = rustDirectory + "/src/test.rs";
+    static final String rustDirectory = "../temp";
+    static final String testFilePath = rustDirectory + "/src/test.rs";
 
     @Before
     public void generateLib() throws IOException {
@@ -58,23 +59,14 @@ public class EndToEndTests {
         return dbsp.toRustString();
     }
 
+    @SuppressWarnings("SameParameterValue")
     private PrintWriter writeToFile(String file, String contents) throws FileNotFoundException, UnsupportedEncodingException {
         PrintWriter writer = new PrintWriter(file, "UTF-8");
         writer.print(contents);
         return writer;
     }
 
-    private void compileAndTestRust(String directory) throws IOException, InterruptedException {
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("cargo", "test");
-        processBuilder.directory(new File(directory));
-        processBuilder.inheritIO();
-        Process process = processBuilder.start();
-        int exitCode = process.waitFor();
-        assert exitCode == 0 : "Rust process failed with exit code " + exitCode;
-    }
-
-    private final DBSPExpression e0 = new DBSPTupleExpression(
+    private final DBSPTupleExpression e0 = new DBSPTupleExpression(
             new DBSPLiteral(10),
             new DBSPLiteral(12.0),
             new DBSPLiteral(true),
@@ -82,7 +74,7 @@ public class EndToEndTests {
             new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)),
             new DBSPLiteral(DBSPTypeDouble.instance.setMayBeNull(true))
     );
-    private final DBSPExpression e1 = new DBSPTupleExpression(
+    private final DBSPTupleExpression e1 = new DBSPTupleExpression(
             new DBSPLiteral(10),
             new DBSPLiteral(1.0),
             new DBSPLiteral(false),
@@ -121,7 +113,7 @@ public class EndToEndTests {
             PrintWriter writer = this.writeToFile(testFilePath, rust);
             this.createTester(writer, expectedOutput);
             writer.close();
-            this.compileAndTestRust(rustDirectory);
+            Utilities.compileAndTestRust(rustDirectory);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -215,5 +207,16 @@ public class EndToEndTests {
     public void exceptTest() {
         String query = "CREATE VIEW V AS SELECT * FROM T EXCEPT (SELECT * FROM T WHERE COL3)";
         this.testQuery(query, this.z1);
+    }
+
+    @Test
+    public void cartesianTest() {
+        String query = "CREATE VIEW V AS SELECT * FROM T, T AS X";
+        DBSPExpression inResult = DBSPTupleExpression.flatten(e0, e0);
+        DBSPZSetLiteral result = new DBSPZSetLiteral(inResult);
+        result.add(DBSPTupleExpression.flatten(e0, e1));
+        result.add(DBSPTupleExpression.flatten(e1, e0));
+        result.add(DBSPTupleExpression.flatten(e1, e1));
+        this.testQuery(query, result);
     }
 }

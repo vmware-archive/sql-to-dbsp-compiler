@@ -27,6 +27,7 @@ package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.TranslationException;
 
 import javax.annotation.Nullable;
 
@@ -42,8 +43,10 @@ public class DBSPBinaryExpression extends DBSPExpression {
         this.operation = operation;
         this.left = left;
         this.right = right;
-        assert this.left != null : "Null left operand";
-        assert this.right != null : "Null right operand";
+        if (this.left == null)
+            throw new TranslationException("Null left operand", node);
+        if (this.right == null)
+            throw new TranslationException("Null right operand", node);
     }
 
     @Override
