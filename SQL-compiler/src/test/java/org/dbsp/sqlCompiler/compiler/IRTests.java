@@ -1,5 +1,6 @@
 package org.dbsp.sqlCompiler.compiler;
 
+import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPApplyOperator;
@@ -24,7 +25,7 @@ public class IRTests {
                 new DBSPClosureExpression(null, type, new DBSPBinaryExpression(null, type, "+",
                         new DBSPVariableReference(varName, type),
                         new DBSPLiteral(1)), varName
-                ), type, input);
+                ), TypeCompiler.makeZSet(type), input);
         circuit.addOperator(op);
         DBSPOperator output = new DBSPSinkOperator(null, type, "o", op);
         circuit.addOperator(output);
@@ -44,7 +45,7 @@ public class IRTests {
                 new DBSPVariableReference(x, type),
                 new DBSPRefExpression(new DBSPVariableReference(x, type))), x
         );
-        DBSPOperator op = new DBSPApplyOperator(null, function, type, input);
+        DBSPOperator op = new DBSPApplyOperator(null, function, TypeCompiler.makeZSet(type), input);
         circuit.addOperator(op);
         DBSPOperator output = new DBSPSinkOperator(null, type, "o", op);
         circuit.addOperator(output);

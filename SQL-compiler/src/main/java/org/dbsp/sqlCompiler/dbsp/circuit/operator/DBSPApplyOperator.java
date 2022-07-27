@@ -37,7 +37,7 @@ import javax.annotation.Nullable;
 public class DBSPApplyOperator extends DBSPOperator {
     public DBSPApplyOperator(@Nullable Object node, DBSPExpression expression,
                              DBSPType resultType, DBSPOperator input) {
-        super(node, "apply", expression, TypeCompiler.makeZSet(resultType));
+        super(node, "apply", expression, resultType);
         this.addInput(input);
     }
 }
