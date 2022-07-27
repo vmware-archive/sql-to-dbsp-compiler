@@ -44,6 +44,6 @@ public class DBSPSeqExpression extends DBSPExpression {
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append("{").increase()
                 .join(";\n", this.contents).decrease()
-                .append("}");
+                .append("\n}");
     }
 }

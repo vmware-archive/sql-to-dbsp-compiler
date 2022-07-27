@@ -58,7 +58,7 @@ public class DBSPFieldExpression extends DBSPExpression {
                 .append(this.expression)
                 .append(".")
                 .append(this.fieldNo);
-        if (this.getType().is(DBSPTypeString.class))
+        if (this.getNonVoidType().is(DBSPTypeString.class))
             result.append(".clone()");
         return result;
     }

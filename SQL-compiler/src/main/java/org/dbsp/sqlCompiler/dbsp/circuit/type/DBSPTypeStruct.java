@@ -140,7 +140,7 @@ public class DBSPTypeStruct extends DBSPType {
     public DBSPType getFieldType(String col) {
         for (Field f : this.getFields()) {
             if (f.getName().equals(col))
-                return f.getType();
+                return f.getNonVoidType();
         }
         this.error("Field " + col + " not present in struct " + this.name);
         throw new RuntimeException("unreachable");

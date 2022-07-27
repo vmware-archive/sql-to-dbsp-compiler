@@ -2,12 +2,10 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPLiteral;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
@@ -49,14 +47,13 @@ public class EndToEndTests {
         return calcite;
     }
 
-    private String compileQuery(String query) throws SqlParseException {
+    private DBSPCircuit compileQuery(String query) throws SqlParseException {
         CalciteCompiler calcite = this.compileDef();
         calcite.compile(query);
         CalciteProgram program = calcite.getProgram();
 
         CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
-        DBSPCircuit dbsp = compiler.compile(program);
-        return dbsp.toRustString();
+        return compiler.compile(program, "circuit");
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -84,34 +81,27 @@ public class EndToEndTests {
     );
     private final DBSPZSetLiteral z0 = new DBSPZSetLiteral(e0);
     private final DBSPZSetLiteral z1 = new DBSPZSetLiteral(e1);
-    private final DBSPZSetLiteral empty = new DBSPZSetLiteral(z0.getType());
+    private final DBSPZSetLiteral empty = new DBSPZSetLiteral(z0.getNonVoidType());
 
-    private DBSPExpression createInput() {
+    private DBSPZSetLiteral createInput() {
         return new DBSPZSetLiteral(e0, e1);
     }
 
-    private void createTester(PrintWriter writer, @Nullable DBSPExpression expectedOutput) {
-        DBSPExpression input = this.createInput();
+    private void createTester(PrintWriter writer, DBSPCircuit circuit, DBSPZSetLiteral expectedOutput) {
+        DBSPZSetLiteral input = this.createInput();
+        DBSPTransaction transaction = new DBSPTransaction();
+        transaction.addSet("T", input);
+        DBSPFunction tester = SqlRuntimeLibrary.createTesterCode(
+                circuit,"circuit", transaction, expectedOutput, expectedOutput.size());
         writer.println("#[test]");
-        writer.println("fn tester() {");
-        writer.print("   let data = ");
-        writer.print(input.toRustString());
-        writer.println(";\n");
-        writer.println("   let mut circuit = circuit_generator();");
-        writer.println("   let _output = circuit(data);");
-        if (expectedOutput != null) {
-            writer.print("    assert_eq!(");
-            writer.print(expectedOutput.toRustString());
-            writer.println(", _output);");
-        }
-        writer.println("}\n");
+        writer.println(tester.toRustString());
     }
 
-    private void testQuery(String query, @Nullable DBSPExpression expectedOutput) {
+    private void testQuery(String query, @Nullable DBSPZSetLiteral expectedOutput) {
         try {
-            String rust = this.compileQuery(query);
-            PrintWriter writer = this.writeToFile(testFilePath, rust);
-            this.createTester(writer, expectedOutput);
+            DBSPCircuit circuit = this.compileQuery(query);
+            PrintWriter writer = this.writeToFile(testFilePath, circuit.toRustString());
+            this.createTester(writer, circuit, expectedOutput);
             writer.close();
             Utilities.compileAndTestRust(rustDirectory);
         } catch (Exception ex) {
@@ -200,7 +190,7 @@ public class EndToEndTests {
     @Test
     public void whereExpressionTest() {
         String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL2 < 0";
-        this.testQuery(query, new DBSPZSetLiteral(this.z0.getType()));
+        this.testQuery(query, new DBSPZSetLiteral(this.z0.getNonVoidType()));
     }
 
     @Test

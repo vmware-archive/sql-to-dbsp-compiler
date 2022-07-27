@@ -23,27 +23,23 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.expression;
+package org.dbsp.sqllogictest;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.IHasType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import java.util.ArrayList;
+import java.util.List;
 
-import javax.annotation.Nullable;
-
-public abstract class DBSPExpression extends DBSPNode implements IHasType {
-    // Null for an expression that evaluates to void.
-    @Nullable
-    private final DBSPType type;
-
-    protected DBSPExpression(@Nullable Object node, @Nullable DBSPType type) {
-        super(node);
-        this.type = type;
+/**
+ * A set of SQL statements.
+ */
+public class SqlStatementList {
+    /**
+     * List of SQL statements that are used to create tables.
+     */
+    public final List<String> statements;
+    public SqlStatementList() {
+        this.statements = new ArrayList<>();
     }
-
-    @Override
-    @Nullable
-    public DBSPType getType() {
-        return this.type;
+    public void add(String statement) {
+        this.statements.add(statement);
     }
 }

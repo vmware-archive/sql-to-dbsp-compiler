@@ -25,25 +25,35 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.IHasType;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
-public abstract class DBSPExpression extends DBSPNode implements IHasType {
-    // Null for an expression that evaluates to void.
-    @Nullable
-    private final DBSPType type;
+/**
+ * Function application expression.
+ */
+public class DBSPApplyMethodExpression extends DBSPExpression {
+    public final String function;
+    public final DBSPExpression self;
+    public final DBSPExpression[] arguments;
 
-    protected DBSPExpression(@Nullable Object node, @Nullable DBSPType type) {
-        super(node);
-        this.type = type;
+    public DBSPApplyMethodExpression(
+            String function, @Nullable DBSPType returnType,
+            DBSPExpression self, DBSPExpression... arguments) {
+        super(null, returnType);
+        this.function = function;
+        this.self = self;
+        this.arguments = arguments;
     }
 
     @Override
-    @Nullable
-    public DBSPType getType() {
-        return this.type;
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append(this.self)
+                .append(".")
+                .append(this.function)
+                .append("(")
+                .join(", ", this.arguments)
+                .append(")");
     }
 }

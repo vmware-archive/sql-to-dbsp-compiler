@@ -25,7 +25,11 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
+
+import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * A Raw tuple expression generates a raw Rust tuple.
@@ -33,6 +37,10 @@ import org.dbsp.util.IndentStringBuilder;
 public class DBSPRawTupleExpression extends DBSPTupleExpression {
     public DBSPRawTupleExpression(DBSPExpression... fields) {
         super(fields);
+    }
+
+    public DBSPRawTupleExpression(@Nullable Object node, DBSPType type, List<DBSPExpression> exprs) {
+        super(node, type, exprs);
     }
 
     @Override

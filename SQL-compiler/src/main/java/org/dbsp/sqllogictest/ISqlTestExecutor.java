@@ -32,7 +32,9 @@ import org.apache.calcite.sql.parser.SqlParseException;
  */
 public interface ISqlTestExecutor {
     void reset();
-    void prepare(SqlTestPrepare prepare) throws SqlParseException;
+    void prepareTables(SqlTestPrepareTables prepare) throws SqlParseException;
     // TODO: add validator argument
-    void executeAndValidate(String query) throws SqlParseException;
+    void executeAndValidate(String query,
+                            SqlTestPrepareInput inputs,
+                            int expectedRowCount) throws SqlParseException;
 }

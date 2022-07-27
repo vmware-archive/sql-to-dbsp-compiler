@@ -23,27 +23,49 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.expression;
+package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.IHasType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
-public abstract class DBSPExpression extends DBSPNode implements IHasType {
-    // Null for an expression that evaluates to void.
-    @Nullable
-    private final DBSPType type;
+/**
+ * Represents the usize Rust type.
+ */
+public class DBSPTypeUSize extends DBSPType
+        implements IsNumericType, IDBSPBaseType {
+    public static final DBSPTypeUSize instance = new DBSPTypeUSize(null, false);
 
-    protected DBSPExpression(@Nullable Object node, @Nullable DBSPType type) {
-        super(node);
-        this.type = type;
+    protected DBSPTypeUSize(@Nullable Object node, boolean mayBeNull) {
+        super(node, mayBeNull);
     }
 
     @Override
-    @Nullable
-    public DBSPType getType() {
-        return this.type;
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return this.wrapOption(builder, "usize"); }
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        throw new Unimplemented();
+    }
+
+    @Override
+    public String shortName() {
+        return "u";
+    }
+
+    @Override
+    public boolean same(DBSPType type) {
+        if (!super.same(type))
+            return false;
+        return type.is(DBSPTypeUSize.class);
     }
 }

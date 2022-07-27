@@ -40,8 +40,8 @@ public class DBSPCastExpression extends DBSPExpression {
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        DBSPType type = this.getType();
-        if (type.same(this.argument.getType()))
+        DBSPType type = this.getNonVoidType();
+        if (type.same(this.argument.getNonVoidType()))
             return builder.append(this.argument);
         return type.standardCastFrom(builder, this.argument);
     }

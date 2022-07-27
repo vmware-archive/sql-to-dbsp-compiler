@@ -46,7 +46,7 @@ public class SqlTestQuery {
     private SortOrder order;
     @Nullable private String name;
     @Nullable private String hash;
-    private int rowCount;
+    private int valueCount;
     private final List<String> queryResults;
 
     public void setName(String name) {
@@ -57,21 +57,26 @@ public class SqlTestQuery {
         this.hash = hash;
     }
 
-    public void setRowCount(int rows) {
-        this.rowCount = rows;
+    public void setValueCount(int values) {
+        this.valueCount = values;
     }
 
     public void addResultLine(String line) {
         this.queryResults.add(line);
+        this.valueCount += this.getResultColumnCount();
     }
 
-    public void executeAndValidate(ISqlTestExecutor executor) throws SqlParseException {
+    public int getResultColumnCount() {
+        return this.columnTypes.size();
+    }
+
+    public void executeAndValidate(ISqlTestExecutor executor, SqlTestPrepareInput input) throws SqlParseException {
         if (this.hash != null && !this.hash.isEmpty()) {
             // TODO: generate hash-based validator
         } else {
             // TODO: generate exact result validator
         }
-        executor.executeAndValidate(this.query);
+        executor.executeAndValidate(this.query, input, this.valueCount / this.getResultColumnCount());
     }
 
     enum ColumnType {
@@ -89,7 +94,7 @@ public class SqlTestQuery {
     SqlTestQuery() {
         this.query = "";
         this.columnTypes = new ArrayList<>();
-        this.rowCount = 0;
+        this.valueCount = 0;
         this.hash = "";
         this.queryResults = new ArrayList<>();
         this.order = SortOrder.None;

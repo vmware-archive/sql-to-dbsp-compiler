@@ -23,27 +23,9 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.expression;
+package org.dbsp.sqllogictest;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.IHasType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-
-import javax.annotation.Nullable;
-
-public abstract class DBSPExpression extends DBSPNode implements IHasType {
-    // Null for an expression that evaluates to void.
-    @Nullable
-    private final DBSPType type;
-
-    protected DBSPExpression(@Nullable Object node, @Nullable DBSPType type) {
-        super(node);
-        this.type = type;
-    }
-
-    @Override
-    @Nullable
-    public DBSPType getType() {
-        return this.type;
-    }
-}
+/**
+ * A Set of Sql statements that insert or delete data from tables.
+ */
+public class SqlTestPrepareInput extends SqlStatementList {}

@@ -25,25 +25,30 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.IHasType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
+public class DBSPLetExpression extends DBSPExpression {
+    public final String variable;
+    public final DBSPExpression initializer;
+    public final boolean mutable;
 
-public abstract class DBSPExpression extends DBSPNode implements IHasType {
-    // Null for an expression that evaluates to void.
-    @Nullable
-    private final DBSPType type;
+    public DBSPLetExpression(String variable, DBSPExpression initializer, boolean mutable) {
+        super(null, null);
+        this.variable = variable;
+        this.initializer = initializer;
+        this.mutable = mutable;
+    }
 
-    protected DBSPExpression(@Nullable Object node, @Nullable DBSPType type) {
-        super(node);
-        this.type = type;
+    public DBSPLetExpression(String variable, DBSPExpression initializer) {
+        this(variable, initializer, false);
     }
 
     @Override
-    @Nullable
-    public DBSPType getType() {
-        return this.type;
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("let ")
+                .append(this.mutable ? "mut " : "")
+                .append(variable)
+                .append(" = ")
+                .append(this.initializer);
     }
 }

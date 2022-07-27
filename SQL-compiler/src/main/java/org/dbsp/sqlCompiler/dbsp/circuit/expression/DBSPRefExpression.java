@@ -35,7 +35,7 @@ public class DBSPRefExpression extends DBSPExpression {
     private final DBSPExpression expression;
 
     public DBSPRefExpression(DBSPExpression expression) {
-        super(null, new DBSPTypeRef(expression.getType()));
+        super(null, new DBSPTypeRef(expression.getNonVoidType()));
         this.expression = expression;
     }
 

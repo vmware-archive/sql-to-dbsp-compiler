@@ -45,6 +45,7 @@ public class DBSPCircuit extends DBSPNode {
             "#![allow(unused_variables)]\n" +
             "\n" +
             "use dbsp::{\n" +
+            "    NumEntries,\n" +
             "    circuit::{Root, Stream},\n" +
             "    operator::{Generator, FilterMap},\n" +
             "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
@@ -62,8 +63,8 @@ public class DBSPCircuit extends DBSPNode {
             "use tuple::declare_tuples;\n" +
             "type Weight = isize;\n";
 
-    private final List<DBSPOperator> inputOperators = new ArrayList<>();
-    private final List<DBSPOperator> outputOperators = new ArrayList<>();
+    private final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
+    private final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
     private final List<DBSPOperator> operators = new ArrayList<>();
     private final String name;
 
@@ -72,11 +73,19 @@ public class DBSPCircuit extends DBSPNode {
         this.name = name;
     }
 
+    /**
+     * @return the names of the input tables.
+     * The order of the tables corresponds to the inputs of the generated circuit.
+     */
+    public List<String> getInputTables() {
+        return Linq.map(this.inputOperators, DBSPOperator::getName);
+    }
+
     public void addOperator(DBSPOperator operator) {
         if (operator instanceof DBSPSourceOperator)
-            this.inputOperators.add(operator);
+            this.inputOperators.add((DBSPSourceOperator)operator);
         else if (operator instanceof DBSPSinkOperator)
-            this.outputOperators.add(operator);
+            this.outputOperators.add((DBSPSinkOperator)operator);
         else
             this.operators.add(operator);
     }
@@ -85,7 +94,7 @@ public class DBSPCircuit extends DBSPNode {
         builder.append("let ")
                 .append(op.getName())
                 .append(" = Rc::new(RefCell::<")
-                .append(op.getType())
+                .append(op.getNonVoidType())
                 .append(">::new(Default::default()));")
                 .newline();
         builder.append("let ")
@@ -126,13 +135,12 @@ public class DBSPCircuit extends DBSPNode {
             }
             builder.append(">,\n");
         }
-        builder.decrease().append("}\n");
+        builder.decrease().append("}\n\n");
 
         // function prototype:
-        // fn circuit_generator() -> impl FnMut(T0, T1) -> (O0, O1) {
+        // fn name() -> impl FnMut(T0, T1) -> (O0, O1) {
         builder.append("fn ")
                 .append(this.name)
-                .append("_generator")
                 .append("() -> impl FnMut(");
 
         boolean first = true;
@@ -140,10 +148,10 @@ public class DBSPCircuit extends DBSPNode {
             if (!first)
                 builder.append(",");
             first = false;
-            builder.append(i.getType());
+            builder.append(i.getNonVoidType());
         }
         builder.append(") -> ");
-        DBSPTypeTuple tuple = new DBSPTypeTuple(null, Linq.map(this.outputOperators, DBSPOperator::getType));
+        DBSPTypeTuple tuple = new DBSPTypeTuple(null, Linq.map(this.outputOperators, DBSPOperator::getNonVoidType));
         builder.append(tuple)
                 .append(" {")
                 .increase();
@@ -213,9 +221,5 @@ public class DBSPCircuit extends DBSPNode {
         IndentStringBuilder builder = new IndentStringBuilder();
         this.toRustString(builder);
         return builder.toString();
-    }
-
-    public DBSPTransaction createTransaction() {
-        return new DBSPTransaction(this);
     }
 }

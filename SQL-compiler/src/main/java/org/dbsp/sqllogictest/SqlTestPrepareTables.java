@@ -29,19 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A set of SQL statements that prepare a test.
+ * A set of SQL statements create tables.
  */
-public class SqlTestPrepare {
-    /**
-     * List of SQL statements that are used to prepare the data.
-     */
-    public final List<String> statements;
-
-    public SqlTestPrepare() {
-        this.statements = new ArrayList<>();
-    }
-
-    public void add(String statement) {
-        this.statements.add(statement);
-    }
-}
+public class SqlTestPrepareTables extends SqlStatementList { }

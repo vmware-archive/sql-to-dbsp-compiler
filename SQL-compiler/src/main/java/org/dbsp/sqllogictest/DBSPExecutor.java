@@ -27,9 +27,14 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPFunction;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
+import org.dbsp.sqlCompiler.frontend.SimulatorResult;
+import org.dbsp.sqlCompiler.frontend.TableModifyStatement;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
@@ -60,7 +65,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
     }
 
     @Override
-    public void prepare(SqlTestPrepare prepare) throws SqlParseException {
+    public void prepareTables(SqlTestPrepareTables prepare) throws SqlParseException {
         if (this.calcite == null)
             throw new RuntimeException("Calcite compiler not initialized yet");
         for (String statement : prepare.statements)
@@ -68,7 +73,8 @@ public class DBSPExecutor implements ISqlTestExecutor {
     }
 
     @Override
-    public void executeAndValidate(String query) throws SqlParseException {
+    public void executeAndValidate(
+            String query, SqlTestPrepareInput inputs, int expectedRowCount) throws SqlParseException {
         //if (!query.equals(" SELECT ALL - CAST ( NULL AS REAL ) + col2 FROM tab1")) return;
         if (this.calcite == null)
             throw new RuntimeException("Calcite compiler not initialized yet");
@@ -80,18 +86,26 @@ public class DBSPExecutor implements ISqlTestExecutor {
         this.calcite.compile(query);
         CalciteProgram program = calcite.getProgram();
         // Compile Calcite representation to DBSP
-        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
-        DBSPCircuit dbsp = compiler.compile(program);
+        final CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
+        DBSPCircuit dbsp = compiler.compile(program, "c");
+        DBSPTransaction transaction = new DBSPTransaction();
         String rust = dbsp.toRustString();
         if (!this.compile)
             return;
+
+        for (String statement : inputs.statements) {
+            SimulatorResult result = this.calcite.compile(statement);
+            TableModifyStatement stat = (TableModifyStatement) result;
+            compiler.extendTransaction(transaction, stat);
+        }
         PrintWriter writer;
         try {
             writer = new PrintWriter(testFilePath, "UTF-8");
-            writer.print(rust);
-            System.out.println(rust);
-            // TODO: Generate Rust code for input data
-            // TODO: Generate Rust code for output validation
+            writer.println(rust);
+            DBSPFunction func = SqlRuntimeLibrary.createTesterCode(
+                    dbsp, "c", transaction, null, expectedRowCount);
+            writer.println("#[test]");
+            writer.println(func.toRustString());
             writer.close();
             Utilities.compileAndTestRust(rustDirectory);
             // TODO: execute the query and validate the output
