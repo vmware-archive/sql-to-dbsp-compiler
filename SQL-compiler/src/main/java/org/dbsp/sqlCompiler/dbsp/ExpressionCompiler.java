@@ -52,6 +52,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     @Override
     public DBSPExpression visitLiteral(RexLiteral literal) {
         DBSPType type = this.typeCompiler.convertType(literal.getType());
+        if (literal.isNull())
+            return new DBSPLiteral(type);
         return new DBSPLiteral(literal, type, literal.toString());
     }
 
