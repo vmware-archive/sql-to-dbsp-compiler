@@ -28,7 +28,7 @@ package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 import org.dbsp.sqlCompiler.dbsp.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPStreamType;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeStream;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.IHasType;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
@@ -88,7 +88,7 @@ public class DBSPOperator extends DBSPNode implements IHasName, IHasType {
         builder.append("let ")
                 .append(this.getName())
                 .append(": ")
-                .append(new DBSPStreamType(this.outputType))
+                .append(new DBSPTypeStream(this.outputType))
                 .append(" = ");
         if (!this.inputs.isEmpty())
             builder.append(this.inputs.get(0).getName())
@@ -98,11 +98,12 @@ public class DBSPOperator extends DBSPNode implements IHasName, IHasType {
         for (int i = 1; i < this.inputs.size(); i++) {
             if (i > 1)
                 builder.append(",");
-            builder.append(this.inputs.get(i).getName());
+            builder.append("&")
+                    .append(this.inputs.get(i).getName());
         }
         if (this.function != null) {
             if (this.inputs.size() > 1)
-                builder.append(",");
+                builder.append(", ");
             this.function.toRustString(builder);
         }
         return builder.append(");");

@@ -45,8 +45,8 @@ import java.util.Objects;
  */
 public class SqlSimulator {
     final Catalog schema;
-    RelDataTypeSystem system = RelDataTypeSystem.DEFAULT;
-    RelDataTypeFactory typeFactory;
+    final RelDataTypeSystem system = RelDataTypeSystem.DEFAULT;
+    final RelDataTypeFactory typeFactory;
 
     public SqlSimulator(Catalog schema, RelDataTypeFactory typeFactory) {
         this.schema = schema;

@@ -26,8 +26,8 @@ import java.io.*;
  * from the declared views.
  */
 public class EndToEndTests {
-    static String rustDirectory = "../temp";
-    static String testFilePath = rustDirectory + "/src/test.rs";
+    static final String rustDirectory = "../temp";
+    static final String testFilePath = rustDirectory + "/src/test.rs";
 
     @Before
     public void generateLib() throws IOException {
@@ -59,13 +59,14 @@ public class EndToEndTests {
         return dbsp.toRustString();
     }
 
+    @SuppressWarnings("SameParameterValue")
     private PrintWriter writeToFile(String file, String contents) throws FileNotFoundException, UnsupportedEncodingException {
         PrintWriter writer = new PrintWriter(file, "UTF-8");
         writer.print(contents);
         return writer;
     }
 
-    private final DBSPExpression e0 = new DBSPTupleExpression(
+    private final DBSPTupleExpression e0 = new DBSPTupleExpression(
             new DBSPLiteral(10),
             new DBSPLiteral(12.0),
             new DBSPLiteral(true),
@@ -73,7 +74,7 @@ public class EndToEndTests {
             new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)),
             new DBSPLiteral(DBSPTypeDouble.instance.setMayBeNull(true))
     );
-    private final DBSPExpression e1 = new DBSPTupleExpression(
+    private final DBSPTupleExpression e1 = new DBSPTupleExpression(
             new DBSPLiteral(10),
             new DBSPLiteral(1.0),
             new DBSPLiteral(false),
@@ -209,8 +210,13 @@ public class EndToEndTests {
     }
 
     @Test
-    public void joinTest() {
+    public void cartesianTest() {
         String query = "CREATE VIEW V AS SELECT * FROM T, T AS X";
-        this.testQuery(query, this.z1);
+        DBSPExpression inResult = DBSPTupleExpression.flatten(e0, e0);
+        DBSPZSetLiteral result = new DBSPZSetLiteral(inResult);
+        result.add(DBSPTupleExpression.flatten(e0, e1));
+        result.add(DBSPTupleExpression.flatten(e1, e0));
+        result.add(DBSPTupleExpression.flatten(e1, e1));
+        this.testQuery(query, result);
     }
 }

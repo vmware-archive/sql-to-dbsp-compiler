@@ -31,32 +31,23 @@ import org.dbsp.util.IndentStringBuilder;
 import javax.annotation.Nullable;
 
 /**
- * An expression that is a closure of the current row.  The current row is a variable named 't'.
- * In particular, FieldExpressions can refer to the row using this variable.
+ * An expression of the form |var1, var2, ...| expression
  */
 public class DBSPClosureExpression extends DBSPExpression {
     private final DBSPExpression expression;
-    private final String varName;
+    private final String[] varNames;
 
-    public DBSPClosureExpression(@Nullable Object node, String varName, DBSPType type, DBSPExpression expression) {
+    public DBSPClosureExpression(@Nullable Object node, DBSPType type, DBSPExpression expression, String... varNames) {
         super(node, type);
         this.expression = expression;
-        this.varName = varName;
+        this.varNames = varNames;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append("|")
-                .append(this.varName)
+                .join(", ", this.varNames)
                 .append("| ")
                 .append(this.expression);
-    }
-
-    public DBSPVariableReference getVarExpr() {
-        return new DBSPVariableReference(this.varName, this.getType());
-    }
-
-    public String variableName() {
-        return this.varName;
     }
 }

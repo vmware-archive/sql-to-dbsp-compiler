@@ -61,7 +61,7 @@ public class Linq {
         final MapIterator<T, S> mapIterator;
 
         MapIterable(Iterable<T> data, Function<T, S> function) {
-            this.mapIterator = new MapIterator<T, S>(data.iterator(), function);
+            this.mapIterator = new MapIterator<>(data.iterator(), function);
         }
 
         @Override
@@ -71,22 +71,22 @@ public class Linq {
     }
 
     public static <T, S> Iterable<S> map(Iterable<T> data, Function<T, S> function) {
-        return new MapIterable<T, S>(data, function);
+        return new MapIterable<>(data, function);
     }
 
     public static <T, S> Iterator<S> map(Iterator<T> data, Function<T, S> function) {
-        return new MapIterator<T, S>(data, function);
+        return new MapIterator<>(data, function);
     }
 
     public static <T, S> List<S> map(List<T> data, Function<T, S> function) {
-        List<S> result = new ArrayList<S>(data.size());
+        List<S> result = new ArrayList<>(data.size());
         for (T aData : data)
             result.add(function.apply(aData));
         return result;
     }
 
     public static <T, S> List<S> flatMap(List<T> data, Function<T, List<S>> function) {
-        List<S> result = new ArrayList<S>(data.size());
+        List<S> result = new ArrayList<>(data.size());
         for (T aData : data)
             result.addAll(function.apply(aData));
         return result;
@@ -110,7 +110,7 @@ public class Linq {
     }
 
     public static <T> List<T> where(List<T> data, Predicate<T> function) {
-        List<T> result = new ArrayList<T>();
+        List<T> result = new ArrayList<>();
         for (T aData : data)
             if (function.test(aData))
                 result.add(aData);
@@ -119,7 +119,7 @@ public class Linq {
 
     @SuppressWarnings("unchecked")
     public static <T> T[] where(T[] data, Predicate<T> function) {
-        List<T> result = new ArrayList<T>();
+        List<T> result = new ArrayList<>();
         for (T datum : data)
             if (function.test(datum))
                 result.add(datum);

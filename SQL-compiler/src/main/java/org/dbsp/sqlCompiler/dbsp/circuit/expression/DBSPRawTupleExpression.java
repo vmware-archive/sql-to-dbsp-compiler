@@ -23,21 +23,22 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
+/**
+ * A Raw tuple expression generates a raw Rust tuple.
+ */
+public class DBSPRawTupleExpression extends DBSPTupleExpression {
+    public DBSPRawTupleExpression(DBSPExpression... fields) {
+        super(fields);
+    }
 
-public class DBSPCartesianOperator extends DBSPOperator {
-    public DBSPCartesianOperator(@Nullable Object node, DBSPType resultType,
-                                 // Closure from key, valueLeft, valueRight to result type
-                                 DBSPExpression function,
-                                 DBSPOperator left, DBSPOperator right) {
-        super(node, "stream_join", function, TypeCompiler.makeZSet(resultType));
-        this.addInput(left);
-        this.addInput(right);
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("(")
+                .join(", ", this.fields)
+                .append(")");
     }
 }

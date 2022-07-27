@@ -39,7 +39,7 @@ import java.util.*;
  * runtime library: support functions that implement the
  * SQL semantics.
  */
-@SuppressWarnings({"FieldCanBeLocal", "MismatchedQueryAndUpdateOfCollection"})
+@SuppressWarnings({"FieldCanBeLocal", "MismatchedQueryAndUpdateOfCollection", "SpellCheckingInspection"})
 public class SqlRuntimeLibrary {
     @Nullable
     private DBSPFile program;
@@ -254,15 +254,15 @@ public class SqlRuntimeLibrary {
                                     new DBSPVariableReference("l", rawType),
                                     new DBSPVariableReference("r", rawType));
                             def = new DBSPMatchExpression(
-                                    new DBSPTupleExpression(
+                                    new DBSPRawTupleExpression(
                                             new DBSPVariableReference("left", leftType),
                                             new DBSPVariableReference("right", rightType)),
                                     Arrays.asList(
                                             new DBSPMatchExpression.Case(
-                                                    new DBSPTupleExpression(leftMatch, rightMatch),
+                                                    new DBSPRawTupleExpression(leftMatch, rightMatch),
                                                     wrapSome(def, type)),
                                             new DBSPMatchExpression.Case(
-                                                    new DBSPTupleExpression(
+                                                    new DBSPRawTupleExpression(
                                                             new DBSPDontCare(leftType),
                                                             new DBSPDontCare(rightType)),
                                                     new DBSPLiteral(type))),

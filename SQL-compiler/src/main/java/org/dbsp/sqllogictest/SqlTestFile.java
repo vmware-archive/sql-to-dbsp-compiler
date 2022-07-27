@@ -139,6 +139,7 @@ public class SqlTestFile {
     /**
      * Parse a query that executes a SqlLogicTest test.
      */
+    @SuppressWarnings("SpellCheckingInspection")
     @Nullable
     private SqlTestQuery parseTestQuery(TestAcceptancePolicy policy) throws IOException {
         String line = this.nextLine(true);

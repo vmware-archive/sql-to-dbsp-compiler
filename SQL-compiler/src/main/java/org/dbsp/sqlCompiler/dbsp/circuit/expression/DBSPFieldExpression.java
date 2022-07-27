@@ -32,17 +32,32 @@ import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
+/**
+ * Tuple field reference expression.
+ */
 public class DBSPFieldExpression extends DBSPExpression {
-    private final int fieldNo;
+    public final DBSPExpression expression;
+    public final int fieldNo;
 
-    public DBSPFieldExpression(@Nullable RexNode node, int fieldNo, DBSPType type) {
+    public DBSPFieldExpression(@Nullable RexNode node, DBSPExpression expression, int fieldNo, DBSPType type) {
         super(node, type);
+        this.expression = expression;
         this.fieldNo = fieldNo;
+    }
+
+    public DBSPExpression simplify() {
+        if (this.expression.is(DBSPTupleExpression.class)) {
+            return this.expression.to(DBSPTupleExpression.class).fields.get(this.fieldNo);
+        }
+        return this;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        IndentStringBuilder result = builder.append("t.").append(this.fieldNo);
+        IndentStringBuilder result = builder
+                .append(this.expression)
+                .append(".")
+                .append(this.fieldNo);
         if (this.getType().is(DBSPTypeString.class))
             result.append(".clone()");
         return result;

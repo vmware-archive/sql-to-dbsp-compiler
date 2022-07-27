@@ -47,7 +47,7 @@ public class Main {
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
         int tests = 0;
-        ISqlTestExecutor executor = new DBSPExecutor();
+        final ISqlTestExecutor executor = new DBSPExecutor();
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
@@ -79,6 +79,7 @@ public class Main {
     }
 
     public static void main(String[] argv) throws IOException {
+        @SuppressWarnings("SpellCheckingInspection")
         String directory = "../../sqllogictest/test/random/select";
         if (argv.length > 1)
             directory = argv[1];

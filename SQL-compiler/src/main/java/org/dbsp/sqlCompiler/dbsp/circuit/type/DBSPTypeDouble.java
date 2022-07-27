@@ -49,7 +49,7 @@ public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType, IDBSPBa
         return "d";
     }
 
-    public static DBSPTypeDouble instance = new DBSPTypeDouble(null,false);
+    public static final DBSPTypeDouble instance = new DBSPTypeDouble(null,false);
 
     @Override
     public boolean same(DBSPType type) {

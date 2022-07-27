@@ -52,7 +52,7 @@ public class DBSPTypeBool extends DBSPType implements IDBSPBaseType {
         return type.is(DBSPTypeBool.class);
     }
 
-    public static DBSPTypeBool instance = new DBSPTypeBool(null, false);
+    public static final DBSPTypeBool instance = new DBSPTypeBool(null, false);
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {

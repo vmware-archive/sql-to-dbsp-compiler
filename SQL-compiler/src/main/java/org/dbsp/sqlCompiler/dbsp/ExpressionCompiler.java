@@ -44,7 +44,9 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     @Override
     public DBSPExpression visitInputRef(RexInputRef inputRef) {
         DBSPType type = this.typeCompiler.convertType(inputRef.getType());
-        return new DBSPFieldExpression(inputRef, inputRef.getIndex(), type);
+        return new DBSPFieldExpression(
+                inputRef, new DBSPVariableReference("t", DBSPTypeAny.instance),
+                inputRef.getIndex(), type);
     }
 
     @Override
@@ -57,12 +59,11 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
      * Given operands for "operation" with left and right types,
      * compute the type that both operands must be cast to.
      * Note: this ignores nullability of types.
-     * @param operation  Sql operation string.
      * @param left       Left operand type.
      * @param right      Right operand type.
      * @return           Common type operands must be cast to.
      */
-    public static DBSPType reduceType(String operation, DBSPType left, DBSPType right) {
+    public static DBSPType reduceType(DBSPType left, DBSPType right) {
         left = left.setMayBeNull(false);
         right = right.setMayBeNull(false);
         if (left.same(right))
@@ -94,7 +95,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     }
 
     private static DBSPExpression makeBinaryExpression(
-            RexNode node, DBSPType resultType, String op, List<DBSPExpression> operands) {
+            RexNode node, String op, List<DBSPExpression> operands) {
         // Why doesn't Calcite do this?
         if (operands.size() != 2)
             throw new TranslationException("Expected 2 operands", node);
@@ -104,7 +105,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
             throw new Unimplemented("Found unimplemented expression in " + node);
         DBSPType leftType = left.getType();
         DBSPType rightType = right.getType();
-        DBSPType commonBase = reduceType(op, leftType, rightType);
+        DBSPType commonBase = reduceType(leftType, rightType);
         if (!leftType.setMayBeNull(false).same(commonBase))
             left = new DBSPCastExpression(node, commonBase.setMayBeNull(leftType.mayBeNull), left);
         if (!rightType.setMayBeNull(false).same(commonBase))
@@ -120,33 +121,33 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPType type = this.typeCompiler.convertType(call.getType());
         switch (call.op.kind) {
             case TIMES:
-                return makeBinaryExpression(call, type, "*", ops);
+                return makeBinaryExpression(call, "*", ops);
             case DIVIDE:
-                return makeBinaryExpression(call, type, "/", ops);
+                return makeBinaryExpression(call, "/", ops);
             case MOD:
-                return makeBinaryExpression(call, type, "%", ops);
+                return makeBinaryExpression(call, "%", ops);
             case PLUS:
-                return makeBinaryExpression(call, type, "+", ops);
+                return makeBinaryExpression(call, "+", ops);
             case MINUS:
-                return makeBinaryExpression(call, type, "-", ops);
+                return makeBinaryExpression(call, "-", ops);
             case LESS_THAN:
-                return makeBinaryExpression(call, type, "<", ops);
+                return makeBinaryExpression(call, "<", ops);
             case GREATER_THAN:
-                return makeBinaryExpression(call, type, ">", ops);
+                return makeBinaryExpression(call, ">", ops);
             case LESS_THAN_OR_EQUAL:
-                return makeBinaryExpression(call, type, "<=", ops);
+                return makeBinaryExpression(call, "<=", ops);
             case GREATER_THAN_OR_EQUAL:
-                return makeBinaryExpression(call, type, ">=", ops);
+                return makeBinaryExpression(call, ">=", ops);
             case EQUALS:
-                return makeBinaryExpression(call, type, "==", ops);
+                return makeBinaryExpression(call, "==", ops);
             case NOT_EQUALS:
-                return makeBinaryExpression(call, type, "!=", ops);
+                return makeBinaryExpression(call, "!=", ops);
             case OR:
-                return makeBinaryExpression(call, type, "||", ops);
+                return makeBinaryExpression(call, "||", ops);
             case AND:
-                return makeBinaryExpression(call, type, "&&", ops);
+                return makeBinaryExpression(call, "&&", ops);
             case DOT:
-                return makeBinaryExpression(call, type, ".", ops);
+                return makeBinaryExpression(call, ".", ops);
             case NOT:
             case IS_FALSE:
             case IS_NOT_TRUE:
@@ -161,11 +162,11 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                     throw new TranslationException("Expected 1 operand", call);
                 return ops.get(0);
             case BIT_AND:
-                return makeBinaryExpression(call, type, "&", ops);
+                return makeBinaryExpression(call, "&", ops);
             case BIT_OR:
-                return makeBinaryExpression(call, type, "|", ops);
+                return makeBinaryExpression(call, "|", ops);
             case BIT_XOR:
-                return makeBinaryExpression(call, type, "^", ops);
+                return makeBinaryExpression(call, "^", ops);
             case CAST:
                 return new DBSPCastExpression(call, type, ops.get(0));
             case IS_NULL:

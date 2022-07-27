@@ -25,19 +25,23 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeRef;
 import org.dbsp.util.IndentStringBuilder;
 
+/**
+ * An expression of the form *expression.
+ */
 public class DBSPDerefExpression extends DBSPExpression {
-    private final DBSPExpression arg;
+    public final DBSPExpression expression;
 
-    public DBSPDerefExpression(DBSPExpression arg) {
-        super(null, arg.getType());
-        this.arg = arg;
+    public DBSPDerefExpression(DBSPExpression expression) {
+        super(null, expression.getType().to(DBSPTypeRef.class).type);
+        this.expression = expression;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("&")
-                .append(this.arg);
+        return builder.append("*")
+                .append(this.expression);
     }
 }

@@ -23,21 +23,33 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
+/**
+ * An unknown type, represented in code as _.
+ */
+public class DBSPTypeAny extends DBSPType {
+    public static final DBSPType instance = new DBSPTypeAny();
 
-public class DBSPCartesianOperator extends DBSPOperator {
-    public DBSPCartesianOperator(@Nullable Object node, DBSPType resultType,
-                                 // Closure from key, valueLeft, valueRight to result type
-                                 DBSPExpression function,
-                                 DBSPOperator left, DBSPOperator right) {
-        super(node, "stream_join", function, TypeCompiler.makeZSet(resultType));
-        this.addInput(left);
-        this.addInput(right);
+    protected DBSPTypeAny() {
+        super(null, false);
+    }
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("_");
     }
 }

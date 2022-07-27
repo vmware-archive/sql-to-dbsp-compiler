@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DBSPCircuit extends DBSPNode {
-    static String rustPreamble = "#![allow(dead_code)]\n" +
+    static final String rustPreamble = "#![allow(dead_code)]\n" +
             "#![allow(non_snake_case)]\n" +
             "#![allow(unused_imports)]\n" +
             "#![allow(unused_parens)]\n" +
@@ -50,11 +50,16 @@ public class DBSPCircuit extends DBSPNode {
             "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
             "    zset,\n" +
             "};\n" +
-            "use std::cell::RefCell;\n" +
-            "use std::rc::Rc;\n" +
             "use ordered_float::OrderedFloat;\n" +
             "mod sqllib;\n" +
             "use crate::test::sqllib::*;\n" +
+            "use ::serde::{Deserialize,Serialize};\n" +
+            "use std::{\n" +
+            "    fmt::{Debug, Formatter, Result as FmtResult},\n" +
+            "    cell::RefCell,\n" +
+            "    rc::Rc,\n" +
+            "};\n" +
+            "use tuple::declare_tuples;\n" +
             "type Weight = isize;\n";
 
     private final List<DBSPOperator> inputOperators = new ArrayList<>();
@@ -76,7 +81,7 @@ public class DBSPCircuit extends DBSPNode {
             this.operators.add(operator);
     }
 
-    private void genRcRell(IndentStringBuilder builder, DBSPOperator op) {
+    private void genRcCell(IndentStringBuilder builder, DBSPOperator op) {
         builder.append("let ")
                 .append(op.getName())
                 .append(" = Rc::new(RefCell::<")
@@ -107,6 +112,22 @@ public class DBSPCircuit extends DBSPNode {
         builder.append(rustPreamble)
                 .newline();
 
+        builder.append("declare_tuples! {").increase();
+        // Do not generate Tuple1
+        for (int i = 2; i <= DBSPTypeTuple.maxTupleSize; i++) {
+            builder.append("Tuple")
+                    .append(i)
+                    .append("<");
+            for (int j = 0; j < i; j++) {
+                if (j > 0)
+                    builder.append(", ");
+                builder.append("T")
+                        .append(j);
+            }
+            builder.append(">,\n");
+        }
+        builder.decrease().append("}\n");
+
         // function prototype:
         // fn circuit_generator() -> impl FnMut(T0, T1) -> (O0, O1) {
         builder.append("fn ")
@@ -129,10 +150,10 @@ public class DBSPCircuit extends DBSPNode {
 
         // For each input and output operator a corresponding Rc cell
         for (DBSPOperator i: this.inputOperators)
-            this.genRcRell(builder, i);
+            this.genRcCell(builder, i);
 
         for (DBSPOperator o: this.outputOperators)
-            this.genRcRell(builder, o);
+            this.genRcCell(builder, o);
 
         // Circuit body
         builder.append("let root = Root::build(|circuit| {")

@@ -40,12 +40,12 @@ import java.io.PrintWriter;
  * Sql test executor that uses DBSP as a SQL runtime.
  * Does not support arbitrary tests: only tests that can be recast as a standing query will work.
  */
+@SuppressWarnings("FieldCanBeLocal")
 public class DBSPExecutor implements ISqlTestExecutor {
-    @SuppressWarnings("FieldCanBeLocal")
     private final boolean debug = true;
     private final boolean compile = true;
-    static String rustDirectory = "../temp";
-    static String testFilePath = rustDirectory + "/src/test.rs";
+    static final String rustDirectory = "../temp";
+    static final String testFilePath = rustDirectory + "/src/test.rs";
 
     @Nullable
     private CalciteCompiler calcite;

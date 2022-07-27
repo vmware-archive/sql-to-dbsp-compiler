@@ -44,10 +44,13 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class CalciteToDBSPCompiler extends RelVisitor {
+    public static final DBSPType weightType = new DBSPTypeUser(null, "Weight", false);
+
     static class Context {
         @Nullable
+        final
         RelNode parent;
-        int inputNo;
+        final int inputNo;
 
         public Context(@Nullable RelNode parent, int inputNo) {
             this.parent = parent;
@@ -56,7 +59,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     }
 
     private final DBSPCircuit circuit;
-    boolean debug = true;
+    final boolean debug = true;
     // The path in the IR tree used to reach the current node.
     final List<Context> stack;
     // Map an input or output name to the corresponding operator
@@ -64,8 +67,8 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     // Map a RelNode operator to its DBSP implementation.
     final Map<RelNode, DBSPOperator> nodeOperator;
 
-    TypeCompiler typeCompiler = new TypeCompiler();
-    ExpressionCompiler expressionCompiler = new ExpressionCompiler(true);
+    final TypeCompiler typeCompiler = new TypeCompiler();
+    final ExpressionCompiler expressionCompiler = new ExpressionCompiler(true);
 
     public CalciteToDBSPCompiler() {
         this.circuit = new DBSPCircuit(null, "circuit");
@@ -100,11 +103,11 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public void visitAggregate(LogicalAggregate aggregate) {
         DBSPType type = this.convertType(aggregate.getRowType());
         RelNode input = aggregate.getInput();
-        DBSPOperator opinput = this.getOperator(input);
+        DBSPOperator opInput = this.getOperator(input);
         if (!aggregate.getAggCallList().isEmpty())
             throw new Unimplemented(aggregate);
         if (aggregate.containsDistinctCall() || aggregate.getAggCallList().isEmpty()) {
-            DBSPOperator dist = new DBSPDistinctOperator(aggregate, type, opinput);
+            DBSPOperator dist = new DBSPDistinctOperator(aggregate, type, opInput);
             this.assignOperator(aggregate, dist);
         } else {
             throw new Unimplemented();
@@ -113,8 +116,8 @@ public class CalciteToDBSPCompiler extends RelVisitor {
 
     public void visitScan(LogicalTableScan scan) {
         List<String> name = scan.getTable().getQualifiedName();
-        String tname = name.get(name.size() - 1);
-        DBSPOperator op = Utilities.getExists(this.ioOperator, tname);
+        String tableName = name.get(name.size() - 1);
+        DBSPOperator op = Utilities.getExists(this.ioOperator, tableName);
         this.assignOperator(scan, op);
     }
 
@@ -132,7 +135,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public void visitProject(LogicalProject project) {
         // LogicalProject is not really SQL project, it is rather map.
         RelNode input = project.getInput();
-        DBSPOperator opinput = this.getOperator(input);
+        DBSPOperator opInput = this.getOperator(input);
         DBSPType type = this.convertType(project.getRowType());
         List<DBSPExpression> resultColumns = new ArrayList<>();
         for (RexNode column : project.getProjects()) {
@@ -140,8 +143,8 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             resultColumns.add(exp);
         }
         DBSPExpression exp = new DBSPTupleExpression(project, type, resultColumns);
-        DBSPExpression closure = new DBSPClosureExpression(project, "t", type, exp);
-        DBSPMapOperator op = new DBSPMapOperator(project, closure, type, opinput);
+        DBSPExpression closure = new DBSPClosureExpression(project, type, exp, "t");
+        DBSPMapOperator op = new DBSPMapOperator(project, closure, type, opInput);
         // No distinct needed - in SQL project may produce a multiset.
         this.assignOperator(project, op);
     }
@@ -164,13 +167,13 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         boolean first = true;
         List<DBSPOperator> inputs = new ArrayList<>();
         for (RelNode input : minus.getInputs()) {
-            DBSPOperator opin = this.getOperator(input);
+            DBSPOperator opInput = this.getOperator(input);
             if (!first) {
-                DBSPNegateOperator neg = new DBSPNegateOperator(minus, type, opin);
+                DBSPNegateOperator neg = new DBSPNegateOperator(minus, type, opInput);
                 this.circuit.addOperator(neg);
                 inputs.add(neg);
             } else {
-                inputs.add(opin);
+                inputs.add(opInput);
             }
             first = false;
         }
@@ -191,7 +194,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         if (condition.getType().mayBeNull) {
             condition = new DBSPApplyExpression("wrap_bool", condition.getType(), condition);
         }
-        condition = new DBSPClosureExpression(filter.getCondition(), "t", condition.getType(), condition);
+        condition = new DBSPClosureExpression(filter.getCondition(), condition.getType(), condition, "t");
         DBSPOperator input = this.getOperator(filter.getInput());
         DBSPFilterOperator fop = new DBSPFilterOperator(filter, condition, type, input);
         this.assignOperator(filter, fop);
@@ -207,28 +210,39 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         DBSPType rightElementType = right.getType().to(DBSPTypeZSet.class).elementType;
 
         DBSPExpression toEmptyLeft = new DBSPClosureExpression(
-                null, "t", leftElementType,
-                new DBSPTupleExpression(DBSPTupleExpression.emptyTuple,
-                        new DBSPVariableReference("t", leftElementType)));
+                null, leftElementType,
+                new DBSPRawTupleExpression(
+                        DBSPTupleExpression.emptyTuple,
+                        DBSPTupleExpression.flatten(
+                                new DBSPVariableReference("t", leftElementType))),
+                "t");
         DBSPIndexOperator lindex = new DBSPIndexOperator(
                 join, toEmptyLeft, DBSPTypeTuple.emptyTupleType, leftElementType, left);
         this.circuit.addOperator(lindex);
 
         DBSPExpression toEmptyRight = new DBSPClosureExpression(
-                null, "t", leftElementType,
-                new DBSPTupleExpression(DBSPTupleExpression.emptyTuple,
-                        new DBSPVariableReference("t", leftElementType)));
-        DBSPIndexOperator rindex = new DBSPIndexOperator(
+                null, leftElementType,
+                new DBSPRawTupleExpression(
+                        DBSPTupleExpression.emptyTuple,
+                        DBSPTupleExpression.flatten(
+                                new DBSPVariableReference("t", leftElementType))),
+                        "t");
+        DBSPIndexOperator rIndex = new DBSPIndexOperator(
                 join, toEmptyRight, DBSPTypeTuple.emptyTupleType, rightElementType, right);
-        this.circuit.addOperator(rindex);
+        this.circuit.addOperator(rIndex);
 
-        DBSPCartesianOperator cart = new DBSPCartesianOperator(join, type, lindex, rindex);
+        DBSPExpression l = new DBSPVariableReference("l", leftElementType);
+        DBSPExpression r = new DBSPVariableReference("r", rightElementType);
+        DBSPExpression makePairs = new DBSPClosureExpression(null, type,
+                DBSPTupleExpression.flatten(l, r),
+                "k", "l", "r");
+        DBSPCartesianOperator cart = new DBSPCartesianOperator(join, type, makePairs, lindex, rIndex);
         this.circuit.addOperator(cart);
         DBSPExpression condition = this.expressionCompiler.compile(join.getCondition());
         if (condition.getType().mayBeNull) {
             condition = new DBSPApplyExpression("wrap_bool", condition.getType(), condition);
         }
-        condition = new DBSPClosureExpression(join.getCondition(), "t", condition.getType(), condition);
+        condition = new DBSPClosureExpression(join.getCondition(), condition.getType(), condition, "t");
         DBSPFilterOperator fop = new DBSPFilterOperator(join, condition, type, cart);
         this.assignOperator(join, fop);
     }
@@ -238,7 +252,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     private DBSPZSetLiteral logicalValueTranslation = null;
 
     /**
-     * Visit a logicalvalue: a SQL literal, as produced by a VALUES expression
+     * Visit a LogicalValue: a SQL literal, as produced by a VALUES expression
      */
     public void visitLogicalValues(LogicalValues values) {
         DBSPType type = this.convertType(values.getRowType());
@@ -312,13 +326,11 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         this.logicalValueTranslation = null;
     }
 
-    public static final DBSPType weightType = new DBSPTypeUser(null, "Weight", false);
-
     private DBSPSourceOperator createInput(TableDDL i) {
         List<DBSPType> fields = new ArrayList<>();
         for (ColumnInfo col: i.columns) {
-            DBSPType ftype = this.convertType(col.type);
-            fields.add(ftype);
+            DBSPType fType = this.convertType(col.type);
+            fields.add(fType);
         }
         DBSPTypeTuple type = new DBSPTypeTuple(i, fields);
         DBSPSourceOperator result = new DBSPSourceOperator(i, this.makeZSet(type), i.name);
@@ -330,8 +342,8 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         if (v.compiled == null)
             throw new TranslationException("Could not compile ", v.getNode());
         for (RelDataTypeField field: v.compiled.validatedRowType.getFieldList()) {
-            DBSPType ftype = this.convertType(field.getType());
-            fields.add(ftype);
+            DBSPType fType = this.convertType(field.getType());
+            fields.add(fType);
         }
         DBSPTypeTuple type = new DBSPTypeTuple(v, fields);
         DBSPSinkOperator result = new DBSPSinkOperator(v, this.makeZSet(type), v.name, source);

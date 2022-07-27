@@ -25,48 +25,35 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
-import java.util.Objects;
+/**
+ * A type of the form 'Stream<_, elementType>'
+ */
+public class DBSPTypeStream extends DBSPType {
+    public final DBSPType elementType;
 
-public class DBSPStructField extends DBSPNode implements IHasType {
-    private final String name;
-    private final DBSPType type;
-
-    public DBSPStructField(@Nullable Object node, String name, DBSPType type) {
-        super(node);
-        this.name = name;
-        this.type = type;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public DBSPType getType() {
-        return type;
+    public DBSPTypeStream(DBSPType elementType) {
+        super(elementType.getNode(), elementType.mayBeNull);
+        this.elementType = elementType;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(name, type);
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DBSPStructField that = (DBSPStructField) o;
-        return name.equals(that.name) &&
-                type.same(that.type);
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.name)
-                .append(":")
-                .append(this.type);
+        return builder.append("Stream<")
+                .append("_, ") // Circuit type
+                .append(this.elementType)
+                .append(">");
     }
 }

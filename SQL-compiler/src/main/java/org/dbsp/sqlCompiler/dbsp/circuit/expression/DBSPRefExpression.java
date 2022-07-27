@@ -23,34 +23,25 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.type;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeRef;
 import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPStreamType extends DBSPType {
-    public final DBSPType elementType;
+/**
+ * An expression of the form &expression.
+ */
+public class DBSPRefExpression extends DBSPExpression {
+    private final DBSPExpression expression;
 
-    public DBSPStreamType(DBSPType elementType) {
-        super(elementType.getNode(), elementType.mayBeNull);
-        this.elementType = elementType;
-    }
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
-        throw new UnsupportedOperationException();
+    public DBSPRefExpression(DBSPExpression expression) {
+        super(null, new DBSPTypeRef(expression.getType()));
+        this.expression = expression;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("Stream<")
-                .append("_, ") // Circuit type
-                .append(this.elementType)
-                .append(">");
+        return builder.append("&")
+                .append(this.expression);
     }
 }

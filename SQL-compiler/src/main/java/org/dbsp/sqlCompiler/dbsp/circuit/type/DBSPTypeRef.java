@@ -23,21 +23,36 @@
  *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.Unimplemented;
 
-import javax.annotation.Nullable;
+/**
+ * A type of the form &type.
+ */
+public class DBSPTypeRef extends DBSPType {
+    public final DBSPType type;
 
-public class DBSPCartesianOperator extends DBSPOperator {
-    public DBSPCartesianOperator(@Nullable Object node, DBSPType resultType,
-                                 // Closure from key, valueLeft, valueRight to result type
-                                 DBSPExpression function,
-                                 DBSPOperator left, DBSPOperator right) {
-        super(node, "stream_join", function, TypeCompiler.makeZSet(resultType));
-        this.addInput(left);
-        this.addInput(right);
+    public DBSPTypeRef(DBSPType type) {
+        super(null, false);
+        this.type = type;
+    }
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        throw new RuntimeException("Reference types cannot be null");
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        throw new Unimplemented();
+    }
+
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("&")
+                .append(this.type);
     }
 }

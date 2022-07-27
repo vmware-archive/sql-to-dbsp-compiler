@@ -25,23 +25,65 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 public class DBSPTypeStruct extends DBSPType {
+    public static class Field extends DBSPNode implements IHasType {
+        private final String name;
+        private final DBSPType type;
+
+        public Field(@Nullable Object node, String name, DBSPType type) {
+            super(node);
+            this.name = name;
+            this.type = type;
+        }
+
+        public String getName() {
+            return this.name;
+        }
+
+        public DBSPType getType() {
+            return type;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, type);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Field that = (Field) o;
+            return name.equals(that.name) &&
+                    type.same(that.type);
+        }
+
+        @Override
+        public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+            return builder.append(this.name)
+                    .append(":")
+                    .append(this.type);
+        }
+    }
+
     private final String name;
-    private final List<DBSPStructField> args;
+    private final List<Field> args;
     private final HashSet<String> fields = new HashSet<>();
 
-    public DBSPTypeStruct(@Nullable Object node, String name, List<DBSPStructField> args) {
+    public DBSPTypeStruct(@Nullable Object node, String name, List<Field> args) {
         super(node,false);
         this.name = name;
         this.args = args;
-        for (DBSPStructField f: args) {
+        for (Field f: args) {
             if (this.hasField(f.getName()))
                 this.error("Field name " + f + " is duplicated");
             fields.add(f.getName());
@@ -76,7 +118,7 @@ public class DBSPTypeStruct extends DBSPType {
 
     public String getName() { return this.name; }
 
-    public List<DBSPStructField> getFields() { return this.args; }
+    public List<Field> getFields() { return this.args; }
 
     @Override
     public boolean same(DBSPType type) {
@@ -96,7 +138,7 @@ public class DBSPTypeStruct extends DBSPType {
     }
 
     public DBSPType getFieldType(String col) {
-        for (DBSPStructField f : this.getFields()) {
+        for (Field f : this.getFields()) {
             if (f.getName().equals(col))
                 return f.getType();
         }

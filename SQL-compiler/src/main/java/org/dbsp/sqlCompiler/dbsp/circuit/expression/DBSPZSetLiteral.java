@@ -96,14 +96,14 @@ public class DBSPZSetLiteral extends DBSPExpression {
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append("zset!(");
+        builder.append("zset!(").increase();
         for (Map.Entry<DBSPExpression, Integer> e: data.entrySet()) {
             builder.append(e.getKey())
                     .append(" => ")
                     .append(e.getValue())
                     .append(",\n");
         }
-        return builder.append(")");
+        return builder.decrease().append(")");
     }
 
     public int size() {

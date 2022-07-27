@@ -26,8 +26,6 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.checkerframework.checker.units.qual.C;
-import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.SimulatorResult;
 import org.junit.Assert;
