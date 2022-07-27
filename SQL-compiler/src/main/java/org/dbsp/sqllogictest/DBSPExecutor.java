@@ -69,6 +69,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
 
     @Override
     public void executeAndValidate(String query) throws SqlParseException {
+        // if (!query.equals(" SELECT DISTINCT * FROM tab0, tab0 AS cor0, tab1 AS cor1, tab1, tab1 cor2")) return;
         if (this.calcite == null)
             throw new RuntimeException("Calcite compiler not initialized yet");
         // heuristic: add a "CREATE VIEW V AS" in front

@@ -221,11 +221,11 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         this.circuit.addOperator(lindex);
 
         DBSPExpression toEmptyRight = new DBSPClosureExpression(
-                null, leftElementType,
+                null, rightElementType,
                 new DBSPRawTupleExpression(
                         DBSPTupleExpression.emptyTuple,
                         DBSPTupleExpression.flatten(
-                                new DBSPVariableReference("t", leftElementType))),
+                                new DBSPVariableReference("t", rightElementType))),
                         "t");
         DBSPIndexOperator rIndex = new DBSPIndexOperator(
                 join, toEmptyRight, DBSPTypeTuple.emptyTupleType, rightElementType, right);
