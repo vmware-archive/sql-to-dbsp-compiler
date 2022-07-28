@@ -220,7 +220,7 @@ public class SqlTestFile {
                 line = this.nextLine(false);
             }
         }
-        result.setQuery(query.toString());
+        result.setQuery(query.toString().trim());
 
         if (!this.done) {
             line = this.nextLine(true);

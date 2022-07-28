@@ -28,6 +28,7 @@ package org.dbsp.sqlCompiler.dbsp.circuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSourceOperator;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeTuple;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
@@ -78,6 +79,14 @@ public class DBSPCircuit extends DBSPNode {
      */
     public List<String> getInputTables() {
         return Linq.map(this.inputOperators, DBSPOperator::getName);
+    }
+
+    public int getOutputCount() {
+        return this.outputOperators.size();
+    }
+
+    public DBSPType getOutputType(int outputNo) {
+        return this.outputOperators.get(outputNo).getNonVoidType();
     }
 
     public void addOperator(DBSPOperator operator) {

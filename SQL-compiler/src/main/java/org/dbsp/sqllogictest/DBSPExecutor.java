@@ -30,7 +30,8 @@ import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPFunction;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
 import org.dbsp.sqlCompiler.frontend.SimulatorResult;
@@ -40,6 +41,8 @@ import org.dbsp.util.Utilities;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Sql test executor that uses DBSP as a SQL runtime.
@@ -74,14 +77,19 @@ public class DBSPExecutor implements ISqlTestExecutor {
 
     @Override
     public void executeAndValidate(
-            String query, SqlTestPrepareInput inputs, int expectedRowCount) throws SqlParseException {
-        //if (!query.equals(" SELECT ALL - CAST ( NULL AS REAL ) + col2 FROM tab1")) return;
+            String query, SqlTestPrepareInput inputs,
+            @Nullable List<String> expectedResult,
+            int expectedRowCount) throws SqlParseException {
+        //if (!query.equals("CREATE VIEW V AS  SELECT ALL * FROM tab2 AS cor0 CROSS JOIN tab0, tab1 AS cor1 WHERE NULL > NULL")) return;
         if (this.calcite == null)
             throw new RuntimeException("Calcite compiler not initialized yet");
         // heuristic: add a "CREATE VIEW V AS" in front
         query = "CREATE VIEW V AS " + query;
-        if (this.debug)
+        if (this.debug) {
             System.out.println("Executing query:\n" + query);
+            if (expectedResult != null)
+                System.out.println("Expected results " + expectedResult);
+        }
         // Compile query to a Calcite representation
         this.calcite.compile(query);
         CalciteProgram program = calcite.getProgram();
@@ -93,6 +101,37 @@ public class DBSPExecutor implements ISqlTestExecutor {
         if (!this.compile)
             return;
 
+        DBSPZSetLiteral expectedOutput = null;
+        if (expectedResult != null) {
+            if (dbsp.getOutputCount() != 1)
+                throw new RuntimeException(
+                        "Didn't expect a query to have " + dbsp.getOutputCount() + " outputs");
+            DBSPType outputType = dbsp.getOutputType(0);
+            expectedOutput = new DBSPZSetLiteral(outputType);
+            DBSPTypeTuple outputElementType = expectedOutput.getElementType().to(DBSPTypeTuple.class);
+
+            for (String s: expectedResult) {
+                List<DBSPExpression> fields = new ArrayList<>();
+                int col = 0;
+                DBSPExpression field;
+                for (String f: s.split(",")) {
+                    DBSPType colType = outputElementType.tupArgs[col];
+                    if (colType.is(DBSPTypeInteger.class))
+                        field = new DBSPLiteral(Integer.parseInt(f));
+                    else if (colType.is(DBSPTypeDouble.class))
+                        field = new DBSPLiteral(Double.parseDouble(f));
+                    else if (colType.is(DBSPTypeString.class))
+                        field = new DBSPLiteral(f);
+                    else
+                        throw new RuntimeException("Unexpected type " + colType);
+                    if (colType.mayBeNull)
+                        field = new DBSPCastExpression(null, colType, field);
+                    fields.add(field);
+                    col++;
+                }
+                expectedOutput.add(new DBSPTupleExpression(null, outputElementType, fields));
+            }
+        }
         for (String statement : inputs.statements) {
             SimulatorResult result = this.calcite.compile(statement);
             TableModifyStatement stat = (TableModifyStatement) result;
@@ -103,7 +142,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
             writer = new PrintWriter(testFilePath, "UTF-8");
             writer.println(rust);
             DBSPFunction func = SqlRuntimeLibrary.createTesterCode(
-                    dbsp, "c", transaction, null, expectedRowCount);
+                    dbsp, "c", transaction, expectedOutput, expectedRowCount);
             writer.println("#[test]");
             writer.println(func.toRustString());
             writer.close();

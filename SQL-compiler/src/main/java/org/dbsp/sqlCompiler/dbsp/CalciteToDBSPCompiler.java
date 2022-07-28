@@ -304,8 +304,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             throw new TranslationException("Expected a tuple with " + resultType.size() +
                     " values but got " + values, values);
 
-        DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPTypeZSet(
-                null, resultType, DBSPTypeInteger.signed32));
+        DBSPZSetLiteral result = new DBSPZSetLiteral(TypeCompiler.makeZSet(resultType));
         for (List<RexLiteral> t: values.getTuples()) {
             List<DBSPExpression> exprs = new ArrayList<>();
             if (t.size() != sourceType.size())
