@@ -52,6 +52,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     @Override
     public DBSPExpression visitLiteral(RexLiteral literal) {
         DBSPType type = this.typeCompiler.convertType(literal.getType());
+        if (literal.isNull())
+            return new DBSPLiteral(type);
         return new DBSPLiteral(literal, type, literal.toString());
     }
 
@@ -103,8 +105,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPExpression right = operands.get(1);
         if (left == null || right == null)
             throw new Unimplemented("Found unimplemented expression in " + node);
-        DBSPType leftType = left.getType();
-        DBSPType rightType = right.getType();
+        DBSPType leftType = left.getNonVoidType();
+        DBSPType rightType = right.getNonVoidType();
         DBSPType commonBase = reduceType(leftType, rightType);
         if (!leftType.setMayBeNull(false).same(commonBase))
             left = new DBSPCastExpression(node, commonBase.setMayBeNull(leftType.mayBeNull), left);

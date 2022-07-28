@@ -46,7 +46,7 @@ public class DBSPUnaryExpression extends DBSPExpression {
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.left.getType().mayBeNull) {
+        if (this.left.getNonVoidType().mayBeNull) {
             return builder.append("(")
                     .append("match ")
                     .append(this.left)

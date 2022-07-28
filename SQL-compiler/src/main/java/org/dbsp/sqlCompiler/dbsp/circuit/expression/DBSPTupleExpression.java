@@ -39,6 +39,8 @@ public class DBSPTupleExpression extends DBSPExpression {
 
     public static final DBSPTupleExpression emptyTuple = new DBSPTupleExpression();
 
+    public int size() { return this.fields.size(); }
+
     public DBSPTupleExpression(@Nullable Object object, DBSPType tupleType, List<DBSPExpression> fields) {
         super(object, tupleType);
         this.fields = fields;
@@ -50,7 +52,7 @@ public class DBSPTupleExpression extends DBSPExpression {
         int i = 0;
         for (DBSPType fieldType: tuple.tupArgs) {
             DBSPExpression field = fields.get(i);
-            if (!fieldType.same(field.getType()))
+            if (!fieldType.same(field.getNonVoidType()))
                 throw new RuntimeException("Tuple field " + i + " type " + fieldType +
                         " does not match expression "+ fields.get(i) + " with type " + field.getType());
             i++;
@@ -59,7 +61,7 @@ public class DBSPTupleExpression extends DBSPExpression {
 
     public DBSPTupleExpression(DBSPExpression... expressions) {
         this(null, new DBSPTypeTuple(null,
-                Linq.map(Linq.list(expressions), DBSPExpression::getType)),
+                Linq.map(Linq.list(expressions), DBSPExpression::getNonVoidType)),
                 Linq.list(expressions)
         );
     }
@@ -72,7 +74,7 @@ public class DBSPTupleExpression extends DBSPExpression {
         List<DBSPExpression> fields = new ArrayList<>();
         List<DBSPType> fieldTypes = new ArrayList<>();
         for (DBSPExpression expression: expressions) {
-            DBSPTypeTuple type = expression.getType().to(DBSPTypeTuple.class);
+            DBSPTypeTuple type = expression.getNonVoidType().to(DBSPTypeTuple.class);
             for (int i = 0; i < type.size(); i++) {
                 DBSPType fieldType = type.tupArgs[i];
                 DBSPExpression field = new DBSPFieldExpression(null, expression, i, fieldType).simplify();

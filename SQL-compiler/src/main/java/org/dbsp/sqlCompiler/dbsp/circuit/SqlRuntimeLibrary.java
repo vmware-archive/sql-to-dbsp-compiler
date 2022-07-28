@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit;
 
+import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
 import org.dbsp.util.IndentStringBuilder;
@@ -167,16 +168,16 @@ public class SqlRuntimeLibrary {
                         Collections.singletonList(arg),
                         DBSPTypeBool.instance,
                         new DBSPMatchExpression(
-                                new DBSPVariableReference("b", arg.getType()),
+                                new DBSPVariableReference("b", arg.getNonVoidType()),
                                 Arrays.asList(
                                     new DBSPMatchExpression.Case(
                                             new DBSPConstructorExpression("Some",
-                                                    arg.getType(),
+                                                    arg.getNonVoidType(),
                                                     new DBSPVariableReference("x", DBSPTypeBool.instance)),
                                             new DBSPVariableReference("x", DBSPTypeBool.instance)
                                     ),
                                     new DBSPMatchExpression.Case(
-                                            new DBSPConstructorExpression("_", arg.getType()),
+                                            new DBSPConstructorExpression("_", arg.getNonVoidType()),
                                             new DBSPLiteral(false)
                                     )
                                 ),
@@ -277,6 +278,10 @@ public class SqlRuntimeLibrary {
         this.program = new DBSPFile(null, declarations);
     }
 
+    /**
+     * Writes in the specified file the Rust code for the SQL runtime.
+     * @param filename   File to write the code to.
+     */
     public void writeSqlLibrary(String filename) throws IOException {
         File file = new File(filename);
         FileWriter writer = new FileWriter(file);
@@ -289,5 +294,46 @@ public class SqlRuntimeLibrary {
         this.program.toRustString(builder);
         writer.append(builder.toString());
         writer.close();
+    }
+
+    /**
+     * Generates a Rust function which tests a DBSP circuit.
+     * @param circuit       DBSP circuit that will be tested.
+     * @param queryCircuit  Name of function that generates the DBSP circuit.
+     * @param transaction   Input data to feed the circuit.
+     * @param output        Expected data from the circuit.
+     * @param expectedOutputSize  If not -1 number of expected rows in output.
+     * @return              The code for a function that runs the circuit with the specified
+     *                      input and tests the produced output.
+     */
+    public static DBSPFunction createTesterCode(
+            DBSPCircuit circuit,
+            String queryCircuit, DBSPTransaction transaction,
+            @Nullable DBSPZSetLiteral output,
+            int expectedOutputSize) {
+        List<DBSPExpression> list = new ArrayList<>();
+        DBSPZSetLiteral[] inputData = transaction.getInputData(circuit);
+        list.add(new DBSPLetExpression("circuit",
+                new DBSPApplyExpression(queryCircuit, DBSPTypeAny.instance), true));
+        DBSPType outputType = output != null ? output.getNonVoidType() : DBSPTypeAny.instance;
+        list.add(new DBSPLetExpression("output",
+                new DBSPApplyExpression("circuit", outputType, inputData)));
+        if (output != null) {
+            list.add(new DBSPApplyExpression("assert_eq!", null,
+                    new DBSPVariableReference("output", output.getNonVoidType()),
+                    output));
+        } else {
+            list.add(new DBSPTupleExpression());
+        }
+        if (expectedOutputSize >= 0) {
+            list.add(new DBSPApplyExpression("assert_eq!", null,
+                    new DBSPApplyMethodExpression("weighted_count",
+                            DBSPTypeUSize.instance,
+                            new DBSPVariableReference("output", DBSPTypeAny.instance)),
+                    new DBSPLiteral(expectedOutputSize)));
+        }
+        DBSPExpression body = new DBSPSeqExpression(list);
+        return new DBSPFunction(
+                "tester", new ArrayList<>(), null, body);
     }
 }

@@ -68,7 +68,7 @@ public abstract class DBSPType extends DBSPNode {
      * Typical implementation of castFrom, which handles nullable types.
      */
     public IndentStringBuilder standardCastFrom(IndentStringBuilder builder, DBSPExpression source) {
-        DBSPType type = source.getType();
+        DBSPType type = source.getNonVoidType();
         if (type.mayBeNull) {
             if (!this.mayBeNull)
                 throw new RuntimeException("Unexpected nullable source " + source +

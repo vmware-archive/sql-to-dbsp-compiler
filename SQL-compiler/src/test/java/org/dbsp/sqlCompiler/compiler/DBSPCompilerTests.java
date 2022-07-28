@@ -55,7 +55,7 @@ public class DBSPCompilerTests {
         Assert.assertNotNull(i);
         CalciteProgram program = calcite.getProgram();
         CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
-        DBSPCircuit dbsp = compiler.compile(program);
+        DBSPCircuit dbsp = compiler.compile(program, "circuit");
         Assert.assertNotNull(dbsp);
     }
 
@@ -71,14 +71,14 @@ public class DBSPCompilerTests {
         calcite.compile(ddl);
         CalciteProgram program = calcite.getProgram();
         CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
-        DBSPCircuit dbsp = compiler.compile(program);
+        DBSPCircuit dbsp = compiler.compile(program, "circuit");
         Assert.assertNotNull(dbsp);
 
         String insert = "INSERT INTO T VALUES(0, 0.0, true, 'Hi')";
         SimulatorResult i = calcite.compile(insert);
         Assert.assertNotNull(i);
         Assert.assertTrue(i instanceof TableModifyStatement);
-        DBSPTransaction transaction = dbsp.createTransaction();
+        DBSPTransaction transaction = new DBSPTransaction();
         compiler.extendTransaction(transaction, (TableModifyStatement)i);
         DBSPZSetLiteral t = transaction.perInputChange.get("T");
         Assert.assertNotNull(t);

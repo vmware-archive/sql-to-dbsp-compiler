@@ -50,11 +50,11 @@ public class DBSPZSetLiteral extends DBSPExpression {
      *             with just a type argument.
      */
     public DBSPZSetLiteral(DBSPExpression... data) {
-        super(null, new DBSPTypeZSet(null, data[0].getType(), DBSPTypeInteger.signed32));
-        this.zsetType = this.getType().to(DBSPTypeZSet.class);
+        super(null, new DBSPTypeZSet(null, data[0].getNonVoidType(), DBSPTypeInteger.signed32));
+        this.zsetType = this.getNonVoidType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
         for (DBSPExpression e: data) {
-            if (!e.getType().same(data[0].getType()))
+            if (!e.getNonVoidType().same(data[0].getNonVoidType()))
                 throw new RuntimeException("Not all values of set have the same type:" +
                     e.getType() + " vs " + data[0].getType());
             this.data.put(e, 1);
@@ -63,7 +63,7 @@ public class DBSPZSetLiteral extends DBSPExpression {
 
     public DBSPZSetLiteral(DBSPType type) {
         super(null, type);
-        this.zsetType = this.getType().to(DBSPTypeZSet.class);
+        this.zsetType = this.getNonVoidType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
     }
 
@@ -73,7 +73,7 @@ public class DBSPZSetLiteral extends DBSPExpression {
 
     public void add(DBSPExpression expression) {
         // We expect the expression to be a constant value (a literal)
-        if (!expression.getType().same(this.getElementType()))
+        if (!expression.getNonVoidType().same(this.getElementType()))
             throw new RuntimeException("Added element does not match zset type " +
                     expression.getType() + " vs " + this.getElementType());
         this.data.put(expression, 1);
@@ -81,14 +81,14 @@ public class DBSPZSetLiteral extends DBSPExpression {
 
     public void add(DBSPExpression expression, int weight) {
         // We expect the expression to be a constant value (a literal)
-        if (!expression.getType().same(this.getElementType()))
+        if (!expression.getNonVoidType().same(this.getElementType()))
             throw new RuntimeException("Added element does not match zset type " +
                     expression.getType() + " vs " + this.getElementType());
         this.data.put(expression, weight);
     }
 
     public void add(DBSPZSetLiteral other) {
-        if (!this.getType().same(other.getType()))
+        if (!this.getNonVoidType().same(other.getNonVoidType()))
             throw new RuntimeException("Added zsets do not have the same type " +
                     this.getElementType() + " vs " + other.getElementType());
         other.data.forEach(this::add);

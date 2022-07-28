@@ -72,9 +72,10 @@ public class TypeCompiler {
                 case CHAR:
                 case VARCHAR:
                     return DBSPTypeString.instance.setMayBeNull(nullable);
+                case NULL:
+                    return DBSPTypeNull.instance;
                 case BINARY:
                 case VARBINARY:
-                case NULL:
                 case UNKNOWN:
                 case ANY:
                 case SYMBOL:

@@ -23,23 +23,49 @@
  *
  */
 
-package org.dbsp.sqllogictest;
+package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
-import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
-import java.util.List;
+import java.util.Objects;
 
 /**
- * Interface implemented by a class that knows how to execute a test.
+ * Represents the usize Rust type.
  */
-public interface ISqlTestExecutor {
-    void reset();
-    void prepareTables(SqlTestPrepareTables prepare) throws SqlParseException;
-    // TODO: add validator argument
-    void executeAndValidate(String query,
-                            SqlTestPrepareInput inputs,
-                            @Nullable List<String> expectedResults,
-                            int expectedRowCount) throws SqlParseException;
+public class DBSPTypeUSize extends DBSPType
+        implements IsNumericType, IDBSPBaseType {
+    public static final DBSPTypeUSize instance = new DBSPTypeUSize(null, false);
+
+    protected DBSPTypeUSize(@Nullable Object node, boolean mayBeNull) {
+        super(node, mayBeNull);
+    }
+
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return this.wrapOption(builder, "usize"); }
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        throw new Unimplemented();
+    }
+
+    @Override
+    public String shortName() {
+        return "u";
+    }
+
+    @Override
+    public boolean same(DBSPType type) {
+        if (!super.same(type))
+            return false;
+        return type.is(DBSPTypeUSize.class);
+    }
 }

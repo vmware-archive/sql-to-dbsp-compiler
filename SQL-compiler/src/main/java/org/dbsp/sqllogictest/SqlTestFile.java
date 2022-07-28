@@ -43,8 +43,8 @@ public class SqlTestFile {
      */
     private int lineno;
 
-    @Nullable
-    public SqlTestPrepare prepare;
+    public final SqlTestPrepareTables prepareTables;
+    public final SqlTestPrepareInput prepareInput;
     public final List<SqlTestQuery> tests;
     private final BufferedReader reader;
     // To support undo for reading
@@ -55,6 +55,8 @@ public class SqlTestFile {
 
     public SqlTestFile(String testFile, TestAcceptancePolicy policy) throws IOException {
         this.tests = new ArrayList<>();
+        this.prepareTables = new SqlTestPrepareTables();
+        this.prepareInput = new SqlTestPrepareInput();
         File file = new File(testFile);
         this.reader = new BufferedReader(new FileReader(file));
         this.lineno = 0;
@@ -109,8 +111,7 @@ public class SqlTestFile {
     /**
      * Parse the beginning of a SqlLogicTest .test file, which prepares the test data
      */
-    private SqlTestPrepare parsePrepare() throws IOException {
-        SqlTestPrepare result = new SqlTestPrepare();
+    private void parsePrepare() throws IOException {
         String line;
         while (!this.done) {
             line = this.nextLine(false);
@@ -122,8 +123,13 @@ public class SqlTestFile {
             if (line.startsWith("statement")) {
                 boolean ok = line.startsWith("statement ok");
                 line = this.nextLine(false);
-                if (ok)
-                    result.add(line);
+                if (ok) {
+                    if (line.toLowerCase().contains("create table")) {
+                        this.prepareTables.add(line);
+                    } else {
+                        this.prepareInput.add(line);
+                    }
+                }
                 // Should we ignore the statements that should produce an error when executed,
                 // or ignore the whole test?  Right now we ignore such statements.
             }
@@ -133,7 +139,6 @@ public class SqlTestFile {
                 break;
             }
         }
-        return result;
     }
 
     /**
@@ -215,7 +220,7 @@ public class SqlTestFile {
                 line = this.nextLine(false);
             }
         }
-        result.setQuery(query.toString());
+        result.setQuery(query.toString().trim());
 
         if (!this.done) {
             line = this.nextLine(true);
@@ -223,8 +228,8 @@ public class SqlTestFile {
                 if (line.contains("values hashing to")) {
                     int vi = line.indexOf("values hashing to");
                     String number = line.substring(0, vi - 1);
-                    int rows = Integer.parseInt(number);
-                    result.setRowCount(rows);
+                    int values = Integer.parseInt(number);
+                    result.setValueCount(values);
                     line = line.substring(vi + "values hashing to".length()).trim();
                     result.setHash(line);
                     line = this.nextLine(true);
@@ -271,7 +276,7 @@ public class SqlTestFile {
         30 values hashing to 3c13dee48d9356ae19af2515e05e6b54
      */
     private void parse(TestAcceptancePolicy policy) throws IOException {
-        this.prepare = this.parsePrepare();
+        this.parsePrepare();
         while (!this.done) {
             @Nullable
             SqlTestQuery test = this.parseTestQuery(policy);
@@ -285,12 +290,10 @@ public class SqlTestFile {
     }
 
     void execute(ISqlTestExecutor executor) throws SqlParseException {
-        if (this.prepare == null)
-            return;
         for (SqlTestQuery query: this.tests) {
             executor.reset();
-            executor.prepare(this.prepare);
-            query.executeAndValidate(executor);
+            executor.prepareTables(this.prepareTables);
+            query.executeAndValidate(executor, this.prepareInput);
         }
     }
 }

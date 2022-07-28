@@ -25,9 +25,20 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
+import javax.annotation.Nullable;
+
 /**
  * Interface implemented by all classes that have a type.
  */
 public interface IHasType {
+    @Nullable
     DBSPType getType();
+
+    default DBSPType getNonVoidType() {
+        // void is represented as Java null.
+        DBSPType type = this.getType();
+        if (type == null)
+            throw new RuntimeException("Expected a non-void type");
+        return type;
+    }
 }

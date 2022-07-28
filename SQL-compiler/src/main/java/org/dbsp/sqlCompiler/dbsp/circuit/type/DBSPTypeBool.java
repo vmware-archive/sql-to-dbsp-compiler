@@ -61,7 +61,7 @@ public class DBSPTypeBool extends DBSPType implements IDBSPBaseType {
 
     @Override
     public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
-        DBSPType argtype = source.getType();
+        DBSPType argtype = source.getNonVoidType();
         if (argtype.is(DBSPTypeFP.class)) {
             return builder
                     .append(source)

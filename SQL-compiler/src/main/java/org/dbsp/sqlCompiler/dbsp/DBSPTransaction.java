@@ -27,9 +27,12 @@ package org.dbsp.sqlCompiler.dbsp;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,16 +41,11 @@ import java.util.Map;
  */
 public class DBSPTransaction {
     /**
-     * A transaction is always associated with a circuit.
-     */
-    public final DBSPCircuit circuit;
-    /**
      * A Map from input (table) name to a ZSet value that will be used to update the table.
      */
     public final Map<String, DBSPZSetLiteral> perInputChange;
 
-    public DBSPTransaction(DBSPCircuit circuit) {
-        this.circuit = circuit;
+    public DBSPTransaction() {
         this.perInputChange = new HashMap<>();
     }
 
@@ -63,5 +61,18 @@ public class DBSPTransaction {
             this.perInputChange.get(table).add(set);
         else
             this.perInputChange.put(table, set);
+    }
+
+    public DBSPZSetLiteral[] getInputData(DBSPCircuit circuit) {
+        List<String> tables = circuit.getInputTables();
+        DBSPZSetLiteral[] tuple = new DBSPZSetLiteral[tables.size()];
+        for (int i = 0; i < circuit.getInputTables().size(); i++) {
+            String table = tables.get(i);
+            DBSPZSetLiteral lit = this.perInputChange.get(table);
+            if (lit == null)
+                throw new RuntimeException("No input found for table " + table);
+            tuple[i] = lit;
+        }
+        return tuple;
     }
 }

@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.IHasType;
 import org.dbsp.util.IndentStringBuilder;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -62,10 +63,12 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
 
     public final String name;
     public final List<DBSPArgument> arguments;
+    // Null if function returns void.
+    @Nullable
     public final DBSPType returnType;
     public final DBSPExpression body;
 
-    public DBSPFunction(String name, List<DBSPArgument> arguments, DBSPType returnType, DBSPExpression body) {
+    public DBSPFunction(String name, List<DBSPArgument> arguments, @Nullable DBSPType returnType, DBSPExpression body) {
         super(null);
         this.name = name;
         this.arguments = arguments;
@@ -75,13 +78,17 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("pub fn ")
+        builder.append("pub fn ")
                 .append(this.name)
                 .append("(")
                 .join(", ", this.arguments)
-                .append(") -> ")
-                .append(this.returnType)
-                .append("\n{").increase()
+                .append(") ");
+        if (this.returnType != null)
+            builder.append("-> ")
+                .append(this.returnType);
+        if (this.body.is(DBSPSeqExpression.class))
+            return builder.append(this.body);
+        return builder.append("\n{").increase()
                 .append(this.body).decrease()
                 .append("\n}");
     }

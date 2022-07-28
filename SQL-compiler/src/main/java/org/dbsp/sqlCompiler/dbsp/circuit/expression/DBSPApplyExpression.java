@@ -28,6 +28,8 @@ package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
+import javax.annotation.Nullable;
+
 /**
  * Function application expression.
  */
@@ -35,7 +37,7 @@ public class DBSPApplyExpression extends DBSPExpression {
     public final String function;
     public final DBSPExpression[] arguments;
 
-    public DBSPApplyExpression(String function, DBSPType returnType, DBSPExpression... arguments) {
+    public DBSPApplyExpression(String function, @Nullable DBSPType returnType, DBSPExpression... arguments) {
         super(null, returnType);
         this.function = function;
         this.arguments = arguments;

@@ -25,21 +25,10 @@
 
 package org.dbsp.sqllogictest;
 
-import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
-
-import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Interface implemented by a class that knows how to execute a test.
+ * A set of SQL statements create tables.
  */
-public interface ISqlTestExecutor {
-    void reset();
-    void prepareTables(SqlTestPrepareTables prepare) throws SqlParseException;
-    // TODO: add validator argument
-    void executeAndValidate(String query,
-                            SqlTestPrepareInput inputs,
-                            @Nullable List<String> expectedResults,
-                            int expectedRowCount) throws SqlParseException;
-}
+public class SqlTestPrepareTables extends SqlStatementList { }

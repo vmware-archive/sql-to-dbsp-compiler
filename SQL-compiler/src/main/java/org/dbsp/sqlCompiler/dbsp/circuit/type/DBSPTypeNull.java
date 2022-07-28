@@ -19,29 +19,39 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.sqllogictest;
+package org.dbsp.sqlCompiler.dbsp.circuit.type;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.util.IndentStringBuilder;
+
+import javax.annotation.Nullable;
 
 /**
- * A set of SQL statements that prepare a test.
+ * This type has a single value, NULL.
  */
-public class SqlTestPrepare {
-    /**
-     * List of SQL statements that are used to prepare the data.
-     */
-    public final List<String> statements;
+public class DBSPTypeNull extends DBSPType {
+    public static DBSPType instance = new DBSPTypeNull(null);
 
-    public SqlTestPrepare() {
-        this.statements = new ArrayList<>();
+    protected DBSPTypeNull(@Nullable Object node) {
+        super(node, true);
     }
 
-    public void add(String statement) {
-        this.statements.add(statement);
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        if (!mayBeNull)
+            throw new RuntimeException("Type NULL cannot be non-null");
+        return this;
+    }
+
+    @Override
+    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("Option<()>");
     }
 }

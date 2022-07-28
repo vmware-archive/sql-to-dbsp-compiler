@@ -23,23 +23,32 @@
  *
  */
 
-package org.dbsp.sqllogictest;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
+import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
-import java.util.List;
+public class DBSPLetExpression extends DBSPExpression {
+    public final String variable;
+    public final DBSPExpression initializer;
+    public final boolean mutable;
 
-/**
- * Interface implemented by a class that knows how to execute a test.
- */
-public interface ISqlTestExecutor {
-    void reset();
-    void prepareTables(SqlTestPrepareTables prepare) throws SqlParseException;
-    // TODO: add validator argument
-    void executeAndValidate(String query,
-                            SqlTestPrepareInput inputs,
-                            @Nullable List<String> expectedResults,
-                            int expectedRowCount) throws SqlParseException;
+    public DBSPLetExpression(String variable, DBSPExpression initializer, boolean mutable) {
+        super(null, null);
+        this.variable = variable;
+        this.initializer = initializer;
+        this.mutable = mutable;
+    }
+
+    public DBSPLetExpression(String variable, DBSPExpression initializer) {
+        this(variable, initializer, false);
+    }
+
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("let ")
+                .append(this.mutable ? "mut " : "")
+                .append(variable)
+                .append(" = ")
+                .append(this.initializer);
+    }
 }

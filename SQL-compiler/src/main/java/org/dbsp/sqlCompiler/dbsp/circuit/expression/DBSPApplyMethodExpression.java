@@ -23,23 +23,37 @@
  *
  */
 
-package org.dbsp.sqllogictest;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 /**
- * Interface implemented by a class that knows how to execute a test.
+ * Function application expression.
  */
-public interface ISqlTestExecutor {
-    void reset();
-    void prepareTables(SqlTestPrepareTables prepare) throws SqlParseException;
-    // TODO: add validator argument
-    void executeAndValidate(String query,
-                            SqlTestPrepareInput inputs,
-                            @Nullable List<String> expectedResults,
-                            int expectedRowCount) throws SqlParseException;
+public class DBSPApplyMethodExpression extends DBSPExpression {
+    public final String function;
+    public final DBSPExpression self;
+    public final DBSPExpression[] arguments;
+
+    public DBSPApplyMethodExpression(
+            String function, @Nullable DBSPType returnType,
+            DBSPExpression self, DBSPExpression... arguments) {
+        super(null, returnType);
+        this.function = function;
+        this.self = self;
+        this.arguments = arguments;
+    }
+
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append(this.self)
+                .append(".")
+                .append(this.function)
+                .append("(")
+                .join(", ", this.arguments)
+                .append(")");
+    }
 }
