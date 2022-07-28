@@ -25,7 +25,6 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit;
 
-import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSourceOperator;
@@ -45,7 +44,7 @@ public class DBSPCircuit extends DBSPNode {
             "#![allow(unused_variables)]\n" +
             "\n" +
             "use dbsp::{\n" +
-            "    NumEntries,\n" +
+            "    algebra::ZSet,\n" +
             "    circuit::{Root, Stream},\n" +
             "    operator::{Generator, FilterMap},\n" +
             "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
