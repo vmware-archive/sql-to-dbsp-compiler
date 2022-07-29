@@ -38,7 +38,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DBSPCircuit extends DBSPNode {
-    static final String rustPreamble = "#![allow(dead_code)]\n" +
+    static final String rustPreamble =
+            "// Automatically-generated file\n" +
+            "#![allow(dead_code)]\n" +
             "#![allow(non_snake_case)]\n" +
             "#![allow(unused_imports)]\n" +
             "#![allow(unused_parens)]\n" +
@@ -61,6 +63,7 @@ public class DBSPCircuit extends DBSPNode {
             "    rc::Rc,\n" +
             "};\n" +
             "use tuple::declare_tuples;\n" +
+            "use sqllibbool::*;\n" +
             "type Weight = isize;\n";
 
     private final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
