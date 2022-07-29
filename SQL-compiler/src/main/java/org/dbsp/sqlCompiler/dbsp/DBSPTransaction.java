@@ -26,7 +26,8 @@
 package org.dbsp.sqlCompiler.dbsp;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPFunction;
+import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
 
@@ -49,13 +50,6 @@ public class DBSPTransaction {
         this.perInputChange = new HashMap<>();
     }
 
-    public void addTuple(String table, DBSPExpression expression) {
-        if (this.perInputChange.containsKey(table))
-            this.perInputChange.get(table).add(expression);
-        else
-            this.perInputChange.put(table, new DBSPZSetLiteral(expression));
-    }
-
     public void addSet(String table, DBSPZSetLiteral set) {
         if (this.perInputChange.containsKey(table))
             this.perInputChange.get(table).add(set);
@@ -63,7 +57,7 @@ public class DBSPTransaction {
             this.perInputChange.put(table, set);
     }
 
-    public DBSPZSetLiteral[] getInputData(DBSPCircuit circuit) {
+    public DBSPFunction inputGeneratingFunction(String name, DBSPCircuit circuit) {
         List<String> tables = circuit.getInputTables();
         DBSPZSetLiteral[] tuple = new DBSPZSetLiteral[tables.size()];
         for (int i = 0; i < circuit.getInputTables().size(); i++) {
@@ -73,6 +67,8 @@ public class DBSPTransaction {
                 throw new RuntimeException("No input found for table " + table);
             tuple[i] = lit;
         }
-        return tuple;
+        DBSPRawTupleExpression result = new DBSPRawTupleExpression(tuple);
+        return new DBSPFunction(name, new ArrayList<>(),
+                result.getType(), result);
     }
 }

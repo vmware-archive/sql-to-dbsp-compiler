@@ -16,7 +16,7 @@ import org.junit.Test;
 public class IRTests {
     @Test
     public void irTest() {
-        DBSPCircuit circuit = new DBSPCircuit(null, "test_scalar");
+        DBSPCircuit circuit = new DBSPCircuit(null, "test_scalar", "handbuilt");
         DBSPType type = DBSPTypeInteger.signed32;
         DBSPOperator input = new DBSPSourceOperator(null, type, "i");
         circuit.addOperator(input);
@@ -36,7 +36,7 @@ public class IRTests {
 
     @Test
     public void setTest() {
-        DBSPCircuit circuit = new DBSPCircuit(null, "test_zset");
+        DBSPCircuit circuit = new DBSPCircuit(null, "test_zset", "handbuilt");
         DBSPType type = new DBSPTypeZSet(null, DBSPTypeInteger.signed32, DBSPTypeInteger.signed64);
         DBSPOperator input = new DBSPSourceOperator(null, type, "i");
         circuit.addOperator(input);

@@ -35,7 +35,7 @@ public class DBSPLiteral extends DBSPExpression {
     @Nullable
     private final String value;
 
-    public DBSPLiteral(@Nullable Object node, DBSPType type, String value) {
+    protected DBSPLiteral(@Nullable Object node, DBSPType type, String value) {
         super(node, type);
         this.value = type.mayBeNull ? "Some(" + value + ")" : value;
     }
@@ -88,7 +88,7 @@ public class DBSPLiteral extends DBSPExpression {
         super(null, type);
         if (!type.mayBeNull)
             throw new RuntimeException("Type " + type + " cannot represent the NULL value");
-        this.value = "None";
+        this.value = "None::<" + this.getNonVoidType().setMayBeNull(false) + ">";
     }
 
     @Override

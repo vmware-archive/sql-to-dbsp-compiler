@@ -354,7 +354,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     }
 
     public DBSPCircuit compile(CalciteProgram program, String circuitName) {
-        this.circuit = new DBSPCircuit(null, circuitName);
+        this.circuit = new DBSPCircuit(null, circuitName, program.query);
         for (TableDDL i: program.inputTables) {
             DBSPSourceOperator si = this.createInput(i);
             this.circuit.addOperator(si);

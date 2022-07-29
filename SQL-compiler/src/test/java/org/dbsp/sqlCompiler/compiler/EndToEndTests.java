@@ -43,6 +43,7 @@ public class EndToEndTests {
                 ", COL6 DOUBLE" +
                 ")";
 
+        calcite.startCompilation();
         calcite.compile(ddl);
         return calcite;
     }
@@ -54,13 +55,6 @@ public class EndToEndTests {
 
         CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
         return compiler.compile(program, "circuit");
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private PrintWriter writeToFile(String file, String contents) throws FileNotFoundException, UnsupportedEncodingException {
-        PrintWriter writer = new PrintWriter(file, "UTF-8");
-        writer.print(contents);
-        return writer;
     }
 
     private final DBSPTupleExpression e0 = new DBSPTupleExpression(
@@ -79,20 +73,23 @@ public class EndToEndTests {
             new DBSPLiteral(1, true),
             new DBSPLiteral(0.0, true)
     );
-    private final DBSPZSetLiteral z0 = new DBSPZSetLiteral(e0);
-    private final DBSPZSetLiteral z1 = new DBSPZSetLiteral(e1);
+    private final DBSPZSetLiteral z0 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0);
+    private final DBSPZSetLiteral z1 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e1);
     private final DBSPZSetLiteral empty = new DBSPZSetLiteral(z0.getNonVoidType());
 
     private DBSPZSetLiteral createInput() {
-        return new DBSPZSetLiteral(e0, e1);
+        return new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0, e1);
     }
 
     private void createTester(PrintWriter writer, DBSPCircuit circuit, DBSPZSetLiteral expectedOutput) {
         DBSPZSetLiteral input = this.createInput();
         DBSPTransaction transaction = new DBSPTransaction();
         transaction.addSet("T", input);
+        DBSPFunction inputGen = transaction.inputGeneratingFunction("input", circuit);
+        writer.println(inputGen.toRustString());
         DBSPFunction tester = SqlRuntimeLibrary.createTesterCode(
-                circuit,"circuit", transaction, expectedOutput, expectedOutput.size());
+                "tester", "input",
+                circuit, expectedOutput, expectedOutput.size());
         writer.println("#[test]");
         writer.println(tester.toRustString());
     }
@@ -100,7 +97,9 @@ public class EndToEndTests {
     private void testQuery(String query, @Nullable DBSPZSetLiteral expectedOutput) {
         try {
             DBSPCircuit circuit = this.compileQuery(query);
-            PrintWriter writer = this.writeToFile(testFilePath, circuit.toRustString());
+            PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
+            writer.println(DBSPCircuit.generatePreamble());
+            writer.println(circuit.toRustString());
             this.createTester(writer, circuit, expectedOutput);
             writer.close();
             Utilities.compileAndTestRust(rustDirectory);
@@ -113,7 +112,7 @@ public class EndToEndTests {
     public void projectTest() {
         String query = "CREATE VIEW V AS SELECT T.COL3 FROM T";
         this.testQuery(query,
-                new DBSPZSetLiteral(
+                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
                         new DBSPTupleExpression(new DBSPLiteral(true)),
                         new DBSPTupleExpression(new DBSPLiteral(false))));
     }
@@ -122,7 +121,7 @@ public class EndToEndTests {
     public void plusNullTest() {
         String query = "CREATE VIEW V AS SELECT T.COL1 + T.COL5 FROM T";
         this.testQuery(query,
-                new DBSPZSetLiteral(
+                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
                         new DBSPTupleExpression(new DBSPLiteral(11, true)),
                         new DBSPTupleExpression(new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)))));
     }
@@ -131,7 +130,7 @@ public class EndToEndTests {
     public void negateNullTest() {
         String query = "CREATE VIEW V AS SELECT -T.COL5 FROM T";
         this.testQuery(query,
-                new DBSPZSetLiteral(
+                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
                         new DBSPTupleExpression(new DBSPLiteral(-1, true)),
                         new DBSPTupleExpression(new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)))));
     }
@@ -140,7 +139,7 @@ public class EndToEndTests {
     public void projectNullTest() {
         String query = "CREATE VIEW V AS SELECT T.COL5 FROM T";
         this.testQuery(query,
-                new DBSPZSetLiteral(
+                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
                         new DBSPTupleExpression(new DBSPLiteral(1, true)),
                         new DBSPTupleExpression(new DBSPLiteral(DBSPTypeInteger.signed32.setMayBeNull(true)))));
     }
@@ -203,7 +202,7 @@ public class EndToEndTests {
     public void cartesianTest() {
         String query = "CREATE VIEW V AS SELECT * FROM T, T AS X";
         DBSPExpression inResult = DBSPTupleExpression.flatten(e0, e0);
-        DBSPZSetLiteral result = new DBSPZSetLiteral(inResult);
+        DBSPZSetLiteral result = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, inResult);
         result.add(DBSPTupleExpression.flatten(e0, e1));
         result.add(DBSPTupleExpression.flatten(e1, e0));
         result.add(DBSPTupleExpression.flatten(e1, e1));

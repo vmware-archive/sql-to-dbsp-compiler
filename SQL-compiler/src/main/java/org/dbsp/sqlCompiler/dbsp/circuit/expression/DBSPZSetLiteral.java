@@ -26,7 +26,6 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeZSet;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -44,13 +43,14 @@ public class DBSPZSetLiteral extends DBSPExpression {
 
     /**
      * Create a ZSet literal from a set of data values.
+     * @param weightType  Type of weight used.
      * @param data Data to insert in zset - cannot be empty, since
      *             it is used to extract the zset type.
      *             To create empty zsets use the constructor
      *             with just a type argument.
      */
-    public DBSPZSetLiteral(DBSPExpression... data) {
-        super(null, new DBSPTypeZSet(null, data[0].getNonVoidType(), DBSPTypeInteger.signed32));
+    public DBSPZSetLiteral(DBSPType weightType, DBSPExpression... data) {
+        super(null, new DBSPTypeZSet(null, data[0].getNonVoidType(), weightType));
         this.zsetType = this.getNonVoidType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
         for (DBSPExpression e: data) {

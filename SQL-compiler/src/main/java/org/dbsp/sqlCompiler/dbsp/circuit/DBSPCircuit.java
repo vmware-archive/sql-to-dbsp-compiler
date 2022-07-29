@@ -66,11 +66,13 @@ public class DBSPCircuit extends DBSPNode {
     private final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
     private final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
     private final List<DBSPOperator> operators = new ArrayList<>();
-    private final String name;
+    public final String name;
+    public final String query;
 
-    public DBSPCircuit(@Nullable Object node, String name) {
+    public DBSPCircuit(@Nullable Object node, String name, String query) {
         super(node);
         this.name = name;
+        this.query = query;
     }
 
     /**
@@ -121,11 +123,8 @@ public class DBSPCircuit extends DBSPNode {
         }
     }
 
-    /**
-     * Generates a Rust function that returns a closure which evaluates the circuit.
-     */
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+    public static String generatePreamble() {
+        IndentStringBuilder builder = new IndentStringBuilder();
         builder.append(rustPreamble)
                 .newline();
 
@@ -143,8 +142,17 @@ public class DBSPCircuit extends DBSPNode {
             }
             builder.append(">,\n");
         }
-        builder.decrease().append("}\n\n");
+        return builder.decrease()
+                .append("}\n\n")
+                .toString();
+    }
 
+    /**
+     * Generates a Rust function that returns a closure which evaluates the circuit.
+     * TODO: generate an IR node.
+     */
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         // function prototype:
         // fn name() -> impl FnMut(T0, T1) -> (O0, O1) {
         builder.append("fn ")
@@ -164,6 +172,9 @@ public class DBSPCircuit extends DBSPNode {
                 .append(" {")
                 .increase();
 
+        builder.append("// ")
+                .append(this.query)
+                .append("\n");
         // For each input and output operator a corresponding Rc cell
         for (DBSPOperator i: this.inputOperators)
             this.genRcCell(builder, i);

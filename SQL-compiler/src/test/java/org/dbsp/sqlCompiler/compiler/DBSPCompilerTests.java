@@ -51,6 +51,7 @@ public class DBSPCompilerTests {
                 ", COL4 VARCHAR NOT NULL" +
                 ")";
 
+        calcite.startCompilation();
         SimulatorResult i = calcite.compile(ddl);
         Assert.assertNotNull(i);
         CalciteProgram program = calcite.getProgram();
@@ -62,12 +63,14 @@ public class DBSPCompilerTests {
     @Test
     public void DDLAndInsertTest() throws SqlParseException {
         CalciteCompiler calcite = new CalciteCompiler();
+
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +
                 ", COL3 BOOLEAN NOT NULL" +
                 ", COL4 VARCHAR NOT NULL" +
                 ")";
+        calcite.startCompilation();
         calcite.compile(ddl);
         CalciteProgram program = calcite.getProgram();
         CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
