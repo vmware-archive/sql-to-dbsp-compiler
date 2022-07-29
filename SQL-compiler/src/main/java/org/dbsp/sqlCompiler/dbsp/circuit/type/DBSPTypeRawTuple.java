@@ -32,28 +32,19 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 
-public class DBSPTypeTuple extends DBSPType {
-    /**
-     * Keep track of the size of the maximum tuple size allocated.
-     */
-    public static int maxTupleSize = 0;
-
-    public final DBSPType[] tupArgs;
-
-    public static final DBSPTypeTuple emptyTupleType = new DBSPTypeTuple(null);
-
-    protected DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupArgs) {
-        super(node, mayBeNull);
-        this.tupArgs = tupArgs;
-        if (this.tupArgs.length > maxTupleSize)
-            maxTupleSize = this.tupArgs.length;
+/**
+ * A Raw Rust tuple.
+ */
+public class DBSPTypeRawTuple extends DBSPTypeTuple {
+    private DBSPTypeRawTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupArgs) {
+        super(node, mayBeNull, tupArgs);
     }
 
-    public DBSPTypeTuple(@Nullable Object node, DBSPType... tupArgs) {
+    public DBSPTypeRawTuple(@Nullable Object node, DBSPType... tupArgs) {
         this(node, false, tupArgs);
     }
 
-    public DBSPTypeTuple(@Nullable Object node, List<DBSPType> tupArgs) {
+    public DBSPTypeRawTuple(@Nullable Object node, List<DBSPType> tupArgs) {
         this(node, tupArgs.toArray(new DBSPType[0]));
     }
 
@@ -67,18 +58,16 @@ public class DBSPTypeTuple extends DBSPType {
             return builder.append(this.tupArgs[0]);
         else if (this.tupArgs.length == 0)
             return builder.append("()");
-        builder.append("Tuple")
-                .append(this.tupArgs.length)
-                .append("<");
+        builder.append("(");
         builder.join(", ", this.tupArgs);
-        return builder.append(">");
+        return builder.append(")");
     }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (mayBeNull == this.mayBeNull)
             return this;
-        return new DBSPTypeTuple(this.getNode(), mayBeNull, this.tupArgs);
+        return new DBSPTypeRawTuple(this.getNode(), mayBeNull, this.tupArgs);
     }
 
     @Override
@@ -87,10 +76,10 @@ public class DBSPTypeTuple extends DBSPType {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DBSPTypeTuple that = (DBSPTypeTuple) o;
+        DBSPTypeRawTuple that = (DBSPTypeRawTuple) o;
         return Arrays.equals(tupArgs, that.tupArgs);
     }
 
@@ -103,9 +92,9 @@ public class DBSPTypeTuple extends DBSPType {
     public boolean same(DBSPType type) {
         if (!super.same(type))
             return false;
-        if (!type.is(DBSPTypeTuple.class))
+        if (!type.is(DBSPTypeRawTuple.class))
             return false;
-        DBSPTypeTuple other = type.to(DBSPTypeTuple.class);
+        DBSPTypeRawTuple other = type.to(DBSPTypeRawTuple.class);
         if (this.tupArgs.length != other.tupArgs.length)
             return false;
         for (int i = 0; i < this.tupArgs.length; i++)

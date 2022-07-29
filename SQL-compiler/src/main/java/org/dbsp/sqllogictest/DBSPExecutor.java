@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Sql test executor that uses DBSP as a SQL runtime.
@@ -50,16 +51,35 @@ import java.util.List;
  */
 @SuppressWarnings("FieldCanBeLocal")
 public class DBSPExecutor implements ISqlTestExecutor {
-    private final boolean debug = true;
-    private final boolean compile = true;
+    /**
+     * A pair of a Rust circuit representation and a tester function that can
+     * exercise it.
+     */
+    static class ProgramAndTester {
+        public final String program;
+        public final DBSPFunction tester;
+
+        ProgramAndTester(String program, DBSPFunction tester) {
+            this.program = program;
+            this.tester = tester;
+        }
+    }
+
+    private final boolean debug = false;
     static final String rustDirectory = "../temp";
     static final String testFilePath = rustDirectory + "/src/test.rs";
-
+    int queryNo;
     @Nullable
     private CalciteCompiler calcite;
+    private final List<ProgramAndTester> queries;
+    private final String inputFunctionName = "input";
+    @Nullable
+    private DBSPFunction inputFunction = null;
 
     public DBSPExecutor() {
         this.calcite = null;
+        this.queryNo = 0;
+        this.queries = new ArrayList<>();
     }
 
     @Override
@@ -71,38 +91,32 @@ public class DBSPExecutor implements ISqlTestExecutor {
     public void prepareTables(SqlTestPrepareTables prepare) throws SqlParseException {
         if (this.calcite == null)
             throw new RuntimeException("Calcite compiler not initialized yet");
+        this.calcite.startCompilation();
         for (String statement : prepare.statements)
             this.calcite.compile(statement);
     }
 
     @Override
-    public void executeAndValidate(
+    public void addQuery(
             String query, SqlTestPrepareInput inputs,
-            @Nullable List<String> expectedResult,
-            int expectedRowCount) throws SqlParseException {
-        //if (!query.equals("CREATE VIEW V AS  SELECT ALL * FROM tab2 AS cor0 CROSS JOIN tab0, tab1 AS cor1 WHERE NULL > NULL")) return;
+            SqlTestOutputDescription output) throws SqlParseException {
+        //if (!query.equals("SELECT + CAST ( 31 AS REAL ) FROM tab2 AS cor0")) return;
         if (this.calcite == null)
             throw new RuntimeException("Calcite compiler not initialized yet");
         // heuristic: add a "CREATE VIEW V AS" in front
         query = "CREATE VIEW V AS " + query;
         if (this.debug) {
-            System.out.println("Executing query:\n" + query);
-            if (expectedResult != null)
-                System.out.println("Expected results " + expectedResult);
+            System.out.println("Query:\n" + query);
+            if (output.queryResults != null)
+                System.out.println("Expected results " + output.queryResults);
         }
-        // Compile query to a Calcite representation
         this.calcite.compile(query);
         CalciteProgram program = calcite.getProgram();
-        // Compile Calcite representation to DBSP
-        final CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
-        DBSPCircuit dbsp = compiler.compile(program, "c");
-        DBSPTransaction transaction = new DBSPTransaction();
-        String rust = dbsp.toRustString();
-        if (!this.compile)
-            return;
+        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
+        DBSPCircuit dbsp = compiler.compile(program, "c" + this.queryNo);
 
         DBSPZSetLiteral expectedOutput = null;
-        if (expectedResult != null) {
+        if (output.queryResults != null) {
             if (dbsp.getOutputCount() != 1)
                 throw new RuntimeException(
                         "Didn't expect a query to have " + dbsp.getOutputCount() + " outputs");
@@ -110,46 +124,72 @@ public class DBSPExecutor implements ISqlTestExecutor {
             expectedOutput = new DBSPZSetLiteral(outputType);
             DBSPTypeTuple outputElementType = expectedOutput.getElementType().to(DBSPTypeTuple.class);
 
-            for (String s: expectedResult) {
-                List<DBSPExpression> fields = new ArrayList<>();
-                int col = 0;
-                DBSPExpression field;
-                for (String f: s.split(",")) {
-                    DBSPType colType = outputElementType.tupArgs[col];
-                    if (colType.is(DBSPTypeInteger.class))
-                        field = new DBSPLiteral(Integer.parseInt(f));
-                    else if (colType.is(DBSPTypeDouble.class))
-                        field = new DBSPLiteral(Double.parseDouble(f));
-                    else if (colType.is(DBSPTypeString.class))
-                        field = new DBSPLiteral(f);
-                    else
-                        throw new RuntimeException("Unexpected type " + colType);
-                    if (colType.mayBeNull)
-                        field = new DBSPCastExpression(null, colType, field);
-                    fields.add(field);
-                    col++;
+            List<DBSPExpression> fields = new ArrayList<>();
+            int col = 0;
+            DBSPExpression field;
+            for (String s: output.queryResults) {
+                DBSPType colType = outputElementType.tupArgs[col];
+                if (s.equalsIgnoreCase("null"))
+                    field = new DBSPLiteral(colType);
+                else if (colType.is(DBSPTypeInteger.class))
+                    field = new DBSPLiteral(Integer.parseInt(s));
+                else if (colType.is(DBSPTypeDouble.class))
+                    field = new DBSPLiteral(Double.parseDouble(s));
+                else if (colType.is(DBSPTypeFloat.class))
+                    field = new DBSPLiteral(Float.parseFloat(s));
+                else if (colType.is(DBSPTypeString.class))
+                    field = new DBSPLiteral(s);
+                else
+                    throw new RuntimeException("Unexpected type " + colType);
+                if (!colType.same(field.getNonVoidType()))
+                    field = new DBSPCastExpression(field.getNode(), colType, field);
+                fields.add(field);
+                col++;
+                if (col == outputElementType.size()) {
+                    expectedOutput.add(new DBSPTupleExpression(null, outputElementType, fields));
+                    fields = new ArrayList<>();
+                    col = 0;
                 }
-                expectedOutput.add(new DBSPTupleExpression(null, outputElementType, fields));
+            }
+            if (col != 0) {
+                throw new RuntimeException("Could not assign all query output values to rows. " +
+                        "I have " + col + " leftover values in the last row");
             }
         }
-        for (String statement : inputs.statements) {
-            SimulatorResult result = this.calcite.compile(statement);
-            TableModifyStatement stat = (TableModifyStatement) result;
-            compiler.extendTransaction(transaction, stat);
+
+        if (this.inputFunction == null) {
+            // Here we assume that the input statements are the same for all queries in a test,
+            // and that all queries in a test depend on the same set of input tables.
+            // So we generate a single input function to produce this input.
+            // Makes for shorter code.
+            DBSPTransaction transaction = new DBSPTransaction();
+            for (String statement : inputs.statements) {
+                SimulatorResult result = this.calcite.compile(statement);
+                TableModifyStatement stat = (TableModifyStatement) result;
+                compiler.extendTransaction(transaction, stat);
+            }
+            this.inputFunction = transaction.inputGeneratingFunction(inputFunctionName, dbsp);
         }
-        PrintWriter writer;
-        try {
-            writer = new PrintWriter(testFilePath, "UTF-8");
-            writer.println(rust);
-            DBSPFunction func = SqlRuntimeLibrary.createTesterCode(
-                    dbsp, "c", transaction, expectedOutput, expectedRowCount);
+
+        String rust = dbsp.toRustString();
+        DBSPFunction func = SqlRuntimeLibrary.createTesterCode(
+                "tester" + this.queryNo, inputFunctionName,
+                dbsp, expectedOutput, output.getExpectedOutputSize());
+        this.queries.add(new ProgramAndTester(rust, func));
+        this.queryNo++;
+    }
+
+    public void run() throws IOException, InterruptedException {
+        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
+        writer.println(DBSPCircuit.generatePreamble());
+
+        writer.println(Objects.requireNonNull(this.inputFunction).toRustString());
+        for (ProgramAndTester pt: this.queries) {
+            writer.println(pt.program);
             writer.println("#[test]");
-            writer.println(func.toRustString());
-            writer.close();
-            Utilities.compileAndTestRust(rustDirectory);
-            // TODO: execute the query and validate the output
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            writer.println(pt.tester.toRustString());
         }
+        writer.close();
+        Utilities.compileAndTestRust(rustDirectory);
     }
 }

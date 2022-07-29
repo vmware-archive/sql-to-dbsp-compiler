@@ -28,86 +28,25 @@ package org.dbsp.sqllogictest;
 import org.apache.calcite.sql.parser.SqlParseException;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 
 public class SqlTestQuery {
     /**
      * Query that is executed.
      */
-    private String query;
-    /**
-     * Types of columns expected in result.
-     */
-    private final List<ColumnType> columnTypes;
-    /**
-     * How results are sorted.
-     */
-    private SortOrder order;
+    public String query;
     @Nullable private String name;
-    @Nullable private String hash;
-    private int valueCount;
-    @Nullable
-    private List<String> queryResults;
+    public final SqlTestOutputDescription outputDescription;
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setHash(String hash) {
-        this.hash = hash;
-    }
-
-    public void setValueCount(int values) {
-        this.valueCount = values;
-    }
-
-    public void addResultLine(String line) {
-        if (this.queryResults == null)
-            this.queryResults = new ArrayList<>();
-        this.queryResults.add(line);
-        this.valueCount += this.getResultColumnCount();
-    }
-
-    public int getResultColumnCount() {
-        return this.columnTypes.size();
-    }
-
-    public void executeAndValidate(ISqlTestExecutor executor, SqlTestPrepareInput input) throws SqlParseException {
-        if (this.hash != null && !this.hash.isEmpty()) {
-            // TODO: generate hash-based validator
-        }
-        executor.executeAndValidate(this.query, input,
-                this.queryResults, this.valueCount / this.getResultColumnCount());
-    }
-
-    enum ColumnType {
-        Integer,
-        Real,
-        String
-    }
-
-    enum SortOrder {
-        None,
-        Row,
-        Value
+    public void addQuery(ISqlTestExecutor executor, SqlTestPrepareInput input) throws SqlParseException {
     }
 
     SqlTestQuery() {
         this.query = "";
-        this.columnTypes = new ArrayList<>();
-        this.valueCount = 0;
-        this.hash = "";
-        this.queryResults = null;
-        this.order = SortOrder.None;
-    }
-
-    void addColumn(ColumnType type) {
-        this.columnTypes.add(type);
-    }
-
-    void setOrder(SortOrder order) {
-        this.order = order;
+        this.outputDescription = new SqlTestOutputDescription();
     }
 
     void setQuery(String query) {

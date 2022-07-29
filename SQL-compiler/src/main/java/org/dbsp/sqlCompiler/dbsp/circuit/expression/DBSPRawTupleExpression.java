@@ -26,7 +26,9 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeRawTuple;
 import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -36,7 +38,8 @@ import java.util.List;
  */
 public class DBSPRawTupleExpression extends DBSPTupleExpression {
     public DBSPRawTupleExpression(DBSPExpression... fields) {
-        super(fields);
+        super(null, new DBSPTypeRawTuple(
+                null, Linq.map(Linq.list(fields), DBSPExpression::getNonVoidType)), Linq.list(fields));
     }
 
     public DBSPRawTupleExpression(@Nullable Object node, DBSPType type, List<DBSPExpression> exprs) {

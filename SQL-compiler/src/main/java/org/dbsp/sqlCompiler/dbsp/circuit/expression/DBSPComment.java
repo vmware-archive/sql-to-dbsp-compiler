@@ -19,43 +19,25 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.sqllogictest;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
+import org.dbsp.util.IndentStringBuilder;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+public class DBSPComment extends DBSPExpression {
+    private final String comment;
 
-/**
- * Interface implemented by a class that knows how to execute a test.
- */
-public interface ISqlTestExecutor {
-    /**
-     * Prepare for a new test.
-     */
-    void reset() throws FileNotFoundException, UnsupportedEncodingException;
-    /**
-     * Prepare the input tables.
-     */
-    void prepareTables(SqlTestPrepareTables prepare) throws SqlParseException;
+    public DBSPComment(String comment) {
+        super(null, null);
+        this.comment = comment;
+    }
 
-    /**
-     * Add code for a query to be tested.
-     * @param query   SQL query that is tested.
-     * @param inputs  Input data that is inserted in the tables.
-     * @param description  Description of the expected output.
-     */
-    void addQuery(String query,
-                  SqlTestPrepareInput inputs,
-                  SqlTestOutputDescription description) throws SqlParseException;
-
-    /**
-     * Run all the generated tests.
-     */
-    void run() throws IOException, InterruptedException;
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("//")
+                .append(comment)
+                .append("\n");
+    }
 }

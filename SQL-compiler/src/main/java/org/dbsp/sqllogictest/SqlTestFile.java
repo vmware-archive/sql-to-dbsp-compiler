@@ -170,43 +170,18 @@ public class SqlTestFile {
         if (line.isEmpty())
             this.error("Malformed query description " + line);
 
-        boolean done = false;
-        for (int i = 0; !done && i < line.length(); i++) {
-            // Type of result encoded as characters.
-            char c = line.charAt(i);
-            switch (c) {
-                case ' ':
-                    done = true;
-                    line = line.substring(i).trim();
-                    break;
-                case 'I':
-                    result.addColumn(SqlTestQuery.ColumnType.Integer);
-                    break;
-                case 'R':
-                    result.addColumn(SqlTestQuery.ColumnType.Real);
-                    break;
-                case 'T':
-                    result.addColumn(SqlTestQuery.ColumnType.String);
-                    break;
-                default:
-                    this.error("Unexpected column type: " + c);
-            }
-        }
-
+        line = result.outputDescription.parseType(line);
+        if (line == null)
+            this.error("Could not parse output column types");
+        assert line != null;
+        line = line.trim();
         if (line.isEmpty())
             this.error("Malformed query description " + line);
-        if (line.startsWith("nosort")) {
-            result.setOrder(SqlTestQuery.SortOrder.None);
-            line = line.substring("nosort".length());
-        } else if (line.startsWith("rowsort")) {
-            result.setOrder(SqlTestQuery.SortOrder.Row);
-            line = line.substring("rowsort".length());
-        } else if (line.startsWith("valuesort")) {
-            result.setOrder(SqlTestQuery.SortOrder.Value);
-            line = line.substring("valuesort".length());
-        } else {
-            this.error("Unexpected sort value in query " + line);
-        }
+
+        line = result.outputDescription.parseOrder(line);
+        if (line == null)
+            this.error("Did not understand sort order");
+        assert line != null;
         line = line.trim();
         if (!line.isEmpty())
             result.setName(line);
@@ -229,15 +204,15 @@ public class SqlTestFile {
                     int vi = line.indexOf("values hashing to");
                     String number = line.substring(0, vi - 1);
                     int values = Integer.parseInt(number);
-                    result.setValueCount(values);
+                    result.outputDescription.setValueCount(values);
                     line = line.substring(vi + "values hashing to".length()).trim();
-                    result.setHash(line);
+                    result.outputDescription.setHash(line);
                     line = this.nextLine(true);
                     if (!this.done && !line.isEmpty())
                         this.error("Expected an empty line between tests: " + Utilities.singleQuote(line));
                 } else {
                     while (!line.isEmpty()) {
-                        result.addResultLine(line);
+                        result.outputDescription.addResultLine(line);
                         line = this.nextLine(false);
                     }
                 }
@@ -289,11 +264,20 @@ public class SqlTestFile {
         return this.tests.size();
     }
 
-    void execute(ISqlTestExecutor executor) throws SqlParseException {
-        for (SqlTestQuery query: this.tests) {
-            executor.reset();
+    void execute(ISqlTestExecutor executor) throws SqlParseException, IOException, InterruptedException {
+        int batchSize = 500;
+        executor.reset();
+        int i = 0;
+        for (SqlTestQuery testQuery : this.tests) {
             executor.prepareTables(this.prepareTables);
-            query.executeAndValidate(executor, this.prepareInput);
+            executor.addQuery(testQuery.query, this.prepareInput, testQuery.outputDescription);
+            i++;
+            if (i % batchSize == 0) {
+                System.out.println("Executing up to " + i);
+                executor.run();
+                executor.reset();
+            }
         }
+        executor.run();
     }
 }

@@ -40,8 +40,7 @@ public class DBSPTypeNull extends DBSPType {
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
-        if (!mayBeNull)
-            throw new RuntimeException("Type NULL cannot be non-null");
+        // Ignore
         return this;
     }
 

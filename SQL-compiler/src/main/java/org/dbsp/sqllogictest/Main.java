@@ -68,7 +68,7 @@ public class Main {
                     try {
                         System.out.println(file);
                         test.execute(this.executor);
-                    } catch (SqlParseException ex) {
+                    } catch (SqlParseException | IOException | InterruptedException ex) {
                         throw new RuntimeException(ex);
                     }
                 }

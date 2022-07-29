@@ -52,7 +52,9 @@ import org.dbsp.util.TranslationException;
 import org.dbsp.util.Unimplemented;
 import org.dbsp.util.UnsupportedException;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -71,11 +73,12 @@ public class CalciteCompiler {
     private final SqlSimulator simulator;
     public final RelOptCluster cluster;
     public final RelDataTypeFactory typeFactory;
-
-    private final CalciteProgram program = new CalciteProgram();
+    @Nullable
+    private CalciteProgram program;
 
     // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
     public CalciteCompiler() {
+        this.program = null;
         Properties connConfigProp = new Properties();
         connConfigProp.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
         connConfigProp.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
@@ -150,6 +153,10 @@ public class CalciteCompiler {
         return this.simulator.execute(node);
     }
 
+    public void startCompilation() {
+        this.program = new CalciteProgram();
+    }
+
     /**
      * Given a SQL query statement it compiles.
      * If the statement is a DDL statement (CREATE TABLE, CREATE VIEW),
@@ -163,6 +170,9 @@ public class CalciteCompiler {
      * @param sqlStatement  SQL statement to compile.
      */
     public SimulatorResult compile(String sqlStatement) throws SqlParseException {
+        if (this.program == null)
+            throw new RuntimeException("Did you call startCompilation? Program is null");
+        this.program.setQuery(sqlStatement);
         SqlNode node = this.parse(sqlStatement);
         if (SqlKind.DDL.contains(node.getKind())) {
             SimulatorResult result = this.simulate(node);
@@ -206,6 +216,6 @@ public class CalciteCompiler {
     }
 
     public CalciteProgram getProgram() {
-        return this.program;
+        return Objects.requireNonNull(this.program);
     }
 }

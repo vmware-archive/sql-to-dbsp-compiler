@@ -33,6 +33,7 @@ import java.util.List;
  * Packages together the results of compiling a set of view declarations.
  */
 public class CalciteProgram {
+    public String query = "";
     /**
      * Views declared in SQL.
      */
@@ -45,6 +46,10 @@ public class CalciteProgram {
     public CalciteProgram() {
         this.views = new ArrayList<>();
         this.inputTables = new ArrayList<>();
+    }
+
+    public void setQuery(String query) {
+        this.query = query;
     }
 
     public void addView(ViewDDL result) {
