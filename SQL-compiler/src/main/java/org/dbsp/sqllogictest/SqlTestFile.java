@@ -265,7 +265,7 @@ public class SqlTestFile {
     }
 
     void execute(ISqlTestExecutor executor) throws SqlParseException, IOException, InterruptedException {
-        int batchSize = 10001;
+        int batchSize = 500;
         executor.reset();
         int i = 0;
         for (SqlTestQuery testQuery : this.tests) {

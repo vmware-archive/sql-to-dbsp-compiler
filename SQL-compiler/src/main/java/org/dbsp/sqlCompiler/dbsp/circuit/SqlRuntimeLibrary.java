@@ -100,7 +100,6 @@ public class SqlRuntimeLibrary {
 
         this.booleanFunctions.put("eq", "==");
         this.booleanFunctions.put("neq", "!=");
-        // The following two need custom hand-written rules
         this.booleanFunctions.put("and", "&&");
         this.booleanFunctions.put("or", "||");
 

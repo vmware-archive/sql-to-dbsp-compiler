@@ -6,5 +6,6 @@ if [ ! -d ../../sqllogictest ]; then
     exit 1
 fi
 
+mvn test
 echo "Running sqllogictest tests"
 mvn compile exec:java -Dexec.mainClass="org.dbsp.sqllogictest.Main"
