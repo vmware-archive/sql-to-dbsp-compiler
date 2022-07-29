@@ -132,9 +132,7 @@ public class SqlTestFile {
                 }
                 // Should we ignore the statements that should produce an error when executed,
                 // or ignore the whole test?  Right now we ignore such statements.
-            }
-
-            if (line.startsWith("query")) {
+            } else {
                 this.undoRead(line);
                 break;
             }
