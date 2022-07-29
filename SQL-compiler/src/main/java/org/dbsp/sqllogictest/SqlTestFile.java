@@ -273,8 +273,13 @@ public class SqlTestFile {
             executor.addQuery(testQuery.query, this.prepareInput, testQuery.outputDescription);
             i++;
             if (i % batchSize == 0) {
-                System.out.println("Executing up to " + i);
-                executor.run();
+                if (true || i > 6000) {
+                    System.out.println("Executing up to " + i);
+                    long start = System.nanoTime();
+                    executor.run();
+                    long end = System.nanoTime();
+                    System.out.println("This took " + (end - start) / 1000000000 + " seconds");
+                }
                 executor.reset();
             }
         }

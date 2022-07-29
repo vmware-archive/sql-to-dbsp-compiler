@@ -39,6 +39,7 @@ import org.dbsp.sqlCompiler.frontend.TableModifyStatement;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -85,6 +86,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
     @Override
     public void reset() {
         this.calcite = new CalciteCompiler();
+        this.queries.clear();
     }
 
     @Override
@@ -100,7 +102,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
     public void addQuery(
             String query, SqlTestPrepareInput inputs,
             SqlTestOutputDescription output) throws SqlParseException {
-        //if (!query.equals("SELECT + CAST ( 31 AS REAL ) FROM tab2 AS cor0")) return;
+        //if (!query.equals("SELECT ALL * FROM tab2 WHERE col1 NOT BETWEEN col0 AND NULL")) return;
         if (this.calcite == null)
             throw new RuntimeException("Calcite compiler not initialized yet");
         // heuristic: add a "CREATE VIEW V AS" in front
@@ -180,6 +182,8 @@ public class DBSPExecutor implements ISqlTestExecutor {
     }
 
     public void run() throws IOException, InterruptedException {
+        File file = new File(testFilePath);
+        file.delete();
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
         writer.println(DBSPCircuit.generatePreamble());
 

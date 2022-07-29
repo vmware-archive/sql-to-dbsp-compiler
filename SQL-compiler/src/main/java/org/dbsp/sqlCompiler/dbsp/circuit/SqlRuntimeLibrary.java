@@ -202,6 +202,9 @@ public class SqlRuntimeLibrary {
                 this.arithmeticFunctions, this.booleanFunctions, this.stringFunctions, this.doubleFunctions)) {
             for (String f : h.keySet()) {
                 String op = h.get(f);
+                if (op.equals("&&") || op.equals("||"))
+                    // Hand-written rules in a separate library
+                    continue;
                 for (int i = 0; i < 4; i++) {
                     DBSPType leftType;
                     DBSPType rightType;
@@ -240,6 +243,7 @@ public class SqlRuntimeLibrary {
                         }
                         */
 
+                        // The general rule is: if any operand is NULL, the result is NULL.
                         FunctionDescription function = this.getFunction(op, leftType, rightType);
                         DBSPFunction.DBSPArgument left = new DBSPFunction.DBSPArgument("left", leftType);
                         DBSPFunction.DBSPArgument right = new DBSPFunction.DBSPArgument("right", rightType);
@@ -287,6 +291,7 @@ public class SqlRuntimeLibrary {
         IndentStringBuilder builder = new IndentStringBuilder();
         if (this.program == null)
             throw new RuntimeException("No source program for writing the sql library");
+        builder.append("// Automatically-generated file\n");
         builder.append("#![allow(unused_parens)]\n");
         builder.append("use ordered_float::OrderedFloat;\n");
         builder.append("\n");
