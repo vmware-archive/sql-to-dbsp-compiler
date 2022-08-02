@@ -19,32 +19,30 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.sqllogictest;
+package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import javax.annotation.Nullable;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeUser;
+import org.dbsp.util.IndentStringBuilder;
 
-public class SqlTestQuery {
-    /**
-     * Query that is executed.
-     */
-    public String query;
-    @Nullable private String name;
-    public final SqlTestOutputDescription outputDescription;
+/**
+ * For now only support simple enums, with no additional arguments.
+ */
+public class DBSPEnumValue extends DBSPExpression {
+    public final String enumName;
+    public final String constructor;
 
-    public void setName(String name) {
-        this.name = name;
+    public DBSPEnumValue(String enumName, String constructor) {
+        super(null, new DBSPTypeUser(null, enumName, false));
+        this.enumName = enumName;
+        this.constructor = constructor;
     }
 
-    SqlTestQuery() {
-        this.query = "";
-        this.outputDescription = new SqlTestOutputDescription();
-    }
-
-    void setQuery(String query) {
-        this.query = query;
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append(this.enumName)
+                .append("::")
+                .append(this.constructor);
     }
 }

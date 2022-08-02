@@ -10,6 +10,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
+import org.dbsp.sqllogictest.SqlTestOutputDescription;
 import org.dbsp.util.Utilities;
 import org.junit.Before;
 import org.junit.Test;
@@ -89,7 +90,8 @@ public class EndToEndTests {
         writer.println(inputGen.toRustString());
         DBSPFunction tester = SqlRuntimeLibrary.createTesterCode(
                 "tester", "input",
-                circuit, expectedOutput, expectedOutput.size());
+                circuit, expectedOutput, expectedOutput.size(), null,
+                SqlTestOutputDescription.SortOrder.None);
         writer.println("#[test]");
         writer.println(tester.toRustString());
     }

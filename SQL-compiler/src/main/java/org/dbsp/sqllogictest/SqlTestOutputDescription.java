@@ -34,7 +34,7 @@ public class SqlTestOutputDescription {
         String
     }
 
-    enum SortOrder {
+    public enum SortOrder {
         None,
         Row,
         Value
@@ -45,8 +45,7 @@ public class SqlTestOutputDescription {
      * Types of columns expected in result.
      */
     public final List<ColumnType> columnTypes;
-    @SuppressWarnings("unused")
-    @Nullable private String hash;
+    @Nullable public String hash;
     /**
      * How results are sorted.
      */
@@ -57,14 +56,18 @@ public class SqlTestOutputDescription {
     public SqlTestOutputDescription() {
         this.columnTypes = new ArrayList<>();
         this.valueCount = 0;
-        this.hash = "";
+        this.hash = null;
         this.queryResults = null;
         this.order = SortOrder.None;
     }
 
+    public void clearResults() {
+        this.queryResults = new ArrayList<>();
+    }
+
     public void addResultLine(String line) {
         if (this.queryResults == null)
-            this.queryResults = new ArrayList<>();
+            throw new RuntimeException("queryResults were not initialized");
         this.queryResults.add(line);
         this.valueCount++;
     }

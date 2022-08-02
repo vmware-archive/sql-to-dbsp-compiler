@@ -27,6 +27,7 @@ package org.dbsp.sqlCompiler.dbsp.circuit;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
+import org.dbsp.sqllogictest.SqlTestOutputDescription;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Unimplemented;
 
@@ -315,7 +316,9 @@ public class SqlRuntimeLibrary {
             String inputFunction,
             DBSPCircuit circuit,
             @Nullable DBSPZSetLiteral output,
-            int expectedOutputSize) {
+            int expectedOutputSize,
+            @Nullable String outputHash,
+            SqlTestOutputDescription.SortOrder order) {
         List<DBSPExpression> list = new ArrayList<>();
         list.add(new DBSPLetExpression("circuit",
                 new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true));
@@ -339,6 +342,16 @@ public class SqlRuntimeLibrary {
                     new DBSPVariableReference("output", output.getNonVoidType()),
                     output));
         } else {
+            if (outputHash == null)
+                throw new RuntimeException("Expected hash to be supplied");
+            list.add(new DBSPLetExpression("_hash",
+                    new DBSPApplyExpression("hash", DBSPTypeString.instance,
+                            new DBSPRefExpression(
+                                    new DBSPVariableReference("output", DBSPTypeAny.instance)),
+                            new DBSPEnumValue("SortOrder", order.toString()))));
+            list.add(new DBSPApplyExpression("assert_eq!", null,
+                    new DBSPVariableReference("_hash", DBSPTypeString.instance),
+                    new DBSPLiteral(outputHash)));
             list.add(new DBSPTupleExpression());
         }
         if (expectedOutputSize >= 0) {

@@ -209,11 +209,14 @@ public class SqlTestFile {
                     if (!this.done && !line.isEmpty())
                         this.error("Expected an empty line between tests: " + Utilities.singleQuote(line));
                 } else {
+                    result.outputDescription.clearResults();
                     while (!line.isEmpty()) {
                         result.outputDescription.addResultLine(line);
                         line = this.nextLine(false);
                     }
                 }
+            } else {
+                result.outputDescription.clearResults();
             }
         }
 

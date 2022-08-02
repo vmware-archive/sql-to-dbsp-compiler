@@ -191,9 +191,11 @@ public class CalciteCompiler {
                             SqlExplainFormat.TEXT,
                             SqlExplainLevel.NON_COST_ATTRIBUTES));
                 view.setCompiledQuery(relRoot);
+                /*
                 if (!relRoot.collation.getKeys().isEmpty()) {
                     throw new UnsupportedException("ORDER BY", relRoot);
                 }
+                 */
                 this.program.addView(view);
                 return view;
             }
