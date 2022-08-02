@@ -157,6 +157,9 @@ public class DBSPExecutor implements ISqlTestExecutor {
                 throw new RuntimeException("Could not assign all query output values to rows. " +
                         "I have " + col + " leftover values in the last row");
             }
+        } else {
+            if (output.hash == null)
+                throw new RuntimeException("No hash or outputs specified");
         }
 
         if (this.inputFunction == null) {
@@ -176,13 +179,14 @@ public class DBSPExecutor implements ISqlTestExecutor {
         String rust = dbsp.toRustString();
         DBSPFunction func = SqlRuntimeLibrary.createTesterCode(
                 "tester" + this.queryNo, inputFunctionName,
-                dbsp, expectedOutput, output.getExpectedOutputSize());
+                dbsp, expectedOutput, output.getExpectedOutputSize(), output.hash, output.order);
         this.queries.add(new ProgramAndTester(rust, func));
         this.queryNo++;
     }
 
     public void run() throws IOException, InterruptedException {
         File file = new File(testFilePath);
+        //noinspection ResultOfMethodCallIgnored
         file.delete();
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
         writer.println(DBSPCircuit.generatePreamble());

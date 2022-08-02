@@ -64,6 +64,7 @@ public class DBSPCircuit extends DBSPNode {
             "};\n" +
             "use tuple::declare_tuples;\n" +
             "use sqllibbool::*;\n" +
+            "use hashing::*;\n" +
             "type Weight = isize;\n";
 
     private final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
