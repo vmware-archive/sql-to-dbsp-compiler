@@ -89,14 +89,12 @@ public class DBSPTupleExpression extends DBSPExpression {
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         if (this.fields.isEmpty()) {
             return builder.append("()");
-        } else if (this.fields.size() != 1)
+        } else {
             return builder.append("Tuple")
                     .append(this.fields.size())
                     .append("::new(")
                     .join(", ", this.fields)
                     .append(")");
-        else {
-            return builder.append(this.fields.get(0));
         }
     }
 }

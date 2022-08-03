@@ -12,9 +12,24 @@ macro_rules! declare_tuples {
             #[derive(Default, Eq, Ord, Clone, Hash, PartialEq, PartialOrd, Serialize, Deserialize)]
             pub struct $tuple_name<$($element,)*>($(pub $element,)*);
 
-            impl<$($element),*> $tuple_name<$($element,)*> {
+            impl<$($element),*> $tuple_name<$($element,)*>
+            {
                 fn new($($element: $element),*) -> Self {
                     Self($($element),*)
+                }
+            }
+
+            impl<$($element),*> ToSqlRow for $tuple_name<$($element,)*>
+            where
+                $(SqlValue: From<$element>,)*
+                $($element: Clone,)*
+            {
+                fn to_row(&self) -> SqlRow
+                {
+                    let mut result = SqlRow::new();
+                    let $tuple_name($($element),*) = self;
+                    $(result.push(SqlValue::from($element.clone()));)*
+                    result
                 }
             }
 

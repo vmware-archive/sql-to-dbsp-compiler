@@ -10,6 +10,7 @@ use core::{
     cmp::Ordering,
     fmt::Debug,
 };
+use sqlvalue::*;
 use md5;
 
 #[derive(Eq, PartialEq)]
@@ -41,9 +42,9 @@ where
 }
 
 /// This function mimics the md5 checksum computation from SqlLogicTest
-pub fn hash<K, W>(set: &OrdZSet<K, W>, order: SortOrder) -> String
+pub fn hash<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> String
 where
-    K: Ord + Clone + Debug + 'static,
+    K: Ord + Clone + Debug + 'static + ToSqlRow,
     W: ZRingValue,
 {
     let mut vec = Vec::<Vec::<String>>::new();
@@ -51,26 +52,10 @@ where
     while cursor.key_valid() {
         let mut w = cursor.weight();
         if !w.ge0() {
-            panic!("Negative weight in set");
+            panic!("Negative weight in output set!");
         }
-        let row_str = format!("{:?}", cursor.key());
-        let mut row = &row_str[..];
-        if row_str.starts_with("(") {
-            row = &row_str[1..row.len() - 1];
-        }
-
         while !w.le0() {
-            let split = row.split(",");
-            let mut row_vec = Vec::<String>::new();
-            for s in split {
-                let mut s = s.trim();
-                if s == "None" {
-                    s = "NULL";
-                } else if s.starts_with("Some(") {
-                    s = &s[5 .. s.len() - 1];
-                }
-                row_vec.push(String::from(s))
-            }
+            let row_vec = cursor.key().to_row().to_slt_strings(&format);
             if order == SortOrder::Row {
                 vec.push(row_vec);
             } else if order == SortOrder::Value {
@@ -78,7 +63,7 @@ where
                     vec.push(vec!(r))
                 }
             } else {
-                panic!("Didn't expect sort order None");
+                panic!("Didn't expect sort order 'None'");
             }
             w = w.add(W::neg(W::one()));
         }

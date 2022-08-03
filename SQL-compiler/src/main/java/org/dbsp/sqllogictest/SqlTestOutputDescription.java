@@ -26,14 +26,9 @@ package org.dbsp.sqllogictest;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class SqlTestOutputDescription {
-    enum ColumnType {
-        Integer,
-        Real,
-        String
-    }
-
     public enum SortOrder {
         None,
         Row,
@@ -42,9 +37,10 @@ public class SqlTestOutputDescription {
 
     public int valueCount;
     /**
-     * Types of columns expected in result.
+     * Encoded types of columns expected in result.
      */
-    public final List<ColumnType> columnTypes;
+    @Nullable
+    public String columnTypes;
     @Nullable public String hash;
     /**
      * How results are sorted.
@@ -54,7 +50,7 @@ public class SqlTestOutputDescription {
     public List<String> queryResults;
 
     public SqlTestOutputDescription() {
-        this.columnTypes = new ArrayList<>();
+        this.columnTypes = null;
         this.valueCount = 0;
         this.hash = null;
         this.queryResults = null;
@@ -79,26 +75,23 @@ public class SqlTestOutputDescription {
      */
     @Nullable
     String parseType(String line) {
-        for (int i = 0; i < line.length(); i++) {
+        int space = line.indexOf(" ");
+        if (space < 0)
+            throw new RuntimeException("No column types identified");
+        this.columnTypes = line.substring(0, space).trim();
+        for (int i = 0; i < this.columnTypes.length(); i++) {
             // Type of result encoded as characters.
             char c = line.charAt(i);
             switch (c) {
-                case ' ':
-                    return line.substring(i);
                 case 'I':
-                    this.addColumn(ColumnType.Integer);
-                    break;
                 case 'R':
-                    this.addColumn(ColumnType.Real);
-                    break;
                 case 'T':
-                    this.addColumn(ColumnType.String);
-                    break;
+                    continue;
                 default:
-                    return null;
+                    throw new RuntimeException("Unexpected column type " + c);
             }
         }
-        return "";
+        return line.substring(space + 1);
     }
 
     /**
@@ -129,15 +122,7 @@ public class SqlTestOutputDescription {
         this.valueCount = values;
     }
 
-    public int getResultColumnCount() {
-        return this.columnTypes.size();
-    }
-
-    void addColumn(ColumnType type) {
-        this.columnTypes.add(type);
-    }
-
-    int getExpectedOutputSize() {
-        return this.valueCount / this.columnTypes.size();
+    public int getExpectedOutputSize() {
+        return this.valueCount / Objects.requireNonNull(this.columnTypes).length();
     }
 }

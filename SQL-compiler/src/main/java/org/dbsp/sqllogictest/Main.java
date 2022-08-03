@@ -53,7 +53,7 @@ public class Main {
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             String extension = Utilities.getFileExtension(file.toString());
             String str = file.toString();
-            if (str.contains("slt_good_12.") || str.contains("slt_good_53."))
+            if (str.contains("slt_good_12."))
                 return FileVisitResult.CONTINUE;
             if (attrs.isRegularFile() && extension != null && extension.equals("test")) {
                 // validates the test

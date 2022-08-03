@@ -88,10 +88,12 @@ public class EndToEndTests {
         transaction.addSet("T", input);
         DBSPFunction inputGen = transaction.inputGeneratingFunction("input", circuit);
         writer.println(inputGen.toRustString());
+        SqlTestOutputDescription description = new SqlTestOutputDescription();
+        description.columnTypes = "I";
+        description.setValueCount(expectedOutput.size());
         DBSPFunction tester = SqlRuntimeLibrary.createTesterCode(
                 "tester", "input",
-                circuit, expectedOutput, expectedOutput.size(), null,
-                SqlTestOutputDescription.SortOrder.None);
+                circuit, expectedOutput, description);
         writer.println("#[test]");
         writer.println(tester.toRustString());
     }
