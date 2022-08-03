@@ -335,22 +335,44 @@ public class SqlRuntimeLibrary {
         }
         list.add(new DBSPLetExpression("output",
                 new DBSPApplyExpression("circuit", outputType, arguments)));
+
+        DBSPExpression sort = new DBSPEnumValue("SortOrder", description.order.toString());
         if (output != null) {
-            list.add(new DBSPApplyExpression("assert_eq!", null,
-                    new DBSPVariableReference("output", output.getNonVoidType()),
-                    output));
+            if (description.columnTypes != null) {
+                DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
+                DBSPTypeZSet otype = outputType.to(DBSPTypeZSet.class);
+                DBSPExpression zset_to_strings = new DBSPQualifyTypeExpression(
+                        new DBSPVariableReference("zset_to_strings", DBSPTypeAny.instance),
+                        otype.elementType,
+                        otype.weightType
+                );
+                list.add(new DBSPApplyExpression("assert_eq!", null,
+                        new DBSPApplyExpression("zset_to_strings", DBSPTypeAny.instance,
+                                new DBSPRefExpression(
+                                        new DBSPVariableReference("output", outputType)),
+                                columnTypes,
+                                sort),
+                        new DBSPApplyExpression(zset_to_strings, DBSPTypeAny.instance,
+                                new DBSPRefExpression(output),
+                                columnTypes,
+                                sort)));
+            } else {
+                list.add(new DBSPApplyExpression("assert_eq!", null,
+                        new DBSPVariableReference("output", output.getNonVoidType()),
+                        output));
+            }
         } else {
-            if (description.hash == null)
-                throw new RuntimeException("Expected hash to be supplied");
             if (description.columnTypes == null)
                 throw new RuntimeException("Expected column types to be supplied");
+            DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
+            if (description.hash == null)
+                throw new RuntimeException("Expected hash to be supplied");
             list.add(new DBSPLetExpression("_hash",
                     new DBSPApplyExpression("hash", DBSPTypeString.instance,
                             new DBSPRefExpression(
                                     new DBSPVariableReference("output", DBSPTypeAny.instance)),
-                            new DBSPLiteral(description.columnTypes),
-                            new DBSPEnumValue("SortOrder", description.order.toString())
-                    )));
+                            columnTypes,
+                            sort)));
             list.add(new DBSPApplyExpression("assert_eq!", null,
                     new DBSPVariableReference("_hash", DBSPTypeString.instance),
                     new DBSPLiteral(description.hash)));

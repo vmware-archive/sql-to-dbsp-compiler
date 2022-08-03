@@ -122,7 +122,12 @@ public class SqlTestOutputDescription {
         this.valueCount = values;
     }
 
+    /**
+     * Return -1 if the output size is not known.
+     */
     public int getExpectedOutputSize() {
-        return this.valueCount / Objects.requireNonNull(this.columnTypes).length();
+        if (this.columnTypes == null || this.valueCount < 0)
+            return -1;
+        return this.valueCount / this.columnTypes.length();
     }
 }

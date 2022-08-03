@@ -41,13 +41,12 @@ where
     return llen.cmp(&rlen)
 }
 
-/// This function mimics the md5 checksum computation from SqlLogicTest
-pub fn hash<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> String
+pub fn zset_to_rows<K, W>(set: &OrdZSet<K, W>) -> Vec<SqlRow>
 where
     K: Ord + Clone + Debug + 'static + ToSqlRow,
     W: ZRingValue,
 {
-    let mut vec = Vec::<Vec::<String>>::new();
+    let mut result = Vec::new();
     let mut cursor = set.cursor();
     while cursor.key_valid() {
         let mut w = cursor.weight();
@@ -55,28 +54,47 @@ where
             panic!("Negative weight in output set!");
         }
         while !w.le0() {
-            let row_vec = cursor.key().to_row().to_slt_strings(&format);
-            if order == SortOrder::Row {
-                vec.push(row_vec);
-            } else if order == SortOrder::Value {
-                for r in row_vec {
-                    vec.push(vec!(r))
-                }
-            } else {
-                panic!("Didn't expect sort order 'None'");
-            }
+            let row_vec = cursor.key().to_row();
+            result.push(row_vec);
             w = w.add(W::neg(W::one()));
         }
         cursor.step_key();
     }
-    vec.sort_by(&compare);
-    for row in &vec {
-        for elem in row {
-            print!("{},", elem);
-        }
-        println!();
-    }
+    result
+}
 
+/// The format is from the SqlLogicTest query output string format
+pub fn zset_to_strings<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> Vec<Vec<String>>
+where
+    K: Ord + Clone + Debug + 'static + ToSqlRow,
+    W: ZRingValue,
+{
+    let mut vec = Vec::<Vec::<String>>::new();
+    let rows = zset_to_rows(set);
+    for row in rows {
+        let row_vec = row.to_slt_strings(&format);
+        if order == SortOrder::Row {
+            vec.push(row_vec);
+        } else if order == SortOrder::Value {
+            for r in row_vec {
+                vec.push(vec!(r))
+            }
+        } else {
+            panic!("Didn't expect sort order 'None'");
+        }
+    }
+    vec.sort_by(&compare);
+    vec
+}
+
+/// This function mimics the md5 checksum computation from SqlLogicTest
+/// The format is from the SqlLogicTest query output string format
+pub fn hash<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> String
+where
+    K: Ord + Clone + Debug + 'static + ToSqlRow,
+    W: ZRingValue,
+{
+    let vec = zset_to_strings::<K, W>(set, format, order);
     let mut builder = String::default();
     for row in vec {
         for col in row {

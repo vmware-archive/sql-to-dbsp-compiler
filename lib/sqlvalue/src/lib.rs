@@ -26,6 +26,12 @@ impl From<i32> for SqlValue {
     }
 }
 
+impl From<bool> for SqlValue {
+    fn from(value: bool) -> Self {
+        SqlValue::Bool(value)
+    }
+}
+
 impl From<f32> for SqlValue {
     fn from(value: f32) -> Self {
         SqlValue::Flt(value)
@@ -59,6 +65,12 @@ impl From<String> for SqlValue {
 impl From<Option<i32>> for SqlValue {
     fn from(value: Option<i32>) -> Self {
         SqlValue::OptInt(value)
+    }
+}
+
+impl From<Option<bool>> for SqlValue {
+    fn from(value: Option<bool>) -> Self {
+        SqlValue::OptBool(value)
     }
 }
 
