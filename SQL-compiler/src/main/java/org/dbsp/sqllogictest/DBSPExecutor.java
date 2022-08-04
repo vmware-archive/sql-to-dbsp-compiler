@@ -66,7 +66,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
         }
     }
 
-    private final boolean debug = false;
+    private final boolean debug = true;
     static final String rustDirectory = "../temp";
     static final String testFilePath = rustDirectory + "/src/test.rs";
     int queryNo;

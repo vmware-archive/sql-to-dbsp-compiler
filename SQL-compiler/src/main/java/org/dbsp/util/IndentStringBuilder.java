@@ -109,6 +109,14 @@ public class IndentStringBuilder {
         return this;
     }
 
+    public IndentStringBuilder intercalateS(String separator, List<String> data) {
+        for (String d: data) {
+            this.append(d);
+            this.append(separator);
+        }
+        return this;
+    }
+
     public IndentStringBuilder newline() {
         return this.append("\n");
     }

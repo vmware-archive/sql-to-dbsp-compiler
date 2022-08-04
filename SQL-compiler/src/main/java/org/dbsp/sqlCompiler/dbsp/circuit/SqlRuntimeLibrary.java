@@ -274,6 +274,7 @@ public class SqlRuntimeLibrary {
                                     type);
                         }
                         DBSPFunction func = new DBSPFunction(function.function, Arrays.asList(left, right), type, def);
+                        func.addAnnotation("#[inline(always)]");
                         declarations.add(func);
                     }
                 }

@@ -32,6 +32,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.type.IHasType;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -67,6 +68,7 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
     @Nullable
     public final DBSPType returnType;
     public final DBSPExpression body;
+    public final List<String> annotations;
 
     public DBSPFunction(String name, List<DBSPArgument> arguments, @Nullable DBSPType returnType, DBSPExpression body) {
         super(null);
@@ -74,11 +76,17 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
         this.arguments = arguments;
         this.returnType = returnType;
         this.body = body;
+        this.annotations = new ArrayList<>();
+    }
+
+    public void addAnnotation(String annotation) {
+        this.annotations.add(annotation);
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append("pub fn ")
+        builder.intercalateS("\n", this.annotations)
+                .append("pub fn ")
                 .append(this.name)
                 .append("(")
                 .join(", ", this.arguments)
