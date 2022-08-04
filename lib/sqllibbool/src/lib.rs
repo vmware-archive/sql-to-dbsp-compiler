@@ -1,10 +1,12 @@
 #![allow(non_snake_case)]
 
+#[inline(always)]
 pub fn or_b_b(left: bool, right: bool) -> bool
 {
     left || right
 }
 
+#[inline(always)]
 pub fn or_bN_b(left: Option<bool>, right: bool) -> Option<bool>
 {
     match (left, right) {
@@ -14,6 +16,7 @@ pub fn or_bN_b(left: Option<bool>, right: bool) -> Option<bool>
     }
 }
 
+#[inline(always)]
 pub fn or_b_bN(left: bool, right: Option<bool>) -> Option<bool>
 {
     match (left, right) {
@@ -23,6 +26,7 @@ pub fn or_b_bN(left: bool, right: Option<bool>) -> Option<bool>
     }
 }
 
+#[inline(always)]
 pub fn or_bN_bN(left: Option<bool>, right: Option<bool>) -> Option<bool>
 {
     match (left, right) {
@@ -33,11 +37,13 @@ pub fn or_bN_bN(left: Option<bool>, right: Option<bool>) -> Option<bool>
     }
 }
 
+#[inline(always)]
 pub fn and_b_b(left: bool, right: bool) -> bool
 {
     left && right
 }
 
+#[inline(always)]
 pub fn and_bN_b(left: Option<bool>, right: bool) -> Option<bool>
 {
     match (left, right) {
@@ -47,6 +53,7 @@ pub fn and_bN_b(left: Option<bool>, right: bool) -> Option<bool>
     }
 }
 
+#[inline(always)]
 pub fn and_b_bN(left: bool, right: Option<bool>) -> Option<bool>
 {
     match (left, right) {
@@ -56,6 +63,7 @@ pub fn and_b_bN(left: bool, right: Option<bool>) -> Option<bool>
     }
 }
 
+#[inline(always)]
 pub fn and_bN_bN(left: Option<bool>, right: Option<bool>) -> Option<bool>
 {
     match (left, right) {
@@ -63,5 +71,14 @@ pub fn and_bN_bN(left: Option<bool>, right: Option<bool>) -> Option<bool>
         (Some(false), _) => Some(false),
         (_, Some(false)) => Some(false),
         (_, _) => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn is_null<T>(value: Option<T>) -> bool
+{
+    match value {
+        Some(_) => false,
+        _       => true,
     }
 }

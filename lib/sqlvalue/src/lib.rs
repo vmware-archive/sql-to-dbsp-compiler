@@ -1,8 +1,8 @@
-// SqlValue is a dynamically-typed object that holds a value that at
-// runtime can appear in a SQL program.  These values are not used
-// during computations, but they are used to display values.  The
-// Tuple* types are used for computations, and they are converted
-// to SqlRow objects when they need to be displayed.
+//! SqlValue is a dynamically-typed object that holds a value that at
+//! runtime can appear in a SQL program.  These values are not used
+//! during computations, but they are used to display values.  The
+//! Tuple* types are used for computations, and they are converted
+//! to SqlRow objects when they need to be displayed.
 
 use ordered_float::OrderedFloat;
 
@@ -123,15 +123,18 @@ impl SqlRow {
         SqlRow { values: Vec::default() }
     }
 
-    // Output the SqlRow value in the format expected by the tests
-    // in SqlLogicTest.
-    // 'format' is a string with characters I, R, or T, standing
-    // respectively for integers, real, or text.
+    /// Output the SqlRow value in the format expected by the tests
+    /// in SqlLogicTest.
+    /// # Arguments
+    /// - 'format': a string with characters I, R, or T, standing
+    /// respectively for integers, real, or text.
+    /// # Panics
+    /// if format.let() != self.values.len()
     pub fn to_slt_strings(self, format: &String) -> Vec<String> {
         if self.values.len() != format.len() {
             panic!("Mismatched format {} vs len {}", format.len(), self.values.len())
         }
-        let mut result = Vec::<String>::new();
+        let mut result = Vec::<String>::with_capacity(format.len());
         for elem in self.values.iter().zip(format.chars()) {
             result.push(elem.0.format_slt(&elem.1));
         }
@@ -155,12 +158,14 @@ pub trait SqlLogicTestFormat {
     fn format_slt(&self, arg: &char) -> String;
 }
 
-
-fn print_string(s: &String) -> String {
+/// Convert a string result according to the SqlLogicTest rules:
+/// empty strings are turned into (empty)
+/// non-printable (ASCII) characters are turned into @
+fn slt_translate_string(s: &String) -> String {
     if s == "" {
         return String::from("(empty)")
     }
-    let mut result = String::new();
+    let mut result = String::with_capacity(s.len());
     for mut c in s.chars() {
         if c < ' ' || c > '~' {
             c = '@';
@@ -170,8 +175,8 @@ fn print_string(s: &String) -> String {
     result
 }
 
-// Format a SqlValue according to SqlLogicTest rules
-// the arg is one character of the form I - i32, R - f32, or T - String.
+/// Format a SqlValue according to SqlLogicTest rules
+/// the arg is one character of the form I - i32, R - f32, or T - String.
 impl SqlLogicTestFormat for SqlValue {
     fn format_slt(self: &Self, arg: &char) -> String {
         match (self, arg) {
@@ -191,9 +196,9 @@ impl SqlLogicTestFormat for SqlValue {
             (SqlValue::Dbl(x), _) => format!("{:.3}", x),
             (SqlValue::OptDbl(Some(x)), _) => format!("{:.3}", x),
 
-            (SqlValue::Str(x), 'T') => print_string(x),
+            (SqlValue::Str(x), 'T') => slt_translate_string(x),
             (SqlValue::OptStr(None), 'T') => String::from("NULL"),
-            (SqlValue::OptStr(Some(x)), 'T') => print_string(x),
+            (SqlValue::OptStr(Some(x)), 'T') => slt_translate_string(x),
 
             (SqlValue::OptBool(None), _) => String::from("NULL"),
             (SqlValue::Bool(b), _) => format!("{}", b),

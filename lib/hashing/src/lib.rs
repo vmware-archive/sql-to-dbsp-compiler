@@ -4,7 +4,10 @@ use dbsp::{
         BatchReader,
         cursor::Cursor,
     },
-    algebra::ZRingValue,
+    algebra::{
+        ZRingValue,
+        ZSet,
+    },
 };
 use core::{
     cmp::Ordering,
@@ -41,12 +44,18 @@ where
     return llen.cmp(&rlen)
 }
 
+/// Convert a zset to a vector of SqlRow.
+/// Elements with > 1 weights will generate multiple SqlRows
+/// # Panics
+/// if any of the zset weights is negative
 pub fn zset_to_rows<K, W>(set: &OrdZSet<K, W>) -> Vec<SqlRow>
 where
     K: Ord + Clone + Debug + 'static + ToSqlRow,
     W: ZRingValue,
+    usize: TryFrom<W>,
+    <usize as TryFrom<W>>::Error: Debug,
 {
-    let mut result = Vec::new();
+    let mut result = Vec::with_capacity(set.weighted_count().try_into().unwrap());
     let mut cursor = set.cursor();
     while cursor.key_valid() {
         let mut w = cursor.weight();
@@ -68,9 +77,11 @@ pub fn zset_to_strings<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrd
 where
     K: Ord + Clone + Debug + 'static + ToSqlRow,
     W: ZRingValue,
+    usize: TryFrom<W>,
+    <usize as TryFrom<W>>::Error: Debug,
 {
-    let mut vec = Vec::<Vec::<String>>::new();
     let rows = zset_to_rows(set);
+    let mut vec = Vec::<Vec::<String>>::with_capacity(rows.len());
     for row in rows {
         let row_vec = row.to_slt_strings(&format);
         if order == SortOrder::Row {
@@ -83,7 +94,7 @@ where
             panic!("Didn't expect sort order 'None'");
         }
     }
-    vec.sort_by(&compare);
+    vec.sort_unstable_by(&compare);
     vec
 }
 
@@ -93,6 +104,8 @@ pub fn hash<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> Stri
 where
     K: Ord + Clone + Debug + 'static + ToSqlRow,
     W: ZRingValue,
+    usize: TryFrom<W>,
+    <usize as TryFrom<W>>::Error: Debug,
 {
     let vec = zset_to_strings::<K, W>(set, format, order);
     let mut builder = String::default();
