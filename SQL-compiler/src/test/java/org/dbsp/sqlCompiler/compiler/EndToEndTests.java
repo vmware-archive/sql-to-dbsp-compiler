@@ -6,8 +6,7 @@ import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeDouble;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeInteger;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
 import org.dbsp.sqllogictest.SqlTestOutputDescription;
@@ -15,7 +14,6 @@ import org.dbsp.util.Utilities;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.annotation.Nullable;
 import java.io.*;
 
 /**
@@ -82,21 +80,39 @@ public class EndToEndTests {
         return new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0, e1);
     }
 
+    @SuppressWarnings("unused")
+    private String getStringFormat(DBSPTypeTuple type) {
+        StringBuilder result = new StringBuilder();
+        for (DBSPType field: type.tupArgs) {
+            if (field.is(DBSPTypeInteger.class))
+                result.append("I");
+            else if (field.is(DBSPTypeFP.class))
+                result.append("R");
+            else if (field.is(DBSPTypeString.class))
+                result.append("T");
+            else result.append("T");
+        }
+        return result.toString();
+    }
+
     private void createTester(PrintWriter writer, DBSPCircuit circuit, DBSPZSetLiteral expectedOutput) {
         DBSPZSetLiteral input = this.createInput();
         DBSPTransaction transaction = new DBSPTransaction();
         transaction.addSet("T", input);
         DBSPFunction inputGen = transaction.inputGeneratingFunction("input", circuit);
         writer.println(inputGen.toRustString());
+        SqlTestOutputDescription description = new SqlTestOutputDescription();
+        description.columnTypes = null;
+        description.setValueCount(expectedOutput.size());
+        description.order = SqlTestOutputDescription.SortOrder.Row;
         DBSPFunction tester = SqlRuntimeLibrary.createTesterCode(
                 "tester", "input",
-                circuit, expectedOutput, expectedOutput.size(), null,
-                SqlTestOutputDescription.SortOrder.None);
+                circuit, expectedOutput, description);
         writer.println("#[test]");
         writer.println(tester.toRustString());
     }
 
-    private void testQuery(String query, @Nullable DBSPZSetLiteral expectedOutput) {
+    private void testQuery(String query, DBSPZSetLiteral expectedOutput) {
         try {
             DBSPCircuit circuit = this.compileQuery(query);
             PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");

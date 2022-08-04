@@ -63,9 +63,7 @@ public class DBSPTypeTuple extends DBSPType {
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.tupArgs.length == 1)
-            return builder.append(this.tupArgs[0]);
-        else if (this.tupArgs.length == 0)
+        if (this.tupArgs.length == 0)
             return builder.append("()");
         builder.append("Tuple")
                 .append(this.tupArgs.length)

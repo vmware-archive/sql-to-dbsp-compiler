@@ -37,6 +37,8 @@ import java.util.List;
  * Execute all SqlLogicTest tests.
  */
 public class Main {
+    static String[] done = { "10", "62", "12", "53", "126", "46", "51", "65", "67", "74", "0" };
+
     static class NoMySql implements TestAcceptancePolicy {
         @Override
         public boolean accept(List<String> skip, List<String> only) {
@@ -53,8 +55,9 @@ public class Main {
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             String extension = Utilities.getFileExtension(file.toString());
             String str = file.toString();
-            if (str.contains("slt_good_12.") || str.contains("slt_good_53."))
-                return FileVisitResult.CONTINUE;
+            for (String d: done)
+                if (str.contains("select/slt_good_" + d + "."))
+                    return FileVisitResult.CONTINUE;
             if (attrs.isRegularFile() && extension != null && extension.equals("test")) {
                 // validates the test
                 SqlTestFile test = null;
@@ -76,8 +79,8 @@ public class Main {
                     }
                 }
             }
-            return FileVisitResult.TERMINATE;
-            //return FileVisitResult.CONTINUE;
+            //return FileVisitResult.TERMINATE;
+            return FileVisitResult.CONTINUE;
         }
     }
 

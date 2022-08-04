@@ -23,21 +23,27 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.expression;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPComment extends DBSPExpression {
-    private final String comment;
+/**
+ * An expression qualified with a type.
+ */
+public class DBSPQualifyTypeExpression extends DBSPExpression {
+    public final DBSPExpression expression;
+    public final DBSPType[] type;
 
-    public DBSPComment(String comment) {
-        super(null, null);
-        this.comment = comment;
+    public DBSPQualifyTypeExpression(DBSPExpression expression, DBSPType... type) {
+        super(null, expression.getType());
+        this.expression = expression;
+        this.type = type;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("//")
-                .append(comment)
-                .append("\n");
+        return builder.append(this.expression)
+                .append("::<")
+                .join(", ", this.type)
+                .append(">");
     }
 }

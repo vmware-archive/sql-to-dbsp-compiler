@@ -274,6 +274,7 @@ public class SqlRuntimeLibrary {
                                     type);
                         }
                         DBSPFunction func = new DBSPFunction(function.function, Arrays.asList(left, right), type, def);
+                        func.addAnnotation("#[inline(always)]");
                         declarations.add(func);
                     }
                 }
@@ -307,7 +308,7 @@ public class SqlRuntimeLibrary {
      * @param inputFunction Name of function which generates the input data.
      * @param circuit       DBSP circuit that will be tested.
      * @param output        Expected data from the circuit.
-     * @param expectedOutputSize  If not -1 number of expected rows in output.
+     * @param description   Description of the expected outputs.
      * @return              The code for a function that runs the circuit with the specified
      *                      input and tests the produced output.
      */
@@ -316,9 +317,7 @@ public class SqlRuntimeLibrary {
             String inputFunction,
             DBSPCircuit circuit,
             @Nullable DBSPZSetLiteral output,
-            int expectedOutputSize,
-            @Nullable String outputHash,
-            SqlTestOutputDescription.SortOrder order) {
+            SqlTestOutputDescription description) {
         List<DBSPExpression> list = new ArrayList<>();
         list.add(new DBSPLetExpression("circuit",
                 new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true));
@@ -337,29 +336,55 @@ public class SqlRuntimeLibrary {
         }
         list.add(new DBSPLetExpression("output",
                 new DBSPApplyExpression("circuit", outputType, arguments)));
+
+        DBSPExpression sort = new DBSPEnumValue("SortOrder", description.order.toString());
         if (output != null) {
-            list.add(new DBSPApplyExpression("assert_eq!", null,
-                    new DBSPVariableReference("output", output.getNonVoidType()),
-                    output));
+            if (description.columnTypes != null) {
+                DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
+                DBSPTypeZSet otype = outputType.to(DBSPTypeZSet.class);
+                DBSPExpression zset_to_strings = new DBSPQualifyTypeExpression(
+                        new DBSPVariableReference("zset_to_strings", DBSPTypeAny.instance),
+                        otype.elementType,
+                        otype.weightType
+                );
+                list.add(new DBSPApplyExpression("assert_eq!", null,
+                        new DBSPApplyExpression("zset_to_strings", DBSPTypeAny.instance,
+                                new DBSPRefExpression(
+                                        new DBSPVariableReference("output", outputType)),
+                                columnTypes,
+                                sort),
+                        new DBSPApplyExpression(zset_to_strings, DBSPTypeAny.instance,
+                                new DBSPRefExpression(output),
+                                columnTypes,
+                                sort)));
+            } else {
+                list.add(new DBSPApplyExpression("assert_eq!", null,
+                        new DBSPVariableReference("output", output.getNonVoidType()),
+                        output));
+            }
         } else {
-            if (outputHash == null)
+            if (description.columnTypes == null)
+                throw new RuntimeException("Expected column types to be supplied");
+            DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
+            if (description.hash == null)
                 throw new RuntimeException("Expected hash to be supplied");
             list.add(new DBSPLetExpression("_hash",
                     new DBSPApplyExpression("hash", DBSPTypeString.instance,
                             new DBSPRefExpression(
                                     new DBSPVariableReference("output", DBSPTypeAny.instance)),
-                            new DBSPEnumValue("SortOrder", order.toString()))));
+                            columnTypes,
+                            sort)));
             list.add(new DBSPApplyExpression("assert_eq!", null,
                     new DBSPVariableReference("_hash", DBSPTypeString.instance),
-                    new DBSPLiteral(outputHash)));
+                    new DBSPLiteral(description.hash)));
             list.add(new DBSPTupleExpression());
         }
-        if (expectedOutputSize >= 0) {
+        if (description.getExpectedOutputSize() >= 0) {
             list.add(new DBSPApplyExpression("assert_eq!", null,
                     new DBSPApplyMethodExpression("weighted_count",
                             DBSPTypeUSize.instance,
                             new DBSPVariableReference("output", DBSPTypeAny.instance)),
-                    new DBSPLiteral(expectedOutputSize)));
+                    new DBSPLiteral(description.getExpectedOutputSize())));
         }
         DBSPExpression body = new DBSPSeqExpression(list);
         return new DBSPFunction(name, new ArrayList<>(), null, body);

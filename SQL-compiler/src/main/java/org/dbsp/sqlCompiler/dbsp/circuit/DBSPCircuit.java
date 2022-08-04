@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSourceOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeRawTuple;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeTuple;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
@@ -64,6 +65,7 @@ public class DBSPCircuit extends DBSPNode {
             "};\n" +
             "use tuple::declare_tuples;\n" +
             "use sqllibbool::*;\n" +
+            "use sqlvalue::*;\n" +
             "use hashing::*;\n" +
             "type Weight = isize;\n";
 
@@ -134,7 +136,7 @@ public class DBSPCircuit extends DBSPNode {
 
         builder.append("declare_tuples! {").increase();
         // Do not generate Tuple1
-        for (int i = 2; i <= DBSPTypeTuple.maxTupleSize; i++) {
+        for (int i = 1; i <= DBSPTypeTuple.maxTupleSize; i++) {
             builder.append("Tuple")
                     .append(i)
                     .append("<");
@@ -171,7 +173,7 @@ public class DBSPCircuit extends DBSPNode {
             builder.append(i.getNonVoidType());
         }
         builder.append(") -> ");
-        DBSPTypeTuple tuple = new DBSPTypeTuple(null, Linq.map(this.outputOperators, DBSPOperator::getNonVoidType));
+        DBSPTypeTuple tuple = new DBSPTypeRawTuple(null, Linq.map(this.outputOperators, DBSPOperator::getNonVoidType));
         builder.append(tuple)
                 .append(" {")
                 .increase();

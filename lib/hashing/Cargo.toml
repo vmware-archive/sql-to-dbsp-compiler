@@ -3,8 +3,7 @@ name = "hashing"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 md5 = { version = "0.7.0" }
 dbsp = { git = "https://github.com/vmware/database-stream-processor.git" }
+sqlvalue = { path = "../sqlvalue" }

@@ -4,12 +4,16 @@ use dbsp::{
         BatchReader,
         cursor::Cursor,
     },
-    algebra::ZRingValue,
+    algebra::{
+        ZRingValue,
+        ZSet,
+    },
 };
 use core::{
     cmp::Ordering,
     fmt::Debug,
 };
+use sqlvalue::*;
 use md5;
 
 #[derive(Eq, PartialEq)]
@@ -40,58 +44,70 @@ where
     return llen.cmp(&rlen)
 }
 
-/// This function mimics the md5 checksum computation from SqlLogicTest
-pub fn hash<K, W>(set: &OrdZSet<K, W>, order: SortOrder) -> String
+/// Convert a zset to a vector of SqlRow.
+/// Elements with > 1 weights will generate multiple SqlRows
+/// # Panics
+/// if any of the zset weights is negative
+pub fn zset_to_rows<K, W>(set: &OrdZSet<K, W>) -> Vec<SqlRow>
 where
-    K: Ord + Clone + Debug + 'static,
+    K: Ord + Clone + Debug + 'static + ToSqlRow,
     W: ZRingValue,
+    usize: TryFrom<W>,
+    <usize as TryFrom<W>>::Error: Debug,
 {
-    let mut vec = Vec::<Vec::<String>>::new();
+    let mut result = Vec::with_capacity(set.weighted_count().try_into().unwrap());
     let mut cursor = set.cursor();
     while cursor.key_valid() {
         let mut w = cursor.weight();
         if !w.ge0() {
-            panic!("Negative weight in set");
+            panic!("Negative weight in output set!");
         }
-        let row_str = format!("{:?}", cursor.key());
-        let mut row = &row_str[..];
-        if row_str.starts_with("(") {
-            row = &row_str[1..row.len() - 1];
-        }
-
         while !w.le0() {
-            let split = row.split(",");
-            let mut row_vec = Vec::<String>::new();
-            for s in split {
-                let mut s = s.trim();
-                if s == "None" {
-                    s = "NULL";
-                } else if s.starts_with("Some(") {
-                    s = &s[5 .. s.len() - 1];
-                }
-                row_vec.push(String::from(s))
-            }
-            if order == SortOrder::Row {
-                vec.push(row_vec);
-            } else if order == SortOrder::Value {
-                for r in row_vec {
-                    vec.push(vec!(r))
-                }
-            } else {
-                panic!("Didn't expect sort order None");
-            }
+            let row_vec = cursor.key().to_row();
+            result.push(row_vec);
             w = w.add(W::neg(W::one()));
         }
         cursor.step_key();
     }
-    vec.sort_by(&compare);
-    for row in &vec {
-        for elem in row {
-            print!("{},", elem);
-        }
-        println!();
-    }
+    result
+}
 
+/// The format is from the SqlLogicTest query output string format
+pub fn zset_to_strings<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> Vec<Vec<String>>
+where
+    K: Ord + Clone + Debug + 'static + ToSqlRow,
+    W: ZRingValue,
+    usize: TryFrom<W>,
+    <usize as TryFrom<W>>::Error: Debug,
+{
+    let rows = zset_to_rows(set);
+    let mut vec = Vec::<Vec::<String>>::with_capacity(rows.len());
+    for row in rows {
+        let row_vec = row.to_slt_strings(&format);
+        if order == SortOrder::Row {
+            vec.push(row_vec);
+        } else if order == SortOrder::Value {
+            for r in row_vec {
+                vec.push(vec!(r))
+            }
+        } else {
+            panic!("Didn't expect sort order 'None'");
+        }
+    }
+    vec.sort_unstable_by(&compare);
+    vec
+}
+
+/// This function mimics the md5 checksum computation from SqlLogicTest
+/// The format is from the SqlLogicTest query output string format
+pub fn hash<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> String
+where
+    K: Ord + Clone + Debug + 'static + ToSqlRow,
+    W: ZRingValue,
+    usize: TryFrom<W>,
+    <usize as TryFrom<W>>::Error: Debug,
+{
+    let vec = zset_to_strings::<K, W>(set, format, order);
     let mut builder = String::default();
     for row in vec {
         for col in row {

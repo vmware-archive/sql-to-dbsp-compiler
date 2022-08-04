@@ -66,7 +66,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
         }
     }
 
-    private final boolean debug = false;
+    private final boolean debug = true;
     static final String rustDirectory = "../temp";
     static final String testFilePath = rustDirectory + "/src/test.rs";
     int queryNo;
@@ -179,7 +179,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
         String rust = dbsp.toRustString();
         DBSPFunction func = SqlRuntimeLibrary.createTesterCode(
                 "tester" + this.queryNo, inputFunctionName,
-                dbsp, expectedOutput, output.getExpectedOutputSize(), output.hash, output.order);
+                dbsp, expectedOutput, output);
         this.queries.add(new ProgramAndTester(rust, func));
         this.queryNo++;
     }

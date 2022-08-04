@@ -26,6 +26,7 @@
 package org.dbsp.sqlCompiler.dbsp;
 
 import org.apache.calcite.rex.*;
+import org.apache.calcite.sql.SqlKind;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
@@ -188,6 +189,20 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                 return new DBSPCastExpression(call, type, ops.get(0));
             case IS_NULL:
             case IS_NOT_NULL:
+                if (!type.same(DBSPTypeBool.instance))
+                    throw new TranslationException("Expected expression to produce a boolean result", call);
+                DBSPExpression arg = ops.get(0);
+                DBSPType argType = arg.getNonVoidType();
+                if (argType.mayBeNull) {
+                    if (call.op.kind == SqlKind.IS_NULL)
+                        return new DBSPApplyExpression("is_null", type, ops.get(0));
+                    else
+                        return new DBSPUnaryExpression(call,
+                                type,
+                                "!",
+                                new DBSPApplyExpression("is_null", type, ops.get(0)));
+                }
+                return new DBSPLiteral(false);
             case FLOOR:
             case CEIL:
             default:
