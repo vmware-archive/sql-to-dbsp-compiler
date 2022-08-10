@@ -36,6 +36,10 @@ import java.io.UnsupportedEncodingException;
  */
 public interface ISqlTestExecutor {
     /**
+     * Number of queries added so far.
+     */
+    int getQueryCount();
+    /**
      * Prepare for a new test.
      */
     void reset() throws FileNotFoundException, UnsupportedEncodingException;

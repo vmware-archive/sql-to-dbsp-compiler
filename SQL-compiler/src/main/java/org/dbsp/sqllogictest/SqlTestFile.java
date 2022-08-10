@@ -26,11 +26,13 @@
 package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.util.Unimplemented;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -265,23 +267,36 @@ public class SqlTestFile {
         return this.tests.size();
     }
 
-    void execute(ISqlTestExecutor executor) throws SqlParseException, IOException, InterruptedException {
-        int batchSize = 10;
+    void run(ISqlTestExecutor executor) throws IOException, InterruptedException {
+        System.out.println("Executing up to " + executor.getQueryCount());
+        long start = System.nanoTime();
+        executor.run();
+        long end = System.nanoTime();
+        System.out.println("This took " + (end - start) / 1000000000 + " seconds");
         executor.reset();
-        int i = 0;
+    }
+
+    void execute(ISqlTestExecutor executor, int batchSize, HashSet<String> calciteBugs)
+            throws SqlParseException, IOException, InterruptedException {
+        executor.reset();
         for (SqlTestQuery testQuery : this.tests) {
             executor.prepareTables(this.prepareTables);
-            executor.addQuery(testQuery.query, this.prepareInput, testQuery.outputDescription);
-            i++;
-            if (i % batchSize == 0) {
-                System.out.println("Executing up to " + i);
-                long start = System.nanoTime();
-                executor.run();
-                long end = System.nanoTime();
-                System.out.println("This took " + (end - start) / 1000000000 + " seconds");
-                executor.reset();
+            if (calciteBugs.contains(testQuery.query)) {
+                System.err.println("Skipping query that cannot be handled by Calcite " + testQuery.query);
+                continue;
+            }
+            try {
+                executor.addQuery(testQuery.query, this.prepareInput, testQuery.outputDescription);
+            } catch (Exception ex) {
+                System.err.println("Error while compiling " + testQuery.query);
+                throw ex;
+            }
+            if (executor.getQueryCount() % batchSize == 0) {
+                this.run(executor);
             }
         }
-        executor.run();
+        if ((executor.getQueryCount() % batchSize) != 0)
+            // left overs
+            this.run(executor);
     }
 }

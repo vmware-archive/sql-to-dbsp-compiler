@@ -26,7 +26,7 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 
 import javax.annotation.Nullable;
 

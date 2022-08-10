@@ -28,9 +28,10 @@ package org.dbsp.sqlCompiler.dbsp.circuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSourceOperator;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeRawTuple;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeTuple;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRawTuple;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
+import org.dbsp.sqlCompiler.dbsp.rust.type.IHasType;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
 
@@ -48,7 +49,7 @@ public class DBSPCircuit extends DBSPNode {
             "#![allow(unused_variables)]\n" +
             "\n" +
             "use dbsp::{\n" +
-            "    algebra::ZSet,\n" +
+            "    algebra::{ZSet, MulByRef},\n" +
             "    circuit::{Root, Stream},\n" +
             "    operator::{Generator, FilterMap},\n" +
             "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
@@ -95,6 +96,10 @@ public class DBSPCircuit extends DBSPNode {
 
     public DBSPType getOutputType(int outputNo) {
         return this.outputOperators.get(outputNo).getNonVoidType();
+    }
+
+    public DBSPTypeRawTuple getOutputtype() {
+        return new DBSPTypeRawTuple(null, Linq.map(this.outputOperators, IHasType::getNonVoidType));
     }
 
     public void addOperator(DBSPOperator operator) {
@@ -208,8 +213,7 @@ public class DBSPCircuit extends DBSPNode {
 
         // Create the closure and return it.
         builder.append("return move |")
-                .append(String.join(", ",
-                        Linq.map(this.inputOperators, DBSPOperator::getName)))
+                .joinS(", ", Linq.map(this.inputOperators, DBSPOperator::getName))
                 .append("| {")
                 .increase();
 
@@ -221,16 +225,13 @@ public class DBSPCircuit extends DBSPNode {
                     .append(";")
                     .newline();
         builder.append("root.step().unwrap();")
-                        .newline();
-        builder.append("return ");
-        if (this.outputOperators.size() > 1)
-            builder.append("(");
-        builder.append(String.join(", ",
-                Linq.map(this.outputOperators,
-                        o -> o.getName() + "_external.borrow().clone()")));
-        if (this.outputOperators.size() > 1)
-            builder.append(")");
-        builder.append(";")
+                .newline()
+                .append("return ")
+                .append("(")
+                .intercalateS(", ",
+                        Linq.map(this.outputOperators, o -> o.getName() + "_external.borrow().clone()"))
+                .append(")")
+                .append(";")
                 .newline()
                 .decrease()
                 .append("};")

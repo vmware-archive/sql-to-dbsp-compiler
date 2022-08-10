@@ -29,9 +29,10 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
 import org.dbsp.sqlCompiler.frontend.SimulatorResult;
@@ -44,7 +45,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Sql test executor that uses DBSP as a SQL runtime.
@@ -66,7 +66,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
         }
     }
 
-    private final boolean debug = true;
+    private final boolean debug = false;
     static final String rustDirectory = "../temp";
     static final String testFilePath = rustDirectory + "/src/test.rs";
     int queryNo;
@@ -81,6 +81,11 @@ public class DBSPExecutor implements ISqlTestExecutor {
         this.calcite = null;
         this.queryNo = 0;
         this.queries = new ArrayList<>();
+    }
+
+    @Override
+    public int getQueryCount() {
+        return this.queries.size();
     }
 
     @Override
@@ -102,11 +107,11 @@ public class DBSPExecutor implements ISqlTestExecutor {
     public void addQuery(
             String query, SqlTestPrepareInput inputs,
             SqlTestOutputDescription output) throws SqlParseException {
-        //if (!query.equals("SELECT ALL * FROM tab2 WHERE col1 NOT BETWEEN col0 AND NULL")) return;
+        //if (!query.equals("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )")) return;
         if (this.calcite == null)
             throw new RuntimeException("Calcite compiler not initialized yet");
         // heuristic: add a "CREATE VIEW V AS" in front
-        query = "CREATE VIEW V AS " + query;
+        query = "CREATE VIEW V AS (" + query + ")";
         if (this.debug) {
             System.out.println("Query:\n" + query);
             if (output.queryResults != null)
@@ -185,13 +190,16 @@ public class DBSPExecutor implements ISqlTestExecutor {
     }
 
     public void run() throws IOException, InterruptedException {
+        if (this.inputFunction == null)
+            return;
+
         File file = new File(testFilePath);
         //noinspection ResultOfMethodCallIgnored
         file.delete();
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
         writer.println(DBSPCircuit.generatePreamble());
 
-        writer.println(Objects.requireNonNull(this.inputFunction).toRustString());
+        writer.println(this.inputFunction.toRustString());
         for (ProgramAndTester pt: this.queries) {
             writer.println(pt.program);
             writer.println("#[test]");

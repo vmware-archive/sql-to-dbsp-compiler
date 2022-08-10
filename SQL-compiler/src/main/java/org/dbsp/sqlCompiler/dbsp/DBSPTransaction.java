@@ -26,10 +26,9 @@
 package org.dbsp.sqlCompiler.dbsp;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPFunction;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPRawTupleExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPRawTupleExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPZSetLiteral;
 
 import java.util.ArrayList;
 import java.util.HashMap;
