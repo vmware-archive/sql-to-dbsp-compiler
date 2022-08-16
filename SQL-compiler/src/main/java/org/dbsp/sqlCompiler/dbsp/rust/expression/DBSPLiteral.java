@@ -58,6 +58,14 @@ public class DBSPLiteral extends DBSPExpression {
         this(value, false);
     }
 
+    public DBSPLiteral(long value, boolean nullable) {
+        this(null, DBSPTypeInteger.signed64.setMayBeNull(nullable), value + "i64");
+    }
+
+    public DBSPLiteral(long value) {
+        this(value, false);
+    }
+
     public DBSPLiteral(double value) {
         this(value, false);
     }

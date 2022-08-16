@@ -94,18 +94,18 @@ public class Main {
     }
 
     public static void main(String[] argv) throws IOException {
-        calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");
-
-        int batchSize = 10;
+        calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");       
+        int batchSize = 100;
         ISqlTestExecutor executor = new DBSPExecutor();
-        String directory =
-            //"../../sqllogictest/test/s.test"
+        String files =
+            "../../sqllogictest/test/s.test"
             //"../../sqllogictest/test/random/select"
-             "../../sqllogictest/test/random/aggregates"
+            //"../../sqllogictest/test/random/expr"
+            //"../../sqllogictest/test/random/aggregates"
         ;
         if (argv.length > 1)
-            directory = argv[1];
-        Path path = Paths.get(directory);
+            files = argv[1];
+        Path path = Paths.get(files);
         TestLoader loader = new TestLoader(batchSize, executor);
         Files.walkFileTree(path, loader);
         System.out.println("Could not parse: " + loader.errors);

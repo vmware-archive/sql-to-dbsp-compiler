@@ -78,7 +78,7 @@ public class EndToEndTests {
     );
     private final DBSPZSetLiteral z0 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0);
     private final DBSPZSetLiteral z1 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e1);
-    private final DBSPZSetLiteral empty = new DBSPZSetLiteral(z0.getNonVoidType());
+    private final DBSPZSetLiteral empty = new DBSPZSetLiteral(this.z0.getNonVoidType());
 
     private DBSPZSetLiteral createInput() {
         return new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0, e1);
@@ -218,6 +218,36 @@ public class EndToEndTests {
     public void exceptTest() {
         String query = "CREATE VIEW V AS SELECT * FROM T EXCEPT (SELECT * FROM T WHERE COL3)";
         this.testQuery(query, this.z1);
+    }
+
+    @Test
+    public void aggregateTest() {
+        String query = "CREATE VIEW V AS SELECT SUM(T.COL1) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(20, true))));
+    }
+
+    @Test
+    public void optionAggregateTest() {
+        String query = "CREATE VIEW V AS SELECT SUM(T.COL5) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(1, true))));
+    }
+
+    @Test
+    public void aggregateFalseTest() {
+        String query = "CREATE VIEW V AS SELECT SUM(T.COL1) FROM T WHERE FALSE";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(
+                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test
+    public void averageTest() {
+        String query = "CREATE VIEW V AS SELECT AVG(T.COL1) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
+                        new DBSPLiteral(10, true))));
     }
 
     @Test

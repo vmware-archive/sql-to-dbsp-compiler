@@ -21,40 +21,26 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.expression;
+package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
-import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPIdentifierPattern;
-import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPPattern;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRef;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
-/**
- * Reference to a variable by name.
- */
-public class DBSPVariableReference extends DBSPExpression {
-    public final String variable;
+import javax.annotation.Nullable;
 
-    public DBSPVariableReference(String variable, DBSPType type) {
-        super(null, type);
-        this.variable = variable;
+public class DBSPConstantOperator extends DBSPOperator {
+    public DBSPConstantOperator(@Nullable Object node, DBSPExpression value) {
+        super(node, "", value, value.getNonVoidType());
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.variable);
-    }
-
-    public DBSPPattern asPattern() {
-        return new DBSPIdentifierPattern(this.variable);
-    }
-
-    public DBSPClosureExpression.Parameter asParameter() {
-        return new DBSPClosureExpression.Parameter(this.asPattern(), this.getNonVoidType());
-    }
-
-    public DBSPClosureExpression.Parameter asRefParameter() {
-        return new DBSPClosureExpression.Parameter(this.asPattern(),
-                new DBSPTypeRef(this.getNonVoidType()));
+        assert this.function != null;
+        return builder.append("let ")
+                .append(this.getName())
+                .append(" = ")
+                .append("circuit.add_source(Generator::new(|| ")
+                .append(this.function)
+                .append("));");
     }
 }

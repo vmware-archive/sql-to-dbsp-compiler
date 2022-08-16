@@ -147,7 +147,7 @@ public class SqlTestFile {
     @SuppressWarnings("SpellCheckingInspection")
     @Nullable
     private SqlTestQuery parseTestQuery(TestAcceptancePolicy policy) throws IOException {
-        String line = this.nextLine(true);
+        @Nullable String line = this.nextLine(true);
         if (this.done)
             return null;
         List<String> skip = new ArrayList<>();
@@ -214,7 +214,7 @@ public class SqlTestFile {
                     result.outputDescription.clearResults();
                     while (!line.isEmpty()) {
                         result.outputDescription.addResultLine(line);
-                        line = this.nextLine(false);
+                        line = this.getNextLine(true);
                     }
                 }
             } else {

@@ -72,7 +72,7 @@ public class DBSPTupleExpression extends DBSPExpression {
         List<DBSPExpression> fields = new ArrayList<>();
         List<DBSPType> fieldTypes = new ArrayList<>();
         for (DBSPExpression expression: expressions) {
-            DBSPTypeTuple type = expression.getNonVoidType().to(DBSPTypeTuple.class);
+            DBSPTypeTuple type = expression.getNonVoidType().toRef(DBSPTypeTuple.class);
             for (int i = 0; i < type.size(); i++) {
                 DBSPType fieldType = type.tupArgs[i];
                 DBSPExpression field = new DBSPFieldExpression(null, expression, i, fieldType).simplify();

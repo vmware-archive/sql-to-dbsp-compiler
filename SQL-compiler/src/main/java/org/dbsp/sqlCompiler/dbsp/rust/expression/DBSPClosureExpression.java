@@ -27,20 +27,19 @@ import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPTuplePattern;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRawTuple;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
-import org.dbsp.sqlCompiler.dbsp.rust.type.IHasType;
+import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
 
 /**
- * An expression of the form |var1, var2, ...| expression
+ * An expression of the form |var1, var2, ...| body.
+ * Note: the type of the expression is in fact the type of the body,
+ * and not a closure type.
  */
 public class DBSPClosureExpression extends DBSPExpression {
-    private final DBSPExpression expression;
+    private final DBSPExpression body;
     private final Parameter[] varNames;
 
     public static class Parameter extends DBSPNode implements IHasType {
@@ -54,7 +53,7 @@ public class DBSPClosureExpression extends DBSPExpression {
             this.type = type;
         }
 
-        public Parameter(DBSPVariableReference[] variables) {
+        public Parameter(DBSPVariableReference... variables) {
             super(null);
             this.pattern = new DBSPTuplePattern(Linq.map(variables, DBSPVariableReference::asPattern, DBSPPattern.class));
             this.type = new DBSPTypeRawTuple(Linq.map(variables, DBSPExpression::getType, DBSPType.class));
@@ -82,23 +81,35 @@ public class DBSPClosureExpression extends DBSPExpression {
         }
     }
 
-    public DBSPClosureExpression(@Nullable Object node, DBSPExpression expression, String... varNames) {
-        super(node, null);
-        this.expression = expression;
+    public DBSPClosureExpression(@Nullable Object node, DBSPExpression body, String... varNames) {
+        super(node, body.getType());
+        this.body = body;
         this.varNames = Linq.map(varNames, v -> new Parameter(v, null), Parameter.class);
     }
 
-    public DBSPClosureExpression(@Nullable Object node, DBSPExpression expression, Parameter... variables) {
-        super(node, new DBSPTypeTuple(Linq.map(variables, Parameter::getType, DBSPType.class)));
-        this.expression = expression;
+    public DBSPClosureExpression(@Nullable Object node, DBSPExpression body, Parameter... variables) {
+        super(node, body.getType());
+        this.body = body;
         this.varNames = variables;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("|")
+        builder.append("move |")
                 .intercalate(", ", this.varNames)
-                .append("| ")
-                .append(this.expression);
+                .append("| ");
+        if (this.getType() != null)
+            builder.append("-> ")
+                    .append(this.getType())
+                    .append(" ");
+        return builder.append("{")
+                .increase()
+                .append(this.body)
+                .decrease()
+                .append("}");
+    }
+
+    public DBSPType[] getParameterTypes() {
+        return Linq.map(this.varNames, Parameter::getType, DBSPType.class);
     }
 }

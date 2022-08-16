@@ -114,7 +114,6 @@ public class SqlRuntimeLibrary {
         this.comparisons.add("<=");
         this.comparisons.add(">");
         this.comparisons.add("<");
-        this.generateProgram();
     }
 
     boolean isComparison(String op) {
@@ -301,6 +300,7 @@ public class SqlRuntimeLibrary {
      * @param filename   File to write the code to.
      */
     public void writeSqlLibrary(String filename) throws IOException {
+        this.generateProgram();
         File file = new File(filename);
         FileWriter writer = new FileWriter(file);
         IndentStringBuilder builder = new IndentStringBuilder();

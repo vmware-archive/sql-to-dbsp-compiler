@@ -44,8 +44,13 @@ public class DBSPFieldExpression extends DBSPExpression {
         this.fieldNo = fieldNo;
     }
 
+    static DBSPType getFieldType(DBSPType type, int fieldNo) {
+        DBSPTypeTuple tupl = type.toRef(DBSPTypeTuple.class);
+        return tupl.getFieldType(fieldNo);
+    }
+
     public DBSPFieldExpression(@Nullable RexNode node, DBSPExpression expression, int fieldNo) {
-        this(node, expression, fieldNo, expression.getNonVoidType().to(DBSPTypeTuple.class).getFieldType(fieldNo));
+        this(node, expression, fieldNo, getFieldType(expression.getNonVoidType(), fieldNo));
     }
 
     public DBSPExpression simplify() {

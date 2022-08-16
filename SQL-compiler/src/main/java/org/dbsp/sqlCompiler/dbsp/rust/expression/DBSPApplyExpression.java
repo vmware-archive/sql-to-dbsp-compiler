@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 
 /**
  * Function application expression.
+ * Note: the type of the expression is the type of the result returned by the function.
  */
 public class DBSPApplyExpression extends DBSPExpression {
     public final DBSPExpression function;

@@ -25,9 +25,22 @@
 
 package org.dbsp.util;
 
+/**
+ * Every time one of these is instantiated it will generate a unique name.
+ */
 public class NameGen extends IdGen {
+    private final String prefix;
+
+    public NameGen() {
+        this.prefix = "id";
+    }
+
+    public NameGen(String prefix) {
+        this.prefix = prefix;
+    }
+
     @Override
     public String toString() {
-        return "id" + this.id;
+        return this.prefix + this.id;
     }
 }

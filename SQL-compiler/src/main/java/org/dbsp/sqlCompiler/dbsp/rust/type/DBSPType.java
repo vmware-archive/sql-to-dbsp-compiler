@@ -66,20 +66,20 @@ public abstract class DBSPType extends DBSPNode {
      * Typical implementation of castFrom, which handles nullable types.
      */
     public IndentStringBuilder standardCastFrom(IndentStringBuilder builder, DBSPExpression source) {
-        DBSPType type = source.getNonVoidType();
-        if (type.mayBeNull) {
-            if (!this.mayBeNull)
-                throw new RuntimeException("Unexpected nullable source " + source +
-                        " and non-nullable result " + this);
+        DBSPType sourceType = source.getNonVoidType();
+        if (sourceType.mayBeNull) {
             builder.append("(match ")
                     .append(source)
-                    .append(" {\n").increase()
+                    .append(" {").increase()
                     .append("Some(x) => Some(");
-            DBSPExpression expr = new DBSPVariableReference("x", type.setMayBeNull(false));
-            return this.setMayBeNull(false).castFrom(builder, expr)
+            DBSPExpression expr = new DBSPVariableReference("x", sourceType.setMayBeNull(false));
+            this.setMayBeNull(false).castFrom(builder, expr)
                     .append("),\n")
                     .append("_ => None,\n").decrease()
                     .append("})");
+            if (!this.mayBeNull)
+                builder.append(".unwrap()");
+            return builder;
         } else {
             if (this.mayBeNull) {
                 builder.append("(Some(");
@@ -89,6 +89,16 @@ public abstract class DBSPType extends DBSPNode {
                 return this.castFrom(builder, source);
             }
         }
+    }
+
+    /**
+     * Similar to 'to', but handles Ref types specially.
+     */
+    public <T> T toRef(Class<T> clazz) {
+        DBSPTypeRef ref = this.as(DBSPTypeRef.class);
+        if (ref != null)
+            return ref.type.to(clazz);
+        return this.to(clazz);
     }
 
     /**

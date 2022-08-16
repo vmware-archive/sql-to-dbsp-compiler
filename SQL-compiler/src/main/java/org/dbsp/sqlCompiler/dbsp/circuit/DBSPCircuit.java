@@ -28,12 +28,15 @@ package org.dbsp.sqlCompiler.dbsp.circuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSourceOperator;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLetExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRawTuple;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.dbsp.rust.type.IHasType;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
+import org.dbsp.util.NameGen;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -50,7 +53,7 @@ public class DBSPCircuit extends DBSPNode {
             "\n" +
             "use dbsp::{\n" +
             "    algebra::{ZSet, MulByRef},\n" +
-            "    circuit::{Root, Stream},\n" +
+            "    circuit::{Circuit, Stream},\n" +
             "    operator::{Generator, FilterMap},\n" +
             "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
             "    zset,\n" +
@@ -73,6 +76,7 @@ public class DBSPCircuit extends DBSPNode {
     private final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
     private final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
     private final List<DBSPOperator> operators = new ArrayList<>();
+    private final List<IDBSPDeclaration> declarations = new ArrayList<>();
     public final String name;
     public final String query;
 
@@ -109,6 +113,13 @@ public class DBSPCircuit extends DBSPNode {
             this.outputOperators.add((DBSPSinkOperator)operator);
         else
             this.operators.add(operator);
+    }
+
+    public DBSPLetExpression declareLocal(String prefix, DBSPExpression init) {
+        String name = new NameGen(prefix).toString();
+        DBSPLetExpression let = new DBSPLetExpression(name, init);
+        this.declarations.add(let);
+        return let;
     }
 
     private void genRcCell(IndentStringBuilder builder, DBSPOperator op) {
@@ -194,8 +205,12 @@ public class DBSPCircuit extends DBSPNode {
             this.genRcCell(builder, o);
 
         // Circuit body
-        builder.append("let root = Root::build(|circuit| {")
+        builder.append("let root = Circuit::build(|circuit| {")
                 .increase();
+        for (IDBSPDeclaration decl: this.declarations)
+            builder.append(decl)
+                    .append(";")
+                    .newline();
         for (DBSPOperator i: this.inputOperators)
             builder.append(i)
                     .newline();
@@ -224,7 +239,7 @@ public class DBSPCircuit extends DBSPNode {
                     .append(i.getName())
                     .append(";")
                     .newline();
-        builder.append("root.step().unwrap();")
+        builder.append("root.0.step().unwrap();")
                 .newline()
                 .append("return ")
                 .append("(")

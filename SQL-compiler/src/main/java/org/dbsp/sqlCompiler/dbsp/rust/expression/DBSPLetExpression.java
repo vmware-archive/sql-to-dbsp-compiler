@@ -23,9 +23,10 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.circuit.IDBSPDeclaration;
 import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPLetExpression extends DBSPExpression {
+public class DBSPLetExpression extends DBSPExpression implements IDBSPDeclaration {
     public final String variable;
     public final DBSPExpression initializer;
     public final boolean mutable;
@@ -48,5 +49,14 @@ public class DBSPLetExpression extends DBSPExpression {
                 .append(variable)
                 .append(" = ")
                 .append(this.initializer);
+    }
+
+    @Override
+    public String getName() {
+        return this.variable;
+    }
+
+    public DBSPVariableReference getVarReference() {
+        return new DBSPVariableReference(this.variable, initializer.getNonVoidType());
     }
 }

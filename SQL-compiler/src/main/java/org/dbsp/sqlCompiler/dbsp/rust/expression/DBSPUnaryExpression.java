@@ -38,6 +38,8 @@ public class DBSPUnaryExpression extends DBSPExpression {
         super(node, type);
         this.operation = operation;
         this.left = operand;
+        if (operand.getNonVoidType().mayBeNull && !type.mayBeNull)
+            throw new RuntimeException("Unary operation produces non-nullable from nullable " + this);
         if (this.left == null)
             throw new TranslationException("Null operand", node);
     }
