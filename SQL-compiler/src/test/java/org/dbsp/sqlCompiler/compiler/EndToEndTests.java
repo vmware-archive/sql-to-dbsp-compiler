@@ -4,9 +4,13 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPTupleExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
 import org.dbsp.sqllogictest.SqlTestOutputDescription;
@@ -74,7 +78,7 @@ public class EndToEndTests {
     );
     private final DBSPZSetLiteral z0 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0);
     private final DBSPZSetLiteral z1 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e1);
-    private final DBSPZSetLiteral empty = new DBSPZSetLiteral(z0.getNonVoidType());
+    private final DBSPZSetLiteral empty = new DBSPZSetLiteral(this.z0.getNonVoidType());
 
     private DBSPZSetLiteral createInput() {
         return new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0, e1);
@@ -217,6 +221,76 @@ public class EndToEndTests {
     }
 
     @Test
+    public void divTest() {
+        String query = "CREATE VIEW V AS SELECT T.COL1 / T.COL5 FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(
+                        DBSPTypeInteger.signed32.setMayBeNull(true))),
+                new DBSPTupleExpression(new DBSPLiteral(10, true))));
+    }
+
+    @Test
+    public void divIntTest() {
+        String query = "CREATE VIEW V AS SELECT T.COL5 / T.COL5 FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(
+                        DBSPTypeInteger.signed32.setMayBeNull(true))),
+                new DBSPTupleExpression(new DBSPLiteral(1, true))));
+    }
+
+    // Calcite seems to handle this query incorrectly
+    //@Test
+    public void divZeroTest() {
+        String query = "CREATE VIEW V AS SELECT 1 / 0";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(
+                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test
+    public void floatDivTest() {
+        String query = "CREATE VIEW V AS SELECT T.COL6 / T.COL6 FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(
+                        DBSPTypeDouble.instance.setMayBeNull(true))),
+                new DBSPTupleExpression(new DBSPLiteral(Double.NaN, true))));
+    }
+
+    @Test
+    public void aggregateTest() {
+        String query = "CREATE VIEW V AS SELECT SUM(T.COL1) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(20, true))));
+    }
+
+    @Test
+    public void optionAggregateTest() {
+        String query = "CREATE VIEW V AS SELECT SUM(T.COL5) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(1, true))));
+    }
+
+    @Test
+    public void aggregateFalseTest() {
+        String query = "CREATE VIEW V AS SELECT SUM(T.COL1) FROM T WHERE FALSE";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(
+                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test
+    public void averageTest() {
+        String query = "CREATE VIEW V AS SELECT AVG(T.COL1) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
+                        new DBSPLiteral(10, true))));
+    }
+
+    @Test
     public void cartesianTest() {
         String query = "CREATE VIEW V AS SELECT * FROM T, T AS X";
         DBSPExpression inResult = DBSPTupleExpression.flatten(e0, e0);
@@ -225,5 +299,13 @@ public class EndToEndTests {
         result.add(DBSPTupleExpression.flatten(e1, e0));
         result.add(DBSPTupleExpression.flatten(e1, e1));
         this.testQuery(query, result);
+    }
+
+    @Test
+    public void foldTest() {
+        String query = "CREATE VIEW V AS SELECT + 91 + NULLIF ( + 93, + 38 )";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
+                new DBSPLiteral(184, true))));
     }
 }

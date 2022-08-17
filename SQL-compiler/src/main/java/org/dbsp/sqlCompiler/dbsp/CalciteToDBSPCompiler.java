@@ -27,15 +27,16 @@ package org.dbsp.sqlCompiler.dbsp;
 
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
+import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.logical.*;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.*;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqlCompiler.frontend.*;
 import org.dbsp.util.*;
 
@@ -44,7 +45,14 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class CalciteToDBSPCompiler extends RelVisitor {
+    /**
+     * Type of weight used in generated z-sets.
+     */
     public static final DBSPType weightType = new DBSPTypeUser(null, "Weight", false);
+    /**
+     * Variable that refers to the weight of the row in the z-set.
+     */
+    public static final DBSPVariableReference weight = new DBSPVariableReference("w", CalciteToDBSPCompiler.weightType);
 
     static class Context {
         @Nullable
@@ -69,7 +77,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     final Map<RelNode, DBSPOperator> nodeOperator;
 
     final TypeCompiler typeCompiler = new TypeCompiler();
-    final ExpressionCompiler expressionCompiler = new ExpressionCompiler(true);
 
     public CalciteToDBSPCompiler() {
         this.circuit = null;
@@ -102,16 +109,136 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     }
 
     public void visitAggregate(LogicalAggregate aggregate) {
+        assert this.circuit != null;
+
+        // A pair of count+sum aggregations:
+        // let count_sum = |k: GroupKey, vw: &mut Vec<(Tuple, Weight)>| -> (GroupKey, ResultType) {
+        //     let result: ResultType = vw.drain(..).fold(
+        //                     (0, Default::default()),
+        //                     |(r1, r2), (v, w)| (add_N_N(r1 + v.0.mul_by_weight(w), sum_N_N(r2, v.1.mul_by_weight(w))));
+        //     (*k, result)
+        // };
+        // input.aggregate(count_sum);
         DBSPType type = this.convertType(aggregate.getRowType());
+        DBSPTypeTuple tuple = type.to(DBSPTypeTuple.class);
         RelNode input = aggregate.getInput();
         DBSPOperator opInput = this.getOperator(input);
-        if (!aggregate.getAggCallList().isEmpty())
-            throw new Unimplemented(aggregate);
-        if (aggregate.containsDistinctCall() || aggregate.getAggCallList().isEmpty()) {
+        DBSPType inputRowType = this.convertType(input.getRowType());
+        List<AggregateCall> aggs = aggregate.getAggCallList();
+        if (!aggs.isEmpty()) {
+            // TODO: currently DBSP's aggregation interface requires grouping
+            // by ().  This should be avoided if it is not necessary.
+            DBSPExpression toEmpty = new DBSPClosureExpression(
+                    null,
+                    new DBSPRawTupleExpression(
+                            DBSPTupleExpression.emptyTuple,
+                            DBSPTupleExpression.flatten(
+                                    new DBSPVariableReference("t", inputRowType))),
+                    "t");
+            DBSPIndexOperator index = new DBSPIndexOperator(
+                    aggregate, toEmpty, DBSPTypeTuple.emptyTupleType, inputRowType, opInput);
+            this.circuit.addOperator(index);
+            DBSPVariableReference k = new DBSPVariableReference("k", DBSPTypeRawTuple.emptyTupleType);
+            DBSPVariableReference vw = new DBSPVariableReference("vw", new DBSPTypeTuple(inputRowType, CalciteToDBSPCompiler.weightType));
+            DBSPExpression drain = new DBSPApplyMethodExpression("drain", DBSPTypeAny.instance, vw,
+                    new DBSPRangeExpression(null, null, false, DBSPTypeInteger.signed32));
+            DBSPVariableReference v = new DBSPVariableReference("v", new DBSPTypeRef(inputRowType));
+
+            AggregateCompiler.Implementation[] impl = new AggregateCompiler.Implementation[aggs.size()];
+            int aggIndex = 0;
+            for (AggregateCall call: aggs) {
+                DBSPType resultType = tuple.getFieldType(aggIndex);
+                AggregateCompiler compiler = new AggregateCompiler(call, resultType, aggIndex, v);
+                impl[aggIndex] = compiler.compile();
+                aggIndex++;
+            }
+
+            DBSPExpression zero = new DBSPRawTupleExpression(Linq.map(impl, i -> i.zero, DBSPExpression.class));
+            DBSPExpression aggBody = new DBSPRawTupleExpression(Linq.map(impl, i -> i.increment, DBSPExpression.class));
+            DBSPClosureExpression.Parameter tupAccumulators = new DBSPClosureExpression.Parameter(
+                    Linq.map(impl, i -> i.accumulator, DBSPVariableReference.class));
+            DBSPClosureExpression foldBody = new DBSPClosureExpression(null, aggBody,
+                    tupAccumulators,
+                    new DBSPClosureExpression.Parameter(v, weight));
+            DBSPLetExpression foldClo = this.circuit.declareLocal("fold", foldBody);
+            DBSPExpression fold = new DBSPApplyMethodExpression(
+                    "fold", DBSPTypeAny.instance, drain, zero, foldClo.getVarReference());
+            // Postprocessing if needed
+            boolean postNeeded = Linq.any(impl, i -> i.postprocess != null);
+            if (postNeeded) {
+                DBSPType[] postArgTypes = new DBSPType[impl.length];
+                for (int i = 0; i < impl.length; i++) {
+                    DBSPClosureExpression post = impl[i].postprocess;
+                    if (post == null) {
+                        postArgTypes[i] = impl[i].accumulator.getNonVoidType();
+                    } else {
+                        DBSPType[] paramTypes = post.getParameterTypes();
+                        if (paramTypes.length != 1)
+                            throw new RuntimeException("Expected a single parameter for " + post);
+                        postArgTypes[i] = paramTypes[0];
+                    }
+                }
+                DBSPTypeRawTuple postArgType = new DBSPTypeRawTuple(postArgTypes);
+                DBSPVariableReference var = new DBSPVariableReference("p", postArgType);
+                DBSPExpression[] posts = new DBSPExpression[impl.length];
+                for (int i = 0; i < impl.length; i++) {
+                    DBSPExpression arg = new DBSPFieldExpression(null, var, i);
+                    DBSPClosureExpression post = impl[i].postprocess;
+                    if (post == null) {
+                        posts[i] = arg;
+                    } else {
+                        DBSPLetExpression let = this.circuit.declareLocal("post", post);
+                        posts[i] = new DBSPApplyExpression(let.getName(), post.getNonVoidType(), arg);
+                    }
+                }
+                DBSPExpression body = new DBSPTupleExpression(posts);
+                DBSPLetExpression let = this.circuit.declareLocal("post",
+                        new DBSPClosureExpression(null, body, var.asParameter()));
+                fold = new DBSPApplyExpression(let.getName(), type, fold);
+            }
+            // Must return a tuple. TODO: is not using the legal Rust grammar
+            DBSPExpression tup1 = new DBSPApplyExpression(
+                    new DBSPPathExpression(
+                            type,tuple.toPath(), "from"),
+                    DBSPTypeAny.instance, fold);
+            DBSPExpression closure = new DBSPClosureExpression(aggregate, tup1,
+                    new DBSPClosureExpression.Parameter(k.asPattern(), null),
+                    new DBSPClosureExpression.Parameter(vw.asPattern(), null));
+            DBSPAggregateOperator agg = new DBSPAggregateOperator(aggregate, closure, type, index);
+            // This almost works, but we have a problem with empty input collections.
+            // aggregate returns empty collections for empty input collections -- the fold
+            // method is never invoked.
+            // So we need to do some postprocessing step for this case.
+            // The current result is a zset like {}/{c->1}: either the empty set (for an empty input)
+            // or the correct count with a weight of 1.
+            // We need to produce {z->1}/{c->1}, where z is the actual zero of the fold above.
+            // For this we synthesize the following graph:
+            // {}/{c->1}------------------------
+            //    | map (|x| x -> z}           |
+            // {}/{z->1}                       |
+            //    | -                          |
+            // {} {z->-1}   {z->1} (constant)  |
+            //          \  /                  /
+            //           +                   /
+            //         {z->1}/{}  -----------
+            //                 \ /
+            //                  +
+            //              {z->1}/{c->1}
+            DBSPExpression tupleZero = new DBSPTupleExpression(Linq.map(impl, i -> i.postZero, DBSPExpression.class));
+            this.circuit.addOperator(agg);
+            DBSPExpression toZero = new DBSPClosureExpression(null, tupleZero, "_t");
+            DBSPOperator map = new DBSPMapOperator(aggregate, toZero, type, agg);
+            this.circuit.addOperator(map);
+            DBSPOperator neg = new DBSPNegateOperator(aggregate, type, map);
+            this.circuit.addOperator(neg);
+            DBSPOperator constant = new DBSPConstantOperator(
+                    aggregate, new DBSPZSetLiteral(weightType, tupleZero));
+            this.circuit.addOperator(constant);
+            DBSPOperator sum = new DBSPSumOperator(aggregate, type, Linq.list(constant, neg, agg));
+            this.assignOperator(aggregate, sum);
+        } else {
             DBSPOperator dist = new DBSPDistinctOperator(aggregate, type, opInput);
             this.assignOperator(aggregate, dist);
-        } else {
-            throw new Unimplemented();
         }
     }
 
@@ -137,15 +264,27 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         // LogicalProject is not really SQL project, it is rather map.
         RelNode input = project.getInput();
         DBSPOperator opInput = this.getOperator(input);
-        DBSPType type = this.convertType(project.getRowType());
+        DBSPType outputType = this.convertType(project.getRowType());
+        DBSPTypeTuple tuple = outputType.to(DBSPTypeTuple.class);
+        DBSPType inputType = this.convertType(project.getInput().getRowType());
+        DBSPVariableReference row = new DBSPVariableReference("t", inputType);
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(row);
+
         List<DBSPExpression> resultColumns = new ArrayList<>();
+        int index = 0;
         for (RexNode column : project.getProjects()) {
-            DBSPExpression exp = this.expressionCompiler.compile(column);
+            DBSPExpression exp = expressionCompiler.compile(column);
+            DBSPType expectedType = tuple.getFieldType(index);
+            if (!exp.getNonVoidType().same(expectedType)) {
+                // Calcite's optimizations do not preserve types!
+                exp = ExpressionCompiler.makeCast(exp, expectedType);
+            }
             resultColumns.add(exp);
+            index++;
         }
-        DBSPExpression exp = new DBSPTupleExpression(project, type, resultColumns);
-        DBSPExpression closure = new DBSPClosureExpression(project, type, exp, "t");
-        DBSPMapOperator op = new DBSPMapOperator(project, closure, type, opInput);
+        DBSPExpression exp = new DBSPTupleExpression(project, outputType, resultColumns);
+        DBSPExpression closure = new DBSPClosureExpression(project, exp, row.asRefParameter());
+        DBSPMapOperator op = new DBSPMapOperator(project, closure, outputType, opInput);
         // No distinct needed - in SQL project may produce a multiset.
         this.assignOperator(project, op);
     }
@@ -191,11 +330,11 @@ public class CalciteToDBSPCompiler extends RelVisitor {
 
     public void visitFilter(LogicalFilter filter) {
         DBSPType type = this.convertType(filter.getRowType());
-        DBSPExpression condition = this.expressionCompiler.compile(filter.getCondition());
-        if (condition.getNonVoidType().mayBeNull) {
-            condition = new DBSPApplyExpression("wrap_bool", condition.getNonVoidType(), condition);
-        }
-        condition = new DBSPClosureExpression(filter.getCondition(), condition.getNonVoidType(), condition, "t");
+        DBSPVariableReference t = new DBSPVariableReference("t", type);
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(t);
+        DBSPExpression condition = expressionCompiler.compile(filter.getCondition());
+        condition = ExpressionCompiler.wrapBoolIfNeeded(condition);
+        condition = new DBSPClosureExpression(filter.getCondition(), condition, t.asRefParameter());
         DBSPOperator input = this.getOperator(filter.getInput());
         DBSPFilterOperator fop = new DBSPFilterOperator(filter, condition, type, input);
         this.assignOperator(filter, fop);
@@ -209,41 +348,41 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         DBSPOperator right = this.getOperator(join.getInput(1));
         DBSPType leftElementType = left.getNonVoidType().to(DBSPTypeZSet.class).elementType;
         DBSPType rightElementType = right.getNonVoidType().to(DBSPTypeZSet.class).elementType;
+        DBSPVariableReference l = new DBSPVariableReference("l", new DBSPTypeRef(leftElementType));
+        DBSPVariableReference r = new DBSPVariableReference("r", new DBSPTypeRef(rightElementType));
 
         DBSPExpression toEmptyLeft = new DBSPClosureExpression(
-                null, leftElementType,
+                null,
                 new DBSPRawTupleExpression(
                         DBSPTupleExpression.emptyTuple,
-                        DBSPTupleExpression.flatten(
-                                new DBSPVariableReference("t", leftElementType))),
-                "t");
+                        DBSPTupleExpression.flatten(l)),
+                l.asParameter());
         DBSPIndexOperator lindex = new DBSPIndexOperator(
                 join, toEmptyLeft, DBSPTypeTuple.emptyTupleType, leftElementType, left);
         Objects.requireNonNull(this.circuit).addOperator(lindex);
 
         DBSPExpression toEmptyRight = new DBSPClosureExpression(
-                null, rightElementType,
+                null,
                 new DBSPRawTupleExpression(
                         DBSPTupleExpression.emptyTuple,
-                        DBSPTupleExpression.flatten(
-                                new DBSPVariableReference("t", rightElementType))),
-                        "t");
+                        DBSPTupleExpression.flatten(r)),
+                r.asParameter());
         DBSPIndexOperator rIndex = new DBSPIndexOperator(
                 join, toEmptyRight, DBSPTypeTuple.emptyTupleType, rightElementType, right);
         this.circuit.addOperator(rIndex);
 
-        DBSPExpression l = new DBSPVariableReference("l", leftElementType);
-        DBSPExpression r = new DBSPVariableReference("r", rightElementType);
-        DBSPExpression makePairs = new DBSPClosureExpression(null, type,
+        DBSPExpression makePairs = new DBSPClosureExpression(null,
                 DBSPTupleExpression.flatten(l, r),
                 "k", "l", "r");
         DBSPCartesianOperator cart = new DBSPCartesianOperator(join, type, makePairs, lindex, rIndex);
         this.circuit.addOperator(cart);
-        DBSPExpression condition = this.expressionCompiler.compile(join.getCondition());
+        DBSPVariableReference inputRow = new DBSPVariableReference("t", makePairs.getNonVoidType());
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(inputRow);
+        DBSPExpression condition = expressionCompiler.compile(join.getCondition());
         if (condition.getNonVoidType().mayBeNull) {
             condition = new DBSPApplyExpression("wrap_bool", condition.getNonVoidType(), condition);
         }
-        condition = new DBSPClosureExpression(join.getCondition(), condition.getNonVoidType(), condition, "t");
+        condition = new DBSPClosureExpression(join.getCondition(), condition, "t");
         DBSPFilterOperator fop = new DBSPFilterOperator(join, condition, type, cart);
         this.assignOperator(join, fop);
     }
@@ -286,36 +425,49 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 throw new RuntimeException("Overwriting logical value translation");
             this.logicalValueTranslation = literal;
         }
+
+        public boolean prepared() {
+            return this.tableType != null;
+        }
     }
 
     DMLTranslation dmTranslation = new DMLTranslation();
 
     /**
-     * Visit a LogicalValue: a SQL literal, as produced by a VALUES expression
+     * Visit a LogicalValue: a SQL literal, as produced by a VALUES expression.
+     * This can be invoked by a DDM statement, or by a SQL query that computes a constant result.
      */
     public void visitLogicalValues(LogicalValues values) {
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(null);
         DBSPTypeTuple sourceType = this.convertType(values.getRowType()).to(DBSPTypeTuple.class);
-        DBSPTypeTuple resultType = this.dmTranslation
-                .getResultType()
-                .to(DBSPTypeZSet.class)
-                .elementType
-                .to(DBSPTypeTuple.class);
-        if (sourceType.size() != resultType.size())
-            throw new TranslationException("Expected a tuple with " + resultType.size() +
-                    " values but got " + values, values);
+        boolean ddmTranslation = this.dmTranslation.prepared();
+
+        DBSPTypeTuple resultType;
+        if (ddmTranslation) {
+            resultType = this.dmTranslation
+                    .getResultType()
+                    .to(DBSPTypeZSet.class)
+                    .elementType
+                    .to(DBSPTypeTuple.class);
+            if (sourceType.size() != resultType.size())
+                throw new TranslationException("Expected a tuple with " + resultType.size() +
+                        " values but got " + values, values);
+        } else {
+            resultType = sourceType;
+        }
 
         DBSPZSetLiteral result = new DBSPZSetLiteral(TypeCompiler.makeZSet(resultType));
-        for (List<RexLiteral> t: values.getTuples()) {
+        for (List<RexLiteral> t : values.getTuples()) {
             List<DBSPExpression> exprs = new ArrayList<>();
             if (t.size() != sourceType.size())
                 throw new TranslationException("Expected a tuple with " + sourceType.size() +
                         " values but got " + t, values);
             int i = 0;
             for (RexLiteral rl : t) {
-                DBSPExpression expr = this.expressionCompiler.compile(rl);
+                DBSPExpression expr = expressionCompiler.compile(rl);
                 DBSPType resultFieldType = resultType.tupArgs[i];
                 if (!expr.getNonVoidType().same(resultFieldType)) {
-                    DBSPCastExpression cast = new DBSPCastExpression(values, resultFieldType, expr);
+                    DBSPExpression cast = ExpressionCompiler.makeCast(expr, resultFieldType);
                     exprs.add(cast);
                 } else {
                     exprs.add(expr);
@@ -325,7 +477,13 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             DBSPTupleExpression expression = new DBSPTupleExpression(t, resultType, exprs);
             result.add(expression);
         }
-        this.dmTranslation.setResult(result);
+
+        if (ddmTranslation) {
+            this.dmTranslation.setResult(result);
+        } else {
+            DBSPOperator constant = new DBSPConstantOperator(values, result);
+            this.assignOperator(values, constant);
+        }
     }
 
     @Override public void visit(

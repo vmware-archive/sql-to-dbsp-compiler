@@ -1,5 +1,8 @@
 #![allow(non_snake_case)]
 
+use std::ops::Add;
+use ordered_float::OrderedFloat;
+
 #[inline(always)]
 pub fn or_b_b(left: bool, right: bool) -> bool
 {
@@ -80,5 +83,279 @@ pub fn is_null<T>(value: Option<T>) -> bool
     match value {
         Some(_) => false,
         _       => true,
+    }
+}
+
+#[inline(always)]
+pub fn indicator<T>(value: Option<T>) -> i64
+{
+    match value {
+        None => 0,
+        Some(_) => 1,
+    }
+}
+
+pub fn agg_max_N_N<T>(left: Option<T>, right: Option<T>) -> Option<T>
+where
+    T: Ord + Copy
+{
+    match (left, right) {
+        (None, _) => right,
+        (_, None) => left,
+        (Some(x), Some(y)) => Some(x.max(y))
+    }
+}
+
+pub fn agg_min_N_N<T>(left: Option<T>, right: Option<T>) -> Option<T>
+where
+    T: Ord + Copy
+{
+    match (left, right) {
+        (None, _) => right,
+        (_, None) => left,
+        (Some(x), Some(y)) => Some(x.min(y))
+    }
+}
+
+pub fn agg_max_N_<T>(left: Option<T>, right: T) -> Option<T>
+where
+    T: Ord + Copy
+{
+    match (left, right) {
+        (None, _) => Some(right),
+        (Some(x), y) => Some(x.max(y))
+    }
+}
+
+pub fn agg_min_N_<T>(left: Option<T>, right: T) -> Option<T>
+where
+    T: Ord + Copy
+{
+    match (left, right) {
+        (None, _) => Some(right),
+        (Some(x), y) => Some(x.min(y))
+    }
+}
+
+pub fn agg_plus_N_N<T>(left: Option<T>, right: Option<T>) -> Option<T>
+where
+    T: Add<T, Output = T> + Copy
+{
+    match (left, right) {
+        (None, _) => right,
+        (_, None) => left,
+        (Some(x), Some(y)) => Some(x + y)
+    }
+}
+
+pub fn agg_plus_N_<T>(left: Option<T>, right: T) -> Option<T>
+where
+    T: Add<T, Output = T> + Copy
+{
+    match (left, right) {
+        (None, _) => Some(right),
+        (Some(x), y) => Some(x + y)
+    }
+}
+
+pub fn agg_plus__N<T>(left: T, right: Option<T>) -> Option<T>
+where
+    T: Add<T, Output = T> + Copy
+{
+    match (left, right) {
+        (_, None) => Some(left),
+        (x, Some(y)) => Some(x + y)
+    }
+}
+
+pub fn agg_plus__<T>(left: T, right: T) -> T
+where
+    T: Add<T, Output = T> + Copy
+{
+    left + right
+}
+
+#[inline(always)]
+pub fn div_i16_i16(left: i16, right: i16) -> Option<i16>
+{
+    match right {
+        0 => None,
+        _ => Some(left / right),
+    }
+}
+
+#[inline(always)]
+pub fn div_i32_i32(left: i32, right: i32) -> Option<i32>
+{
+    match right {
+        0 => None,
+        _ => Some(left / right),
+    }
+}
+
+#[inline(always)]
+pub fn div_i64_i64(left: i64, right: i64) -> Option<i64>
+{
+    match right {
+        0 => None,
+        _ => Some(left / right),
+    }
+}
+
+#[inline(always)]
+pub fn div_i16N_i16(left: Option<i16>, right: i16) -> Option<i16>
+{
+    match (left, right, ) {
+        (_, 0) => None,
+        (Some(l), r, ) => Some(l / r),
+        (_, _, ) => None::<i16>,
+    }
+}
+
+#[inline(always)]
+pub fn div_i32N_i32(left: Option<i32>, right: i32) -> Option<i32>
+{
+    match (left, right, ) {
+        (_, 0) => None,
+        (Some(l), r, ) => Some(l / r),
+        (_, _, ) => None::<i32>,
+    }
+}
+
+#[inline(always)]
+pub fn div_i64N_i64(left: Option<i64>, right: i64) -> Option<i64>
+{
+    match (left, right, ) {
+        (_, 0) => None,
+        (Some(l), r, ) => Some(l / r),
+        (_, _, ) => None::<i64>,
+    }
+}
+
+#[inline(always)]
+pub fn div_i16_i16N(left: i16, right: Option<i16>) -> Option<i16>
+{
+    match (left, right) {
+        (_, Some(0)) => None,
+        (l, Some(r)) => Some(l / r),
+        (_, _) => None::<i16>,
+    }
+}
+
+#[inline(always)]
+pub fn div_i32_i32N(left: i32, right: Option<i32>) -> Option<i32>
+{
+    match (left, right) {
+        (_, Some(0)) => None,
+        (l, Some(r)) => Some(l / r),
+        (_, _) => None::<i32>,
+    }
+}
+
+#[inline(always)]
+pub fn div_i64_i64N(left: i64, right: Option<i64>) -> Option<i64>
+{
+    match (left, right) {
+        (_, Some(0)) => None,
+        (l, Some(r)) => Some(l / r),
+        (_, _) => None::<i64>,
+    }
+}
+
+#[inline(always)]
+pub fn div_i16N_i16N(left: Option<i16>, right: Option<i16>) -> Option<i16>
+{
+    match (left, right) {
+        (_, Some(0)) => None,
+        (Some(l), Some(r)) => Some(l / r),
+        (_, _) => None::<i16>,
+    }
+}
+
+#[inline(always)]
+pub fn div_i32N_i32N(left: Option<i32>, right: Option<i32>) -> Option<i32>
+{
+    match (left, right) {
+        (_, Some(0)) => None,
+        (Some(l), Some(r)) => Some(l / r),
+        (_, _) => None::<i32>,
+    }
+}
+
+#[inline(always)]
+pub fn div_i64N_i64N(left: Option<i64>, right: Option<i64>) -> Option<i64>
+{
+    match (left, right) {
+        (_, Some(0)) => None,
+        (Some(l), Some(r)) => Some(l / r),
+        (_, _) => None::<i64>,
+    }
+}
+
+#[inline(always)]
+pub fn div_f_f(left: OrderedFloat<f32>, right: OrderedFloat<f32>) -> Option<OrderedFloat<f32>>
+{
+    Some(OrderedFloat::<f32>(left.into_inner() / right.into_inner()))
+}
+
+#[inline(always)]
+pub fn div_f_fN(left: OrderedFloat<f32>, right: Option<OrderedFloat<f32>>) -> Option<OrderedFloat<f32>>
+{
+    match right {
+        None => None,
+        Some(right) => Some(OrderedFloat::<f32>(left.into_inner() / right.into_inner())),
+    }
+}
+
+#[inline(always)]
+pub fn div_fN_f(left: Option<OrderedFloat<f32>>, right: OrderedFloat<f32>) -> Option<OrderedFloat<f32>>
+{
+    match left {
+        None => None,
+        Some(left) => Some(OrderedFloat::<f32>(left.into_inner() / right.into_inner())),
+    }
+}
+
+#[inline(always)]
+pub fn div_fN_fN(left: Option<OrderedFloat<f32>>, right: Option<OrderedFloat<f32>>) -> Option<OrderedFloat<f32>>
+{
+    match (left, right) {
+        (None, _) => None,
+        (_, None) => None,
+        (Some(left), Some(right)) => Some(OrderedFloat::<f32>(left.into_inner() / right.into_inner())),
+    }
+}
+
+#[inline(always)]
+pub fn div_d_d(left: OrderedFloat<f64>, right: OrderedFloat<f64>) -> Option<OrderedFloat<f64>>
+{
+    Some(OrderedFloat::<f64>(left.into_inner() / right.into_inner()))
+}
+
+#[inline(always)]
+pub fn div_d_dN(left: OrderedFloat<f64>, right: Option<OrderedFloat<f64>>) -> Option<OrderedFloat<f64>>
+{
+    match right {
+        None => None,
+        Some(right) => Some(OrderedFloat::<f64>(left.into_inner() / right.into_inner())),
+    }
+}
+
+#[inline(always)]
+pub fn div_dN_d(left: Option<OrderedFloat<f64>>, right: OrderedFloat<f64>) -> Option<OrderedFloat<f64>>
+{
+    match left {
+        None => None,
+        Some(left) => Some(OrderedFloat::<f64>(left.into_inner() / right.into_inner())),
+    }
+}
+
+#[inline(always)]
+pub fn div_dN_dN(left: Option<OrderedFloat<f64>>, right: Option<OrderedFloat<f64>>) -> Option<OrderedFloat<f64>>
+{
+    match (left, right) {
+        (None, _) => None,
+        (_, None) => None,
+        (Some(left), Some(right)) => Some(OrderedFloat::<f64>(left.into_inner() / right.into_inner())),
     }
 }

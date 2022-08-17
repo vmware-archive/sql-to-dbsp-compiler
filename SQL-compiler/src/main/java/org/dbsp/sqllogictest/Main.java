@@ -31,13 +31,16 @@ import org.dbsp.util.Utilities;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashSet;
 import java.util.List;
 
 /**
  * Execute all SqlLogicTest tests.
  */
 public class Main {
-    static String[] done = { "10", "62", "12", "53", "126", "46", "51", "65", "67", "74", "0" };
+    // Following are queries that calcite fails to parse.
+    static HashSet<String> calciteBugs = new HashSet<>();
+    static String[] done = {}; // { "10", "62", "12", "53", "126", "46", "51", "65", "67", "74", "0" };
 
     static class NoMySql implements TestAcceptancePolicy {
         @Override
@@ -49,7 +52,13 @@ public class Main {
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
         int tests = 0;
-        final ISqlTestExecutor executor = new DBSPExecutor();
+        final int batchSize;
+        final ISqlTestExecutor executor;
+
+        TestLoader(int batchSize, ISqlTestExecutor executor) {
+            this.batchSize = batchSize;
+            this.executor = executor;
+        }
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
@@ -73,7 +82,7 @@ public class Main {
                 if (test != null) {
                     try {
                         System.out.println(file);
-                        test.execute(this.executor);
+                        test.execute(this.executor, this.batchSize, calciteBugs);
                     } catch (SqlParseException | IOException | InterruptedException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -85,13 +94,22 @@ public class Main {
     }
 
     public static void main(String[] argv) throws IOException {
-        String directory =
-            // "../../sqllogictest/test/s.test"; //
-            "../../sqllogictest/test/random/select";
+        // Calcite cannot parse this query
+        calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");       
+        // Calcite types /0 as not nullable!
+        calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
+        int batchSize = 300;
+        ISqlTestExecutor executor = new DBSPExecutor();
+        String files =
+            //"../../sqllogictest/test/s.test"
+            //"../../sqllogictest/test/random/select"
+            "../../sqllogictest/test/random/expr"
+            //"../../sqllogictest/test/random/aggregates"
+        ;
         if (argv.length > 1)
-            directory = argv[1];
-        Path path = Paths.get(directory);
-        TestLoader loader = new TestLoader();
+            files = argv[1];
+        Path path = Paths.get(files);
+        TestLoader loader = new TestLoader(batchSize, executor);
         Files.walkFileTree(path, loader);
         System.out.println("Could not parse: " + loader.errors);
         System.out.println("Parsed tests: " + String.format("%,3d", loader.tests));

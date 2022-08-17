@@ -8,12 +8,14 @@ use ordered_float::OrderedFloat;
 
 pub enum SqlValue {
     Int(i32),
+    Long(i64),
     Str(String),
     Flt(f32),
     Dbl(f64),
     Bool(bool),
 
     OptInt(Option<i32>),
+    OptLong(Option<i64>),
     OptStr(Option<String>),
     OptFlt(Option<f32>),
     OptDbl(Option<f64>),
@@ -23,6 +25,12 @@ pub enum SqlValue {
 impl From<i32> for SqlValue {
     fn from(value: i32) -> Self {
         SqlValue::Int(value)
+    }
+}
+
+impl From<i64> for SqlValue {
+    fn from(value: i64) -> Self {
+        SqlValue::Long(value)
     }
 }
 
@@ -65,6 +73,12 @@ impl From<String> for SqlValue {
 impl From<Option<i32>> for SqlValue {
     fn from(value: Option<i32>) -> Self {
         SqlValue::OptInt(value)
+    }
+}
+
+impl From<Option<i64>> for SqlValue {
+    fn from(value: Option<i64>) -> Self {
+        SqlValue::OptLong(value)
     }
 }
 
@@ -183,6 +197,10 @@ impl SqlLogicTestFormat for SqlValue {
             (SqlValue::Int(x), _) => format!("{}", x),
             (SqlValue::OptInt(None), _) => String::from("NULL"),
             (SqlValue::OptInt(Some(x)), _) => format!("{}", x),
+
+            (SqlValue::Long(x), _) => format!("{}", x),
+            (SqlValue::OptLong(None), _) => String::from("NULL"),
+            (SqlValue::OptLong(Some(x)), _) => format!("{}", x),
 
             (SqlValue::OptFlt(None), _) => String::from("NULL"),
             (SqlValue::Flt(x), 'I') => format!("{}", *x as i32),

@@ -26,8 +26,8 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 
 public class DBSPFilterOperator extends DBSPOperator {
     public DBSPFilterOperator(Object filter, DBSPExpression condition, DBSPType type, DBSPOperator input) {

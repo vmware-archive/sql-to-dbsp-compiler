@@ -28,7 +28,7 @@ package org.dbsp.sqlCompiler.dbsp;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
+import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.util.Unimplemented;
 
 import java.util.ArrayList;

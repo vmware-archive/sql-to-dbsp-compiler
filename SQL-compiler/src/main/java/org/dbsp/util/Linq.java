@@ -133,4 +133,12 @@ public class Linq {
             }
         return false;
     }
+
+    public static <T> boolean any(T[] data, Predicate<T> test) {
+        for (T d: data)
+            if (test.test(d)) {
+                return true;
+            }
+        return false;
+    }
 }

@@ -28,11 +28,15 @@ package org.dbsp.sqlCompiler.dbsp.circuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSourceOperator;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeRawTuple;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.DBSPTypeTuple;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLetExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRawTuple;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
+import org.dbsp.sqlCompiler.dbsp.rust.type.IHasType;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
+import org.dbsp.util.NameGen;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -48,8 +52,8 @@ public class DBSPCircuit extends DBSPNode {
             "#![allow(unused_variables)]\n" +
             "\n" +
             "use dbsp::{\n" +
-            "    algebra::ZSet,\n" +
-            "    circuit::{Root, Stream},\n" +
+            "    algebra::{ZSet, MulByRef},\n" +
+            "    circuit::{Circuit, Stream},\n" +
             "    operator::{Generator, FilterMap},\n" +
             "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
             "    zset,\n" +
@@ -72,6 +76,7 @@ public class DBSPCircuit extends DBSPNode {
     private final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
     private final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
     private final List<DBSPOperator> operators = new ArrayList<>();
+    private final List<IDBSPDeclaration> declarations = new ArrayList<>();
     public final String name;
     public final String query;
 
@@ -97,6 +102,10 @@ public class DBSPCircuit extends DBSPNode {
         return this.outputOperators.get(outputNo).getNonVoidType();
     }
 
+    public DBSPTypeRawTuple getOutputtype() {
+        return new DBSPTypeRawTuple(null, Linq.map(this.outputOperators, IHasType::getNonVoidType));
+    }
+
     public void addOperator(DBSPOperator operator) {
         if (operator instanceof DBSPSourceOperator)
             this.inputOperators.add((DBSPSourceOperator)operator);
@@ -104,6 +113,13 @@ public class DBSPCircuit extends DBSPNode {
             this.outputOperators.add((DBSPSinkOperator)operator);
         else
             this.operators.add(operator);
+    }
+
+    public DBSPLetExpression declareLocal(String prefix, DBSPExpression init) {
+        String name = new NameGen(prefix).toString();
+        DBSPLetExpression let = new DBSPLetExpression(name, init);
+        this.declarations.add(let);
+        return let;
     }
 
     private void genRcCell(IndentStringBuilder builder, DBSPOperator op) {
@@ -189,8 +205,12 @@ public class DBSPCircuit extends DBSPNode {
             this.genRcCell(builder, o);
 
         // Circuit body
-        builder.append("let root = Root::build(|circuit| {")
+        builder.append("let root = Circuit::build(|circuit| {")
                 .increase();
+        for (IDBSPDeclaration decl: this.declarations)
+            builder.append(decl)
+                    .append(";")
+                    .newline();
         for (DBSPOperator i: this.inputOperators)
             builder.append(i)
                     .newline();
@@ -208,8 +228,7 @@ public class DBSPCircuit extends DBSPNode {
 
         // Create the closure and return it.
         builder.append("return move |")
-                .append(String.join(", ",
-                        Linq.map(this.inputOperators, DBSPOperator::getName)))
+                .joinS(", ", Linq.map(this.inputOperators, DBSPOperator::getName))
                 .append("| {")
                 .increase();
 
@@ -220,17 +239,14 @@ public class DBSPCircuit extends DBSPNode {
                     .append(i.getName())
                     .append(";")
                     .newline();
-        builder.append("root.step().unwrap();")
-                        .newline();
-        builder.append("return ");
-        if (this.outputOperators.size() > 1)
-            builder.append("(");
-        builder.append(String.join(", ",
-                Linq.map(this.outputOperators,
-                        o -> o.getName() + "_external.borrow().clone()")));
-        if (this.outputOperators.size() > 1)
-            builder.append(")");
-        builder.append(";")
+        builder.append("root.0.step().unwrap();")
+                .newline()
+                .append("return ")
+                .append("(")
+                .intercalateS(", ",
+                        Linq.map(this.outputOperators, o -> o.getName() + "_external.borrow().clone()"))
+                .append(")")
+                .append(";")
                 .newline()
                 .decrease()
                 .append("};")

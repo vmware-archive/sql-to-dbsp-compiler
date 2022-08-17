@@ -25,8 +25,10 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.expression.*;
-import org.dbsp.sqlCompiler.dbsp.circuit.type.*;
+import org.dbsp.sqlCompiler.dbsp.rust.DBSPFile;
+import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqllogictest.SqlTestOutputDescription;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Unimplemented;
@@ -82,6 +84,8 @@ public class SqlRuntimeLibrary {
         this.arithmeticFunctions.put("band", "&");
         this.arithmeticFunctions.put("bor", "|");
         this.arithmeticFunctions.put("bxor", "^");
+        this.arithmeticFunctions.put("min", "min");
+        this.arithmeticFunctions.put("max", "max");
 
         this.doubleFunctions.put("eq", "==");
         this.doubleFunctions.put("neq", "!=");
@@ -110,7 +114,6 @@ public class SqlRuntimeLibrary {
         this.comparisons.add("<=");
         this.comparisons.add(">");
         this.comparisons.add("<");
-        this.generateProgram();
     }
 
     boolean isComparison(String op) {
@@ -127,7 +130,8 @@ public class SqlRuntimeLibrary {
         }
     }
     
-    public FunctionDescription getFunction(String op, DBSPType ltype, @Nullable DBSPType rtype) {
+    public FunctionDescription getFunction(
+            String op, DBSPType ltype, @Nullable DBSPType rtype, boolean aggregate) {
         HashMap<String, String> map;
         DBSPType returnType;
         boolean anyNull = ltype.mayBeNull || (rtype != null && rtype.mayBeNull);
@@ -143,20 +147,19 @@ public class SqlRuntimeLibrary {
 
         if (isComparison(op))
             returnType = DBSPTypeBool.instance.setMayBeNull(anyNull);
+        if (op.equals("/"))
+            // Always, for division by 0
+            returnType = returnType.setMayBeNull(true);
         String suffixl = ltype.mayBeNull ? "N" : "";
         String suffixr = rtype == null ? "" : (rtype.mayBeNull ? "N" : "");
-        String tsuffixl = ltype.to(IDBSPBaseType.class).shortName();
-        String tsuffixr = rtype == null ? "" : rtype.to(IDBSPBaseType.class).shortName();
+        String tsuffixl = aggregate ? "" : ltype.to(IDBSPBaseType.class).shortName();
+        String tsuffixr = (rtype == null || aggregate) ? "" : rtype.to(IDBSPBaseType.class).shortName();
         for (String k: map.keySet()) {
             if (map.get(k).equals(op)) {
                 return new FunctionDescription(k + "_" + tsuffixl + suffixl + "_" + tsuffixr + suffixr, returnType);
             }
         }
         throw new Unimplemented("Could not find `" + op + "` for type " + ltype);
-    }
-
-    public static DBSPExpression wrapSome(DBSPExpression expr, DBSPType type) {
-        return new DBSPConstructorExpression("Some", type, expr);
     }
 
     void generateProgram() {
@@ -171,14 +174,12 @@ public class SqlRuntimeLibrary {
                                 new DBSPVariableReference("b", arg.getNonVoidType()),
                                 Arrays.asList(
                                     new DBSPMatchExpression.Case(
-                                            new DBSPConstructorExpression("Some",
-                                                    arg.getNonVoidType(),
+                                            new DBSPSomeExpression(
                                                     new DBSPVariableReference("x", DBSPTypeBool.instance)),
                                             new DBSPVariableReference("x", DBSPTypeBool.instance)
                                     ),
                                     new DBSPMatchExpression.Case(
-                                            new DBSPConstructorExpression("_", arg.getNonVoidType()),
-                                            new DBSPLiteral(false)
+                                            new DBSPDontCare(arg.getNonVoidType()), new DBSPLiteral(false)
                                     )
                                 ),
                                 DBSPTypeBool.instance)));
@@ -203,9 +204,12 @@ public class SqlRuntimeLibrary {
                 this.arithmeticFunctions, this.booleanFunctions, this.stringFunctions, this.doubleFunctions)) {
             for (String f : h.keySet()) {
                 String op = h.get(f);
-                if (op.equals("&&") || op.equals("||"))
+                if (op.equals("&&") || op.equals("||") ||
+                        op.equals("min") || op.equals("max") ||
+                        op.equals("/"))
                     // Hand-written rules in a separate library
                     continue;
+                boolean method = false;
                 for (int i = 0; i < 4; i++) {
                     DBSPType leftType;
                     DBSPType rightType;
@@ -226,13 +230,13 @@ public class SqlRuntimeLibrary {
                         DBSPExpression rightMatch = new DBSPVariableReference("r", rawType);
                         if ((i & 1) == 1) {
                             leftType = withNull;
-                            leftMatch = wrapSome(leftMatch, leftType);
+                            leftMatch = new DBSPSomeExpression(leftMatch);
                         } else {
                             leftType = rawType;
                         }
                         if ((i & 2) == 2) {
                             rightType = withNull;
-                            rightMatch = wrapSome(rightMatch, rightType);
+                            rightMatch = new DBSPSomeExpression(rightMatch);
                         } else {
                             rightType = rawType;
                         }
@@ -245,19 +249,27 @@ public class SqlRuntimeLibrary {
                         */
 
                         // The general rule is: if any operand is NULL, the result is NULL.
-                        FunctionDescription function = this.getFunction(op, leftType, rightType);
+                        FunctionDescription function = this.getFunction(op, leftType, rightType, false);
                         DBSPFunction.DBSPArgument left = new DBSPFunction.DBSPArgument("left", leftType);
                         DBSPFunction.DBSPArgument right = new DBSPFunction.DBSPArgument("right", rightType);
                         DBSPType type = function.returnType;
                         DBSPExpression def;
                         if (i == 0) {
-                            def = new DBSPBinaryExpression(null, type, op,
-                                    new DBSPVariableReference("left", rawType),
-                                    new DBSPVariableReference("right", rawType));
+                            DBSPExpression leftVar = new DBSPVariableReference("left", rawType);
+                            DBSPExpression rightVar = new DBSPVariableReference("right", rawType);
+                            if (method)
+                                def = new DBSPApplyMethodExpression(op, type, leftVar, rightVar);
+                            else
+                                def = new DBSPBinaryExpression(null, type, op, leftVar, rightVar);
                         } else {
-                            def = new DBSPBinaryExpression(null, type, op,
-                                    new DBSPVariableReference("l", rawType),
-                                    new DBSPVariableReference("r", rawType));
+                            if (method)
+                                def = new DBSPApplyMethodExpression(op, type,
+                                        new DBSPVariableReference("l", rawType),
+                                        new DBSPVariableReference("r", rawType));
+                            else
+                                def = new DBSPBinaryExpression(null, type, op,
+                                        new DBSPVariableReference("l", rawType),
+                                        new DBSPVariableReference("r", rawType));
                             def = new DBSPMatchExpression(
                                     new DBSPRawTupleExpression(
                                             new DBSPVariableReference("left", leftType),
@@ -265,7 +277,7 @@ public class SqlRuntimeLibrary {
                                     Arrays.asList(
                                             new DBSPMatchExpression.Case(
                                                     new DBSPRawTupleExpression(leftMatch, rightMatch),
-                                                    wrapSome(def, type)),
+                                                    new DBSPSomeExpression(def)),
                                             new DBSPMatchExpression.Case(
                                                     new DBSPRawTupleExpression(
                                                             new DBSPDontCare(leftType),
@@ -288,6 +300,7 @@ public class SqlRuntimeLibrary {
      * @param filename   File to write the code to.
      */
     public void writeSqlLibrary(String filename) throws IOException {
+        this.generateProgram();
         File file = new File(filename);
         FileWriter writer = new FileWriter(file);
         IndentStringBuilder builder = new IndentStringBuilder();
@@ -321,27 +334,27 @@ public class SqlRuntimeLibrary {
         List<DBSPExpression> list = new ArrayList<>();
         list.add(new DBSPLetExpression("circuit",
                 new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true));
-        DBSPType outputType = output != null ? output.getNonVoidType() : DBSPTypeAny.instance;
+        // the following may not be the same, since SqlLogicTest sometimes lies about the output type
+        DBSPType outputType = output != null ? new DBSPTypeRawTuple(output.getNonVoidType()) : circuit.getOutputtype();
         DBSPExpression[] arguments = new DBSPExpression[circuit.getInputTables().size()];
 
         list.add(new DBSPLetExpression("_in",
                 new DBSPApplyExpression(inputFunction, DBSPTypeAny.instance)));
-        if (arguments.length > 1) {
-            for (int i = 0; i < arguments.length; i++) {
-                arguments[i] = new DBSPFieldExpression(null,
-                        new DBSPVariableReference("_in", DBSPTypeAny.instance), i, DBSPTypeAny.instance);
-            }
-        } else {
-            arguments[0] = new DBSPVariableReference("_in", DBSPTypeAny.instance);
+        for (int i = 0; i < arguments.length; i++) {
+            arguments[i] = new DBSPFieldExpression(null,
+                    new DBSPVariableReference("_in", DBSPTypeAny.instance), i);
         }
         list.add(new DBSPLetExpression("output",
                 new DBSPApplyExpression("circuit", outputType, arguments)));
 
         DBSPExpression sort = new DBSPEnumValue("SortOrder", description.order.toString());
+        DBSPExpression output0 = new DBSPFieldExpression(null,
+                new DBSPVariableReference("output", outputType), 0);
+
         if (output != null) {
             if (description.columnTypes != null) {
                 DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
-                DBSPTypeZSet otype = outputType.to(DBSPTypeZSet.class);
+                DBSPTypeZSet otype = output.getNonVoidType().to(DBSPTypeZSet.class);
                 DBSPExpression zset_to_strings = new DBSPQualifyTypeExpression(
                         new DBSPVariableReference("zset_to_strings", DBSPTypeAny.instance),
                         otype.elementType,
@@ -349,8 +362,7 @@ public class SqlRuntimeLibrary {
                 );
                 list.add(new DBSPApplyExpression("assert_eq!", null,
                         new DBSPApplyExpression("zset_to_strings", DBSPTypeAny.instance,
-                                new DBSPRefExpression(
-                                        new DBSPVariableReference("output", outputType)),
+                                new DBSPRefExpression(output0),
                                 columnTypes,
                                 sort),
                         new DBSPApplyExpression(zset_to_strings, DBSPTypeAny.instance,
@@ -358,9 +370,8 @@ public class SqlRuntimeLibrary {
                                 columnTypes,
                                 sort)));
             } else {
-                list.add(new DBSPApplyExpression("assert_eq!", null,
-                        new DBSPVariableReference("output", output.getNonVoidType()),
-                        output));
+                list.add(new DBSPApplyExpression(
+                        "assert_eq!", null, output0, output));
             }
         } else {
             if (description.columnTypes == null)
@@ -370,8 +381,7 @@ public class SqlRuntimeLibrary {
                 throw new RuntimeException("Expected hash to be supplied");
             list.add(new DBSPLetExpression("_hash",
                     new DBSPApplyExpression("hash", DBSPTypeString.instance,
-                            new DBSPRefExpression(
-                                    new DBSPVariableReference("output", DBSPTypeAny.instance)),
+                            new DBSPRefExpression(output0),
                             columnTypes,
                             sort)));
             list.add(new DBSPApplyExpression("assert_eq!", null,
@@ -383,10 +393,10 @@ public class SqlRuntimeLibrary {
             list.add(new DBSPApplyExpression("assert_eq!", null,
                     new DBSPApplyMethodExpression("weighted_count",
                             DBSPTypeUSize.instance,
-                            new DBSPVariableReference("output", DBSPTypeAny.instance)),
+                            output0),
                     new DBSPLiteral(description.getExpectedOutputSize())));
         }
-        DBSPExpression body = new DBSPSeqExpression(list);
+        DBSPExpression body = new DBSPBlockExpression(list);
         return new DBSPFunction(name, new ArrayList<>(), null, body);
     }
 }

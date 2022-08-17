@@ -68,6 +68,17 @@ public class IndentStringBuilder {
         return this;
     }
 
+    public IndentStringBuilder joinS(String separator, List<String> data) {
+        boolean first = true;
+        for (String d: data) {
+            if (!first)
+                this.append(separator);
+            first = false;
+            this.append(d);
+        }
+        return this;
+    }
+
     public IndentStringBuilder join(String separator, String[] data) {
         boolean first = true;
         for (String d: data) {
@@ -102,6 +113,14 @@ public class IndentStringBuilder {
     }
 
     public <T extends ToRustString> IndentStringBuilder intercalate(String separator, List<T> data) {
+        for (ToRustString d: data) {
+            this.append(d);
+            this.append(separator);
+        }
+        return this;
+    }
+
+    public <T extends ToRustString> IndentStringBuilder intercalate(String separator, T[] data) {
         for (ToRustString d: data) {
             this.append(d);
             this.append(separator);
