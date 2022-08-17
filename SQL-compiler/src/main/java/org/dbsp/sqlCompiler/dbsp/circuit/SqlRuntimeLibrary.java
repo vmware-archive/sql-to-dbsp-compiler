@@ -147,6 +147,9 @@ public class SqlRuntimeLibrary {
 
         if (isComparison(op))
             returnType = DBSPTypeBool.instance.setMayBeNull(anyNull);
+        if (op.equals("/"))
+            // Always, for division by 0
+            returnType = returnType.setMayBeNull(true);
         String suffixl = ltype.mayBeNull ? "N" : "";
         String suffixr = rtype == null ? "" : (rtype.mayBeNull ? "N" : "");
         String tsuffixl = aggregate ? "" : ltype.to(IDBSPBaseType.class).shortName();
@@ -201,7 +204,9 @@ public class SqlRuntimeLibrary {
                 this.arithmeticFunctions, this.booleanFunctions, this.stringFunctions, this.doubleFunctions)) {
             for (String f : h.keySet()) {
                 String op = h.get(f);
-                if (op.equals("&&") || op.equals("||") || op.equals("min") || op.equals("max"))
+                if (op.equals("&&") || op.equals("||") ||
+                        op.equals("min") || op.equals("max") ||
+                        op.equals("/"))
                     // Hand-written rules in a separate library
                     continue;
                 boolean method = false;

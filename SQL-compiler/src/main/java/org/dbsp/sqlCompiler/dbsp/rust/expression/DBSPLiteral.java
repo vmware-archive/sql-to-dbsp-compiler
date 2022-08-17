@@ -75,11 +75,23 @@ public class DBSPLiteral extends DBSPExpression {
     }
 
     public DBSPLiteral(float value, boolean nullable) {
-        this(null, DBSPTypeFloat.instance.setMayBeNull(nullable), "OrderedFloat::<f32>(" + value + ")");
+        this(null, DBSPTypeFloat.instance.setMayBeNull(nullable), "OrderedFloat::<f32>(" + toString(value) + ")");
+    }
+
+    static String toString(double value) {
+        if (Double.isNaN(value))
+            return "std::f64::NAN";
+        return Double.toString(value);
+    }
+
+    static String toString(float value) {
+        if (Float.isNaN(value))
+            return "std::f32::NAN";
+        return Float.toString(value);
     }
 
     public DBSPLiteral(double value, boolean nullable) {
-        this(null, DBSPTypeDouble.instance.setMayBeNull(nullable), "OrderedFloat::<f64>(" + value + ")");
+        this(null, DBSPTypeDouble.instance.setMayBeNull(nullable), "OrderedFloat::<f64>(" + toString(value) + ")");
     }
 
     public DBSPLiteral(boolean b, boolean nullable) {

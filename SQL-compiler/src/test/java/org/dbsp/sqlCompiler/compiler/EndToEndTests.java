@@ -221,6 +221,46 @@ public class EndToEndTests {
     }
 
     @Test
+    public void divTest() {
+        String query = "CREATE VIEW V AS SELECT T.COL1 / T.COL5 FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(
+                        DBSPTypeInteger.signed32.setMayBeNull(true))),
+                new DBSPTupleExpression(new DBSPLiteral(10, true))));
+    }
+
+    @Test
+    public void divIntTest() {
+        String query = "CREATE VIEW V AS SELECT T.COL5 / T.COL5 FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(
+                        DBSPTypeInteger.signed32.setMayBeNull(true))),
+                new DBSPTupleExpression(new DBSPLiteral(1, true))));
+    }
+
+    // Calcite seems to handle this query incorrectly
+    //@Test
+    public void divZeroTest() {
+        String query = "CREATE VIEW V AS SELECT 1 / 0";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(
+                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test
+    public void floatDivTest() {
+        String query = "CREATE VIEW V AS SELECT T.COL6 / T.COL6 FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(
+                        DBSPTypeDouble.instance.setMayBeNull(true))),
+                new DBSPTupleExpression(new DBSPLiteral(Double.NaN, true))));
+    }
+
+    @Test
     public void aggregateTest() {
         String query = "CREATE VIEW V AS SELECT SUM(T.COL1) FROM T";
         this.testQuery(query, new DBSPZSetLiteral(

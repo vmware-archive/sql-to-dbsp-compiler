@@ -143,7 +143,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPExpression accumulator = operands.get(0);
         for (int i = 1; i < operands.size(); i++)
             accumulator = makeBinaryExpression(node, type, op, Linq.list(accumulator, operands.get(i)));
-        return accumulator;
+        return makeCast(accumulator, type);
     }
 
     public static DBSPExpression makeBinaryExpression(
