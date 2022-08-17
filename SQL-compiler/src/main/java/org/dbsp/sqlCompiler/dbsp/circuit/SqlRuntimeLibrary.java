@@ -155,8 +155,8 @@ public class SqlRuntimeLibrary {
         String tsuffixl = ltype.to(IDBSPBaseType.class).shortName();
         String tsuffixr = (rtype == null) ? "" : rtype.to(IDBSPBaseType.class).shortName();
         if (aggregate) {
-            tsuffixl = ltype.is(DBSPTypeFP.class) ? "f" : "";
-            tsuffixr = rtype != null && rtype.is(DBSPTypeFP.class) ? "f" : "";
+            tsuffixl = ltype.is(DBSPTypeFP.class) && op.equals("+") ? "f" : "";
+            tsuffixr = rtype != null && rtype.is(DBSPTypeFP.class) && op.equals("+") ? "f" : "";
         }
         for (String k: map.keySet()) {
             if (map.get(k).equals(op)) {
