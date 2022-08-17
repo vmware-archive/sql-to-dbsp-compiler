@@ -28,6 +28,7 @@ package org.dbsp.sqllogictest;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
+import org.dbsp.sqlCompiler.dbsp.ExpressionCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
@@ -149,7 +150,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
                 else
                     throw new RuntimeException("Unexpected type " + colType);
                 if (!colType.same(field.getNonVoidType()))
-                    field = new DBSPCastExpression(field.getNode(), colType, field);
+                    field = ExpressionCompiler.makeCast(field, colType);
                 fields.add(field);
                 col++;
                 if (col == outputElementType.size()) {

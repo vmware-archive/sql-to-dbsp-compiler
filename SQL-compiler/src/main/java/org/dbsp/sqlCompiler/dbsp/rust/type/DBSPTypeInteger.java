@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPApplyMethodExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPAsExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Unimplemented;
@@ -49,7 +51,12 @@ public class DBSPTypeInteger extends DBSPType
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder, "i" + this.width); }
+        return this.wrapOption(builder, this.getRustString()); }
+
+    @Override
+    public String getRustString() {
+        return "i" + this.width;
+    }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
@@ -59,19 +66,15 @@ public class DBSPTypeInteger extends DBSPType
     }
 
     @Override
-    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+    public DBSPExpression castFrom(DBSPExpression source) {
+        // Recall: we ignore nullability of this
         DBSPType argtype = source.getNonVoidType();
         if (argtype.is(DBSPTypeFP.class)) {
-            return builder
-                    .append(source)
-                    .append(".into_inner()")
-                    .append(" as ")
-                    .append(this);
+            return new DBSPAsExpression(
+                    new DBSPApplyMethodExpression("into_inner", source.getNonVoidType(), source),
+                    this);
         } else if (argtype.is(DBSPTypeInteger.class)){
-            return builder
-                    .append(source)
-                    .append(" as ")
-                    .append(this);
+            return new DBSPAsExpression(source, this);
         } else {
             throw new Unimplemented();
         }

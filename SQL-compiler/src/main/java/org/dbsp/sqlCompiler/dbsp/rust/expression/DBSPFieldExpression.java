@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.apache.calcite.rex.RexNode;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeAny;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeString;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
 import org.dbsp.util.IndentStringBuilder;
@@ -38,13 +39,15 @@ public class DBSPFieldExpression extends DBSPExpression {
     public final DBSPExpression expression;
     public final int fieldNo;
 
-    public DBSPFieldExpression(@Nullable RexNode node, DBSPExpression expression, int fieldNo, DBSPType type) {
+    protected DBSPFieldExpression(@Nullable RexNode node, DBSPExpression expression, int fieldNo, DBSPType type) {
         super(node, type);
         this.expression = expression;
         this.fieldNo = fieldNo;
     }
 
     static DBSPType getFieldType(DBSPType type, int fieldNo) {
+        if (type.is(DBSPTypeAny.class))
+            return type;
         DBSPTypeTuple tupl = type.toRef(DBSPTypeTuple.class);
         return tupl.getFieldType(fieldNo);
     }

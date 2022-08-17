@@ -23,24 +23,13 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
-
-import javax.annotation.Nullable;
-
-public class DBSPCastExpression extends DBSPExpression {
-    final DBSPExpression argument;
-
-    public DBSPCastExpression(@Nullable Object node, DBSPType type, DBSPExpression argument) {
-        super(node, type);
-        this.argument = argument;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        DBSPType type = this.getNonVoidType();
-        if (type.same(this.argument.getNonVoidType()))
-            return builder.append(this.argument);
-        return type.standardCastFrom(builder, this.argument);
+/**
+ * Convenient shortcut to wrap an expression into a Some() constructor.
+ */
+public class DBSPSomeExpression extends DBSPStructExpression {
+    public DBSPSomeExpression(DBSPExpression argument) {
+        super(new DBSPPathExpression(
+                argument.getNonVoidType(),
+                "Some"), argument.getNonVoidType().setMayBeNull(true), argument);
     }
 }

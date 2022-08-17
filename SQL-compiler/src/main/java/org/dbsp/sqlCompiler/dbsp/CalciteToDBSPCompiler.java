@@ -264,18 +264,25 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         // LogicalProject is not really SQL project, it is rather map.
         RelNode input = project.getInput();
         DBSPOperator opInput = this.getOperator(input);
-        DBSPType type = this.convertType(project.getRowType());
+        DBSPType outputType = this.convertType(project.getRowType());
+        DBSPTypeTuple tuple = outputType.to(DBSPTypeTuple.class);
         DBSPType inputType = this.convertType(project.getInput().getRowType());
         DBSPVariableReference row = new DBSPVariableReference("t", inputType);
         ExpressionCompiler expressionCompiler = new ExpressionCompiler(row);
 
         List<DBSPExpression> resultColumns = new ArrayList<>();
+        int index = 0;
         for (RexNode column : project.getProjects()) {
             DBSPExpression exp = expressionCompiler.compile(column);
+            DBSPType expectedType = tuple.getFieldType(index);
+            if (!exp.getNonVoidType().same(expectedType)) {
+                // Calcite's optimizations do not preserve types!
+                exp = ExpressionCompiler.makeCast(exp, expectedType);
+            }
             resultColumns.add(exp);
+            index++;
         }
-        DBSPExpression exp = new DBSPTupleExpression(project, type, resultColumns);
-        DBSPType outputType = exp.getNonVoidType();
+        DBSPExpression exp = new DBSPTupleExpression(project, outputType, resultColumns);
         DBSPExpression closure = new DBSPClosureExpression(project, exp, row.asRefParameter());
         DBSPMapOperator op = new DBSPMapOperator(project, closure, outputType, opInput);
         // No distinct needed - in SQL project may produce a multiset.
@@ -326,11 +333,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         DBSPVariableReference t = new DBSPVariableReference("t", type);
         ExpressionCompiler expressionCompiler = new ExpressionCompiler(t);
         DBSPExpression condition = expressionCompiler.compile(filter.getCondition());
-        DBSPType condType = condition.getNonVoidType();
-        if (condType.mayBeNull) {
-            condition = new DBSPApplyExpression(
-                    "wrap_bool", condType.setMayBeNull(false), condition);
-        }
+        condition = ExpressionCompiler.wrapBoolIfNeeded(condition);
         condition = new DBSPClosureExpression(filter.getCondition(), condition, t.asRefParameter());
         DBSPOperator input = this.getOperator(filter.getInput());
         DBSPFilterOperator fop = new DBSPFilterOperator(filter, condition, type, input);
@@ -464,7 +467,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 DBSPExpression expr = expressionCompiler.compile(rl);
                 DBSPType resultFieldType = resultType.tupArgs[i];
                 if (!expr.getNonVoidType().same(resultFieldType)) {
-                    DBSPCastExpression cast = new DBSPCastExpression(values, resultFieldType, expr);
+                    DBSPExpression cast = ExpressionCompiler.makeCast(expr, resultFieldType);
                     exprs.add(cast);
                 } else {
                     exprs.add(expr);

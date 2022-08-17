@@ -45,11 +45,6 @@ public class DBSPTypeNull extends DBSPType {
     }
 
     @Override
-    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append("Option<()>");
     }

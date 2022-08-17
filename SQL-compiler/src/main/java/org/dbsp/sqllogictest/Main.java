@@ -98,10 +98,10 @@ public class Main {
         int batchSize = 100;
         ISqlTestExecutor executor = new DBSPExecutor();
         String files =
-            "../../sqllogictest/test/s.test"
+            //"../../sqllogictest/test/s.test"
             //"../../sqllogictest/test/random/select"
             //"../../sqllogictest/test/random/expr"
-            //"../../sqllogictest/test/random/aggregates"
+            "../../sqllogictest/test/random/aggregates"
         ;
         if (argv.length > 1)
             files = argv[1];

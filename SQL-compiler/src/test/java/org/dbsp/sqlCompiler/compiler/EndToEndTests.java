@@ -260,4 +260,12 @@ public class EndToEndTests {
         result.add(DBSPTupleExpression.flatten(e1, e1));
         this.testQuery(query, result);
     }
+
+    @Test
+    public void foldTest() {
+        String query = "CREATE VIEW V AS SELECT + 91 + NULLIF ( + 93, + 38 )";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
+                new DBSPLiteral(184, true))));
+    }
 }

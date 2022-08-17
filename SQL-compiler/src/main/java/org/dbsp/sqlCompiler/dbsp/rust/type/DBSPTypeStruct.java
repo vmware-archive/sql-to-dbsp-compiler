@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -94,11 +93,6 @@ public class DBSPTypeStruct extends DBSPType {
                 .append("{")
                 .join(", ", this.args)
                 .append("}");
-    }
-
-    @Override
-    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

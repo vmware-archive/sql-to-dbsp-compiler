@@ -219,7 +219,7 @@ public class AggregateCompiler {
         DBSPVariableReference accumulator = new DBSPVariableReference("r" + aggIndex, zero.getNonVoidType());
         DBSPExpression countAccumulator = new DBSPFieldExpression(null, accumulator, 0);
         DBSPExpression sumAccumulator = new DBSPFieldExpression(null, accumulator, 1);
-        DBSPExpression aggregatedValue = new DBSPCastExpression(null, i64, this.getAggregatedValue());
+        DBSPExpression aggregatedValue = ExpressionCompiler.makeCast(this.getAggregatedValue(), i64);
         DBSPExpression plusOne = new DBSPLiteral(1L);
         if (aggregatedValueType.mayBeNull)
             plusOne = new DBSPApplyExpression("indicator", DBSPTypeInteger.signed64, aggregatedValue);
@@ -249,7 +249,7 @@ public class AggregateCompiler {
                 function, this.resultType, "/",
                 Linq.list(new DBSPFieldExpression(null, a, 0),
                         new DBSPFieldExpression(null, a, 1)));
-        divide = new DBSPCastExpression(null, this.resultType, divide);
+        divide = ExpressionCompiler.makeCast(divide, this.resultType);
         DBSPClosureExpression closure = new DBSPClosureExpression(
                 null, divide, new DBSPClosureExpression.Parameter("a", pairType));
         DBSPExpression postZero = new DBSPLiteral(this.resultType.setMayBeNull(true));

@@ -47,11 +47,6 @@ public class DBSPTypeString extends DBSPType implements IDBSPBaseType {
     }
 
     @Override
-    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
-        throw new Unimplemented();
-    }
-
-    @Override
     public String shortName() {
         return "s";
     }

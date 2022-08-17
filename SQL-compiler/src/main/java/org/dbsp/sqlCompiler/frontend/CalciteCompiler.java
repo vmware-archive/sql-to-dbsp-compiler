@@ -68,7 +68,7 @@ public class CalciteCompiler {
     private final SqlParser.Config parserConfig;
     private final SqlValidator validator;
     private final Catalog simple;
-    private final boolean debug = true;
+    private final boolean debug = false;
     private final SqlToRelConverter converter;
     private final SqlSimulator simulator;
     public final RelOptCluster cluster;

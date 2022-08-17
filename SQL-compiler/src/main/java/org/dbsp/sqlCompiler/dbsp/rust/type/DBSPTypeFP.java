@@ -23,15 +23,14 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 
 import javax.annotation.Nullable;
 
 /**
  * Base class for floating-point types.
  */
-public abstract class DBSPTypeFP extends DBSPType {
+public abstract class DBSPTypeFP extends DBSPType implements IsNumericType {
     protected DBSPTypeFP(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
 
     /**
@@ -41,26 +40,21 @@ public abstract class DBSPTypeFP extends DBSPType {
     /**
      * Rust string describing this type, e.g., f32.
      */
+    @Override
     public String getRustString() { return "f" + this.getWidth(); }
 
     @Override
-    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
+    public DBSPExpression castFrom(DBSPExpression source) {
+        // Recall: we ignore nullability of this.
+        DBSPType noNull = this.setMayBeNull(false);
         DBSPType argtype = source.getNonVoidType();
         if (argtype.is(DBSPTypeFP.class)) {
-            return builder
-                    .append("OrderedFloat(")
-                    .append(source)
-                    .append(".into_inner()")
-                    .append(" as ")
-                    .append(this.getRustString())
-                    .append(")");
+            return new DBSPStructExpression(new DBSPPathExpression(noNull, "OrderedFloat"), this,
+                            new DBSPAsExpression(
+                                    new DBSPApplyMethodExpression(
+                                            "into_inner", argtype, source), this));
         } else {
-            return builder
-                    .append("OrderedFloat(")
-                    .append(source)
-                    .append(" as ")
-                    .append(this.getRustString())
-                    .append(")");
+            return new DBSPStructExpression(new DBSPPathExpression(noNull, "OrderedFloat"), this, new DBSPAsExpression(source, this));
         }
     }
 }

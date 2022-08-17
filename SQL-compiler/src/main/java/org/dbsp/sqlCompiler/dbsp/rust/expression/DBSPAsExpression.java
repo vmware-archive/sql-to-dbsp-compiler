@@ -21,43 +21,26 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.type;
+package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.rust.type.IsNumericType;
 import org.dbsp.util.IndentStringBuilder;
-import org.dbsp.util.Unimplemented;
 
-import javax.annotation.Nullable;
+public class DBSPAsExpression extends DBSPExpression {
+    public final DBSPExpression source;
 
-/**
- * Represents the usize Rust type.
- */
-public class DBSPTypeUSize extends DBSPType
-        implements IsNumericType, IDBSPBaseType {
-    public static final DBSPTypeUSize instance = new DBSPTypeUSize(null, false);
-
-    protected DBSPTypeUSize(@Nullable Object node, boolean mayBeNull) {
-        super(node, mayBeNull);
+    public DBSPAsExpression(DBSPExpression source, DBSPType type) {
+        super(null, type);
+        this.source = source;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder, "usize"); }
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String shortName() {
-        return "u";
-    }
-
-    @Override
-    public boolean same(DBSPType type) {
-        if (!super.same(type))
-            return false;
-        return type.is(DBSPTypeUSize.class);
+        return builder.append("(")
+                .append(this.source)
+                .append(" as ")
+                .append(this.getNonVoidType().to(IsNumericType.class).getRustString())
+                .append(")");
     }
 }

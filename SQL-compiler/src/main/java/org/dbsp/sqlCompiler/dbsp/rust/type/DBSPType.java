@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPVariableReference;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -63,35 +62,6 @@ public abstract class DBSPType extends DBSPNode {
     public abstract DBSPType setMayBeNull(boolean mayBeNull);
 
     /**
-     * Typical implementation of castFrom, which handles nullable types.
-     */
-    public IndentStringBuilder standardCastFrom(IndentStringBuilder builder, DBSPExpression source) {
-        DBSPType sourceType = source.getNonVoidType();
-        if (sourceType.mayBeNull) {
-            builder.append("(match ")
-                    .append(source)
-                    .append(" {").increase()
-                    .append("Some(x) => Some(");
-            DBSPExpression expr = new DBSPVariableReference("x", sourceType.setMayBeNull(false));
-            this.setMayBeNull(false).castFrom(builder, expr)
-                    .append("),\n")
-                    .append("_ => None,\n").decrease()
-                    .append("})");
-            if (!this.mayBeNull)
-                builder.append(".unwrap()");
-            return builder;
-        } else {
-            if (this.mayBeNull) {
-                builder.append("(Some(");
-                this.setMayBeNull(false).castFrom(builder, source);
-                return builder.append("))");
-            } else {
-                return this.castFrom(builder, source);
-            }
-        }
-    }
-
-    /**
      * Similar to 'to', but handles Ref types specially.
      */
     public <T> T toRef(Class<T> clazz) {
@@ -103,8 +73,9 @@ public abstract class DBSPType extends DBSPNode {
 
     /**
      * Generate code for a cast from the specified expression to this type.
-     * This function does not need to handle nullable types, that's done in
-     * 'standardCastFrom'
+     * This function does not need to handle nullable types
      */
-    public abstract IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source);
+    public DBSPExpression castFrom(DBSPExpression source) {
+        throw new UnsupportedOperationException();
+    }
 }

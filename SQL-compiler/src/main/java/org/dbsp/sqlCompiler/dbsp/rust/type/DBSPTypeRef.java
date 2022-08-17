@@ -44,11 +44,6 @@ public class DBSPTypeRef extends DBSPType {
     }
 
     @Override
-    public IndentStringBuilder castFrom(IndentStringBuilder builder, DBSPExpression source) {
-        throw new Unimplemented();
-    }
-
-    @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append("&")
                 .append(this.type);

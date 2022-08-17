@@ -55,12 +55,13 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
 
     @Override
     public DBSPExpression visitInputRef(RexInputRef inputRef) {
-        DBSPType type = this.typeCompiler.convertType(inputRef.getType());
+        // DBSPType type = this.typeCompiler.convertType(inputRef.getType());
+        // Unfortunately it looks like we can't trust the type coming from Calcite.
         if (this.inputRow == null)
             throw new RuntimeException("Row referenced without a row context");
         return new DBSPFieldExpression(
                 inputRef, this.inputRow,
-                inputRef.getIndex(), type);
+                inputRef.getIndex());
     }
 
     @Override
@@ -162,12 +163,38 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
             return new DBSPLiteral(type);
         }
         if (!leftType.setMayBeNull(false).same(commonBase))
-            left = new DBSPCastExpression(node, commonBase.setMayBeNull(leftType.mayBeNull), left);
+            left = makeCast(left, commonBase.setMayBeNull(leftType.mayBeNull));
         if (!rightType.setMayBeNull(false).same(commonBase))
-            right = new DBSPCastExpression(node, commonBase.setMayBeNull(rightType.mayBeNull), right);
+            right = makeCast(right, commonBase.setMayBeNull(rightType.mayBeNull));
         SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
                 op, commonBase.setMayBeNull(leftType.mayBeNull), commonBase.setMayBeNull(rightType.mayBeNull), false);
         return new DBSPApplyExpression(function.function, function.returnType, left, right);
+    }
+
+    public static DBSPExpression makeCast(DBSPExpression from, DBSPType to) {
+        DBSPType fromType = from.getNonVoidType();
+        if (fromType.same(to)) {
+            return from;
+        }
+        if (fromType.mayBeNull) {
+            if (to.mayBeNull) {
+                DBSPMatchExpression.Case none = new DBSPMatchExpression.Case(
+                        new DBSPDontCare(fromType), new DBSPLiteral(to));
+                DBSPExpression x = new DBSPVariableReference("x", fromType.setMayBeNull(false));
+                DBSPMatchExpression.Case some = new DBSPMatchExpression.Case(
+                        new DBSPSomeExpression(x), new DBSPSomeExpression(to.castFrom(x)));
+                return new DBSPMatchExpression(from, Linq.list(some, none), to);
+            } else {
+                return to.castFrom(new DBSPApplyMethodExpression(
+                        "unwrap", fromType.setMayBeNull(true), from));
+            }
+        } else {
+            if (to.mayBeNull) {
+                return new DBSPSomeExpression(to.castFrom(from));
+            } else {
+                return to.castFrom(from);
+            }
+        }
     }
 
     public static DBSPExpression makeUnaryExpression(
@@ -177,11 +204,17 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPExpression operand = operands.get(0);
         if (operand == null)
             throw new Unimplemented("Found unimplemented expression in " + node);
-        DBSPType opType = operand.getNonVoidType();
-        if (opType.mayBeNull && !type.mayBeNull)
-            // This should not really happen.
-            operand = new DBSPCastExpression(node, opType.setMayBeNull(false), operand);
-        return new DBSPUnaryExpression(node, type, op, operand);
+        DBSPExpression expr = new DBSPUnaryExpression(node, operand.getNonVoidType(), op, operand);
+        return makeCast(expr, type);
+    }
+
+    public static DBSPExpression wrapBoolIfNeeded(DBSPExpression expression) {
+        DBSPType type = expression.getNonVoidType();
+        if (type.mayBeNull) {
+            return new DBSPApplyExpression(
+                    "wrap_bool", type.setMayBeNull(false), expression);
+        }
+        return expression;
     }
 
     @Override
@@ -237,14 +270,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
             case BIT_XOR:
                 return makeBinaryExpressions(call, type, "^", ops);
             case CAST:
-                DBSPType opType = ops.get(0).getNonVoidType();
-                /*
-                if (opType.mayBeNull && !type.mayBeNull)
-                    // The calcite compiler must be wrong, since this should
-                    // never happen.
-                    type = type.setMayBeNull(true);
-                 */
-                return new DBSPCastExpression(call, type, ops.get(0));
+                return makeCast(ops.get(0), type);
             case IS_NULL:
             case IS_NOT_NULL:
                 if (!type.same(DBSPTypeBool.instance))
@@ -282,13 +308,14 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                             finalType = finalType.setMayBeNull(true);
                     }
                     if (!result.getNonVoidType().same(finalType))
-                        result = new DBSPCastExpression(call, finalType, result);
+                        result = makeCast(result, finalType);
                     for (int i = 1; i < ops.size() - 1; i += 2) {
                         DBSPExpression alt = ops.get(i + 1);
                         if (!alt.getNonVoidType().same(finalType))
-                            alt = new DBSPCastExpression(call, finalType, alt);
+                            alt = makeCast(alt, finalType);
                         DBSPExpression comp = makeBinaryExpression(
                                 call, DBSPTypeBool.instance, "==", Linq.list(value, ops.get(i)));
+                        comp = wrapBoolIfNeeded(comp);
                         result = new DBSPIfExpression(call, comp, alt, result);
                     }
                     return result;
@@ -304,13 +331,14 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                     }
 
                     if (!result.getNonVoidType().same(finalType))
-                        result = new DBSPCastExpression(call, finalType, result);
+                        result = makeCast(result, finalType);
                     for (int i = 0; i < ops.size() - 1; i += 2) {
                         int index = ops.size() - i - 2;
                         DBSPExpression alt = ops.get(index);
                         if (!alt.getNonVoidType().same(finalType))
-                            alt = new DBSPCastExpression(call, finalType, alt);
-                        result = new DBSPIfExpression(call, ops.get(index - 1), alt, result);
+                            alt = makeCast(alt, finalType);
+                        DBSPExpression condition = wrapBoolIfNeeded(ops.get(index - 1));
+                        result = new DBSPIfExpression(call, condition, alt, result);
                     }
                     return result;
                 }

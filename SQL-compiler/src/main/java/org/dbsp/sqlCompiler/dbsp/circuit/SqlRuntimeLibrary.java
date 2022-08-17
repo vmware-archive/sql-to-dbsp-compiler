@@ -159,10 +159,6 @@ public class SqlRuntimeLibrary {
         throw new Unimplemented("Could not find `" + op + "` for type " + ltype);
     }
 
-    public static DBSPExpression wrapSome(DBSPExpression expr, DBSPType type) {
-        return new DBSPStructExpression(new DBSPVariableReference("Some", DBSPTypeAny.instance), type, expr);
-    }
-
     void generateProgram() {
         List<IDBSPDeclaration> declarations = new ArrayList<>();
         DBSPFunction.DBSPArgument arg = new DBSPFunction.DBSPArgument(
@@ -175,8 +171,7 @@ public class SqlRuntimeLibrary {
                                 new DBSPVariableReference("b", arg.getNonVoidType()),
                                 Arrays.asList(
                                     new DBSPMatchExpression.Case(
-                                            new DBSPStructExpression(new DBSPPathExpression(arg.getNonVoidType(), "Some"),
-                                                    arg.getNonVoidType(),
+                                            new DBSPSomeExpression(
                                                     new DBSPVariableReference("x", DBSPTypeBool.instance)),
                                             new DBSPVariableReference("x", DBSPTypeBool.instance)
                                     ),
@@ -230,13 +225,13 @@ public class SqlRuntimeLibrary {
                         DBSPExpression rightMatch = new DBSPVariableReference("r", rawType);
                         if ((i & 1) == 1) {
                             leftType = withNull;
-                            leftMatch = wrapSome(leftMatch, leftType);
+                            leftMatch = new DBSPSomeExpression(leftMatch);
                         } else {
                             leftType = rawType;
                         }
                         if ((i & 2) == 2) {
                             rightType = withNull;
-                            rightMatch = wrapSome(rightMatch, rightType);
+                            rightMatch = new DBSPSomeExpression(rightMatch);
                         } else {
                             rightType = rawType;
                         }
@@ -277,7 +272,7 @@ public class SqlRuntimeLibrary {
                                     Arrays.asList(
                                             new DBSPMatchExpression.Case(
                                                     new DBSPRawTupleExpression(leftMatch, rightMatch),
-                                                    wrapSome(def, type)),
+                                                    new DBSPSomeExpression(def)),
                                             new DBSPMatchExpression.Case(
                                                     new DBSPRawTupleExpression(
                                                             new DBSPDontCare(leftType),
@@ -342,7 +337,7 @@ public class SqlRuntimeLibrary {
                 new DBSPApplyExpression(inputFunction, DBSPTypeAny.instance)));
         for (int i = 0; i < arguments.length; i++) {
             arguments[i] = new DBSPFieldExpression(null,
-                    new DBSPVariableReference("_in", DBSPTypeAny.instance), i, DBSPTypeAny.instance);
+                    new DBSPVariableReference("_in", DBSPTypeAny.instance), i);
         }
         list.add(new DBSPLetExpression("output",
                 new DBSPApplyExpression("circuit", outputType, arguments)));

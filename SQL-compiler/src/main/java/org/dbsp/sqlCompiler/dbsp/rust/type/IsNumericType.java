@@ -26,4 +26,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.type;
 /**
  * Interface implemented by numeric types.
  */
-public interface IsNumericType { }
+public interface IsNumericType {
+    default String getRustString() { return this.toString(); }
+}
