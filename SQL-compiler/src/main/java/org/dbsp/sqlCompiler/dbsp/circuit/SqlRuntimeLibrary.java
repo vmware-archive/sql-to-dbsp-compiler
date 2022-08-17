@@ -152,8 +152,12 @@ public class SqlRuntimeLibrary {
             returnType = returnType.setMayBeNull(true);
         String suffixl = ltype.mayBeNull ? "N" : "";
         String suffixr = rtype == null ? "" : (rtype.mayBeNull ? "N" : "");
-        String tsuffixl = aggregate ? "" : ltype.to(IDBSPBaseType.class).shortName();
-        String tsuffixr = (rtype == null || aggregate) ? "" : rtype.to(IDBSPBaseType.class).shortName();
+        String tsuffixl = ltype.to(IDBSPBaseType.class).shortName();
+        String tsuffixr = (rtype == null) ? "" : rtype.to(IDBSPBaseType.class).shortName();
+        if (aggregate) {
+            tsuffixl = ltype.is(DBSPTypeFP.class) && op.equals("+") ? "f" : "";
+            tsuffixr = rtype != null && rtype.is(DBSPTypeFP.class) && op.equals("+") ? "f" : "";
+        }
         for (String k: map.keySet()) {
             if (map.get(k).equals(op)) {
                 return new FunctionDescription(k + "_" + tsuffixl + suffixl + "_" + tsuffixr + suffixr, returnType);

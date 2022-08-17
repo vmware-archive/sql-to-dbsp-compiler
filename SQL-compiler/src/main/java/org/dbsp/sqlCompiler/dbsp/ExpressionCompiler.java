@@ -122,8 +122,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     }
 
     public static DBSPExpression aggregateOperation(
-            String op, DBSPType type, DBSPExpression left, DBSPExpression right)
-    {
+            String op, DBSPType type, DBSPExpression left, DBSPExpression right) {
         DBSPType leftType = left.getNonVoidType();
         DBSPType rightType = right.getNonVoidType();
         DBSPType commonBase = reduceType(leftType, rightType);

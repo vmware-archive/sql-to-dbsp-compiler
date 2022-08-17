@@ -240,8 +240,10 @@ public class EndToEndTests {
                 new DBSPTupleExpression(new DBSPLiteral(1, true))));
     }
 
-    // Calcite seems to handle this query incorrectly
+    // Calcite seems to handle this query incorrectly, since
+    // it claims that 1 / 0 is an integer instead of NULL
     //@Test
+    @SuppressWarnings("unused")
     public void divZeroTest() {
         String query = "CREATE VIEW V AS SELECT 1 / 0";
         this.testQuery(query, new DBSPZSetLiteral(
@@ -265,6 +267,13 @@ public class EndToEndTests {
         String query = "CREATE VIEW V AS SELECT SUM(T.COL1) FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(20, true))));
+    }
+
+    @Test
+    public void aggregateFloatTest() {
+        String query = "CREATE VIEW V AS SELECT SUM(T.COL2) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(13.0, true))));
     }
 
     @Test

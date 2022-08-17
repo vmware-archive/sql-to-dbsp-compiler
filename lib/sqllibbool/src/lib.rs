@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use std::ops::Add;
-use ordered_float::OrderedFloat;
+use ordered_float::{OrderedFloat, Float};
 
 #[inline(always)]
 pub fn or_b_b(left: bool, right: bool) -> bool
@@ -173,6 +173,44 @@ where
     T: Add<T, Output = T> + Copy
 {
     left + right
+}
+
+pub fn agg_plus_fN_fN<T>(left: Option<OrderedFloat<T>>, right: Option<OrderedFloat<T>>) -> Option<OrderedFloat<T>>
+where
+    T: Add<T, Output = T> + Copy + Float
+{
+    match (left, right) {
+        (None, _) => right,
+        (_, None) => left,
+        (Some(x), Some(y)) => Some(OrderedFloat(x.into_inner() + y.into_inner()))
+    }
+}
+
+pub fn agg_plus_fN_f<T>(left: Option<OrderedFloat<T>>, right: OrderedFloat<T>) -> Option<OrderedFloat<T>>
+where
+    T: Add<T, Output = T> + Copy + Float
+{
+    match (left, right) {
+        (None, _) => Some(right),
+        (Some(x), y) => Some(OrderedFloat(x.into_inner() + y.into_inner()))
+    }
+}
+
+pub fn agg_plus_f_fN<T>(left: OrderedFloat<T>, right: Option<OrderedFloat<T>>) -> Option<OrderedFloat<T>>
+where
+    T: Add<T, Output = T> + Copy + Float
+{
+    match (left, right) {
+        (_, None) => Some(left),
+        (x, Some(y)) => Some(OrderedFloat(x.into_inner() + y.into_inner()))
+    }
+}
+
+pub fn agg_plus_f_f<T>(left: OrderedFloat<T>, right: OrderedFloat<T>) -> OrderedFloat<T>
+where
+    T: Add<T, Output = T> + Copy + Float
+{
+    OrderedFloat(left.into_inner() + right.into_inner())
 }
 
 #[inline(always)]
