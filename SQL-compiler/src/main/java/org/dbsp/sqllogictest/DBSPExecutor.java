@@ -77,9 +77,12 @@ public class DBSPExecutor implements ISqlTestExecutor {
     private final String inputFunctionName = "input";
     @Nullable
     private DBSPFunction inputFunction = null;
+    // If this is 'false' we just parse and compile the tests.
+    private final boolean execute;
 
-    public DBSPExecutor() {
+    public DBSPExecutor(boolean execute) {
         this.calcite = null;
+        this.execute = execute;
         this.queryNo = 0;
         this.queries = new ArrayList<>();
     }
@@ -207,6 +210,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
             writer.println(pt.tester.toRustString());
         }
         writer.close();
-        Utilities.compileAndTestRust(rustDirectory);
+        if (this.execute)
+            Utilities.compileAndTestRust(rustDirectory);
     }
 }

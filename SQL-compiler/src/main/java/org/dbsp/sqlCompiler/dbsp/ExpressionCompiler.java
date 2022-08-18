@@ -191,7 +191,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
             }
         } else {
             if (to.mayBeNull) {
-                return new DBSPSomeExpression(to.castFrom(from));
+                return new DBSPSomeExpression(makeCast(from, to.setMayBeNull(false)));
             } else {
                 return to.castFrom(from);
             }
