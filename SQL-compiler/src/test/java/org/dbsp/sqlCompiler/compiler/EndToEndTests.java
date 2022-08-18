@@ -56,7 +56,7 @@ public class EndToEndTests {
         calcite.compile(query);
         CalciteProgram program = calcite.getProgram();
 
-        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
+        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler(calcite);
         return compiler.compile(program, "circuit");
     }
 

@@ -52,13 +52,12 @@ public class DBSPCircuit extends DBSPNode {
             "#![allow(unused_variables)]\n" +
             "\n" +
             "use dbsp::{\n" +
-            "    algebra::{ZSet, MulByRef},\n" +
+            "    algebra::{ZSet, MulByRef, F32, F64},\n" +
             "    circuit::{Circuit, Stream},\n" +
             "    operator::{Generator, FilterMap},\n" +
             "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
             "    zset,\n" +
             "};\n" +
-            "use ordered_float::OrderedFloat;\n" +
             "mod sqllib;\n" +
             "use crate::test::sqllib::*;\n" +
             "use ::serde::{Deserialize,Serialize};\n" +

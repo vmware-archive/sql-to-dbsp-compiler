@@ -75,7 +75,7 @@ public class DBSPLiteral extends DBSPExpression {
     }
 
     public DBSPLiteral(float value, boolean nullable) {
-        this(null, DBSPTypeFloat.instance.setMayBeNull(nullable), "OrderedFloat::<f32>(" + toString(value) + ")");
+        this(null, DBSPTypeFloat.instance.setMayBeNull(nullable), "F32::new(" + toString(value) + ")");
     }
 
     static String toString(double value) {
@@ -91,7 +91,7 @@ public class DBSPLiteral extends DBSPExpression {
     }
 
     public DBSPLiteral(double value, boolean nullable) {
-        this(null, DBSPTypeDouble.instance.setMayBeNull(nullable), "OrderedFloat::<f64>(" + toString(value) + ")");
+        this(null, DBSPTypeDouble.instance.setMayBeNull(nullable), "F64::new(" + toString(value) + ")");
     }
 
     public DBSPLiteral(boolean b, boolean nullable) {

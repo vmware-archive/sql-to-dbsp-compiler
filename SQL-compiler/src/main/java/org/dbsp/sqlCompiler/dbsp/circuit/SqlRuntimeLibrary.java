@@ -155,8 +155,8 @@ public class SqlRuntimeLibrary {
         String tsuffixl = ltype.to(IDBSPBaseType.class).shortName();
         String tsuffixr = (rtype == null) ? "" : rtype.to(IDBSPBaseType.class).shortName();
         if (aggregate) {
-            tsuffixl = ltype.is(DBSPTypeFP.class) && op.equals("+") ? "f" : "";
-            tsuffixr = rtype != null && rtype.is(DBSPTypeFP.class) && op.equals("+") ? "f" : "";
+            tsuffixl = "";
+            tsuffixr = "";
         }
         for (String k: map.keySet()) {
             if (map.get(k).equals(op)) {
@@ -229,6 +229,8 @@ public class SqlRuntimeLibrary {
                         raw = numericTypes;
                     }
                     for (DBSPType rawType: raw) {
+                        if (op.equals("%") && rawType.is(DBSPTypeFP.class))
+                            continue;
                         withNull = rawType.setMayBeNull(true);
                         DBSPExpression leftMatch = new DBSPVariableReference("l", rawType);
                         DBSPExpression rightMatch = new DBSPVariableReference("r", rawType);
@@ -312,7 +314,7 @@ public class SqlRuntimeLibrary {
             throw new RuntimeException("No source program for writing the sql library");
         builder.append("// Automatically-generated file\n");
         builder.append("#![allow(unused_parens)]\n");
-        builder.append("use ordered_float::OrderedFloat;\n");
+        builder.append("use dbsp::algebra::{F32, F64};\n");
         builder.append("\n");
         this.program.toRustString(builder);
         writer.append(builder.toString());

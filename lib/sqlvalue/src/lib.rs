@@ -4,7 +4,7 @@
 //! Tuple* types are used for computations, and they are converted
 //! to SqlRow objects when they need to be displayed.
 
-use ordered_float::OrderedFloat;
+use dbsp::algebra::{F32, F64};
 
 pub enum SqlValue {
     Int(i32),
@@ -52,14 +52,14 @@ impl From<f64> for SqlValue {
     }
 }
 
-impl From<OrderedFloat<f32>> for SqlValue {
-    fn from(value: OrderedFloat<f32>) -> Self {
+impl From<F32> for SqlValue {
+    fn from(value: F32) -> Self {
         SqlValue::Flt(value.into())
     }
 }
 
-impl From<OrderedFloat<f64>> for SqlValue {
-    fn from(value: OrderedFloat<f64>) -> Self {
+impl From<F64> for SqlValue {
+    fn from(value: F64) -> Self {
         SqlValue::Dbl(value.into())
     }
 }
@@ -100,20 +100,20 @@ impl From<Option<f64>> for SqlValue {
     }
 }
 
-impl From<Option<OrderedFloat<f32>>> for SqlValue {
-    fn from(value: Option<OrderedFloat<f32>>) -> Self {
+impl From<Option<F32>> for SqlValue {
+    fn from(value: Option<F32>) -> Self {
         match value {
             None => SqlValue::OptFlt(None),
-            Some(OrderedFloat(x)) => SqlValue::OptFlt(Some(x)),
+            Some(x) => SqlValue::OptFlt(Some(x.into())),
         }
     }
 }
 
-impl From<Option<OrderedFloat<f64>>> for SqlValue {
-    fn from(value: Option<OrderedFloat<f64>>) -> Self {
+impl From<Option<F64>> for SqlValue {
+    fn from(value: Option<F64>) -> Self {
         match value {
             None => SqlValue::OptDbl(None),
-            Some(OrderedFloat(x)) => SqlValue::OptDbl(Some(x)),
+            Some(x) => SqlValue::OptDbl(Some(x.into())),
         }
     }
 }

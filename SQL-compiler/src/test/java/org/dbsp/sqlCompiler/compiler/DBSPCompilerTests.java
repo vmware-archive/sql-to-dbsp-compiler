@@ -55,7 +55,7 @@ public class DBSPCompilerTests {
         SimulatorResult i = calcite.compile(ddl);
         Assert.assertNotNull(i);
         CalciteProgram program = calcite.getProgram();
-        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
+        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler(calcite);
         DBSPCircuit dbsp = compiler.compile(program, "circuit");
         Assert.assertNotNull(dbsp);
     }
@@ -73,7 +73,7 @@ public class DBSPCompilerTests {
         calcite.startCompilation();
         calcite.compile(ddl);
         CalciteProgram program = calcite.getProgram();
-        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
+        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler(calcite);
         DBSPCircuit dbsp = compiler.compile(program, "circuit");
         Assert.assertNotNull(dbsp);
 

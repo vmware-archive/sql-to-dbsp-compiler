@@ -26,7 +26,6 @@
 package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.util.Unimplemented;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
@@ -162,6 +161,13 @@ public class SqlTestFile {
             line = this.nextLine(false);
         }
 
+        if (line.startsWith("halt")) {
+            this.nextLine(false);
+            if (policy.accept(skip, only))
+                return null;
+            return this.parseTestQuery(policy);
+        }
+
         if (!line.startsWith("query")) {
             this.error("Unexpected line: " + Utilities.singleQuote(line));
         }
@@ -268,11 +274,11 @@ public class SqlTestFile {
     }
 
     void run(ISqlTestExecutor executor) throws IOException, InterruptedException {
-        System.out.println("Executing up to " + executor.getQueryCount());
         long start = System.nanoTime();
         executor.run();
         long end = System.nanoTime();
-        System.out.println("This took " + (end - start) / 1000000000 + " seconds");
+        System.out.println("Running " + executor.getQueryCount() +
+                " queries took " + (end - start) / 1000000000 + " seconds");
         executor.reset();
     }
 
@@ -287,7 +293,7 @@ public class SqlTestFile {
             }
             try {
                 executor.addQuery(testQuery.query, this.prepareInput, testQuery.outputDescription);
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 System.err.println("Error while compiling " + testQuery.query);
                 throw ex;
             }

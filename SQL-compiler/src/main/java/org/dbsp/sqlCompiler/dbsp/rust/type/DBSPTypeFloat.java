@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -32,7 +33,7 @@ public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType, IDBSPBas
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder,"OrderedFloat<f32>"); }
+        return this.wrapOption(builder,"F32"); }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
@@ -58,5 +59,10 @@ public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType, IDBSPBas
     @Override
     public int getWidth() {
         return 32;
+    }
+
+    @Override
+    public DBSPExpression castFrom(DBSPExpression source) {
+        return castFrom(source, "F32");
     }
 }

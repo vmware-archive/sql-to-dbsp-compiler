@@ -66,6 +66,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         }
     }
 
+    private final CalciteCompiler calciteCompiler;
     @Nullable
     private DBSPCircuit circuit;
     final boolean debug = false;
@@ -78,8 +79,9 @@ public class CalciteToDBSPCompiler extends RelVisitor {
 
     final TypeCompiler typeCompiler = new TypeCompiler();
 
-    public CalciteToDBSPCompiler() {
+    public CalciteToDBSPCompiler(CalciteCompiler calciteCompiler) {
         this.circuit = null;
+        this.calciteCompiler = calciteCompiler;
         this.stack = new ArrayList<>();
         this.ioOperator = new HashMap<>();
         this.nodeOperator = new HashMap<>();
@@ -268,7 +270,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         DBSPTypeTuple tuple = outputType.to(DBSPTypeTuple.class);
         DBSPType inputType = this.convertType(project.getInput().getRowType());
         DBSPVariableReference row = new DBSPVariableReference("t", inputType);
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(row);
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(row, this.calciteCompiler.getRexBuilder());
 
         List<DBSPExpression> resultColumns = new ArrayList<>();
         int index = 0;
@@ -331,7 +333,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public void visitFilter(LogicalFilter filter) {
         DBSPType type = this.convertType(filter.getRowType());
         DBSPVariableReference t = new DBSPVariableReference("t", type);
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(t);
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.calciteCompiler.getRexBuilder());
         DBSPExpression condition = expressionCompiler.compile(filter.getCondition());
         condition = ExpressionCompiler.wrapBoolIfNeeded(condition);
         condition = new DBSPClosureExpression(filter.getCondition(), condition, t.asRefParameter());
@@ -377,7 +379,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         DBSPCartesianOperator cart = new DBSPCartesianOperator(join, type, makePairs, lindex, rIndex);
         this.circuit.addOperator(cart);
         DBSPVariableReference inputRow = new DBSPVariableReference("t", makePairs.getNonVoidType());
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(inputRow);
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(inputRow, this.calciteCompiler.getRexBuilder());
         DBSPExpression condition = expressionCompiler.compile(join.getCondition());
         if (condition.getNonVoidType().mayBeNull) {
             condition = new DBSPApplyExpression("wrap_bool", condition.getNonVoidType(), condition);
@@ -438,7 +440,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
      * This can be invoked by a DDM statement, or by a SQL query that computes a constant result.
      */
     public void visitLogicalValues(LogicalValues values) {
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(null);
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(null, this.calciteCompiler.getRexBuilder());
         DBSPTypeTuple sourceType = this.convertType(values.getRowType()).to(DBSPTypeTuple.class);
         boolean ddmTranslation = this.dmTranslation.prepared();
 

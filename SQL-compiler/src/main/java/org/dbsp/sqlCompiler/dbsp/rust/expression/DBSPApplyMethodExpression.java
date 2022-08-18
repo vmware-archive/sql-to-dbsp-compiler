@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeAny;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -32,12 +33,21 @@ import javax.annotation.Nullable;
  * Function application expression.
  */
 public class DBSPApplyMethodExpression extends DBSPExpression {
-    public final String function;
+    public final DBSPExpression function;
     public final DBSPExpression self;
     public final DBSPExpression[] arguments;
 
     public DBSPApplyMethodExpression(
             String function, @Nullable DBSPType returnType,
+            DBSPExpression self, DBSPExpression... arguments) {
+        super(null, returnType);
+        this.function = new DBSPPathExpression(DBSPTypeAny.instance, function);;
+        this.self = self;
+        this.arguments = arguments;
+    }
+
+    public DBSPApplyMethodExpression(
+            DBSPExpression function, @Nullable DBSPType returnType,
             DBSPExpression self, DBSPExpression... arguments) {
         super(null, returnType);
         this.function = function;

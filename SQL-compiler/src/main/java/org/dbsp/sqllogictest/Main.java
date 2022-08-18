@@ -40,7 +40,7 @@ import java.util.List;
 public class Main {
     // Following are queries that calcite fails to parse.
     static HashSet<String> calciteBugs = new HashSet<>();
-    static String[] done = {}; // { "10", "62", "12", "53", "126", "46", "51", "65", "67", "74", "0" };
+    static String[] skip = {};
 
     static class NoMySql implements TestAcceptancePolicy {
         @Override
@@ -64,8 +64,8 @@ public class Main {
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             String extension = Utilities.getFileExtension(file.toString());
             String str = file.toString();
-            for (String d: done)
-                if (str.contains("select/slt_good_" + d + "."))
+            for (String d: skip)
+                if (str.contains("expr/slt_good_" + d + "."))
                     return FileVisitResult.CONTINUE;
             if (attrs.isRegularFile() && extension != null && extension.equals("test")) {
                 // validates the test
@@ -99,12 +99,13 @@ public class Main {
         // Calcite types /0 as not nullable!
         calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
         int batchSize = 500;
-        ISqlTestExecutor executor = new DBSPExecutor();
+        ISqlTestExecutor executor = new DBSPExecutor(true);
         String files =
             //"../../sqllogictest/test/s.test"
             //"../../sqllogictest/test/random/select"
-            "../../sqllogictest/test/random/expr"
-            //"../../sqllogictest/test/random/aggregates"
+            //"../../sqllogictest/test/random/expr/"
+            "../../sqllogictest/test/random/aggregates"
+            //"../../sqllogictest/test/select1.test"
         ;
         if (argv.length > 1)
             files = argv[1];
