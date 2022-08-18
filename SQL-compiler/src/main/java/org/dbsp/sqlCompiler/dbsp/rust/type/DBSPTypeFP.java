@@ -43,18 +43,16 @@ public abstract class DBSPTypeFP extends DBSPType implements IsNumericType {
     @Override
     public String getRustString() { return "f" + this.getWidth(); }
 
-    @Override
-    public DBSPExpression castFrom(DBSPExpression source) {
+    protected DBSPExpression castFrom(DBSPExpression source, String destType) {
         // Recall: we ignore nullability of this.
         DBSPType noNull = this.setMayBeNull(false);
-        DBSPType argtype = source.getNonVoidType();
-        if (argtype.is(DBSPTypeFP.class)) {
-            return new DBSPStructExpression(new DBSPPathExpression(noNull, "OrderedFloat"), this,
-                            new DBSPAsExpression(
-                                    new DBSPApplyMethodExpression(
-                                            "into_inner", argtype, source), this));
-        } else {
-            return new DBSPStructExpression(new DBSPPathExpression(noNull, "OrderedFloat"), this, new DBSPAsExpression(source, this));
+        DBSPType sourceType = source.getNonVoidType();
+        if (sourceType.is(DBSPTypeFP.class)) {
+            return new DBSPApplyExpression(
+                    new DBSPPathExpression(noNull, destType, "from"), this, source);
         }
+        return new DBSPApplyExpression(
+                new DBSPPathExpression(noNull, destType, "from"), this,
+                new DBSPAsExpression(source, this));
     }
 }

@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-ordered-float = { version = "3.0.0" }
+dbsp = { path = "/home/mbudiu/git/database-stream-processor" }

@@ -40,7 +40,7 @@ import java.util.List;
 public class Main {
     // Following are queries that calcite fails to parse.
     static HashSet<String> calciteBugs = new HashSet<>();
-    static String[] done = {}; // { "10", "62", "12", "53", "126", "46", "51", "65", "67", "74", "0" };
+    static String[] done = { "12", "53", "67", "65", "10", "51" };
 
     static class NoMySql implements TestAcceptancePolicy {
         @Override
@@ -65,7 +65,7 @@ public class Main {
             String extension = Utilities.getFileExtension(file.toString());
             String str = file.toString();
             for (String d: done)
-                if (str.contains("select/slt_good_" + d + "."))
+                if (str.contains("expr/slt_good_" + d + "."))
                     return FileVisitResult.CONTINUE;
             if (attrs.isRegularFile() && extension != null && extension.equals("test")) {
                 // validates the test
@@ -103,8 +103,8 @@ public class Main {
         String files =
             //"../../sqllogictest/test/s.test"
             //"../../sqllogictest/test/random/select"
-            "../../sqllogictest/test/random/expr"
-            //"../../sqllogictest/test/random/aggregates"
+            //"../../sqllogictest/test/random/expr"
+            "../../sqllogictest/test/random/aggregates"
         ;
         if (argv.length > 1)
             files = argv[1];

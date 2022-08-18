@@ -68,7 +68,7 @@ public class DBSPTypeBool extends DBSPType implements IDBSPBaseType {
                     new DBSPApplyMethodExpression("into_inner", this.setMayBeNull(false), source),
                     new DBSPLiteral(0));
         } else {
-            throw new Unimplemented();
+            throw new Unimplemented("Cast from " + source.getNonVoidType());
         }
     }
 }

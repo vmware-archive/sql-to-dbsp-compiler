@@ -120,7 +120,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
         }
         this.calcite.compile(query);
         CalciteProgram program = calcite.getProgram();
-        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler();
+        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler(calcite);
         DBSPCircuit dbsp = compiler.compile(program, "c" + this.queryNo);
 
         DBSPZSetLiteral expectedOutput = null;

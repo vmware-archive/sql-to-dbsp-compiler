@@ -26,7 +26,6 @@
 package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.util.Unimplemented;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
@@ -54,6 +53,8 @@ public class SqlTestFile {
     private String nextLine;
     private final String testFile;
     private boolean done;
+    // If this is 'false' we just parse and compile the tests.
+    private static final boolean execute = true;
 
     public SqlTestFile(String testFile, TestAcceptancePolicy policy) throws IOException {
         this.tests = new ArrayList<>();
@@ -287,12 +288,13 @@ public class SqlTestFile {
             }
             try {
                 executor.addQuery(testQuery.query, this.prepareInput, testQuery.outputDescription);
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 System.err.println("Error while compiling " + testQuery.query);
                 throw ex;
             }
             if (executor.getQueryCount() % batchSize == 0) {
-                this.run(executor);
+                if (SqlTestFile.execute)
+                    this.run(executor);
             }
         }
         if ((executor.getQueryCount() % batchSize) != 0)

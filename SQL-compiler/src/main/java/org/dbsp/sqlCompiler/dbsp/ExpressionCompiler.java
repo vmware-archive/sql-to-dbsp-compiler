@@ -47,10 +47,12 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     private final DBSPVariableReference inputRow;
     @SuppressWarnings("FieldCanBeLocal")
     private static final boolean debug = false;
+    private final RexBuilder rexBuilder;
 
-    public ExpressionCompiler(@Nullable DBSPVariableReference inputRow) {
+    public ExpressionCompiler(@Nullable DBSPVariableReference inputRow, RexBuilder rexBuilder) {
         super(true);
         this.inputRow = inputRow;
+        this.rexBuilder = rexBuilder;
     }
 
     @Override
@@ -184,8 +186,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                         new DBSPSomeExpression(x), new DBSPSomeExpression(to.castFrom(x)));
                 return new DBSPMatchExpression(from, Linq.list(some, none), to);
             } else {
-                return to.castFrom(new DBSPApplyMethodExpression(
-                        "unwrap", fromType.setMayBeNull(true), from));
+                return makeCast(new DBSPApplyMethodExpression(
+                        "unwrap", fromType.setMayBeNull(false), from), to);
             }
         } else {
             if (to.mayBeNull) {
@@ -218,6 +220,11 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
 
     @Override
     public DBSPExpression visitCall(RexCall call) {
+        if (call.op.kind == SqlKind.SEARCH) {
+            // TODO: ideally the optimizer should do this before handing the expression to us.
+            // Then we can get rid of the rexBuilder field too.
+            call = (RexCall)RexUtil.expandSearch(this.rexBuilder, null, call);
+        }
         List<DBSPExpression> ops = Linq.map(call.operands, e -> e.accept(this));
         DBSPType type = this.typeCompiler.convertType(call.getType());
         switch (call.op.kind) {

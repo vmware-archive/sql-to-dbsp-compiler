@@ -50,7 +50,6 @@ import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.dbsp.util.TranslationException;
 import org.dbsp.util.Unimplemented;
-import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -132,6 +131,10 @@ public class CalciteCompiler {
                 StandardConvertletTable.INSTANCE,
                 converterConfig
         );
+    }
+
+    public RexBuilder getRexBuilder() {
+        return this.cluster.getRexBuilder();
     }
 
     /**

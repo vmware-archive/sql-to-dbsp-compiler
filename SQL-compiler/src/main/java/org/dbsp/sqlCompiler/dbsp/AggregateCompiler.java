@@ -134,15 +134,26 @@ public class AggregateCompiler {
         DBSPExpression zero = new DBSPLiteral(null, this.resultType, "0");
         DBSPExpression increment;
         DBSPExpression argument;
+        DBSPExpression one;
+        switch (this.resultType.to(DBSPTypeInteger.class).getWidth()) {
+            case 32:
+                one = new DBSPLiteral(1);
+                break;
+            case 64:
+                one = new DBSPLiteral(1L);
+                break;
+            default:
+                throw new RuntimeException("Unexpected result for COUNT aggregation " + this.resultType);
+        }
         if (this.call.getArgList().size() == 0) {
             // COUNT(*)
-            argument = new DBSPLiteral(1);
+            argument = one;
         } else {
             DBSPExpression agg = this.getAggregatedValue();
             if (agg.getNonVoidType().mayBeNull)
                 argument = new DBSPApplyExpression("indicator", this.resultType.setMayBeNull(false), agg);
             else
-                argument = new DBSPLiteral(1);
+                argument = one;
         }
 
         DBSPVariableReference accumulator= new DBSPVariableReference("r" + aggIndex, this.resultType);

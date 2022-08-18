@@ -39,7 +39,7 @@ public class DBSPApplyExpression extends DBSPExpression {
 
     public DBSPApplyExpression(String function, @Nullable DBSPType returnType, DBSPExpression... arguments) {
         super(null, returnType);
-        this.function = new DBSPVariableReference(function, DBSPTypeAny.instance);
+        this.function = new DBSPPathExpression(DBSPTypeAny.instance, function);
         this.arguments = arguments;
     }
 

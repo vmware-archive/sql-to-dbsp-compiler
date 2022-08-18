@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -32,7 +33,7 @@ public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType, IDBSPBa
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder,"OrderedFloat<f64>");
+        return this.wrapOption(builder,"F64");
     }
 
     @Override
@@ -59,5 +60,10 @@ public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType, IDBSPBa
     @Override
     public int getWidth() {
         return 64;
+    }
+
+    @Override
+    public DBSPExpression castFrom(DBSPExpression source) {
+        return castFrom(source, "F64");
     }
 }
