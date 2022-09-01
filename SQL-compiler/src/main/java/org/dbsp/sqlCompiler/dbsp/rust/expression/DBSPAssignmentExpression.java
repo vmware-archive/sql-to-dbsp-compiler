@@ -21,21 +21,24 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.type;
+package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
-import javax.annotation.Nullable;
+import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPTypeZSet extends DBSPTypeUser {
-    public final DBSPType elementType;
-    public final DBSPType weightType;
+public class DBSPAssignmentExpression extends DBSPExpression {
+    public final DBSPExpression left;
+    public final DBSPExpression right;
 
-    public DBSPTypeZSet(@Nullable Object node, DBSPType elementType, DBSPType weightType) {
-        super(node, "OrdZSet", false, elementType, weightType);
-        this.elementType = elementType;
-        this.weightType = weightType;
+    public DBSPAssignmentExpression(DBSPExpression left, DBSPExpression right) {
+        super(null, null);
+        this.left = left;
+        this.right = right;
     }
 
-    public DBSPTypeZSet(DBSPType elementType, DBSPType weightType) {
-        this(null, elementType, weightType);
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append(this.left)
+                .append(" = ")
+                .append(this.right);
     }
 }

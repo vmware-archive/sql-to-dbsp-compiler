@@ -32,6 +32,7 @@ public class SqlTestQuery {
      * Query that is executed.
      */
     public String query;
+    @SuppressWarnings("FieldCanBeLocal")
     @Nullable private String name;
     public final SqlTestOutputDescription outputDescription;
 

@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -38,7 +37,7 @@ public class DBSPTypeTuple extends DBSPType {
 
     public final DBSPType[] tupArgs;
 
-    public static final DBSPTypeTuple emptyTupleType = new DBSPTypeTuple(null);
+    public static final DBSPTypeTuple emptyTupleType = new DBSPTypeTuple();
 
     protected DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupArgs) {
         super(node, mayBeNull);
@@ -51,8 +50,16 @@ public class DBSPTypeTuple extends DBSPType {
         this(node, false, tupArgs);
     }
 
+    public DBSPTypeTuple(DBSPType... tupArgs) {
+        this(null, tupArgs);
+    }
+
     public DBSPTypeTuple(@Nullable Object node, List<DBSPType> tupArgs) {
         this(node, tupArgs.toArray(new DBSPType[0]));
+    }
+
+    public DBSPTypeTuple(List<DBSPType> tupArgs) {
+        this(null, tupArgs);
     }
 
     public DBSPType getFieldType(int index) {

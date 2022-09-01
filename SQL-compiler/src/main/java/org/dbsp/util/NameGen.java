@@ -31,6 +31,7 @@ package org.dbsp.util;
 public class NameGen extends IdGen {
     private final String prefix;
 
+    @SuppressWarnings("unused")
     public NameGen() {
         this.prefix = "id";
     }

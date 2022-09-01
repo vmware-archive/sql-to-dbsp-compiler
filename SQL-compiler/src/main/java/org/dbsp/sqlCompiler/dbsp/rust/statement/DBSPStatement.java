@@ -21,15 +21,15 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+package org.dbsp.sqlCompiler.dbsp.rust.statement;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 
 import javax.annotation.Nullable;
 
-public class DBSPFlatmapOperator extends DBSPOperator {
-    protected DBSPFlatmapOperator(@Nullable Object node, @Nullable DBSPExpression function, DBSPType outputType) {
-        super(node, "flat_map_generic", function, outputType);
+public abstract class DBSPStatement extends DBSPNode {
+    @SuppressWarnings("SameParameterValue")
+    protected DBSPStatement(@Nullable Object node) {
+        super(node);
     }
 }

@@ -33,5 +33,6 @@ public interface TestAcceptancePolicy {
      * @param skip  List of dbs to skip.
      * @param only  List of dbs to accept.
      */
+    @SuppressWarnings("unused")
     boolean accept(List<String> skip, List<String> only);
 }

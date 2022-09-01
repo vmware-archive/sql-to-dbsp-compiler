@@ -42,11 +42,4 @@ public class ColumnInfo {
         this.type = type;
         this.nullable = nullable;
     }
-
-    // TODO: I don't know how to manufacture a proper validator.
-    private ColumnInfo(SqlColumnDeclaration decl, SqlValidator validator, boolean nullable) {
-        this.name = Catalog.identifierToString(decl.name);
-        this.type = decl.dataType.deriveType(validator);
-        this.nullable = nullable;
-    }
 }

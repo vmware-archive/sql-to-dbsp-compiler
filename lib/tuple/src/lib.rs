@@ -9,7 +9,7 @@ macro_rules! declare_tuples {
         $(,)?
     ) => {
         $(
-            #[derive(Default, Eq, Ord, Clone, Hash, PartialEq, PartialOrd, Serialize, Deserialize)]
+            #[derive(Default, Eq, Ord, Clone, Hash, PartialEq, PartialOrd, Serialize, Deserialize, DeepSizeOf)]
             pub struct $tuple_name<$($element,)*>($(pub $element,)*);
 
             impl<$($element),*> $tuple_name<$($element,)*>

@@ -43,46 +43,51 @@ import java.util.function.Consumer;
  */
 public class AggregateCompiler {
     /**
-     * An aggregate is compiled as a fold followed by postporocessing.
+     * An aggregate is compiled as a fold followed by postprocessing.
      * The fold is described by a zero (initial value), and an increment
      * function.  The postprocessing step makes any necessary conversions.
      * For example, AVG has a zero of (0,0), an increment of (1, value),
      * and a postprocessing step of sum/count.
      */
-    public static class Implementation {
+    public static class FoldDescription {
+        /**
+         * Zero of the fold function.
+         */
         public final DBSPExpression zero;
-        public final DBSPExpression increment;
-        public final DBSPVariableReference accumulator;
+        /**
+         * A closure with signature |accum, value, weight| -> accum
+         */
+        public final DBSPClosureExpression increment;
+        /**
+         * Function that may postprocess the accumulator to produce the final result.
+         */
         @Nullable
         public final DBSPClosureExpression postprocess;
         /**
          * Zero produced by postprocessing for an empty set.
          */
-        public final DBSPExpression postZero;
+        public final DBSPExpression emptySetResult;
 
-        public Implementation(
+        public FoldDescription(
                 DBSPExpression zero,
-                DBSPExpression increment,
-                DBSPVariableReference accumulator,
+                DBSPClosureExpression increment,
                 @Nullable
                 DBSPClosureExpression postprocess,
                 @Nullable
-                DBSPExpression postZero) {
-            this.accumulator = accumulator;
+                DBSPExpression emptySetResult) {
             this.zero = zero;
             this.increment = increment;
             this.postprocess = postprocess;
-            if (postZero != null)
-                this.postZero = postZero;
+            if (emptySetResult != null)
+                this.emptySetResult = emptySetResult;
             else
-                this.postZero = zero;
+                this.emptySetResult = zero;
         }
 
-        public Implementation(
+        public FoldDescription(
                 DBSPExpression zero,
-                DBSPExpression increment,
-                DBSPVariableReference accumulator) {
-            this(zero, increment, accumulator, null, null);
+                DBSPClosureExpression increment) {
+            this(zero, increment, null, null);
         }
     }
 
@@ -94,29 +99,21 @@ public class AggregateCompiler {
      * Type of result expected.
      */
     public final DBSPType resultType;
-    /**
-     * The AggregateCompiler may be invoked multiple times
-     * for SQL queries that contain multiple aggregates.
-     * This is an index which helps the compiler generate unique names.
-     * For example SELECT COUNT(*), SUM(t.f) will cause
-     * one invocation for COUNT and one for SUM, with different indexes.
-     */
-    public final int aggIndex;
-
     // Deposit compilation result here
     @Nullable
-    private Implementation implementation;
+    private FoldDescription foldingFunction;
 
     /**
      * Expression that stands for the a whole input row in the input zset.
      */
     private final DBSPVariableReference v;
 
-    public AggregateCompiler(AggregateCall call, DBSPType resultType, int aggIndex, DBSPVariableReference v) {
+    public AggregateCompiler(
+            AggregateCall call, DBSPType resultType,
+            DBSPVariableReference v) {
         this.resultType = resultType;
         this.call = call;
-        this.implementation = null;
-        this.aggIndex = aggIndex;
+        this.foldingFunction = null;
         this.v = v;
     }
 
@@ -127,6 +124,14 @@ public class AggregateCompiler {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Given the body of a closure, make a closure with arguments accum, row, weight
+     */
+    DBSPClosureExpression makeRowClosure(DBSPExpression body, DBSPVariableReference accum) {
+        return new DBSPClosureExpression(body,
+                accum.asParameter(), this.v.asParameter(), CalciteToDBSPCompiler.weight.asParameter());
     }
 
     void processCount(SqlCountAggFunction function) {
@@ -156,26 +161,26 @@ public class AggregateCompiler {
                 argument = one;
         }
 
-        DBSPVariableReference accumulator= new DBSPVariableReference("r" + aggIndex, this.resultType);
+        DBSPVariableReference accum = new DBSPVariableReference("a", this.resultType);
         if (this.call.isDistinct()) {
             increment = ExpressionCompiler.aggregateOperation(
-                    "+", this.resultType, accumulator, argument);
+                    "+", this.resultType, accum, argument);
         } else {
             increment = ExpressionCompiler.aggregateOperation(
                     "+", this.resultType,
-                    accumulator, new DBSPApplyMethodExpression("mul_by_ref",
+                    accum, new DBSPApplyMethodExpression("mul_by_ref",
                             DBSPTypeInteger.signed64,
                             argument,
-                            new DBSPRefExpression(CalciteToDBSPCompiler.weight)));
+                            new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
         }
-        this.implementation = new Implementation(zero, increment, accumulator);
+        this.foldingFunction = new FoldDescription(zero, this.makeRowClosure(increment, accum));
     }
 
     private DBSPExpression getAggregatedValue() {
         if (this.call.getArgList().size() != 1)
             throw new Unimplemented(this.call);
         int fieldNumber = this.call.getArgList().get(0);
-        return new DBSPFieldExpression(null, this.v, fieldNumber);
+        return new DBSPFieldExpression(this.v, fieldNumber);
     }
 
     private DBSPType getAggregatedValueType() {
@@ -196,29 +201,30 @@ public class AggregateCompiler {
                 throw new Unimplemented(this.call);
         }
         DBSPExpression aggregatedValue = this.getAggregatedValue();
-        DBSPVariableReference accumulator= new DBSPVariableReference("r" + aggIndex, this.resultType);
+        DBSPVariableReference accum = new DBSPVariableReference("a", this.resultType);
         DBSPExpression increment = ExpressionCompiler.aggregateOperation(
-                call, this.resultType, accumulator, aggregatedValue);
-        this.implementation = new Implementation(zero, increment, accumulator);
+                call, this.resultType, accum, aggregatedValue);
+        this.foldingFunction = new FoldDescription(zero, this.makeRowClosure(increment, accum));
     }
 
     void processSum(SqlSumAggFunction function) {
         DBSPExpression zero = new DBSPLiteral(this.resultType.setMayBeNull(true));
         DBSPExpression increment;
         DBSPExpression aggregatedValue = this.getAggregatedValue();
-        DBSPVariableReference accumulator= new DBSPVariableReference("r" + aggIndex, this.resultType);
+        DBSPVariableReference accum = new DBSPVariableReference("a", this.resultType);
+
         if (call.isDistinct()) {
             increment = ExpressionCompiler.aggregateOperation(
-                    "+", resultType, accumulator, aggregatedValue);
+                    "+", resultType, accum, aggregatedValue);
         } else {
             increment = ExpressionCompiler.aggregateOperation(
                     "+", resultType,
-                    accumulator, new DBSPApplyMethodExpression("mul_by_ref",
+                    accum, new DBSPApplyMethodExpression("mul_by_ref",
                             aggregatedValue.getNonVoidType(),
                             aggregatedValue,
-                            new DBSPRefExpression(CalciteToDBSPCompiler.weight)));
+                            new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
         }
-        this.implementation = new Implementation(zero, increment, accumulator);
+        this.foldingFunction = new FoldDescription(zero, this.makeRowClosure(increment, accum));
     }
 
     void processAvg(SqlAvgAggFunction function) {
@@ -227,9 +233,9 @@ public class AggregateCompiler {
         DBSPExpression zero = new DBSPRawTupleExpression(new DBSPLiteral(i64), new DBSPLiteral(i64));
         DBSPType pairType = zero.getNonVoidType();
         DBSPExpression count, sum;
-        DBSPVariableReference accumulator = new DBSPVariableReference("r" + aggIndex, zero.getNonVoidType());
-        DBSPExpression countAccumulator = new DBSPFieldExpression(null, accumulator, 0);
-        DBSPExpression sumAccumulator = new DBSPFieldExpression(null, accumulator, 1);
+        DBSPVariableReference accum = new DBSPVariableReference("a", pairType);
+        DBSPExpression countAccumulator = new DBSPFieldExpression(accum, 0);
+        DBSPExpression sumAccumulator = new DBSPFieldExpression(accum, 1);
         DBSPExpression aggregatedValue = ExpressionCompiler.makeCast(this.getAggregatedValue(), i64);
         DBSPExpression plusOne = new DBSPLiteral(1L);
         if (aggregatedValueType.mayBeNull)
@@ -245,36 +251,37 @@ public class AggregateCompiler {
                     countAccumulator, new DBSPApplyMethodExpression("mul_by_ref",
                             DBSPTypeInteger.signed64.setMayBeNull(plusOne.getNonVoidType().mayBeNull),
                             plusOne,
-                            new DBSPRefExpression(CalciteToDBSPCompiler.weight)));
+                            new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
             sum = ExpressionCompiler.aggregateOperation(
                     "+", i64,
                     sumAccumulator, new DBSPApplyMethodExpression("mul_by_ref",
                             i64,
                             aggregatedValue,
-                            new DBSPRefExpression(CalciteToDBSPCompiler.weight)));
+                            new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
         }
 
         DBSPExpression increment = new DBSPRawTupleExpression(sum, count);
-        DBSPExpression a = new DBSPVariableReference("a", pairType);
+        DBSPVariableReference a = new DBSPVariableReference("a", pairType);
         DBSPExpression divide = ExpressionCompiler.makeBinaryExpression(
                 function, this.resultType, "/",
-                Linq.list(new DBSPFieldExpression(null, a, 0),
-                        new DBSPFieldExpression(null, a, 1)));
+                Linq.list(new DBSPFieldExpression(a, 0),
+                        new DBSPFieldExpression(a, 1)));
         divide = ExpressionCompiler.makeCast(divide, this.resultType);
         DBSPClosureExpression closure = new DBSPClosureExpression(
-                null, divide, new DBSPClosureExpression.Parameter("a", pairType));
+                null, divide, a.asParameter());
         DBSPExpression postZero = new DBSPLiteral(this.resultType.setMayBeNull(true));
-        this.implementation = new Implementation(zero, increment, accumulator, closure, postZero);
+        this.foldingFunction = new FoldDescription(zero,
+                this.makeRowClosure(increment, accum), closure, postZero);
     }
 
-    public Implementation compile() {
+    public FoldDescription compile() {
         boolean success =
                 this.process(this.call, SqlCountAggFunction.class, this::processCount) ||
                 this.process(this.call, SqlMinMaxAggFunction.class, this::processMinMax) ||
                 this.process(this.call, SqlSumAggFunction.class, this::processSum) ||
                 this.process(this.call, SqlAvgAggFunction.class, this::processAvg);
-        if (!success || this.implementation == null)
+        if (!success || this.foldingFunction == null)
             throw new Unimplemented(this.call);
-        return this.implementation;
+        return this.foldingFunction;
     }
 }

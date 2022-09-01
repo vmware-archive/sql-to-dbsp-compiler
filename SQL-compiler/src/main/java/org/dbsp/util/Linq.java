@@ -36,6 +36,7 @@ import java.util.function.Predicate;
 /**
  * Some utility classes inspired by C# Linq.
  */
+@SuppressWarnings("unused")
 public class Linq {
     static class MapIterator<T, S> implements Iterator<S> {
         final Iterator<T> data;

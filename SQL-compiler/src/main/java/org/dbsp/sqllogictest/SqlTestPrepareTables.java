@@ -25,9 +25,6 @@
 
 package org.dbsp.sqllogictest;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * A set of SQL statements create tables.
  */

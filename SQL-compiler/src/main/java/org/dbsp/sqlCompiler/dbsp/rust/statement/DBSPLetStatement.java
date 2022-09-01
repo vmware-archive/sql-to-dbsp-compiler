@@ -21,31 +21,45 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.expression;
+package org.dbsp.sqlCompiler.dbsp.rust.statement;
 
-import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPStatement;
+import org.dbsp.sqlCompiler.dbsp.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPVariableReference;
 import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
-import java.util.List;
+public class DBSPLetStatement extends DBSPStatement implements IDBSPDeclaration {
+    public final String variable;
+    public final DBSPExpression initializer;
+    public final boolean mutable;
 
-public class DBSPBlockExpression extends DBSPExpression {
-    public final List<DBSPStatement> contents;
-    @Nullable
-    public final DBSPExpression lastExpression;
+    public DBSPLetStatement(String variable, DBSPExpression initializer, boolean mutable) {
+        super(null);
+        this.variable = variable;
+        this.initializer = initializer;
+        this.mutable = mutable;
+    }
 
-    public DBSPBlockExpression(List<DBSPStatement> contents, @Nullable DBSPExpression last) {
-        super(null, last != null ? last.getType() : null);
-        this.contents = contents;
-        this.lastExpression = last;
+    public DBSPLetStatement(String variable, DBSPExpression initializer) {
+        this(variable, initializer, false);
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append("{").increase()
-                .intercalate("\n", this.contents).decrease();
-        if (this.lastExpression != null)
-            builder.append(this.lastExpression);
-        return builder.append("}");
+        return builder.append("let ")
+                .append(this.mutable ? "mut " : "")
+                .append(variable)
+                .append(" = ")
+                .append(this.initializer)
+                .append(";");
+    }
+
+    @Override
+    public String getName() {
+        return this.variable;
+    }
+
+    public DBSPVariableReference getVarReference() {
+        return new DBSPVariableReference(this.variable, initializer.getNonVoidType());
     }
 }

@@ -23,15 +23,17 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
+import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeIndexedZSet;
 
 import javax.annotation.Nullable;
 
 public class DBSPAggregateOperator extends DBSPOperator {
-    public DBSPAggregateOperator(@Nullable Object node, @Nullable DBSPExpression function, DBSPType outputElementType, DBSPOperator input) {
-        super(node, "aggregate", function, TypeCompiler.makeZSet(outputElementType));
+    public DBSPAggregateOperator(@Nullable Object node, @Nullable DBSPExpression function, DBSPType keyType, DBSPType outputElementType, DBSPOperator input) {
+        super(node, "stream_aggregate", function,
+                new DBSPTypeIndexedZSet(node, keyType, outputElementType, CalciteToDBSPCompiler.weightType));
         this.addInput(input);
     }
 }

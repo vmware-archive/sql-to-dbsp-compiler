@@ -21,21 +21,32 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.type;
+package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
-import javax.annotation.Nullable;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRef;
+import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPTypeZSet extends DBSPTypeUser {
-    public final DBSPType elementType;
-    public final DBSPType weightType;
+/**
+ * An expression of the form &expression.
+ */
+public class DBSPBorrowExpression extends DBSPExpression {
+    private final DBSPExpression expression;
+    private final boolean mut;
 
-    public DBSPTypeZSet(@Nullable Object node, DBSPType elementType, DBSPType weightType) {
-        super(node, "OrdZSet", false, elementType, weightType);
-        this.elementType = elementType;
-        this.weightType = weightType;
+    public DBSPBorrowExpression(DBSPExpression expression, boolean mutable) {
+        super(null, new DBSPTypeRef(expression.getNonVoidType()));
+        this.expression = expression;
+        this.mut = mutable;
     }
 
-    public DBSPTypeZSet(DBSPType elementType, DBSPType weightType) {
-        this(null, elementType, weightType);
+    public DBSPBorrowExpression(DBSPExpression expression) {
+        this(expression, false);
+    }
+
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("&")
+                .append(this.mut ? "mut " : "")
+                .append(this.expression);
     }
 }

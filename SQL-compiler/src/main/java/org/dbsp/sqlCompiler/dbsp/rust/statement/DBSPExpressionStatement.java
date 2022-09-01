@@ -21,42 +21,23 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.expression;
+package org.dbsp.sqlCompiler.dbsp.rust.statement;
 
-import org.dbsp.sqlCompiler.dbsp.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPBlockExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPLetExpression extends DBSPExpression implements IDBSPDeclaration {
-    public final String variable;
-    public final DBSPExpression initializer;
-    public final boolean mutable;
+public class DBSPExpressionStatement extends DBSPStatement {
+    public final DBSPExpression expression;
 
-    public DBSPLetExpression(String variable, DBSPExpression initializer, boolean mutable) {
-        super(null, null);
-        this.variable = variable;
-        this.initializer = initializer;
-        this.mutable = mutable;
-    }
-
-    public DBSPLetExpression(String variable, DBSPExpression initializer) {
-        this(variable, initializer, false);
+    public DBSPExpressionStatement(DBSPExpression expression) {
+        super(null);
+        this.expression = expression;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("let ")
-                .append(this.mutable ? "mut " : "")
-                .append(variable)
-                .append(" = ")
-                .append(this.initializer);
-    }
-
-    @Override
-    public String getName() {
-        return this.variable;
-    }
-
-    public DBSPVariableReference getVarReference() {
-        return new DBSPVariableReference(this.variable, initializer.getNonVoidType());
+        return builder.append(this.expression)
+                .append(this.expression.is(DBSPBlockExpression.class) ? "" : ";");
     }
 }

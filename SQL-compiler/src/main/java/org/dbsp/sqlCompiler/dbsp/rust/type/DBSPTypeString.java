@@ -23,9 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
-import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
 

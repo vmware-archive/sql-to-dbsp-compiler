@@ -48,7 +48,7 @@ public class DBSPZSetLiteral extends DBSPExpression {
      *             with just a type argument.
      */
     public DBSPZSetLiteral(DBSPType weightType, DBSPExpression... data) {
-        super(null, new DBSPTypeZSet(null, data[0].getNonVoidType(), weightType));
+        super(null, new DBSPTypeZSet(data[0].getNonVoidType(), weightType));
         this.zsetType = this.getNonVoidType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
         for (DBSPExpression e: data) {

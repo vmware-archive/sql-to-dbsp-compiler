@@ -64,7 +64,7 @@ public class DBSPTypeBool extends DBSPType implements IDBSPBaseType {
     public DBSPExpression castFrom(DBSPExpression source) {
         DBSPType argtype = source.getNonVoidType();
         if (argtype.is(DBSPTypeFP.class)) {
-            return new DBSPBinaryExpression(null, this, "!=",
+            return new DBSPBinaryExpression(this, "!=",
                     new DBSPApplyMethodExpression("into_inner", this.setMayBeNull(false), source),
                     new DBSPLiteral(0));
         } else {

@@ -157,7 +157,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
                 fields.add(field);
                 col++;
                 if (col == outputElementType.size()) {
-                    expectedOutput.add(new DBSPTupleExpression(null, outputElementType, fields));
+                    expectedOutput.add(new DBSPTupleExpression(outputElementType, fields));
                     fields = new ArrayList<>();
                     col = 0;
                 }

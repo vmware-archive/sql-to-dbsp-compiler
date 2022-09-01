@@ -42,7 +42,7 @@ public interface ISqlTestExecutor {
     /**
      * Prepare for a new test.
      */
-    void reset() throws FileNotFoundException, UnsupportedEncodingException;
+    void reset();
     /**
      * Prepare the input tables.
      */

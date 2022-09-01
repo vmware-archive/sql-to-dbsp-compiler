@@ -221,6 +221,20 @@ public class EndToEndTests {
     }
 
     @Test
+    public void groupByTest() {
+        String query = "CREATE VIEW V AS SELECT COL1 FROM T GROUP BY COL1";
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(10))));
+    }
+
+    @Test
+    public void groupByCountTest() {
+        String query = "CREATE VIEW V AS SELECT COL1, COUNT(col2) FROM T GROUP BY COL1, COL3";
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(10), new DBSPLiteral(1))));
+    }
+
+    @Test
     public void divTest() {
         String query = "CREATE VIEW V AS SELECT T.COL1 / T.COL5 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(

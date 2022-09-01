@@ -23,9 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
-import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
 
@@ -36,6 +34,7 @@ public class DBSPTypeUSize extends DBSPType
         implements IsNumericType, IDBSPBaseType {
     public static final DBSPTypeUSize instance = new DBSPTypeUSize(null, false);
 
+    @SuppressWarnings("SameParameterValue")
     protected DBSPTypeUSize(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);
     }

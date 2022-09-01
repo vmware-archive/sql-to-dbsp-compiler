@@ -47,6 +47,11 @@ public class DBSPBinaryExpression extends DBSPExpression {
             throw new TranslationException("Null right operand", node);
     }
 
+    public DBSPBinaryExpression(DBSPType type, String operation,
+                                DBSPExpression left, DBSPExpression right) {
+        this(null, type, operation, left, right);
+    }
+
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         if (this.left.getNonVoidType().mayBeNull) {

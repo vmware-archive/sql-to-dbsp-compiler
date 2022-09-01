@@ -19,23 +19,20 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ *
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.type;
+/**
+ * Package that doesn't allow null values as method parameters.
+ */
 
-import javax.annotation.Nullable;
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqlCompiler.dbsp.rust.statement;
 
-public class DBSPTypeZSet extends DBSPTypeUser {
-    public final DBSPType elementType;
-    public final DBSPType weightType;
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
 
-    public DBSPTypeZSet(@Nullable Object node, DBSPType elementType, DBSPType weightType) {
-        super(node, "OrdZSet", false, elementType, weightType);
-        this.elementType = elementType;
-        this.weightType = weightType;
-    }
-
-    public DBSPTypeZSet(DBSPType elementType, DBSPType weightType) {
-        this(null, elementType, weightType);
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

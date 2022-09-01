@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeAny;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeFunction;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -43,8 +44,16 @@ public class DBSPApplyExpression extends DBSPExpression {
         this.arguments = arguments;
     }
 
-    public DBSPApplyExpression(DBSPExpression function, @Nullable DBSPType returnType, DBSPExpression... arguments) {
-        super(null, returnType);
+    @Nullable
+    private static DBSPType getReturnType(DBSPType type) {
+        if (type.is(DBSPTypeAny.class))
+            return type;
+        DBSPTypeFunction func = type.to(DBSPTypeFunction.class);
+        return func.resultType;
+    }
+
+    public DBSPApplyExpression(DBSPExpression function, DBSPExpression... arguments) {
+        super(null, DBSPApplyExpression.getReturnType(function.getNonVoidType()));
         this.function = function;
         this.arguments = arguments;
     }

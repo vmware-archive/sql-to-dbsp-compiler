@@ -67,7 +67,6 @@ public class CalciteCompiler {
     private final SqlParser.Config parserConfig;
     private final SqlValidator validator;
     private final Catalog simple;
-    private final boolean debug = false;
     private final SqlToRelConverter converter;
     private final SqlSimulator simulator;
     public final RelOptCluster cluster;
@@ -187,12 +186,6 @@ public class CalciteCompiler {
             ViewDDL view = result.as(ViewDDL.class);
             if (view != null) {
                 RelRoot relRoot = this.converter.convertQuery(view.query, true, true);
-                // Dump plan
-                if (this.debug)
-                    System.out.println(
-                        RelOptUtil.dumpPlan("[Logical plan]", relRoot.rel,
-                            SqlExplainFormat.TEXT,
-                            SqlExplainLevel.NON_COST_ATTRIBUTES));
                 view.setCompiledQuery(relRoot);
                 /*
                 if (!relRoot.collation.getKeys().isEmpty()) {

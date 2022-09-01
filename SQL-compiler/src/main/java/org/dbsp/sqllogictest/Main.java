@@ -39,8 +39,8 @@ import java.util.List;
  */
 public class Main {
     // Following are queries that calcite fails to parse.
-    static HashSet<String> calciteBugs = new HashSet<>();
-    static String[] skip = {};
+    static final HashSet<String> calciteBugs = new HashSet<>();
+    static final String[] skip = {};
 
     static class NoMySql implements TestAcceptancePolicy {
         @Override
@@ -64,6 +64,7 @@ public class Main {
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             String extension = Utilities.getFileExtension(file.toString());
             String str = file.toString();
+            //noinspection RedundantOperationOnEmptyContainer
             for (String d: skip)
                 if (str.contains("expr/slt_good_" + d + "."))
                     return FileVisitResult.CONTINUE;
@@ -105,6 +106,7 @@ public class Main {
             //"../../sqllogictest/test/random/select"
             //"../../sqllogictest/test/random/expr/"
             "../../sqllogictest/test/random/aggregates"
+            //"../../sqllogictest/test/random/groupby"
             //"../../sqllogictest/test/select1.test"
         ;
         if (argv.length > 1)

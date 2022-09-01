@@ -23,19 +23,23 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
-import org.dbsp.util.Unimplemented;
 
 /**
  * A type of the form &type.
  */
 public class DBSPTypeRef extends DBSPType {
     public final DBSPType type;
+    public final boolean mutable;
 
-    public DBSPTypeRef(DBSPType type) {
+    public DBSPTypeRef(DBSPType type, boolean mutable) {
         super(null, false);
         this.type = type;
+        this.mutable = mutable;
+    }
+
+    public DBSPTypeRef(DBSPType type) {
+        this(type, false);
     }
 
     @Override
@@ -46,6 +50,7 @@ public class DBSPTypeRef extends DBSPType {
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append("&")
+                .append(this.mutable ? "mut " : "")
                 .append(this.type);
     }
 }

@@ -73,7 +73,7 @@ public class DBSPOperator extends DBSPNode implements IHasName, IHasType {
 
     public DBSPOperator(@Nullable Object node, String operation,
                         @Nullable DBSPExpression function, DBSPType outputType) {
-        this(node, operation, function, outputType, new NameGen().toString());
+        this(node, operation, function, outputType, new NameGen("stream").toString());
     }
 
     protected void addInput(DBSPOperator node) {
