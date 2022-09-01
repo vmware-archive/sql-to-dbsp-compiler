@@ -48,7 +48,7 @@ public class DBSPTupleExpression extends DBSPExpression {
         if (tuple.size() != fields.size())
             throw new RuntimeException("Tuple size does not match field size " + tuple + " vs " + fields);
         int i = 0;
-        for (DBSPType fieldType: tuple.tupArgs) {
+        for (DBSPType fieldType: tuple.tupFields) {
             DBSPExpression field = fields.get(i);
             if (!fieldType.same(field.getNonVoidType()))
                 throw new RuntimeException("Tuple field " + i + " type " + fieldType +
@@ -78,7 +78,7 @@ public class DBSPTupleExpression extends DBSPExpression {
         for (DBSPExpression expression: expressions) {
             DBSPTypeTuple type = expression.getNonVoidType().toRef(DBSPTypeTuple.class);
             for (int i = 0; i < type.size(); i++) {
-                DBSPType fieldType = type.tupArgs[i];
+                DBSPType fieldType = type.tupFields[i];
                 DBSPExpression field = new DBSPFieldExpression(expression, i, fieldType).simplify();
                 fields.add(field);
                 fieldTypes.add(fieldType);

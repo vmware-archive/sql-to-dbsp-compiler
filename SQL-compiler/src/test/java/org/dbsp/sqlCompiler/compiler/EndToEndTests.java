@@ -80,6 +80,13 @@ public class EndToEndTests {
     private final DBSPZSetLiteral z1 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e1);
     private final DBSPZSetLiteral empty = new DBSPZSetLiteral(this.z0.getNonVoidType());
 
+    /**
+     * Returns the table containing:
+     * -------------------------------------------
+     * | 10 | 12.0 | true  | Hi | NULL    | NULL |
+     * | 10 |  1.0 | false | Hi | Some[1] |  0.0 |
+     * -------------------------------------------
+     */
     private DBSPZSetLiteral createInput() {
         return new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0, e1);
     }
@@ -87,7 +94,7 @@ public class EndToEndTests {
     @SuppressWarnings("unused")
     private String getStringFormat(DBSPTypeTuple type) {
         StringBuilder result = new StringBuilder();
-        for (DBSPType field: type.tupArgs) {
+        for (DBSPType field: type.tupFields) {
             if (field.is(DBSPTypeInteger.class))
                 result.append("I");
             else if (field.is(DBSPTypeFP.class))
@@ -173,6 +180,14 @@ public class EndToEndTests {
     }
 
     @Test
+    public void unionAllTest() {
+        String query = "CREATE VIEW V AS (SELECT * FROM T) UNION ALL (SELECT * FROM T)";
+        DBSPZSetLiteral output = this.createInput();
+        output.add(output);
+        this.testQuery(query, output);
+    }
+
+    @Test
     public void whereTest() {
         String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL3";
         this.testQuery(query, this.z0);
@@ -230,8 +245,8 @@ public class EndToEndTests {
     @Test
     public void groupByCountTest() {
         String query = "CREATE VIEW V AS SELECT COL1, COUNT(col2) FROM T GROUP BY COL1, COL3";
-        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
-                new DBSPTupleExpression(new DBSPLiteral(10), new DBSPLiteral(1))));
+        DBSPExpression row =  new DBSPTupleExpression(new DBSPLiteral(10), new DBSPLiteral(1));
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, row, row));
     }
 
     @Test

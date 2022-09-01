@@ -55,7 +55,7 @@ public class DBSPZSetLiteral extends DBSPExpression {
             if (!e.getNonVoidType().same(data[0].getNonVoidType()))
                 throw new RuntimeException("Not all values of set have the same type:" +
                     e.getType() + " vs " + data[0].getType());
-            this.data.put(e, 1);
+            this.add(e);
         }
     }
 
@@ -70,11 +70,7 @@ public class DBSPZSetLiteral extends DBSPExpression {
     }
 
     public void add(DBSPExpression expression) {
-        // We expect the expression to be a constant value (a literal)
-        if (!expression.getNonVoidType().same(this.getElementType()))
-            throw new RuntimeException("Added element does not match zset type " +
-                    expression.getType() + " vs " + this.getElementType());
-        this.data.put(expression, 1);
+        this.add(expression, 1);
     }
 
     public void add(DBSPExpression expression, int weight) {
@@ -82,6 +78,15 @@ public class DBSPZSetLiteral extends DBSPExpression {
         if (!expression.getNonVoidType().same(this.getElementType()))
             throw new RuntimeException("Added element does not match zset type " +
                     expression.getType() + " vs " + this.getElementType());
+        if (this.data.containsKey(expression)) {
+            int oldWeight = this.data.get(expression);
+            int newWeight = weight + oldWeight;
+            if (newWeight == 0)
+                this.data.remove(expression);
+            else
+                this.data.put(expression, weight + oldWeight);
+            return;
+        }
         this.data.put(expression, weight);
     }
 

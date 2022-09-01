@@ -46,13 +46,13 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
     }
 
     public int size() {
-        return this.tupArgs.length;
+        return this.tupFields.length;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append("(")
-                .intercalate(", ", this.tupArgs)
+                .intercalate(", ", this.tupFields)
                 .append(")");
     }
 
@@ -60,7 +60,7 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (mayBeNull == this.mayBeNull)
             return this;
-        return new DBSPTypeRawTuple(this.getNode(), mayBeNull, this.tupArgs);
+        return new DBSPTypeRawTuple(this.getNode(), mayBeNull, this.tupFields);
     }
 
     @Override
@@ -68,12 +68,12 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DBSPTypeRawTuple that = (DBSPTypeRawTuple) o;
-        return Arrays.equals(tupArgs, that.tupArgs);
+        return Arrays.equals(tupFields, that.tupFields);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(tupArgs);
+        return Arrays.hashCode(tupFields);
     }
 
     @Override
@@ -83,10 +83,10 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
         if (!type.is(DBSPTypeRawTuple.class))
             return false;
         DBSPTypeRawTuple other = type.to(DBSPTypeRawTuple.class);
-        if (this.tupArgs.length != other.tupArgs.length)
+        if (this.tupFields.length != other.tupFields.length)
             return false;
-        for (int i = 0; i < this.tupArgs.length; i++)
-            if (!this.tupArgs[i].same(other.tupArgs[i]))
+        for (int i = 0; i < this.tupFields.length; i++)
+            if (!this.tupFields[i].same(other.tupFields[i]))
                 return false;
         return true;
     }
