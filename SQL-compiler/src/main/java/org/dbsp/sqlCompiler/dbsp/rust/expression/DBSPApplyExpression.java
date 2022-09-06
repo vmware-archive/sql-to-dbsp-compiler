@@ -45,7 +45,7 @@ public class DBSPApplyExpression extends DBSPExpression {
     }
 
     @Nullable
-    private static DBSPType getReturnType(DBSPType type) {
+    public static DBSPType getReturnType(DBSPType type) {
         if (type.is(DBSPTypeAny.class))
             return type;
         DBSPTypeFunction func = type.to(DBSPTypeFunction.class);

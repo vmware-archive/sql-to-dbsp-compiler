@@ -104,7 +104,7 @@ public class Main {
         String files =
             //"../../sqllogictest/test/s.test"
             //"../../sqllogictest/test/random/select"
-            //"../../sqllogictest/test/random/expr/"
+            //"../../sqllogictest/test/random/expr"
             //"../../sqllogictest/test/random/aggregates"
             "../../sqllogictest/test/random/groupby"
             //"../../sqllogictest/test/select1.test"

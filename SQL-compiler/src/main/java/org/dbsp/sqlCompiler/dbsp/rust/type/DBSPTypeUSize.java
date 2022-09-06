@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLiteral;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -54,9 +55,20 @@ public class DBSPTypeUSize extends DBSPType
     }
 
     @Override
-    public boolean same(DBSPType type) {
+    public boolean same(@Nullable DBSPType type) {
         if (!super.same(type))
             return false;
+        assert type != null;
         return type.is(DBSPTypeUSize.class);
+    }
+
+    @Override
+    public DBSPLiteral getZero() {
+        return new DBSPLiteral(null, this, "0usize");
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        return new DBSPLiteral(null, this, "1usize");
     }
 }

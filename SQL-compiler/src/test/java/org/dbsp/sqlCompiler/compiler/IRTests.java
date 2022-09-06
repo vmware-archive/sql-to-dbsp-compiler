@@ -25,7 +25,7 @@ public class IRTests {
         DBSPOperator op = new DBSPApplyOperator(null,
                 new DBSPClosureExpression(new DBSPBinaryExpression(type, "+",
                         x, new DBSPLiteral(1)), x.asParameter()
-                ), TypeCompiler.makeZSet(type), input);
+                ), type, input);
         circuit.addOperator(op);
         DBSPOperator output = new DBSPSinkOperator(null, type, "o", op);
         circuit.addOperator(output);
@@ -41,11 +41,10 @@ public class IRTests {
         DBSPOperator input = new DBSPSourceOperator(null, type, "i");
         circuit.addOperator(input);
         DBSPVariableReference x = new DBSPVariableReference("x", type);
-        DBSPExpression function = new DBSPClosureExpression(new DBSPApplyExpression("add_by_ref", type,
-                x,
-                new DBSPBorrowExpression(x)), x.asParameter()
-        );
-        DBSPOperator op = new DBSPApplyOperator(null, function, TypeCompiler.makeZSet(type), input);
+        DBSPClosureExpression function = new DBSPClosureExpression(
+                new DBSPApplyExpression("add_by_ref", type, x,
+                        new DBSPBorrowExpression(x)), x.asParameter());
+        DBSPOperator op = new DBSPApplyOperator(null, function, type, input);
         circuit.addOperator(op);
         DBSPOperator output = new DBSPSinkOperator(null, type, "o", op);
         circuit.addOperator(output);

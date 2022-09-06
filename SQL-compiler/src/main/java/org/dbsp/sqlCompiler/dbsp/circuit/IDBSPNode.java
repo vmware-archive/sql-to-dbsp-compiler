@@ -26,7 +26,7 @@
 package org.dbsp.sqlCompiler.dbsp.circuit;
 
 import org.dbsp.util.ICastable;
-import org.dbsp.util.ToRustString;
+import org.dbsp.sqlCompiler.dbsp.rust.ToRustString;
 import org.dbsp.util.TranslationException;
 
 import javax.annotation.Nullable;

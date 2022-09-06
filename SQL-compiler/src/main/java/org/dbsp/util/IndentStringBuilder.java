@@ -25,6 +25,8 @@
 
 package org.dbsp.util;
 
+import org.dbsp.sqlCompiler.dbsp.rust.ToRustString;
+
 import java.util.List;
 
 public class IndentStringBuilder {

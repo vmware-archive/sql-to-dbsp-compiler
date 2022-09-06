@@ -84,7 +84,7 @@ public class DBSPTupleExpression extends DBSPExpression {
                 fieldTypes.add(fieldType);
             }
         }
-        return new DBSPTupleExpression(null, new DBSPTypeTuple(fieldTypes), fields);
+        return new DBSPTupleExpression(new DBSPTypeTuple(fieldTypes), fields);
     }
 
     @Override

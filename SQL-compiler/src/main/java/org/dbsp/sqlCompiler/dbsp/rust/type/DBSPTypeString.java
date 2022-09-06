@@ -50,9 +50,10 @@ public class DBSPTypeString extends DBSPType implements IDBSPBaseType {
     }
 
     @Override
-    public boolean same(DBSPType type) {
+    public boolean same(@Nullable DBSPType type) {
         if (!super.same(type))
             return false;
+        assert type != null;
         return type.is(DBSPTypeString.class);
     }
 }

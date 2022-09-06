@@ -31,9 +31,10 @@ import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeIndexedZSet;
 import javax.annotation.Nullable;
 
 public class DBSPAggregateOperator extends DBSPOperator {
-    public DBSPAggregateOperator(@Nullable Object node, @Nullable DBSPExpression function, DBSPType keyType, DBSPType outputElementType, DBSPOperator input) {
+    public DBSPAggregateOperator(@Nullable Object node, DBSPExpression function, DBSPType keyType, DBSPType outputElementType, DBSPOperator input) {
         super(node, "stream_aggregate", function,
                 new DBSPTypeIndexedZSet(node, keyType, outputElementType, CalciteToDBSPCompiler.weightType));
         this.addInput(input);
+        this.checkResultType(function, outputElementType);
     }
 }

@@ -23,9 +23,13 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLiteral;
+
 /**
  * Interface implemented by numeric types.
  */
 public interface IsNumericType {
     default String getRustString() { return this.toString(); }
+    DBSPLiteral getZero();
+    DBSPLiteral getOne();
 }

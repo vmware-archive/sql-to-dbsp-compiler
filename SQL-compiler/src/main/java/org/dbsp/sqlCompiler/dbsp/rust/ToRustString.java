@@ -19,11 +19,11 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.util;
+package org.dbsp.sqlCompiler.dbsp.rust;
+
+import org.dbsp.util.IndentStringBuilder;
 
 /**
  * Interface implemented by objects that can be serialized as Rust programs.

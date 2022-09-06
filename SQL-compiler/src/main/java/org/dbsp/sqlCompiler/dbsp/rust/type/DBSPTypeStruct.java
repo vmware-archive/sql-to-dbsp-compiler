@@ -113,9 +113,10 @@ public class DBSPTypeStruct extends DBSPType {
     public List<Field> getFields() { return this.args; }
 
     @Override
-    public boolean same(DBSPType type) {
+    public boolean same(@Nullable DBSPType type) {
         if (!super.same(type))
             return false;
+        assert type != null;
         if (!type.is(DBSPTypeStruct.class))
             return false;
         DBSPTypeStruct other = type.to(DBSPTypeStruct.class);

@@ -26,6 +26,7 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPClosureExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 
@@ -34,10 +35,11 @@ import javax.annotation.Nullable;
 public class DBSPCartesianOperator extends DBSPOperator {
     public DBSPCartesianOperator(@Nullable Object node, DBSPType resultType,
                                  // Closure from key, valueLeft, valueRight to result type
-                                 DBSPExpression function,
+                                 DBSPClosureExpression function,
                                  DBSPOperator left, DBSPOperator right) {
         super(node, "stream_join", function, TypeCompiler.makeZSet(resultType));
         this.addInput(left);
         this.addInput(right);
+        this.checkResultType(function, resultType);
     }
 }

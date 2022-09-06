@@ -35,7 +35,8 @@ public class DBSPNegateOperator extends DBSPOperator {
         super(node, "neg", null, TypeCompiler.makeZSet(elementType));
         this.addInput(input);
         if (!input.outputType.same(this.outputType)) {
-            throw new RuntimeException("Type mismatch in neg operator");
+            throw new RuntimeException("Neg operator input type " + input.outputType +
+                    " does not match output type " + this.outputType);
         }
     }
 }

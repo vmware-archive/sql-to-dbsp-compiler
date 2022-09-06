@@ -52,7 +52,9 @@ public abstract class DBSPType extends DBSPNode {
         return builder.append(type);
     }
 
-    public boolean same(DBSPType other) {
+    public boolean same(@Nullable DBSPType other) {
+        if (other == null)
+            return false;
         return this.mayBeNull == other.mayBeNull;
     }
 
