@@ -14,3 +14,4 @@ sqlvalue = { path = "../lib/sqlvalue" }
 ordered-float = { version = "3.0.0" }
 serde = { version = "1.0", features = ["derive"] }
 hashing = { path = "../lib/hashing" }
+deepsize = { version = "0.2.0" }

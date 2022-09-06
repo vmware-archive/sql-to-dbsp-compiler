@@ -21,15 +21,23 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+package org.dbsp.sqlCompiler.dbsp.rust.statement;
 
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPBlockExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
+public class DBSPExpressionStatement extends DBSPStatement {
+    public final DBSPExpression expression;
 
-public class DBSPFlatmapOperator extends DBSPOperator {
-    protected DBSPFlatmapOperator(@Nullable Object node, @Nullable DBSPExpression function, DBSPType outputType) {
-        super(node, "flat_map_generic", function, outputType);
+    public DBSPExpressionStatement(DBSPExpression expression) {
+        super(null);
+        this.expression = expression;
+    }
+
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append(this.expression)
+                .append(this.expression.is(DBSPBlockExpression.class) ? "" : ";");
     }
 }

@@ -21,24 +21,26 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.expression;
+package org.dbsp.sqlCompiler.dbsp.rust.statement;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPVariableReference;
 import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPLetExpression extends DBSPExpression implements IDBSPDeclaration {
+public class DBSPLetStatement extends DBSPStatement implements IDBSPDeclaration {
     public final String variable;
     public final DBSPExpression initializer;
     public final boolean mutable;
 
-    public DBSPLetExpression(String variable, DBSPExpression initializer, boolean mutable) {
-        super(null, null);
+    public DBSPLetStatement(String variable, DBSPExpression initializer, boolean mutable) {
+        super(null);
         this.variable = variable;
         this.initializer = initializer;
         this.mutable = mutable;
     }
 
-    public DBSPLetExpression(String variable, DBSPExpression initializer) {
+    public DBSPLetStatement(String variable, DBSPExpression initializer) {
         this(variable, initializer, false);
     }
 
@@ -48,7 +50,8 @@ public class DBSPLetExpression extends DBSPExpression implements IDBSPDeclaratio
                 .append(this.mutable ? "mut " : "")
                 .append(variable)
                 .append(" = ")
-                .append(this.initializer);
+                .append(this.initializer)
+                .append(";");
     }
 
     @Override

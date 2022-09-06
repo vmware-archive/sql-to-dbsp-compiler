@@ -21,25 +21,30 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.expression;
+package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRef;
 import org.dbsp.util.IndentStringBuilder;
 
-/**
- * An expression of the form &expression.
- */
-public class DBSPRefExpression extends DBSPExpression {
-    private final DBSPExpression expression;
+import javax.annotation.Nullable;
 
-    public DBSPRefExpression(DBSPExpression expression) {
-        super(null, new DBSPTypeRef(expression.getNonVoidType()));
-        this.expression = expression;
+public class DBSPTypeFunction extends DBSPType {
+    @Nullable
+    public final DBSPType resultType;
+    public final DBSPType[] argumentTypes;
+
+    public DBSPTypeFunction(@Nullable DBSPType resultType, DBSPType... argumentTypes) {
+        super(false);
+        this.resultType = resultType;
+        this.argumentTypes = argumentTypes;
+    }
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("&")
-                .append(this.expression);
+        return builder.append("_");
     }
 }

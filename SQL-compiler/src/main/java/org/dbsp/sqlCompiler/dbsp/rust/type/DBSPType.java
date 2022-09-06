@@ -40,6 +40,7 @@ public abstract class DBSPType extends DBSPNode {
         this.mayBeNull = mayBeNull;
     }
 
+    @SuppressWarnings("SameParameterValue")
     protected DBSPType(boolean mayBeNull) {
         super(null);
         this.mayBeNull = mayBeNull;
@@ -51,7 +52,9 @@ public abstract class DBSPType extends DBSPNode {
         return builder.append(type);
     }
 
-    public boolean same(DBSPType other) {
+    public boolean same(@Nullable DBSPType other) {
+        if (other == null)
+            return false;
         return this.mayBeNull == other.mayBeNull;
     }
 

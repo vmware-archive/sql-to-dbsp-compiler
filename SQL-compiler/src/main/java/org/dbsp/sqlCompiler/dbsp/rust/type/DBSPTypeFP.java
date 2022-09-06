@@ -47,12 +47,12 @@ public abstract class DBSPTypeFP extends DBSPType implements IsNumericType {
         // Recall: we ignore nullability of this.
         DBSPType noNull = this.setMayBeNull(false);
         DBSPType sourceType = source.getNonVoidType();
+        DBSPTypeFunction func = new DBSPTypeFunction(noNull, source.getNonVoidType());
         if (sourceType.is(DBSPTypeFP.class)) {
             return new DBSPApplyExpression(
-                    new DBSPPathExpression(noNull, destType, "from"), this, source);
+                    new DBSPPathExpression(func, destType, "from"), source);
         }
         return new DBSPApplyExpression(
-                new DBSPPathExpression(noNull, destType, "from"), this,
-                new DBSPAsExpression(source, this));
+                new DBSPPathExpression(func, destType, "from"), new DBSPAsExpression(source, this));
     }
 }

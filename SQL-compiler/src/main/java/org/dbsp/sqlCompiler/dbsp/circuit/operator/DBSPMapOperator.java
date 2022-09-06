@@ -36,5 +36,7 @@ public class DBSPMapOperator extends DBSPOperator {
                            DBSPType resultType, DBSPOperator input) {
         super(node, "map", expression, TypeCompiler.makeZSet(resultType));
         this.addInput(input);
+        this.checkResultType(expression, resultType);
+        this.checkArgumentFunctionType(expression, 0, input);
     }
 }

@@ -137,6 +137,20 @@ where
     }
 }
 
+pub fn agg_max__<T>(left: T, right: T) -> T
+where
+    T: Ord + Copy
+{
+    left.max(right)
+}
+
+pub fn agg_min__<T>(left: T, right: T) -> T
+where
+    T: Ord + Copy
+{
+    left.min(right)
+}
+
 pub fn agg_plus_N_N<T>(left: Option<T>, right: Option<T>) -> Option<T>
 where
     T: Add<T, Output = T> + Copy

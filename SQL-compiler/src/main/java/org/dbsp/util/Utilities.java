@@ -114,6 +114,16 @@ public class Utilities {
         return null;
     }
 
+    public static <T> T[] arraySlice(T[] data, int start, int end) {
+        if (end > data.length)
+            throw new RuntimeException("Slice larger than array " + end + " vs " + data.length);
+        return Arrays.copyOfRange(data, start, end);
+    }
+
+    public static <T> T[] arraySlice(T[] data, int start) {
+        return Utilities.arraySlice(data, start, data.length);
+    }
+
     public static void compileAndTestRust(String directory) throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command("cargo", "test");

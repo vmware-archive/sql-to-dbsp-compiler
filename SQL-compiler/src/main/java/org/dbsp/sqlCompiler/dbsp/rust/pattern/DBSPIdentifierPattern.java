@@ -27,14 +27,21 @@ import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPIdentifierPattern extends DBSPPattern {
     public final String identifier;
+    public final boolean mutable;
 
-    public DBSPIdentifierPattern(String identifier) {
+    public DBSPIdentifierPattern(String identifier, boolean mutable) {
         super(null);
         this.identifier = identifier;
+        this.mutable = mutable;
+    }
+
+    public DBSPIdentifierPattern(String identifier) {
+        this(identifier, false);
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.identifier);
+        return builder.append(this.mutable ? "mut " : "")
+                .append(this.identifier);
     }
 }

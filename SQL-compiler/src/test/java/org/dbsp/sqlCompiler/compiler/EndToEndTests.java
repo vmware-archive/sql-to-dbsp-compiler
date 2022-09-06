@@ -80,6 +80,13 @@ public class EndToEndTests {
     private final DBSPZSetLiteral z1 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e1);
     private final DBSPZSetLiteral empty = new DBSPZSetLiteral(this.z0.getNonVoidType());
 
+    /**
+     * Returns the table containing:
+     * -------------------------------------------
+     * | 10 | 12.0 | true  | Hi | NULL    | NULL |
+     * | 10 |  1.0 | false | Hi | Some[1] |  0.0 |
+     * -------------------------------------------
+     */
     private DBSPZSetLiteral createInput() {
         return new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0, e1);
     }
@@ -87,7 +94,7 @@ public class EndToEndTests {
     @SuppressWarnings("unused")
     private String getStringFormat(DBSPTypeTuple type) {
         StringBuilder result = new StringBuilder();
-        for (DBSPType field: type.tupArgs) {
+        for (DBSPType field: type.tupFields) {
             if (field.is(DBSPTypeInteger.class))
                 result.append("I");
             else if (field.is(DBSPTypeFP.class))
@@ -118,6 +125,7 @@ public class EndToEndTests {
 
     private void testQuery(String query, DBSPZSetLiteral expectedOutput) {
         try {
+            query = "CREATE VIEW V AS " + query;
             DBSPCircuit circuit = this.compileQuery(query);
             PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
             writer.println(DBSPCircuit.generatePreamble());
@@ -132,7 +140,7 @@ public class EndToEndTests {
 
     @Test
     public void projectTest() {
-        String query = "CREATE VIEW V AS SELECT T.COL3 FROM T";
+        String query = "SELECT T.COL3 FROM T";
         this.testQuery(query,
                 new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
                         new DBSPTupleExpression(new DBSPLiteral(true)),
@@ -141,7 +149,7 @@ public class EndToEndTests {
 
     @Test
     public void plusNullTest() {
-        String query = "CREATE VIEW V AS SELECT T.COL1 + T.COL5 FROM T";
+        String query = "SELECT T.COL1 + T.COL5 FROM T";
         this.testQuery(query,
                 new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
                         new DBSPTupleExpression(new DBSPLiteral(11, true)),
@@ -150,7 +158,7 @@ public class EndToEndTests {
 
     @Test
     public void negateNullTest() {
-        String query = "CREATE VIEW V AS SELECT -T.COL5 FROM T";
+        String query = "SELECT -T.COL5 FROM T";
         this.testQuery(query,
                 new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
                         new DBSPTupleExpression(new DBSPLiteral(-1, true)),
@@ -159,7 +167,7 @@ public class EndToEndTests {
 
     @Test
     public void projectNullTest() {
-        String query = "CREATE VIEW V AS SELECT T.COL5 FROM T";
+        String query = "SELECT T.COL5 FROM T";
         this.testQuery(query,
                 new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
                         new DBSPTupleExpression(new DBSPLiteral(1, true)),
@@ -168,61 +176,83 @@ public class EndToEndTests {
 
     @Test
     public void unionTest() {
-        String query = "CREATE VIEW V AS (SELECT * FROM T) UNION (SELECT * FROM T)";
+        String query = "(SELECT * FROM T) UNION (SELECT * FROM T)";
         this.testQuery(query, this.createInput());
     }
 
     @Test
+    public void unionAllTest() {
+        String query = "(SELECT * FROM T) UNION ALL (SELECT * FROM T)";
+        DBSPZSetLiteral output = this.createInput();
+        output.add(output);
+        this.testQuery(query, output);
+    }
+
+    @Test
     public void whereTest() {
-        String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL3";
+        String query = "SELECT * FROM T WHERE COL3";
         this.testQuery(query, this.z0);
     }
 
     @Test
     public void whereImplicitCastTest() {
-        String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL2 < COL1";
+        String query = "SELECT * FROM T WHERE COL2 < COL1";
         this.testQuery(query, this.z1);
     }
 
     @Test
     public void whereExplicitCastTest() {
-        String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL2 < CAST(COL1 AS DOUBLE)";
+        String query = "SELECT * FROM T WHERE COL2 < CAST(COL1 AS DOUBLE)";
         this.testQuery(query, this.z1);
     }
 
     @Test
     public void whereExplicitCastTestNull() {
-        String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL2 < CAST(COL5 AS DOUBLE)";
+        String query = "SELECT * FROM T WHERE COL2 < CAST(COL5 AS DOUBLE)";
         this.testQuery(query, this.empty);
     }
 
     @Test
     public void whereExplicitImplicitCastTest() {
-        String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL2 < CAST(COL1 AS FLOAT)";
+        String query = "SELECT * FROM T WHERE COL2 < CAST(COL1 AS FLOAT)";
         this.testQuery(query, this.z1);
     }
 
     @Test
     public void whereExplicitImplicitCastTestNull() {
-        String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL2 < CAST(COL5 AS FLOAT)";
+        String query = "SELECT * FROM T WHERE COL2 < CAST(COL5 AS FLOAT)";
         this.testQuery(query, this.empty);
     }
 
     @Test
     public void whereExpressionTest() {
-        String query = "CREATE VIEW V AS SELECT * FROM T WHERE COL2 < 0";
+        String query = "SELECT * FROM T WHERE COL2 < 0";
         this.testQuery(query, new DBSPZSetLiteral(this.z0.getNonVoidType()));
     }
 
     @Test
     public void exceptTest() {
-        String query = "CREATE VIEW V AS SELECT * FROM T EXCEPT (SELECT * FROM T WHERE COL3)";
+        String query = "SELECT * FROM T EXCEPT (SELECT * FROM T WHERE COL3)";
         this.testQuery(query, this.z1);
     }
 
     @Test
+    public void groupByTest() {
+        String query = "SELECT COL1 FROM T GROUP BY COL1";
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(10))));
+    }
+
+    @Test
+    public void groupByCountTest() {
+        String query = "SELECT COL1, COUNT(col2) FROM T GROUP BY COL1, COL3";
+        DBSPExpression row =  new DBSPTupleExpression(new DBSPLiteral(10), new DBSPLiteral(1));
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, row, row));
+    }
+
+    @Test
     public void divTest() {
-        String query = "CREATE VIEW V AS SELECT T.COL1 / T.COL5 FROM T";
+        String query = "SELECT T.COL1 / T.COL5 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType,
                 new DBSPTupleExpression(new DBSPLiteral(
@@ -232,7 +262,7 @@ public class EndToEndTests {
 
     @Test
     public void divIntTest() {
-        String query = "CREATE VIEW V AS SELECT T.COL5 / T.COL5 FROM T";
+        String query = "SELECT T.COL5 / T.COL5 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType,
                 new DBSPTupleExpression(new DBSPLiteral(
@@ -245,7 +275,7 @@ public class EndToEndTests {
     //@Test
     @SuppressWarnings("unused")
     public void divZeroTest() {
-        String query = "CREATE VIEW V AS SELECT 1 / 0";
+        String query = "SELECT 1 / 0";
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType,
                 new DBSPTupleExpression(new DBSPLiteral(
@@ -254,7 +284,7 @@ public class EndToEndTests {
 
     @Test
     public void floatDivTest() {
-        String query = "CREATE VIEW V AS SELECT T.COL6 / T.COL6 FROM T";
+        String query = "SELECT T.COL6 / T.COL6 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType,
                 new DBSPTupleExpression(new DBSPLiteral(
@@ -262,30 +292,73 @@ public class EndToEndTests {
                 new DBSPTupleExpression(new DBSPLiteral(Double.NaN, true))));
     }
 
+    //@Test
+    public void aggregateDistinctTest() {
+        String query = "SELECT SUM(DISTINCT T.COL1), SUM(T.COL2) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
+                        new DBSPLiteral(10, true), new DBSPLiteral(13.0, true))));
+    }
+
     @Test
     public void aggregateTest() {
-        String query = "CREATE VIEW V AS SELECT SUM(T.COL1) FROM T";
+        String query = "SELECT SUM(T.COL1) FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(20, true))));
     }
 
     @Test
+    public void maxTest() {
+        String query = "SELECT MAX(T.COL1) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(10, true))));
+    }
+
+    @Test
+    public void maxConst() {
+        String query = "SELECT MAX(6) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(6, true))));
+    }
+
+    @Test
+    public void constAggregateExpression() {
+        String query = "SELECT 34 / SUM (1) FROM T GROUP BY COL1";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(17))));
+    }
+
+    @Test
+    public void constAggregateExpression2() {
+        String query = "SELECT 34 / AVG (1) FROM T GROUP BY COL1";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(34))));
+    }
+
+    @Test
+    public void constAggregateDoubleExpression() {
+        String query = "SELECT 34 / SUM (1), 20 / SUM(2) FROM T GROUP BY COL1";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(17), new DBSPLiteral(5))));
+    }
+
+    @Test
     public void aggregateFloatTest() {
-        String query = "CREATE VIEW V AS SELECT SUM(T.COL2) FROM T";
+        String query = "SELECT SUM(T.COL2) FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(13.0, true))));
     }
 
     @Test
     public void optionAggregateTest() {
-        String query = "CREATE VIEW V AS SELECT SUM(T.COL5) FROM T";
+        String query = "SELECT SUM(T.COL5) FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(1, true))));
     }
 
     @Test
     public void aggregateFalseTest() {
-        String query = "CREATE VIEW V AS SELECT SUM(T.COL1) FROM T WHERE FALSE";
+        String query = "SELECT SUM(T.COL1) FROM T WHERE FALSE";
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(new DBSPLiteral(
                         DBSPTypeInteger.signed32.setMayBeNull(true)))));
@@ -293,7 +366,7 @@ public class EndToEndTests {
 
     @Test
     public void averageTest() {
-        String query = "CREATE VIEW V AS SELECT AVG(T.COL1) FROM T";
+        String query = "SELECT AVG(T.COL1) FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
                         new DBSPLiteral(10, true))));
@@ -301,7 +374,7 @@ public class EndToEndTests {
 
     @Test
     public void cartesianTest() {
-        String query = "CREATE VIEW V AS SELECT * FROM T, T AS X";
+        String query = "SELECT * FROM T, T AS X";
         DBSPExpression inResult = DBSPTupleExpression.flatten(e0, e0);
         DBSPZSetLiteral result = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, inResult);
         result.add(DBSPTupleExpression.flatten(e0, e1));
@@ -312,7 +385,7 @@ public class EndToEndTests {
 
     @Test
     public void foldTest() {
-        String query = "CREATE VIEW V AS SELECT + 91 + NULLIF ( + 93, + 38 )";
+        String query = "SELECT + 91 + NULLIF ( + 93, + 38 )";
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
                 new DBSPLiteral(184, true))));

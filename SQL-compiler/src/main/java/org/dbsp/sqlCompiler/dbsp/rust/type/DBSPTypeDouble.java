@@ -51,9 +51,10 @@ public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType, IDBSPBa
     public static final DBSPTypeDouble instance = new DBSPTypeDouble(null,false);
 
     @Override
-    public boolean same(DBSPType type) {
+    public boolean same(@Nullable DBSPType type) {
         if (!super.same(type))
             return false;
+        assert type != null;
         return type.is(DBSPTypeDouble.class);
     }
 
@@ -65,5 +66,15 @@ public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType, IDBSPBa
     @Override
     public DBSPExpression castFrom(DBSPExpression source) {
         return castFrom(source, "F64");
+    }
+
+    @Override
+    public DBSPLiteral getZero() {
+        return new DBSPLiteral(0D, this.mayBeNull);
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        return new DBSPLiteral(1D, this.mayBeNull);
     }
 }

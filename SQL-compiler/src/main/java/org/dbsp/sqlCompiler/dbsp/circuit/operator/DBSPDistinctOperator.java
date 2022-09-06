@@ -34,5 +34,9 @@ public class DBSPDistinctOperator extends DBSPOperator {
     public DBSPDistinctOperator(@Nullable Object node, DBSPType outputElementType, DBSPOperator input) {
         super(node, "distinct", null, TypeCompiler.makeZSet(outputElementType));
         this.addInput(input);
+        if (!input.outputType.same(this.outputType)) {
+            throw new RuntimeException("Distinct operator input type " + input.outputType +
+                    " does not match output type " + this.outputType);
+        }
     }
 }

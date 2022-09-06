@@ -19,21 +19,17 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.util;
+package org.dbsp.sqlCompiler.dbsp.rust.statement;
 
-/**
- * Interface implemented by objects that can be serialized as Rust programs.
- */
-public interface ToRustString {
-    IndentStringBuilder toRustString(IndentStringBuilder builder);
+import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 
-    default String toRustString() {
-        IndentStringBuilder builder = new IndentStringBuilder();
-        this.toRustString(builder);
-        return builder.toString();
+import javax.annotation.Nullable;
+
+public abstract class DBSPStatement extends DBSPNode {
+    @SuppressWarnings("SameParameterValue")
+    protected DBSPStatement(@Nullable Object node) {
+        super(node);
     }
 }

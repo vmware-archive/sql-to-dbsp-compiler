@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPTuplePattern;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
@@ -35,12 +34,10 @@ import javax.annotation.Nullable;
 
 /**
  * An expression of the form |var1, var2, ...| body.
- * Note: the type of the expression is in fact the type of the body,
- * and not a closure type.
  */
 public class DBSPClosureExpression extends DBSPExpression {
-    private final DBSPExpression body;
-    private final Parameter[] varNames;
+    public final DBSPExpression body;
+    private final Parameter[] parameters;
 
     public static class Parameter extends DBSPNode implements IHasType {
         public final DBSPPattern pattern;
@@ -59,17 +56,11 @@ public class DBSPClosureExpression extends DBSPExpression {
             this.type = new DBSPTypeRawTuple(Linq.map(variables, DBSPExpression::getType, DBSPType.class));
         }
 
-        public Parameter(String pattern, @Nullable DBSPType type) {
-            super(null);
-            this.pattern = new DBSPIdentifierPattern(pattern);
-            this.type = type;
-        }
-
         @Override
         public IndentStringBuilder toRustString(IndentStringBuilder builder) {
             builder.append(this.pattern);
             if (this.type != null)
-                builder.append(":")
+                builder.append(": ")
                         .append(this.type);
             return builder;
         }
@@ -81,35 +72,40 @@ public class DBSPClosureExpression extends DBSPExpression {
         }
     }
 
-    public DBSPClosureExpression(@Nullable Object node, DBSPExpression body, String... varNames) {
-        super(node, body.getType());
-        this.body = body;
-        this.varNames = Linq.map(varNames, v -> new Parameter(v, null), Parameter.class);
+    public DBSPTypeFunction getFunctionType() {
+        return this.getNonVoidType().to(DBSPTypeFunction.class);
+    }
+
+    @Nullable
+    public DBSPType getResultType() {
+        return this.getFunctionType().resultType;
     }
 
     public DBSPClosureExpression(@Nullable Object node, DBSPExpression body, Parameter... variables) {
-        super(node, body.getType());
+        // In Rust in general we can't write the type of a closure.
+        super(node, new DBSPTypeFunction(body.getType(), Linq.map(variables, Parameter::getType, DBSPType.class)));
         this.body = body;
-        this.varNames = variables;
+        this.parameters = variables;
+    }
+
+    public DBSPClosureExpression(DBSPExpression body, Parameter... variables) {
+        this(null, body, variables);
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         builder.append("move |")
-                .intercalate(", ", this.varNames)
+                .intercalate(", ", this.parameters)
                 .append("| ");
-        if (this.getType() != null)
+        DBSPType resultType = this.getResultType();
+        if (resultType != null)
             builder.append("-> ")
-                    .append(this.getType())
+                    .append(resultType)
                     .append(" ");
         return builder.append("{")
                 .increase()
                 .append(this.body)
                 .decrease()
                 .append("}");
-    }
-
-    public DBSPType[] getParameterTypes() {
-        return Linq.map(this.varNames, Parameter::getType, DBSPType.class);
     }
 }

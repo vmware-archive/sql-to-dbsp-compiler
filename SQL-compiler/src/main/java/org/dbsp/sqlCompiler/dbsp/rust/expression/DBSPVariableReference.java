@@ -45,16 +45,28 @@ public class DBSPVariableReference extends DBSPExpression {
         return builder.append(this.variable);
     }
 
+    public DBSPPattern asPattern(boolean mutable) {
+        return new DBSPIdentifierPattern(this.variable, mutable);
+    }
+
     public DBSPPattern asPattern() {
-        return new DBSPIdentifierPattern(this.variable);
+        return this.asPattern(false);
+    }
+
+    public DBSPClosureExpression.Parameter asParameter(boolean mutable) {
+        return new DBSPClosureExpression.Parameter(this.asPattern(mutable), this.getNonVoidType());
     }
 
     public DBSPClosureExpression.Parameter asParameter() {
-        return new DBSPClosureExpression.Parameter(this.asPattern(), this.getNonVoidType());
+        return this.asParameter(false);
+    }
+
+    public DBSPClosureExpression.Parameter asRefParameter(boolean mutable) {
+        return new DBSPClosureExpression.Parameter(this.asPattern(mutable),
+                new DBSPTypeRef(this.getNonVoidType()));
     }
 
     public DBSPClosureExpression.Parameter asRefParameter() {
-        return new DBSPClosureExpression.Parameter(this.asPattern(),
-                new DBSPTypeRef(this.getNonVoidType()));
+        return this.asRefParameter(false);
     }
 }

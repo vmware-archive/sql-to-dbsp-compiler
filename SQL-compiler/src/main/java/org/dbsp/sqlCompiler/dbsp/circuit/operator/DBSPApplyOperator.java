@@ -25,8 +25,11 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPApplyExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPClosureExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeFunction;
 
 import javax.annotation.Nullable;
 
@@ -38,5 +41,6 @@ public class DBSPApplyOperator extends DBSPOperator {
                              DBSPType resultType, DBSPOperator input) {
         super(node, "apply", expression, resultType);
         this.addInput(input);
+        this.checkResultType(expression, resultType);
     }
 }

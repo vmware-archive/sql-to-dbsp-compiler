@@ -23,22 +23,29 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPStatement;
 import org.dbsp.util.IndentStringBuilder;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class DBSPBlockExpression extends DBSPExpression {
-    public final List<DBSPExpression> contents;
+    public final List<DBSPStatement> contents;
+    @Nullable
+    public final DBSPExpression lastExpression;
 
-    public DBSPBlockExpression(List<DBSPExpression> contents) {
-        super(null, contents.get(contents.size() - 1).getType());
+    public DBSPBlockExpression(List<DBSPStatement> contents, @Nullable DBSPExpression last) {
+        super(null, last != null ? last.getType() : null);
         this.contents = contents;
+        this.lastExpression = last;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("{").increase()
-                .join(";\n", this.contents).decrease()
-                .append("\n}");
+        builder.append("{").increase()
+                .intercalate("\n", this.contents).decrease();
+        if (this.lastExpression != null)
+            builder.append(this.lastExpression);
+        return builder.append("}");
     }
 }

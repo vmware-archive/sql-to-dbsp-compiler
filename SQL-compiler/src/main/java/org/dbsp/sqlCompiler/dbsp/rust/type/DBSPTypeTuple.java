@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -36,50 +35,58 @@ public class DBSPTypeTuple extends DBSPType {
      */
     public static int maxTupleSize = 0;
 
-    public final DBSPType[] tupArgs;
+    public final DBSPType[] tupFields;
 
-    public static final DBSPTypeTuple emptyTupleType = new DBSPTypeTuple(null);
+    public static final DBSPTypeTuple emptyTupleType = new DBSPTypeTuple();
 
-    protected DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupArgs) {
+    protected DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
         super(node, mayBeNull);
-        this.tupArgs = tupArgs;
-        if (this.tupArgs.length > maxTupleSize)
-            maxTupleSize = this.tupArgs.length;
+        this.tupFields = tupFields;
+        if (this.tupFields.length > maxTupleSize)
+            maxTupleSize = this.tupFields.length;
     }
 
-    public DBSPTypeTuple(@Nullable Object node, DBSPType... tupArgs) {
-        this(node, false, tupArgs);
+    public DBSPTypeTuple(@Nullable Object node, DBSPType... tupFields) {
+        this(node, false, tupFields);
     }
 
-    public DBSPTypeTuple(@Nullable Object node, List<DBSPType> tupArgs) {
-        this(node, tupArgs.toArray(new DBSPType[0]));
+    public DBSPTypeTuple(DBSPType... tupFields) {
+        this(null, tupFields);
+    }
+
+    public DBSPTypeTuple(@Nullable Object node, List<DBSPType> tupFields) {
+        this(node, tupFields.toArray(new DBSPType[0]));
+    }
+
+    public DBSPTypeTuple(List<DBSPType> tupFields) {
+        this(null, tupFields);
     }
 
     public DBSPType getFieldType(int index) {
-        return this.tupArgs[index];
+        return this.tupFields[index];
     }
 
     public int size() {
-        return this.tupArgs.length;
+        return this.tupFields.length;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.tupArgs.length == 0)
+        if (this.tupFields.length == 0)
             return builder.append("()");
         return builder.append("Tuple")
-                .append(this.tupArgs.length)
+                .append(this.tupFields.length)
                 .append("<")
-                .join(", ", this.tupArgs)
+                .join(", ", this.tupFields)
                 .append(">");
     }
 
     public String toPath() {
         IndentStringBuilder builder = new IndentStringBuilder();
         builder.append("Tuple")
-                .append(this.tupArgs.length)
+                .append(this.tupFields.length)
                 .append("::<")
-                .join(", ", this.tupArgs)
+                .join(", ", this.tupFields)
                 .append(">");
         return builder.toString();
     }
@@ -88,7 +95,7 @@ public class DBSPTypeTuple extends DBSPType {
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (mayBeNull == this.mayBeNull)
             return this;
-        return new DBSPTypeTuple(this.getNode(), mayBeNull, this.tupArgs);
+        return new DBSPTypeTuple(this.getNode(), mayBeNull, this.tupFields);
     }
 
     @Override
@@ -96,25 +103,26 @@ public class DBSPTypeTuple extends DBSPType {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DBSPTypeTuple that = (DBSPTypeTuple) o;
-        return Arrays.equals(tupArgs, that.tupArgs);
+        return Arrays.equals(tupFields, that.tupFields);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(tupArgs);
+        return Arrays.hashCode(tupFields);
     }
 
     @Override
-    public boolean same(DBSPType type) {
+    public boolean same(@Nullable DBSPType type) {
         if (!super.same(type))
             return false;
+        assert type != null;
         if (!type.is(DBSPTypeTuple.class))
             return false;
         DBSPTypeTuple other = type.to(DBSPTypeTuple.class);
-        if (this.tupArgs.length != other.tupArgs.length)
+        if (this.tupFields.length != other.tupFields.length)
             return false;
-        for (int i = 0; i < this.tupArgs.length; i++)
-            if (!this.tupArgs[i].same(other.tupArgs[i]))
+        for (int i = 0; i < this.tupFields.length; i++)
+            if (!this.tupFields[i].same(other.tupFields[i]))
                 return false;
         return true;
     }

@@ -139,7 +139,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
             int col = 0;
             DBSPExpression field;
             for (String s: output.queryResults) {
-                DBSPType colType = outputElementType.tupArgs[col];
+                DBSPType colType = outputElementType.tupFields[col];
                 if (s.equalsIgnoreCase("null"))
                     field = new DBSPLiteral(colType);
                 else if (colType.is(DBSPTypeInteger.class))
@@ -157,7 +157,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
                 fields.add(field);
                 col++;
                 if (col == outputElementType.size()) {
-                    expectedOutput.add(new DBSPTupleExpression(null, outputElementType, fields));
+                    expectedOutput.add(new DBSPTupleExpression(outputElementType, fields));
                     fields = new ArrayList<>();
                     col = 0;
                 }

@@ -41,15 +41,16 @@ public class DBSPApplyMethodExpression extends DBSPExpression {
             String function, @Nullable DBSPType returnType,
             DBSPExpression self, DBSPExpression... arguments) {
         super(null, returnType);
-        this.function = new DBSPPathExpression(DBSPTypeAny.instance, function);;
+        this.function = new DBSPPathExpression(DBSPTypeAny.instance, function);
         this.self = self;
         this.arguments = arguments;
     }
 
+    @SuppressWarnings("unused")
     public DBSPApplyMethodExpression(
-            DBSPExpression function, @Nullable DBSPType returnType,
+            DBSPExpression function,
             DBSPExpression self, DBSPExpression... arguments) {
-        super(null, returnType);
+        super(null, DBSPApplyExpression.getReturnType(function.getNonVoidType()));
         this.function = function;
         this.self = self;
         this.arguments = arguments;

@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -79,9 +78,10 @@ public class DBSPTypeUser extends DBSPType {
     }
 
     @Override
-    public boolean same(DBSPType type) {
+    public boolean same(@Nullable DBSPType type) {
         if (!super.same(type))
             return false;
+        assert type != null;
         if (!type.is(DBSPTypeUser.class))
             return false;
         DBSPTypeUser other = type.to(DBSPTypeUser.class);

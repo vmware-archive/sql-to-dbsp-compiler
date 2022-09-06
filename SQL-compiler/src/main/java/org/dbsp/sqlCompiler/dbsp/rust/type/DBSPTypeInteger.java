@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.dbsp.rust.type;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPApplyMethodExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPAsExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLiteral;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Unimplemented;
 
@@ -56,6 +57,24 @@ public class DBSPTypeInteger extends DBSPType
     @Override
     public String getRustString() {
         return "i" + this.width;
+    }
+
+    @Override
+    public DBSPLiteral getZero() {
+        if (this.width <= 32) {
+            return new DBSPLiteral(0, this.mayBeNull);
+        } else {
+            return new DBSPLiteral(0L, this.mayBeNull);
+        }
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        if (this.width <= 32) {
+            return new DBSPLiteral(1, this.mayBeNull);
+        } else {
+            return new DBSPLiteral(1L, this.mayBeNull);
+        }
     }
 
     @Override
@@ -90,9 +109,10 @@ public class DBSPTypeInteger extends DBSPType
     }
 
     @Override
-    public boolean same(DBSPType type) {
+    public boolean same(@Nullable DBSPType type) {
         if (!super.same(type))
             return false;
+        assert type != null;
         if (!type.is(DBSPTypeInteger.class))
             return false;
         DBSPTypeInteger other = type.to(DBSPTypeInteger.class);

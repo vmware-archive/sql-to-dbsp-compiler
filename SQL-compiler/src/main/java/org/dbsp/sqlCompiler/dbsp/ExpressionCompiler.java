@@ -45,7 +45,6 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     private final TypeCompiler typeCompiler = new TypeCompiler();
     @Nullable
     private final DBSPVariableReference inputRow;
-    @SuppressWarnings("FieldCanBeLocal")
     private static final boolean debug = false;
     private final RexBuilder rexBuilder;
 
@@ -304,8 +303,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                 A condition case (CASE WHEN p1 THEN v1 ... ELSE e END) has an odd number of
                 arguments and even-numbered arguments are predicates, except for the last argument.
                 */
+                DBSPExpression result = ops.get(ops.size() - 1);
                 if (ops.size() % 2 == 0) {
-                    DBSPExpression result = ops.get(ops.size() - 1);
                     DBSPExpression value = ops.get(0);
                     // Compute casts if needed.
                     DBSPType finalType = result.getNonVoidType();
@@ -324,10 +323,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                         comp = wrapBoolIfNeeded(comp);
                         result = new DBSPIfExpression(call, comp, alt, result);
                     }
-                    return result;
                 } else {
                     // Compute casts if needed.
-                    DBSPExpression result = ops.get(ops.size() - 1);
                     // Build this backwards
                     DBSPType finalType = result.getNonVoidType();
                     for (int i = 0; i < ops.size() - 1; i += 2) {
@@ -346,8 +343,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                         DBSPExpression condition = wrapBoolIfNeeded(ops.get(index - 1));
                         result = new DBSPIfExpression(call, condition, alt, result);
                     }
-                    return result;
                 }
+                return result;
             case FLOOR:
             case CEIL:
             default:

@@ -21,21 +21,19 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.type;
+package org.dbsp.sqlCompiler.dbsp.rust;
 
-import javax.annotation.Nullable;
+import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPTypeZSet extends DBSPTypeUser {
-    public final DBSPType elementType;
-    public final DBSPType weightType;
+/**
+ * Interface implemented by objects that can be serialized as Rust programs.
+ */
+public interface ToRustString {
+    IndentStringBuilder toRustString(IndentStringBuilder builder);
 
-    public DBSPTypeZSet(@Nullable Object node, DBSPType elementType, DBSPType weightType) {
-        super(node, "OrdZSet", false, elementType, weightType);
-        this.elementType = elementType;
-        this.weightType = weightType;
-    }
-
-    public DBSPTypeZSet(DBSPType elementType, DBSPType weightType) {
-        this(null, elementType, weightType);
+    default String toRustString() {
+        IndentStringBuilder builder = new IndentStringBuilder();
+        this.toRustString(builder);
+        return builder.toString();
     }
 }

@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -32,8 +31,9 @@ import javax.annotation.Nullable;
  * This type has a single value, NULL.
  */
 public class DBSPTypeNull extends DBSPType {
-    public static DBSPType instance = new DBSPTypeNull(null);
+    public static final DBSPType instance = new DBSPTypeNull(null);
 
+    @SuppressWarnings("SameParameterValue")
     protected DBSPTypeNull(@Nullable Object node) {
         super(node, true);
     }

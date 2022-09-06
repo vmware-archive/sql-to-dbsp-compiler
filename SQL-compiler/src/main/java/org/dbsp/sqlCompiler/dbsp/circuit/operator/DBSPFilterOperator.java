@@ -26,12 +26,19 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPClosureExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeBool;
 
 public class DBSPFilterOperator extends DBSPOperator {
     public DBSPFilterOperator(Object filter, DBSPExpression condition, DBSPType type, DBSPOperator input) {
         super(filter, "filter", condition, TypeCompiler.makeZSet(type));
         this.addInput(input);
+        this.checkResultType(condition, DBSPTypeBool.instance);
+        if (!input.outputType.same(this.outputType)) {
+            throw new RuntimeException("Filter operator input type " + input.outputType +
+                    " does not match output type " + this.outputType);
+        }
     }
 }

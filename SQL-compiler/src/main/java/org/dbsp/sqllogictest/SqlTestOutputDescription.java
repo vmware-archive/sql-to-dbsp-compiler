@@ -26,7 +26,6 @@ package org.dbsp.sqllogictest;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class SqlTestOutputDescription {
     public enum SortOrder {
@@ -99,6 +98,7 @@ public class SqlTestOutputDescription {
      * @param orderDescription  A String that starts with the ordering description
      * @return null on failure, the remaining string if the order is recognized.
      */
+    @SuppressWarnings("SpellCheckingInspection")
     @Nullable
     String parseOrder(String orderDescription) {
         if (orderDescription.startsWith("nosort")) {

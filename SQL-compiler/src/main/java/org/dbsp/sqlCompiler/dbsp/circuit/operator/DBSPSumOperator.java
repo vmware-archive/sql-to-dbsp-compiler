@@ -36,8 +36,13 @@ import java.util.List;
 public class DBSPSumOperator extends DBSPOperator {
     public DBSPSumOperator(@Nullable Object node, DBSPType elementType, List<DBSPOperator> inputs) {
         super(node, "sum", null, TypeCompiler.makeZSet(elementType));
-        for (DBSPOperator op: inputs)
+        for (DBSPOperator op: inputs) {
             this.addInput(op);
+            if (!op.outputType.same(this.outputType)) {
+                throw new RuntimeException("Sum operator input type " + op.outputType +
+                        " does not match output type " + this.outputType);
+            }
+        }
     }
 
     @Override

@@ -29,7 +29,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSourceOperator;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLetExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRawTuple;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DBSPCircuit extends DBSPNode {
+    @SuppressWarnings("SpellCheckingInspection")
     static final String rustPreamble =
             "// Automatically-generated file\n" +
             "#![allow(dead_code)]\n" +
@@ -54,14 +55,16 @@ public class DBSPCircuit extends DBSPNode {
             "use dbsp::{\n" +
             "    algebra::{ZSet, MulByRef, F32, F64},\n" +
             "    circuit::{Circuit, Stream},\n" +
-            "    operator::{Generator, FilterMap},\n" +
+            "    operator::{Generator, FilterMap, Fold},\n" +
             "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
             "    zset,\n" +
             "};\n" +
             "mod sqllib;\n" +
             "use crate::test::sqllib::*;\n" +
+            "use deepsize::DeepSizeOf;\n" +
             "use ::serde::{Deserialize,Serialize};\n" +
             "use std::{\n" +
+            "    convert::identity,\n" +
             "    fmt::{Debug, Formatter, Result as FmtResult},\n" +
             "    cell::RefCell,\n" +
             "    rc::Rc,\n" +
@@ -114,9 +117,9 @@ public class DBSPCircuit extends DBSPNode {
             this.operators.add(operator);
     }
 
-    public DBSPLetExpression declareLocal(String prefix, DBSPExpression init) {
+    public DBSPLetStatement declareLocal(String prefix, DBSPExpression init) {
         String name = new NameGen(prefix).toString();
-        DBSPLetExpression let = new DBSPLetExpression(name, init);
+        DBSPLetStatement let = new DBSPLetStatement(name, init);
         this.declarations.add(let);
         return let;
     }
@@ -208,7 +211,6 @@ public class DBSPCircuit extends DBSPNode {
                 .increase();
         for (IDBSPDeclaration decl: this.declarations)
             builder.append(decl)
-                    .append(";")
                     .newline();
         for (DBSPOperator i: this.inputOperators)
             builder.append(i)

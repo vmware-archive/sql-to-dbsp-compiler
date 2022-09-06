@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLiteral;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -50,9 +51,10 @@ public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType, IDBSPBas
     public static final DBSPTypeFloat instance = new DBSPTypeFloat(null,false);
 
     @Override
-    public boolean same(DBSPType type) {
+    public boolean same(@Nullable DBSPType type) {
         if (!super.same(type))
             return false;
+        assert type != null;
         return type.is(DBSPTypeFloat.class);
     }
 
@@ -64,5 +66,15 @@ public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType, IDBSPBas
     @Override
     public DBSPExpression castFrom(DBSPExpression source) {
         return castFrom(source, "F32");
+    }
+
+    @Override
+    public DBSPLiteral getZero() {
+        return new DBSPLiteral(0F, this.mayBeNull);
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        return new DBSPLiteral(1F, this.mayBeNull);
     }
 }
