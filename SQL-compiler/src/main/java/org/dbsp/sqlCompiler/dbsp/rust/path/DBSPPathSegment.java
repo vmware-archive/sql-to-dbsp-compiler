@@ -19,27 +19,16 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+package org.dbsp.sqlCompiler.dbsp.rust.path;
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPClosureExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 
 import javax.annotation.Nullable;
 
-public class DBSPCartesianOperator extends DBSPOperator {
-    public DBSPCartesianOperator(@Nullable Object node, DBSPType resultType,
-                                 // Closure from key, valueLeft, valueRight to result type
-                                 DBSPClosureExpression function,
-                                 DBSPOperator left, DBSPOperator right) {
-        super(node, "stream_join", function, TypeCompiler.makeZSet(resultType));
-        this.addInput(left);
-        this.addInput(right);
-        this.checkResultType(function, resultType);
+public abstract class DBSPPathSegment extends DBSPNode {
+    protected DBSPPathSegment(@Nullable Object node) {
+        super(node);
     }
 }

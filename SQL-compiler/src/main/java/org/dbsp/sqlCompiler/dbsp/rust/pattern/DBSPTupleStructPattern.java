@@ -21,49 +21,33 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.expression;
+package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeAny;
 import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
+public class DBSPTupleStructPattern extends DBSPPattern {
+    public final DBSPPath path;
+    public final DBSPPattern[] arguments;
 
-/**
- * Function application expression.
- */
-public class DBSPApplyMethodExpression extends DBSPExpression {
-    public final DBSPExpression function;
-    public final DBSPExpression self;
-    public final DBSPExpression[] arguments;
-
-    public DBSPApplyMethodExpression(
-            String function, @Nullable DBSPType returnType,
-            DBSPExpression self, DBSPExpression... arguments) {
-        super(null, returnType);
-        this.function = new DBSPPathExpression(DBSPTypeAny.instance, new DBSPPath(function));
-        this.self = self;
-        this.arguments = arguments;
-    }
-
-    @SuppressWarnings("unused")
-    public DBSPApplyMethodExpression(
-            DBSPExpression function,
-            DBSPExpression self, DBSPExpression... arguments) {
-        super(null, DBSPApplyExpression.getReturnType(function.getNonVoidType()));
-        this.function = function;
-        this.self = self;
+    public DBSPTupleStructPattern(DBSPPath path, DBSPPattern... arguments) {
+        super(null);
+        this.path = path;
         this.arguments = arguments;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.self)
-                .append(".")
-                .append(this.function)
+        return builder.append(this.path)
                 .append("(")
                 .join(", ", this.arguments)
                 .append(")");
+    }
+
+    /**
+     * Shortcut to generate a Some(x) pattern.
+     */
+    public static DBSPPattern somePattern(DBSPPattern argument) {
+        return new DBSPTupleStructPattern(new DBSPPath("Some"), argument);
     }
 }

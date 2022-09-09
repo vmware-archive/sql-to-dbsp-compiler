@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
+import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPSimplePathSegment;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -37,6 +39,7 @@ public class DBSPTypeTuple extends DBSPType {
 
     public final DBSPType[] tupFields;
 
+    @SuppressWarnings("unused")
     public static final DBSPTypeTuple emptyTupleType = new DBSPTypeTuple();
 
     protected DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
@@ -74,21 +77,20 @@ public class DBSPTypeTuple extends DBSPType {
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         if (this.tupFields.length == 0)
             return builder.append("()");
-        return builder.append("Tuple")
+        if (this.mayBeNull)
+            builder.append("Option<");
+        builder.append("Tuple")
                 .append(this.tupFields.length)
                 .append("<")
                 .join(", ", this.tupFields)
                 .append(">");
+        if (this.mayBeNull)
+            builder.append(">");
+        return builder;
     }
 
-    public String toPath() {
-        IndentStringBuilder builder = new IndentStringBuilder();
-        builder.append("Tuple")
-                .append(this.tupFields.length)
-                .append("::<")
-                .join(", ", this.tupFields)
-                .append(">");
-        return builder.toString();
+    public DBSPPath toPath() {
+        return new DBSPPath(new DBSPSimplePathSegment("Tuple" + this.tupFields.length, this.tupFields));
     }
 
     @Override

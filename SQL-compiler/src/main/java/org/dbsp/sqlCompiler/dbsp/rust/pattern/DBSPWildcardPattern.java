@@ -21,12 +21,19 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.expression;
+package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPDontCare extends DBSPVariableReference {
-    public DBSPDontCare(DBSPType type) {
-        super("_", type);
+public class DBSPWildcardPattern extends DBSPPattern {
+    public static DBSPWildcardPattern instance = new DBSPWildcardPattern();
+
+    private DBSPWildcardPattern() {
+        super(null);
+    }
+
+    @Override
+    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
+        return builder.append("_");
     }
 }

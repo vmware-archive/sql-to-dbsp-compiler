@@ -44,7 +44,9 @@ public class DBSPTypeRef extends DBSPType {
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
-        throw new RuntimeException("Reference types cannot be null");
+        if (mayBeNull)
+            throw new RuntimeException("Reference types cannot be null");
+        return this;
     }
 
     @Override

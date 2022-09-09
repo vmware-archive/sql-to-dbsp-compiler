@@ -28,6 +28,7 @@ package org.dbsp.sqlCompiler.dbsp.circuit;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFile;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.pattern.*;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPStatement;
@@ -181,12 +182,12 @@ public class SqlRuntimeLibrary {
                                 new DBSPVariableReference("b", arg.getNonVoidType()),
                                 Arrays.asList(
                                     new DBSPMatchExpression.Case(
-                                            new DBSPSomeExpression(
-                                                    new DBSPVariableReference("x", DBSPTypeBool.instance)),
+                                            DBSPTupleStructPattern.somePattern(
+                                                    new DBSPIdentifierPattern("x")),
                                             new DBSPVariableReference("x", DBSPTypeBool.instance)
                                     ),
                                     new DBSPMatchExpression.Case(
-                                            new DBSPDontCare(arg.getNonVoidType()), new DBSPLiteral(false)
+                                            DBSPWildcardPattern.instance, new DBSPLiteral(false)
                                     )
                                 ),
                                 DBSPTypeBool.instance)));
@@ -235,17 +236,17 @@ public class SqlRuntimeLibrary {
                         if (op.equals("%") && rawType.is(DBSPTypeFP.class))
                             continue;
                         withNull = rawType.setMayBeNull(true);
-                        DBSPExpression leftMatch = new DBSPVariableReference("l", rawType);
-                        DBSPExpression rightMatch = new DBSPVariableReference("r", rawType);
+                        DBSPPattern leftMatch = new DBSPIdentifierPattern("l");
+                        DBSPPattern rightMatch = new DBSPIdentifierPattern("r");
                         if ((i & 1) == 1) {
                             leftType = withNull;
-                            leftMatch = new DBSPSomeExpression(leftMatch);
+                            leftMatch = DBSPTupleStructPattern.somePattern(leftMatch);
                         } else {
                             leftType = rawType;
                         }
                         if ((i & 2) == 2) {
                             rightType = withNull;
-                            rightMatch = new DBSPSomeExpression(rightMatch);
+                            rightMatch = DBSPTupleStructPattern.somePattern(rightMatch);
                         } else {
                             rightType = rawType;
                         }
@@ -285,12 +286,12 @@ public class SqlRuntimeLibrary {
                                             new DBSPVariableReference("right", rightType)),
                                     Arrays.asList(
                                             new DBSPMatchExpression.Case(
-                                                    new DBSPRawTupleExpression(leftMatch, rightMatch),
+                                                    new DBSPTuplePattern(leftMatch, rightMatch),
                                                     new DBSPSomeExpression(def)),
                                             new DBSPMatchExpression.Case(
-                                                    new DBSPRawTupleExpression(
-                                                            new DBSPDontCare(leftType),
-                                                            new DBSPDontCare(rightType)),
+                                                    new DBSPTuplePattern(
+                                                            DBSPWildcardPattern.instance,
+                                                            DBSPWildcardPattern.instance),
                                                     new DBSPLiteral(type))),
                                     type);
                         }

@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
+
 /**
  * Convenient shortcut to wrap an expression into a Some() constructor.
  */
@@ -30,6 +32,6 @@ public class DBSPSomeExpression extends DBSPStructExpression {
     public DBSPSomeExpression(DBSPExpression argument) {
         super(new DBSPPathExpression(
                 argument.getNonVoidType(),
-                "Some"), argument.getNonVoidType().setMayBeNull(true), argument);
+                new DBSPPath("Some")), argument.getNonVoidType().setMayBeNull(true), argument);
     }
 }

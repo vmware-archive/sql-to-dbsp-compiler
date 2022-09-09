@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -34,10 +35,10 @@ import java.util.List;
  */
 public class DBSPMatchExpression extends DBSPExpression {
     public static class Case extends DBSPNode {
-        public final DBSPExpression against;
+        public final DBSPPattern against;
         public final DBSPExpression result;
 
-        public Case(DBSPExpression against, DBSPExpression result) {
+        public Case(DBSPPattern against, DBSPExpression result) {
             super(null);
             this.against = against;
             this.result = result;

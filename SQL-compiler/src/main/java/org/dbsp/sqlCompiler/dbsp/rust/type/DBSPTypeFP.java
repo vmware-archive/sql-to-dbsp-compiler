@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 
 import javax.annotation.Nullable;
@@ -50,9 +51,10 @@ public abstract class DBSPTypeFP extends DBSPType implements IsNumericType {
         DBSPTypeFunction func = new DBSPTypeFunction(noNull, source.getNonVoidType());
         if (sourceType.is(DBSPTypeFP.class)) {
             return new DBSPApplyExpression(
-                    new DBSPPathExpression(func, destType, "from"), source);
+                    new DBSPPathExpression(func, new DBSPPath(destType, "from")), source);
         }
         return new DBSPApplyExpression(
-                new DBSPPathExpression(func, destType, "from"), new DBSPAsExpression(source, this));
+                new DBSPPathExpression(func, new DBSPPath(destType, "from")),
+                new DBSPAsExpression(source, this));
     }
 }

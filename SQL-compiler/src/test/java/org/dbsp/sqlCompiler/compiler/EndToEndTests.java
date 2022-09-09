@@ -189,6 +189,34 @@ public class EndToEndTests {
     }
 
     @Test
+    public void joinTest() {
+        String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 JOIN T AS T2 ON T1.COL1 = T2.COL1";
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(false), new DBSPLiteral(false)),
+                new DBSPTupleExpression(new DBSPLiteral(false), new DBSPLiteral(true)),
+                new DBSPTupleExpression(new DBSPLiteral(true), new DBSPLiteral(false)),
+                new DBSPTupleExpression(new DBSPLiteral(true), new DBSPLiteral(true))
+                ));
+    }
+
+    @Test
+    public void joinNullableTest() {
+        String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 JOIN T AS T2 ON T1.COL1 = T2.COL5";
+        this.testQuery(query, this.empty);
+    }
+
+    //@Test
+    public void outerJoinTest() {
+        String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 LEFT JOIN T AS T2 ON T1.COL1 = T2.COL1";
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(false), new DBSPLiteral(false)),
+                new DBSPTupleExpression(new DBSPLiteral(false), new DBSPLiteral(true)),
+                new DBSPTupleExpression(new DBSPLiteral(true), new DBSPLiteral(false)),
+                new DBSPTupleExpression(new DBSPLiteral(true), new DBSPLiteral(true))
+        ));
+    }
+
+    @Test
     public void whereTest() {
         String query = "SELECT * FROM T WHERE COL3";
         this.testQuery(query, this.z0);

@@ -102,10 +102,12 @@ public class DBSPClosureExpression extends DBSPExpression {
             builder.append("-> ")
                     .append(resultType)
                     .append(" ");
+        if (this.body.is(DBSPBlockExpression.class))
+            return builder.append(this.body);
         return builder.append("{")
                 .increase()
                 .append(this.body)
                 .decrease()
-                .append("}");
+                .append("\n}");
     }
 }

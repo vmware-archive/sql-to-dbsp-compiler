@@ -36,7 +36,7 @@ public class DBSPTuplePattern extends DBSPPattern {
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append("(")
-                .intercalate(",", this.fields)
+                .intercalate(", ", this.fields)
                 .append(")");
     }
 }

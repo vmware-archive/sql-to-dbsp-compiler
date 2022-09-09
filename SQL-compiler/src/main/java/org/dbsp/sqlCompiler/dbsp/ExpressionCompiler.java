@@ -29,7 +29,10 @@ import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlKind;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPTupleStructPattern;
+import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPWildcardPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
+import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.util.Linq;
 import org.dbsp.util.TranslationException;
 import org.dbsp.util.Unimplemented;
@@ -48,10 +51,10 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     private static final boolean debug = false;
     private final RexBuilder rexBuilder;
 
-    public ExpressionCompiler(@Nullable DBSPVariableReference inputRow, RexBuilder rexBuilder) {
+    public ExpressionCompiler(@Nullable DBSPVariableReference inputRow, CalciteCompiler calciteCompiler) {
         super(true);
         this.inputRow = inputRow;
-        this.rexBuilder = rexBuilder;
+        this.rexBuilder = calciteCompiler.getRexBuilder();
     }
 
     @Override
@@ -179,10 +182,11 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         if (fromType.mayBeNull) {
             if (to.mayBeNull) {
                 DBSPMatchExpression.Case none = new DBSPMatchExpression.Case(
-                        new DBSPDontCare(fromType), new DBSPLiteral(to));
-                DBSPExpression x = new DBSPVariableReference("x", fromType.setMayBeNull(false));
+                        DBSPWildcardPattern.instance, new DBSPLiteral(to));
+                DBSPVariableReference x = new DBSPVariableReference("x", fromType.setMayBeNull(false));
                 DBSPMatchExpression.Case some = new DBSPMatchExpression.Case(
-                        new DBSPSomeExpression(x), new DBSPSomeExpression(to.castFrom(x)));
+                        DBSPTupleStructPattern.somePattern(x.asPattern()),
+                        new DBSPSomeExpression(to.castFrom(x)));
                 return new DBSPMatchExpression(from, Linq.list(some, none), to);
             } else {
                 return makeCast(new DBSPApplyMethodExpression(
