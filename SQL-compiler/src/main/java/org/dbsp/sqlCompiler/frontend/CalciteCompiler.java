@@ -86,7 +86,6 @@ public class CalciteCompiler {
         this.parserConfig = SqlParser.config().withParserFactory(SqlDdlParserImpl.FACTORY);
         this.typeFactory = new JavaTypeFactoryImpl();
         this.simple = new Catalog("schema");
-        this.simulator = new SqlSimulator(this.simple, this.typeFactory);
         CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
         rootSchema.add(simple.schemaName, this.simple);
         Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
@@ -121,7 +120,7 @@ public class CalciteCompiler {
 
         SqlToRelConverter.Config converterConfig = SqlToRelConverter.config()
                 .withTrimUnusedFields(true)
-                .withExpand(false);
+                .withExpand(true);
         this.converter = new SqlToRelConverter(
                 (type, query, schema, path) -> null,
                 this.validator,
@@ -130,6 +129,7 @@ public class CalciteCompiler {
                 StandardConvertletTable.INSTANCE,
                 converterConfig
         );
+        this.simulator = new SqlSimulator(this.simple, this.typeFactory, this.validator);
     }
 
     public RexBuilder getRexBuilder() {

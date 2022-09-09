@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeAny;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeFunction;
@@ -40,7 +41,7 @@ public class DBSPApplyExpression extends DBSPExpression {
 
     public DBSPApplyExpression(String function, @Nullable DBSPType returnType, DBSPExpression... arguments) {
         super(null, returnType);
-        this.function = new DBSPPathExpression(DBSPTypeAny.instance, function);
+        this.function = new DBSPPathExpression(DBSPTypeAny.instance, new DBSPPath(function));
         this.arguments = arguments;
     }
 

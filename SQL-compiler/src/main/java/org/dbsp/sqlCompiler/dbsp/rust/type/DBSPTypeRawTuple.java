@@ -45,15 +45,24 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
         this(node, false, tupArgs.toArray(new DBSPType[0]));
     }
 
+    public DBSPTypeRawTuple(List<DBSPType> tupArgs) {
+        this(null, false, tupArgs.toArray(new DBSPType[0]));
+    }
+
     public int size() {
         return this.tupFields.length;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("(")
+        if (this.mayBeNull)
+            builder.append("Option<");
+        builder.append("(")
                 .intercalate(", ", this.tupFields)
                 .append(")");
+        if (this.mayBeNull)
+            builder.append(">");
+        return builder;
     }
 
     @Override

@@ -19,24 +19,23 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ *
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.expression;
+package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
-import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
+import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPPathExpression extends DBSPExpression {
-    public final DBSPPath path;
+import javax.annotation.Nullable;
 
-    public DBSPPathExpression(DBSPType type, DBSPPath path) {
-        super(null, type);
-        this.path = path;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.path);
+public class DBSPFlatMapOperator extends DBSPOperator {
+    public DBSPFlatMapOperator(@Nullable Object node, DBSPExpression expression,
+                               DBSPType resultType, DBSPOperator input) {
+        super(node, "flat_map", expression, TypeCompiler.makeZSet(resultType));
+        this.addInput(input);
+        this.checkArgumentFunctionType(expression, 0, input);
     }
 }

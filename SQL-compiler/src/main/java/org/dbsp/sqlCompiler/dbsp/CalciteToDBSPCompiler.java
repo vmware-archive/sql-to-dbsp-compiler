@@ -39,7 +39,9 @@ import org.apache.calcite.sql.SqlExplainFormat;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.*;
+import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.pattern.*;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqlCompiler.frontend.*;
 import org.dbsp.util.*;
@@ -49,6 +51,8 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class CalciteToDBSPCompiler extends RelVisitor {
+    final boolean debug = false;
+
     /**
      * Type of weight used in generated z-sets.
      */
@@ -73,7 +77,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     private final CalciteCompiler calciteCompiler;
     @Nullable
     private DBSPCircuit circuit;
-    final boolean debug = false;
     // The path in the IR tree used to reach the current node.
     final List<Context> stack;
     // Map an input or output name to the corresponding operator
@@ -197,7 +200,8 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         DBSPClosureExpression postClosure = new DBSPClosureExpression(new DBSPTupleExpression(posts), postAccum.asParameter());
         DBSPExpression post = this.circuit.declareLocal("post", postClosure).getVarReference();
 
-        DBSPExpression constructor = new DBSPPathExpression(DBSPTypeAny.instance, "Fold", "with_output");
+        DBSPExpression constructor = new DBSPPathExpression(DBSPTypeAny.instance,
+                new DBSPPath("Fold", "with_output"));
         DBSPExpression folder = new DBSPApplyExpression(constructor, zero, increment, post);
         return new FoldingDescription(this.circuit.declareLocal("folder", folder).getVarReference(),
                 new DBSPTupleExpression(defaultZeros));
@@ -347,7 +351,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         DBSPTypeTuple tuple = outputType.to(DBSPTypeTuple.class);
         DBSPType inputType = this.convertType(project.getInput().getRowType());
         DBSPVariableReference row = new DBSPVariableReference("t", inputType);
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(row, this.calciteCompiler.getRexBuilder());
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(row, this.calciteCompiler);
 
         List<DBSPExpression> resultColumns = new ArrayList<>();
         int index = 0;
@@ -413,7 +417,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         assert this.circuit != null;
         DBSPType type = this.convertType(filter.getRowType());
         DBSPVariableReference t = new DBSPVariableReference("t", type);
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.calciteCompiler.getRexBuilder());
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.calciteCompiler);
         DBSPExpression condition = expressionCompiler.compile(filter.getCondition());
         condition = ExpressionCompiler.wrapBoolIfNeeded(condition);
         condition = new DBSPClosureExpression(filter.getCondition(), condition, t.asRefParameter());
@@ -423,54 +427,114 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         this.assignOperator(filter, fop);
     }
 
+    private DBSPOperator filterNonNullKeys(LogicalJoin join,
+            List<Integer> keyFields, DBSPOperator input) {
+        assert this.circuit != null;
+        DBSPTypeTuple rowType = input.getNonVoidType().to(DBSPTypeZSet.class).elementType.to(DBSPTypeTuple.class);
+        boolean shouldFilter = Linq.any(keyFields, i -> rowType.tupFields[i].mayBeNull);
+        if (!shouldFilter) return input;
+
+        DBSPVariableReference var = new DBSPVariableReference("r", rowType);
+        List<DBSPMatchExpression.Case> cases = new ArrayList<>();
+        DBSPPattern[] patterns = new DBSPPattern[rowType.size()];
+        for (int i = 0; i < rowType.size(); i++) {
+            if (keyFields.contains(i)) {
+                patterns[i] = DBSPTupleStructPattern.somePattern(DBSPWildcardPattern.instance);
+            } else {
+                patterns[i] = DBSPWildcardPattern.instance;
+            }
+        }
+        DBSPTupleStructPattern tup = new DBSPTupleStructPattern(rowType.toPath(), patterns);
+        DBSPSomeExpression some = new DBSPSomeExpression(
+                new DBSPApplyMethodExpression("clone", var.getNonVoidType(), var));
+        cases.add(new DBSPMatchExpression.Case(tup, some));
+        cases.add(new DBSPMatchExpression.Case(
+                DBSPWildcardPattern.instance, new DBSPLiteral(some.getNonVoidType())));
+        DBSPMatchExpression match = new DBSPMatchExpression(var, cases, some.getNonVoidType());
+        DBSPClosureExpression filterFunc = new DBSPClosureExpression(match, var.asRefParameter());
+        DBSPOperator filter = new DBSPFlatMapOperator(join, filterFunc, rowType, input);
+        this.circuit.addOperator(filter);
+        return filter;
+    }
+
     private void visitJoin(LogicalJoin join) {
         assert this.circuit != null;
         DBSPType type = this.convertType(join.getRowType());
         if (join.getInputs().size() != 2)
             throw new TranslationException("Unexpected join with " + join.getInputs().size() + " inputs", join);
+        if (join.getJoinType().isOuterJoin())
+            throw new Unimplemented(join);
         DBSPOperator left = this.getOperator(join.getInput(0));
         DBSPOperator right = this.getOperator(join.getInput(1));
         DBSPType leftElementType = left.getNonVoidType().to(DBSPTypeZSet.class).elementType;
+
+        JoinConditionAnalyzer analyzer = new JoinConditionAnalyzer(
+                leftElementType.to(DBSPTypeTuple.class).size());
+        JoinConditionAnalyzer.ConditionDecomposition decomposition = analyzer.analyze(join.getCondition());
+        // If any key field is nullable we need to filter the inputs; this will make key columns non-nullable
+        left = this.filterNonNullKeys(join, Linq.map(decomposition.comparisons, c -> c.leftColumn), left);
+        right = this.filterNonNullKeys(join, Linq.map(decomposition.comparisons, c -> c.rightColumn), right);
+
+        leftElementType = left.getNonVoidType().to(DBSPTypeZSet.class).elementType;
         DBSPType rightElementType = right.getNonVoidType().to(DBSPTypeZSet.class).elementType;
         DBSPVariableReference l = new DBSPVariableReference("l", new DBSPTypeRef(leftElementType));
         DBSPVariableReference r = new DBSPVariableReference("r", new DBSPTypeRef(rightElementType));
-        // TODO: use key information
-        DBSPVariableReference k = new DBSPVariableReference("k", DBSPTypeRawTuple.emptyTupleType);
+        DBSPExpression lr = DBSPTupleExpression.flatten(l, r);
+        DBSPVariableReference t = new DBSPVariableReference("t", Objects.requireNonNull(lr.getNonVoidType()));
+        List<DBSPExpression> leftKeyFields = Linq.map(
+                decomposition.comparisons,
+                c -> new DBSPFieldExpression(l, c.leftColumn));
+        leftKeyFields = Linq.map(leftKeyFields,
+                c -> ExpressionCompiler.makeCast(c, c.getNonVoidType().setMayBeNull(false)));
+        List<DBSPExpression> rightKeyFields = Linq.map(
+                decomposition.comparisons,
+                c -> new DBSPFieldExpression(r, c.rightColumn));
+        rightKeyFields = Linq.map(rightKeyFields,
+                c -> ExpressionCompiler.makeCast(c, c.getNonVoidType().setMayBeNull(false)));
+        DBSPExpression leftKey = new DBSPRawTupleExpression(leftKeyFields);
+        DBSPExpression rightKey = new DBSPRawTupleExpression(rightKeyFields);
 
-        DBSPExpression toEmptyLeft = new DBSPClosureExpression(
-                new DBSPRawTupleExpression(
-                        DBSPTupleExpression.emptyTuple,
-                        DBSPTupleExpression.flatten(l)),
+        @Nullable
+        RexNode leftOver = decomposition.getLeftOver();
+        DBSPExpression condition = null;
+        if (leftOver != null) {
+            ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.calciteCompiler);
+            condition = expressionCompiler.compile(leftOver);
+            if (condition.getNonVoidType().mayBeNull) {
+                condition = new DBSPApplyExpression("wrap_bool", condition.getNonVoidType().setMayBeNull(false), condition);
+            }
+            condition = new DBSPClosureExpression(join.getCondition(), condition, t.asRefParameter());
+            condition = this.circuit.declareLocal("cond", condition).getVarReference();
+        }
+        DBSPVariableReference k = new DBSPVariableReference("k", leftKey.getNonVoidType());
+
+        DBSPClosureExpression toLeftKey = new DBSPClosureExpression(
+                new DBSPRawTupleExpression(leftKey, DBSPTupleExpression.flatten(l)),
                 l.asParameter());
         DBSPIndexOperator lindex = new DBSPIndexOperator(
-                join, this.circuit.declareLocal("index", toEmptyLeft).getVarReference(),
-                DBSPTypeTuple.emptyTupleType, leftElementType, left);
+                join, this.circuit.declareLocal("index", toLeftKey).getVarReference(),
+                leftKey.getNonVoidType(), leftElementType, left);
         Objects.requireNonNull(this.circuit).addOperator(lindex);
 
-        DBSPExpression toEmptyRight = new DBSPClosureExpression(
-                new DBSPRawTupleExpression(
-                        DBSPTupleExpression.emptyTuple,
-                        DBSPTupleExpression.flatten(r)),
+        DBSPClosureExpression toRightKey = new DBSPClosureExpression(
+                new DBSPRawTupleExpression(rightKey, DBSPTupleExpression.flatten(r)),
                 r.asParameter());
         DBSPIndexOperator rIndex = new DBSPIndexOperator(
-                join, this.circuit.declareLocal("index", toEmptyRight).getVarReference(),
-                DBSPTypeTuple.emptyTupleType, rightElementType, right);
+                join, this.circuit.declareLocal("index", toRightKey).getVarReference(),
+                rightKey.getNonVoidType(), rightElementType, right);
         this.circuit.addOperator(rIndex);
 
         DBSPClosureExpression makePairs = new DBSPClosureExpression(null,
                 DBSPTupleExpression.flatten(l, r),
                 k.asRefParameter(), l.asParameter(), r.asParameter());
-        DBSPCartesianOperator cart = new DBSPCartesianOperator(join, type, makePairs, lindex, rIndex);
-        this.circuit.addOperator(cart);
-        DBSPVariableReference t = new DBSPVariableReference("t", makePairs.getNonVoidType());
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.calciteCompiler.getRexBuilder());
-        DBSPExpression condition = expressionCompiler.compile(join.getCondition());
-        if (condition.getNonVoidType().mayBeNull) {
-            condition = new DBSPApplyExpression("wrap_bool", condition.getNonVoidType(), condition);
+        DBSPJoinOperator joinResult = new DBSPJoinOperator(join, type, makePairs, lindex, rIndex);
+        if (condition != null) {
+            DBSPFilterOperator fop = new DBSPFilterOperator(join, condition, type, joinResult);
+            this.circuit.addOperator(joinResult);
+            this.assignOperator(join, fop);
+        } else {
+            this.assignOperator(join, joinResult);
         }
-        condition = new DBSPClosureExpression(join.getCondition(), condition, t.asParameter());
-        DBSPFilterOperator fop = new DBSPFilterOperator(join, condition, type, cart);
-        this.assignOperator(join, fop);
     }
 
     /**
@@ -524,7 +588,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
      * This can be invoked by a DDM statement, or by a SQL query that computes a constant result.
      */
     public void visitLogicalValues(LogicalValues values) {
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(null, this.calciteCompiler.getRexBuilder());
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(null, this.calciteCompiler);
         DBSPTypeTuple sourceType = this.convertType(values.getRowType()).to(DBSPTypeTuple.class);
         boolean ddmTranslation = this.dmTranslation.prepared();
 

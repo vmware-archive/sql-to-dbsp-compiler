@@ -45,7 +45,8 @@ public class DBSPBlockExpression extends DBSPExpression {
         builder.append("{").increase()
                 .intercalate("\n", this.contents).decrease();
         if (this.lastExpression != null)
-            builder.append(this.lastExpression);
+            builder.append(this.lastExpression)
+                    .append("\n");
         return builder.append("}");
     }
 }

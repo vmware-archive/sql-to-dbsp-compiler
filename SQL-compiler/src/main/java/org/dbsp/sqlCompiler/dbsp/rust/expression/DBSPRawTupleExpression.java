@@ -27,6 +27,8 @@ import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRawTuple;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
 
+import java.util.List;
+
 /**
  * A Raw tuple expression generates a raw Rust tuple.
  */
@@ -34,6 +36,10 @@ public class DBSPRawTupleExpression extends DBSPTupleExpression {
     public DBSPRawTupleExpression(DBSPExpression... fields) {
         super(null, new DBSPTypeRawTuple(
                 null, Linq.map(Linq.list(fields), DBSPExpression::getNonVoidType)), Linq.list(fields));
+    }
+
+    public <T extends DBSPExpression> DBSPRawTupleExpression(List<T> fields) {
+        this(fields.toArray(new DBSPExpression[0]));
     }
 
     @Override

@@ -21,22 +21,28 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.expression;
+package org.dbsp.sqlCompiler.dbsp.rust.path;
 
-import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPPathExpression extends DBSPExpression {
-    public final DBSPPath path;
+public class DBSPSimplePathSegment extends DBSPPathSegment {
+    public final String identifier;
+    public final DBSPType[] genericArgs;
 
-    public DBSPPathExpression(DBSPType type, DBSPPath path) {
-        super(null, type);
-        this.path = path;
+    public DBSPSimplePathSegment(String identifier, DBSPType... genericArgs) {
+        super(null);
+        this.identifier = identifier;
+        this.genericArgs = genericArgs;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.path);
+        builder.append(this.identifier);
+        if (this.genericArgs.length > 0)
+            builder.append("::<")
+                    .join(", ", this.genericArgs)
+                    .append(">");
+        return builder;
     }
 }
