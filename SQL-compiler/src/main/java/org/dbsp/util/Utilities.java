@@ -114,10 +114,10 @@ public class Utilities {
         return null;
     }
 
-    public static <T> T[] arraySlice(T[] data, int start, int end) {
-        if (end > data.length)
-            throw new RuntimeException("Slice larger than array " + end + " vs " + data.length);
-        return Arrays.copyOfRange(data, start, end);
+    public static <T> T[] arraySlice(T[] data, int start, int endExclusive) {
+        if (endExclusive > data.length)
+            throw new RuntimeException("Slice larger than array " + endExclusive + " vs " + data.length);
+        return Arrays.copyOfRange(data, start, endExclusive);
     }
 
     public static <T> T[] arraySlice(T[] data, int start) {

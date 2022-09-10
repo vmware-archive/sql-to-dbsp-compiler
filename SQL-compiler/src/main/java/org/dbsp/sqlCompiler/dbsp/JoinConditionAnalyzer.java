@@ -23,10 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp;
 
-import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.rex.RexVisitorImpl;
+import org.apache.calcite.rex.*;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -117,6 +114,12 @@ public class JoinConditionAnalyzer extends RexVisitorImpl<Void> {
         if (ref == null)
             return null;
         return ref.getIndex() < this.leftTableColumnCount;
+    }
+
+    @Override
+    public Void visitLiteral(RexLiteral lit) {
+        this.result.setLeftOver(lit);
+        return null;
     }
 
     @Override

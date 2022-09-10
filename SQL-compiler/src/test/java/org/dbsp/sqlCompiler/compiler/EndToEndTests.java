@@ -205,14 +205,34 @@ public class EndToEndTests {
         this.testQuery(query, this.empty);
     }
 
-    //@Test
-    public void outerJoinTest() {
-        String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 LEFT JOIN T AS T2 ON T1.COL1 = T2.COL1";
+    static DBSPLiteral boolNone = new DBSPLiteral(DBSPTypeBool.instance.setMayBeNull(true));
+
+    @Test
+    public void leftOuterJoinTest() {
+        String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 LEFT JOIN T AS T2 ON T1.COL1 = T2.COL5";
         this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
-                new DBSPTupleExpression(new DBSPLiteral(false), new DBSPLiteral(false)),
-                new DBSPTupleExpression(new DBSPLiteral(false), new DBSPLiteral(true)),
-                new DBSPTupleExpression(new DBSPLiteral(true), new DBSPLiteral(false)),
-                new DBSPTupleExpression(new DBSPLiteral(true), new DBSPLiteral(true))
+                new DBSPTupleExpression(new DBSPLiteral(false), boolNone),
+                new DBSPTupleExpression(new DBSPLiteral(true), boolNone)
+        ));
+    }
+
+    @Test
+    public void rightOuterJoinTest() {
+        String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 RIGHT JOIN T AS T2 ON T1.COL1 = T2.COL5";
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(boolNone, new DBSPLiteral(false)),
+                new DBSPTupleExpression(boolNone, new DBSPLiteral(true))
+        ));
+    }
+
+    @Test
+    public void fullOuterJoinTest() {
+        String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 FULL OUTER JOIN T AS T2 ON T1.COL1 = T2.COL5";
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPLiteral(false, true), boolNone),
+                new DBSPTupleExpression(new DBSPLiteral(true, true), boolNone),
+                new DBSPTupleExpression(boolNone, new DBSPLiteral(false, true)),
+                new DBSPTupleExpression(boolNone, new DBSPLiteral(true, true))
         ));
     }
 

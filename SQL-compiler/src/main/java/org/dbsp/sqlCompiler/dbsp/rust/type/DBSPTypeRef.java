@@ -25,6 +25,8 @@ package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.util.IndentStringBuilder;
 
+import javax.annotation.Nullable;
+
 /**
  * A type of the form &type.
  */
@@ -47,6 +49,16 @@ public class DBSPTypeRef extends DBSPType {
         if (mayBeNull)
             throw new RuntimeException("Reference types cannot be null");
         return this;
+    }
+
+    public boolean same(@Nullable DBSPType other) {
+        if (!super.same(other))
+            return false;
+        assert other != null;
+        DBSPTypeRef oref = other.as(DBSPTypeRef.class);
+        if (oref == null)
+            return false;
+        return this.type.same(oref.type);
     }
 
     @Override

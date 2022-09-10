@@ -23,49 +23,37 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.ExpressionCompiler;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DBSPTupleExpression extends DBSPExpression {
-    public final List<DBSPExpression> fields;
+    public final DBSPExpression[] fields;
 
-    public static final DBSPTupleExpression emptyTuple = new DBSPTupleExpression();
+    public int size() { return this.fields.length; }
 
-    public int size() { return this.fields.size(); }
-
-    public DBSPTupleExpression(@Nullable Object object, DBSPType tupleType, List<DBSPExpression> fields) {
-        super(object, tupleType);
-        this.fields = fields;
-        if (!tupleType.is(DBSPTypeTuple.class))
-            throw new RuntimeException("Expected a tuple type " + tupleType);
-        DBSPTypeTuple tuple = tupleType.to(DBSPTypeTuple.class);
-        if (tuple.size() != fields.size())
-            throw new RuntimeException("Tuple size does not match field size " + tuple + " vs " + fields);
-        int i = 0;
-        for (DBSPType fieldType: tuple.tupFields) {
-            DBSPExpression field = fields.get(i);
-            if (!fieldType.same(field.getNonVoidType()))
-                throw new RuntimeException("Tuple field " + i + " type " + fieldType +
-                        " does not match expression "+ fields.get(i) + " with type " + field.getType());
-            i++;
-        }
-    }
-
-    public DBSPTupleExpression(DBSPType tupleType, List<DBSPExpression> fields) {
-        this(null, tupleType, fields);
+    public DBSPTupleExpression(@Nullable Object object, DBSPExpression... expressions) {
+        super(object, new DBSPTypeTuple(Linq.map(expressions, DBSPExpression::getType, DBSPType.class)));
+        this.fields = expressions;
     }
 
     public DBSPTupleExpression(DBSPExpression... expressions) {
-        this(null, new DBSPTypeTuple(
-                Linq.map(Linq.list(expressions), DBSPExpression::getNonVoidType)),
-                Linq.list(expressions)
-        );
+        this(null, expressions);
+    }
+
+    public DBSPTupleExpression(List<DBSPExpression> fields) {
+        this(null, fields.toArray(new DBSPExpression[0]));
+    }
+
+    public DBSPTupleExpression(@Nullable Object node, List<DBSPExpression> fields) {
+        this(node, fields.toArray(new DBSPExpression[0]));
     }
 
     /**
@@ -74,26 +62,45 @@ public class DBSPTupleExpression extends DBSPExpression {
      */
     public static DBSPTupleExpression flatten(DBSPExpression... expressions) {
         List<DBSPExpression> fields = new ArrayList<>();
-        List<DBSPType> fieldTypes = new ArrayList<>();
         for (DBSPExpression expression: expressions) {
             DBSPTypeTuple type = expression.getNonVoidType().toRef(DBSPTypeTuple.class);
             for (int i = 0; i < type.size(); i++) {
                 DBSPType fieldType = type.tupFields[i];
                 DBSPExpression field = new DBSPFieldExpression(expression, i, fieldType).simplify();
                 fields.add(field);
-                fieldTypes.add(fieldType);
             }
         }
-        return new DBSPTupleExpression(new DBSPTypeTuple(fieldTypes), fields);
+        return new DBSPTupleExpression(fields);
+    }
+
+    /**
+     * Cast each element of the tuple to the corresponding type in the destination tuple.
+     */
+    public DBSPTupleExpression pointwiseCast(DBSPTypeTuple destType) {
+        if (this.size() != destType.size())
+            throw new RuntimeException("Cannot cast " + this + " with " + this.size() + " fields "
+                    + " to " + destType + " with " + destType.size() + " fields");
+        return new DBSPTupleExpression(
+                Linq.zip(this.fields, destType.tupFields, ExpressionCompiler::makeCast, DBSPExpression.class));
+    }
+
+    public DBSPTupleExpression slice(int start, int endExclusive) {
+        if (endExclusive <= start)
+            throw new RuntimeException("Incorrect slice parameters " + start + ":" + endExclusive);
+        return new DBSPTupleExpression(Utilities.arraySlice(this.fields, start, endExclusive));
+    }
+
+    public DBSPExpression get(int index) {
+        return this.fields[index];
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.fields.isEmpty()) {
+        if (this.size() == 0) {
             return builder.append("()");
         } else {
             return builder.append("Tuple")
-                    .append(this.fields.size())
+                    .append(this.size())
                     .append("::new(")
                     .join(", ", this.fields)
                     .append(")");

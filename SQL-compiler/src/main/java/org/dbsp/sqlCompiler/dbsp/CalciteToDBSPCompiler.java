@@ -30,6 +30,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
+import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.logical.*;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -308,18 +309,18 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 DBSPExpression toZero = new DBSPClosureExpression(fd.defaultZero, _t.asParameter());
                 DBSPOperator map1 = new DBSPMapOperator(aggregate, toZero, type, map);
                 this.circuit.addOperator(map1);
-                DBSPOperator neg = new DBSPNegateOperator(aggregate, type, map1);
+                DBSPOperator neg = new DBSPNegateOperator(aggregate, map1);
                 this.circuit.addOperator(neg);
                 DBSPOperator constant = new DBSPConstantOperator(
                         aggregate, new DBSPZSetLiteral(weightType, fd.defaultZero));
                 this.circuit.addOperator(constant);
-                DBSPOperator sum = new DBSPSumOperator(aggregate, type, Linq.list(constant, neg, map));
+                DBSPOperator sum = new DBSPSumOperator(aggregate, Linq.list(constant, neg, map));
                 this.assignOperator(aggregate, sum);
             } else {
                 this.assignOperator(aggregate, map);
             }
         } else {
-            DBSPOperator dist = new DBSPDistinctOperator(aggregate, type, opInput);
+            DBSPOperator dist = new DBSPDistinctOperator(aggregate, opInput);
             this.assignOperator(aggregate, dist);
         }
     }
@@ -365,7 +366,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             resultColumns.add(exp);
             index++;
         }
-        DBSPExpression exp = new DBSPTupleExpression(project, outputType, resultColumns);
+        DBSPExpression exp = new DBSPTupleExpression(project, resultColumns);
         DBSPExpression closure = new DBSPClosureExpression(project, exp, row.asRefParameter());
         DBSPExpression mapFunc = this.circuit.declareLocal("map", closure).getVarReference();
         DBSPMapOperator op = new DBSPMapOperator(project, mapFunc, outputType, opInput);
@@ -375,26 +376,25 @@ public class CalciteToDBSPCompiler extends RelVisitor {
 
     @SuppressWarnings("DuplicatedCode")
     private void visitUnion(LogicalUnion union) {
-        DBSPType type = this.convertType(union.getRowType());
+        assert this.circuit != null;
         List<DBSPOperator> inputs = Linq.map(union.getInputs(), this::getOperator);
-        DBSPSumOperator sum = new DBSPSumOperator(union, type, inputs);
+        DBSPSumOperator sum = new DBSPSumOperator(union, inputs);
         if (union.all) {
             this.assignOperator(union, sum);
         } else {
-            Objects.requireNonNull(this.circuit).addOperator(sum);
-            DBSPDistinctOperator d = new DBSPDistinctOperator(union, type, sum);
+            this.circuit.addOperator(sum);
+            DBSPDistinctOperator d = new DBSPDistinctOperator(union, sum);
             this.assignOperator(union, d);
         }
     }
 
     private void visitMinus(LogicalMinus minus) {
-        DBSPType type = this.convertType(minus.getRowType());
         boolean first = true;
         List<DBSPOperator> inputs = new ArrayList<>();
         for (RelNode input : minus.getInputs()) {
             DBSPOperator opInput = this.getOperator(input);
             if (!first) {
-                DBSPNegateOperator neg = new DBSPNegateOperator(minus, type, opInput);
+                DBSPNegateOperator neg = new DBSPNegateOperator(minus, opInput);
                 Objects.requireNonNull(this.circuit).addOperator(neg);
                 inputs.add(neg);
             } else {
@@ -403,12 +403,12 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             first = false;
         }
 
-        DBSPSumOperator sum = new DBSPSumOperator(minus, type, inputs);
+        DBSPSumOperator sum = new DBSPSumOperator(minus, inputs);
         if (minus.all) {
             this.assignOperator(minus, sum);
         } else {
             Objects.requireNonNull(this.circuit).addOperator(sum);
-            DBSPDistinctOperator d = new DBSPDistinctOperator(minus, type, sum);
+            DBSPDistinctOperator d = new DBSPDistinctOperator(minus, sum);
             this.assignOperator(minus, d);
         }
     }
@@ -459,27 +459,38 @@ public class CalciteToDBSPCompiler extends RelVisitor {
 
     private void visitJoin(LogicalJoin join) {
         assert this.circuit != null;
-        DBSPType type = this.convertType(join.getRowType());
+        JoinRelType joinType = join.getJoinType();
+        if (joinType == JoinRelType.ANTI || joinType == JoinRelType.SEMI)
+            throw new Unimplemented(join);
+
+        DBSPTypeTuple resultType = this.convertType(join.getRowType()).to(DBSPTypeTuple.class);
         if (join.getInputs().size() != 2)
             throw new TranslationException("Unexpected join with " + join.getInputs().size() + " inputs", join);
-        if (join.getJoinType().isOuterJoin())
-            throw new Unimplemented(join);
         DBSPOperator left = this.getOperator(join.getInput(0));
         DBSPOperator right = this.getOperator(join.getInput(1));
-        DBSPType leftElementType = left.getNonVoidType().to(DBSPTypeZSet.class).elementType;
+        DBSPTypeTuple leftElementType = left.getNonVoidType().to(DBSPTypeZSet.class).elementType
+                .to(DBSPTypeTuple.class);
 
         JoinConditionAnalyzer analyzer = new JoinConditionAnalyzer(
                 leftElementType.to(DBSPTypeTuple.class).size());
         JoinConditionAnalyzer.ConditionDecomposition decomposition = analyzer.analyze(join.getCondition());
         // If any key field is nullable we need to filter the inputs; this will make key columns non-nullable
-        left = this.filterNonNullKeys(join, Linq.map(decomposition.comparisons, c -> c.leftColumn), left);
-        right = this.filterNonNullKeys(join, Linq.map(decomposition.comparisons, c -> c.rightColumn), right);
+        DBSPOperator filteredLeft = this.filterNonNullKeys(join, Linq.map(decomposition.comparisons, c -> c.leftColumn), left);
+        DBSPOperator filteredRight = this.filterNonNullKeys(join, Linq.map(decomposition.comparisons, c -> c.rightColumn), right);
 
-        leftElementType = left.getNonVoidType().to(DBSPTypeZSet.class).elementType;
-        DBSPType rightElementType = right.getNonVoidType().to(DBSPTypeZSet.class).elementType;
+        leftElementType = filteredLeft.getNonVoidType().to(DBSPTypeZSet.class).elementType.to(DBSPTypeTuple.class);
+        DBSPTypeTuple rightElementType = filteredRight.getNonVoidType().to(DBSPTypeZSet.class).elementType
+                .to(DBSPTypeTuple.class);
+
+        int leftColumns = leftElementType.size();
+        int rightColumns = rightElementType.size();
+        int totalColumns = leftColumns + rightColumns;
+        DBSPTypeTuple leftResultType = resultType.slice(0, leftColumns);
+        DBSPTypeTuple rightResultType = resultType.slice(leftColumns, leftColumns + rightColumns);
+
         DBSPVariableReference l = new DBSPVariableReference("l", new DBSPTypeRef(leftElementType));
         DBSPVariableReference r = new DBSPVariableReference("r", new DBSPTypeRef(rightElementType));
-        DBSPExpression lr = DBSPTupleExpression.flatten(l, r);
+        DBSPTupleExpression lr = DBSPTupleExpression.flatten(l, r);
         DBSPVariableReference t = new DBSPVariableReference("t", Objects.requireNonNull(lr.getNonVoidType()));
         List<DBSPExpression> leftKeyFields = Linq.map(
                 decomposition.comparisons,
@@ -513,28 +524,123 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 l.asParameter());
         DBSPIndexOperator lindex = new DBSPIndexOperator(
                 join, this.circuit.declareLocal("index", toLeftKey).getVarReference(),
-                leftKey.getNonVoidType(), leftElementType, left);
-        Objects.requireNonNull(this.circuit).addOperator(lindex);
+                leftKey.getNonVoidType(), leftElementType, filteredLeft);
+        this.circuit.addOperator(lindex);
 
         DBSPClosureExpression toRightKey = new DBSPClosureExpression(
                 new DBSPRawTupleExpression(rightKey, DBSPTupleExpression.flatten(r)),
                 r.asParameter());
         DBSPIndexOperator rIndex = new DBSPIndexOperator(
                 join, this.circuit.declareLocal("index", toRightKey).getVarReference(),
-                rightKey.getNonVoidType(), rightElementType, right);
+                rightKey.getNonVoidType(), rightElementType, filteredRight);
         this.circuit.addOperator(rIndex);
 
-        DBSPClosureExpression makePairs = new DBSPClosureExpression(null,
-                DBSPTupleExpression.flatten(l, r),
-                k.asRefParameter(), l.asParameter(), r.asParameter());
-        DBSPJoinOperator joinResult = new DBSPJoinOperator(join, type, makePairs, lindex, rIndex);
+        // For outer joins additional columns may become nullable.
+        DBSPTupleExpression allFields = lr.pointwiseCast(resultType);
+        DBSPClosureExpression makeTuple = new DBSPClosureExpression(
+                allFields, k.asRefParameter(), l.asParameter(), r.asParameter());
+        DBSPJoinOperator joinResult = new DBSPJoinOperator(join, resultType,
+                this.circuit.declareLocal("pair", makeTuple).getVarReference(), lindex, rIndex);
+
+        DBSPOperator inner = joinResult;
         if (condition != null) {
-            DBSPFilterOperator fop = new DBSPFilterOperator(join, condition, type, joinResult);
+            DBSPFilterOperator fop = new DBSPFilterOperator(join, condition, resultType, joinResult);
             this.circuit.addOperator(joinResult);
-            this.assignOperator(join, fop);
-        } else {
-            this.assignOperator(join, joinResult);
+            inner = fop;
         }
+
+        // Handle outer joins
+        DBSPOperator result = inner;
+        DBSPVariableReference joinVar = new DBSPVariableReference("j", resultType);
+        if (joinType == JoinRelType.LEFT || joinType == JoinRelType.FULL) {
+            DBSPVariableReference lCasted = new DBSPVariableReference("l", leftResultType);
+            this.circuit.addOperator(result);
+            // project the join on the left columns
+            DBSPClosureExpression toLeftColumns = new DBSPClosureExpression(
+                    DBSPTupleExpression.flatten(joinVar)
+                            .slice(0, leftColumns)
+                            .pointwiseCast(leftResultType),
+                    joinVar.asRefParameter());
+            DBSPOperator joinLeftColumns = new DBSPMapOperator(
+                    join, this.circuit.declareLocal("proj", toLeftColumns).getVarReference(),
+                    leftResultType, inner);
+            this.circuit.addOperator(joinLeftColumns);
+            DBSPOperator distJoin = new DBSPDistinctOperator(join, joinLeftColumns);
+            this.circuit.addOperator(distJoin);
+
+            // subtract from left relation
+            DBSPOperator leftCast = left;
+            if (!leftResultType.same(leftElementType)) {
+                DBSPClosureExpression castLeft = new DBSPClosureExpression(
+                    DBSPTupleExpression.flatten(l).pointwiseCast(leftResultType),
+                    l.asParameter()
+                );
+                leftCast = new DBSPMapOperator(join, castLeft, leftResultType, left);
+                this.circuit.addOperator(leftCast);
+            }
+            DBSPOperator sub = new DBSPSubtractOperator(join, leftCast, distJoin);
+            this.circuit.addOperator(sub);
+            DBSPDistinctOperator dist = new DBSPDistinctOperator(join, sub);
+            this.circuit.addOperator(dist);
+
+            // fill nulls in the right relation fields
+            DBSPTupleExpression rEmpty = new DBSPTupleExpression(
+                    Linq.map(rightElementType.tupFields,
+                             et -> new DBSPLiteral(et.setMayBeNull(true)), DBSPExpression.class));
+            DBSPClosureExpression leftRow = new DBSPClosureExpression(
+                    DBSPTupleExpression.flatten(lCasted, rEmpty),
+                    lCasted.asRefParameter());
+            DBSPOperator expand = new DBSPMapOperator(join,
+                    this.circuit.declareLocal("expand", leftRow).getVarReference(), resultType, dist);
+            this.circuit.addOperator(expand);
+            result = new DBSPSumOperator(join, result, expand);
+        }
+        if (joinType == JoinRelType.RIGHT || joinType == JoinRelType.FULL) {
+            DBSPVariableReference rCasted = new DBSPVariableReference("r", rightResultType);
+            this.circuit.addOperator(result);
+
+            // project the join on the right columns
+            DBSPClosureExpression toRightColumns = new DBSPClosureExpression(
+                    DBSPTupleExpression.flatten(joinVar)
+                            .slice(leftColumns, totalColumns)
+                            .pointwiseCast(rightResultType),
+                    joinVar.asRefParameter());
+            DBSPOperator joinRightColumns = new DBSPMapOperator(
+                    join, this.circuit.declareLocal("proj", toRightColumns).getVarReference(),
+                    rightResultType, inner);
+            this.circuit.addOperator(joinRightColumns);
+            DBSPOperator distJoin = new DBSPDistinctOperator(join, joinRightColumns);
+            this.circuit.addOperator(distJoin);
+
+            // subtract from right relation
+            DBSPOperator rightCast = right;
+            if (!rightResultType.same(rightElementType)) {
+                DBSPClosureExpression castRight = new DBSPClosureExpression(
+                        DBSPTupleExpression.flatten(r).pointwiseCast(rightResultType),
+                        r.asParameter()
+                );
+                rightCast = new DBSPMapOperator(join, castRight, rightResultType, right);
+                this.circuit.addOperator(rightCast);
+            }
+            DBSPOperator sub = new DBSPSubtractOperator(join, rightCast, distJoin);
+            this.circuit.addOperator(sub);
+            DBSPDistinctOperator dist = new DBSPDistinctOperator(join, sub);
+            this.circuit.addOperator(dist);
+
+            // fill nulls in the left relation fields
+            DBSPTupleExpression lEmpty = new DBSPTupleExpression(
+                    Linq.map(leftElementType.tupFields,
+                            et -> new DBSPLiteral(et.setMayBeNull(true)), DBSPExpression.class));
+            DBSPClosureExpression rightRow = new DBSPClosureExpression(
+                    DBSPTupleExpression.flatten(lEmpty, rCasted),
+                    rCasted.asRefParameter());
+            DBSPOperator expand = new DBSPMapOperator(join,
+                    this.circuit.declareLocal("expand", rightRow).getVarReference(), resultType, dist);
+            this.circuit.addOperator(expand);
+            result = new DBSPSumOperator(join, result, expand);
+        }
+
+        this.assignOperator(join, Objects.requireNonNull(result));
     }
 
     /**
@@ -624,7 +730,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 }
                 i++;
             }
-            DBSPTupleExpression expression = new DBSPTupleExpression(t, resultType, exprs);
+            DBSPTupleExpression expression = new DBSPTupleExpression(t, exprs);
             result.add(expression);
         }
 

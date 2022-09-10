@@ -105,8 +105,8 @@ public class Main {
             //"../../sqllogictest/test/s.test"
             //"../../sqllogictest/test/random/select"
             //"../../sqllogictest/test/random/expr"
-            //"../../sqllogictest/test/random/aggregates"
-            "../../sqllogictest/test/random/groupby"
+            "../../sqllogictest/test/random/aggregates/"
+            //"../../sqllogictest/test/random/groupby"
             //"../../sqllogictest/test/select1.test"
         ;
         if (argv.length > 1)

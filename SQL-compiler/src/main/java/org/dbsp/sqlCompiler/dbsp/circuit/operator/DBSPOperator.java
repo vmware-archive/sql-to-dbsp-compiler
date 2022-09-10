@@ -27,7 +27,6 @@ package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPClosureExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.util.IndentStringBuilder;
@@ -100,16 +99,23 @@ public class DBSPOperator extends DBSPNode implements IHasName, IHasType {
         if (function.getNonVoidType().is(DBSPTypeAny.class))
             return;
         DBSPType sourceElementType;
-        if (source.outputType.is(DBSPTypeZSet.class)) {
-            sourceElementType = source.outputType.to(DBSPTypeZSet.class).elementType;
-        } else if (source.outputType.is(DBSPTypeIndexedZSet.class)) {
-            sourceElementType = source.outputType.to(DBSPTypeIndexedZSet.class).elementType;
+        DBSPTypeZSet zSet = source.outputType.as(DBSPTypeZSet.class);
+        DBSPTypeIndexedZSet iZSet = source.outputType.as(DBSPTypeIndexedZSet.class);
+        if (zSet != null) {
+            sourceElementType = new DBSPTypeRef(zSet.elementType);
+        } else if (iZSet != null) {
+            sourceElementType = new DBSPTypeRawTuple(
+                    new DBSPTypeRef(iZSet.keyType),
+                    new DBSPTypeRef(iZSet.elementType));
         } else {
             throw new RuntimeException("Source " + source + " does not produce an (Indexed)ZSet, but "
                     + source.outputType);
         }
         DBSPTypeFunction funcType = function.getNonVoidType().to(DBSPTypeFunction.class);
-        if (sourceElementType.same(funcType.argumentTypes[arg]))
+        DBSPType argType = funcType.argumentTypes[arg];
+        if (argType.is(DBSPTypeAny.class))
+            return;
+        if (!sourceElementType.same(argType))
             throw new RuntimeException(this + ": Expected function to accept " + sourceElementType +
                     " as argument " + arg + " but it expects " + funcType.argumentTypes[arg]);
     }
