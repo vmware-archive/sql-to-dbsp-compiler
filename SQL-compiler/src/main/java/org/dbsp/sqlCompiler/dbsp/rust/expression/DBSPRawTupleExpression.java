@@ -23,10 +23,12 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRawTuple;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
 import org.dbsp.util.IndentStringBuilder;
-import org.dbsp.util.Linq;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -34,8 +36,14 @@ import java.util.List;
  */
 public class DBSPRawTupleExpression extends DBSPTupleExpression {
     public DBSPRawTupleExpression(DBSPExpression... fields) {
-        super(null, new DBSPTypeRawTuple(
-                null, Linq.map(Linq.list(fields), DBSPExpression::getNonVoidType)), Linq.list(fields));
+        super(fields);
+    }
+
+    @Nullable
+    @Override
+    public DBSPType getType() {
+        assert this.type != null;
+        return new DBSPTypeRawTuple(this.type.to(DBSPTypeTuple.class).tupFields);
     }
 
     public <T extends DBSPExpression> DBSPRawTupleExpression(List<T> fields) {

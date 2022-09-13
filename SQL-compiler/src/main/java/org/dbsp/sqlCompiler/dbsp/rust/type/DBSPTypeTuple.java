@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.dbsp.rust.type;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPSimplePathSegment;
 import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -127,5 +128,11 @@ public class DBSPTypeTuple extends DBSPType {
             if (!this.tupFields[i].same(other.tupFields[i]))
                 return false;
         return true;
+    }
+
+    public DBSPTypeTuple slice(int start, int endExclusive) {
+        if (endExclusive <= start)
+            throw new RuntimeException("Incorrect slice parameters " + start + ":" + endExclusive);
+        return new DBSPTypeTuple(Utilities.arraySlice(this.tupFields, start, endExclusive));
     }
 }

@@ -26,7 +26,7 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPClosureExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 
 import javax.annotation.Nullable;
@@ -34,7 +34,7 @@ import javax.annotation.Nullable;
 public class DBSPJoinOperator extends DBSPOperator {
     public DBSPJoinOperator(@Nullable Object node, DBSPType resultType,
                             // Closure from key, valueLeft, valueRight to result type
-                            DBSPClosureExpression function,
+                            DBSPExpression function,
                             DBSPOperator left, DBSPOperator right) {
         super(node, "stream_join", function, TypeCompiler.makeZSet(resultType));
         this.addInput(left);

@@ -19,29 +19,21 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ *
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.expression;
-
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.dbsp.rust.type.IHasType;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import javax.annotation.Nullable;
 
-public abstract class DBSPExpression extends DBSPNode implements IHasType {
-    // Null for an expression that evaluates to void.
-    @Nullable
-    protected final DBSPType type;
-
-    protected DBSPExpression(@Nullable Object node, @Nullable DBSPType type) {
-        super(node);
-        this.type = type;
-    }
-
-    @Override
-    @Nullable
-    public DBSPType getType() {
-        return this.type;
+public class DBSPSubtractOperator extends DBSPOperator {
+    public DBSPSubtractOperator(@Nullable Object node, DBSPOperator left, DBSPOperator right) {
+        super(node, "minus", null, left.outputType);
+        this.addInput(left);
+        this.addInput(right);
+        if (!left.outputType.same(right.outputType))
+            throw new RuntimeException("Inputs do not have the same type " + left.outputType +
+                    " and " + right.outputType);
     }
 }

@@ -25,18 +25,11 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-
 import javax.annotation.Nullable;
 
 public class DBSPNegateOperator extends DBSPOperator {
-    public DBSPNegateOperator(@Nullable Object node, DBSPType elementType, DBSPOperator input) {
-        super(node, "neg", null, TypeCompiler.makeZSet(elementType));
+    public DBSPNegateOperator(@Nullable Object node, DBSPOperator input) {
+        super(node, "neg", null, input.outputType);
         this.addInput(input);
-        if (!input.outputType.same(this.outputType)) {
-            throw new RuntimeException("Neg operator input type " + input.outputType +
-                    " does not match output type " + this.outputType);
-        }
     }
 }

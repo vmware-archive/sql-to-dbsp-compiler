@@ -29,13 +29,14 @@ import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeStream;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
 public class DBSPSumOperator extends DBSPOperator {
-    public DBSPSumOperator(@Nullable Object node, DBSPType elementType, List<DBSPOperator> inputs) {
-        super(node, "sum", null, TypeCompiler.makeZSet(elementType));
+    public DBSPSumOperator(@Nullable Object node, List<DBSPOperator> inputs) {
+        super(node, "sum", null, inputs.get(0).outputType);
         for (DBSPOperator op: inputs) {
             this.addInput(op);
             if (!op.outputType.same(this.outputType)) {
@@ -43,6 +44,10 @@ public class DBSPSumOperator extends DBSPOperator {
                         " does not match output type " + this.outputType);
             }
         }
+    }
+
+    public DBSPSumOperator(@Nullable Object node, DBSPOperator... inputs) {
+        this(node, Linq.list(inputs));
     }
 
     @Override

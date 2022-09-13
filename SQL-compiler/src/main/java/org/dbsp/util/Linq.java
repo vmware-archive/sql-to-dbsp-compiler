@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -102,6 +103,21 @@ public class Linq {
         S[] result = (S[])Array.newInstance(sc, data.length);
         for (int i=0; i < data.length; i++)
             result[i] = function.apply(data[i]);
+        return result;
+    }
+
+    public static <T, S, R> R[] zip(T[] left, S[] right, BiFunction<T, S, R> function, Class<R> rc) {
+        @SuppressWarnings("unchecked")
+        R[] result = (R[])Array.newInstance(rc, Math.min(left.length, right.length));
+        for (int i=0; i < result.length; i++)
+            result[i] = function.apply(left[i], right[i]);
+        return result;
+    }
+
+    public static <T, S, R> List<R> zip(List<T> left, List<S> right, BiFunction<T, S, R> function) {
+        List<R> result = new ArrayList<>();
+        for (int i=0; i < Math.min(left.size(), right.size()); i++)
+            result.add(function.apply(left.get(i), right.get(i)));
         return result;
     }
 

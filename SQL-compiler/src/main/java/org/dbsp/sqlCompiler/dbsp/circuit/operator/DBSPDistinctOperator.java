@@ -31,12 +31,8 @@ import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import javax.annotation.Nullable;
 
 public class DBSPDistinctOperator extends DBSPOperator {
-    public DBSPDistinctOperator(@Nullable Object node, DBSPType outputElementType, DBSPOperator input) {
-        super(node, "distinct", null, TypeCompiler.makeZSet(outputElementType));
+    public DBSPDistinctOperator(@Nullable Object node, DBSPOperator input) {
+        super(node, "distinct", null, input.outputType);
         this.addInput(input);
-        if (!input.outputType.same(this.outputType)) {
-            throw new RuntimeException("Distinct operator input type " + input.outputType +
-                    " does not match output type " + this.outputType);
-        }
     }
 }
