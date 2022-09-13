@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use std::ops::Add;
-use dbsp::algebra::{F32, F64};
+use dbsp::algebra::{F32, F64, ZRingValue};
 
 #[inline(always)]
 pub fn or_b_b(left: bool, right: bool) -> bool
@@ -371,5 +371,18 @@ pub fn div_dN_dN(left: Option<F64>, right: Option<F64>) -> Option<F64>
         (None, _) => None,
         (_, None) => None,
         (Some(left), Some(right)) => Some(F64::new(left.into_inner() / right.into_inner())),
+    }
+}
+
+pub fn weighted_push<T, W>(vec: &mut Vec<T>, value: &T, weight: W)
+where
+    W: ZRingValue,
+    T: Clone,
+{
+    let mut w = weight;
+    let negone = W::one().neg();
+    while w != W::zero() {
+        vec.push(value.clone());
+        w = w.add_by_ref(&negone);
     }
 }

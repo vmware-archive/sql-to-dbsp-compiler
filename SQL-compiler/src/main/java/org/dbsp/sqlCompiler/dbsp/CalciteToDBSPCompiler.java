@@ -26,6 +26,7 @@
 package org.dbsp.sqlCompiler.dbsp;
 
 import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.Aggregate;
@@ -33,7 +34,6 @@ import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.logical.*;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlExplainFormat;
@@ -43,6 +43,8 @@ import org.dbsp.sqlCompiler.dbsp.circuit.operator.*;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.*;
+import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPExpressionStatement;
+import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqlCompiler.frontend.*;
 import org.dbsp.util.*;
@@ -52,7 +54,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class CalciteToDBSPCompiler extends RelVisitor {
-    final boolean debug = false;
+    final boolean debug = true;
 
     /**
      * Type of weight used in generated z-sets.
@@ -742,7 +744,99 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         }
     }
 
-    @Override public void visit(
+    public void visitSort(LogicalSort sort) {
+        assert this.circuit != null;
+        // Aggregate in a single group.
+        // TODO: make this more efficient?
+        RelNode input = sort.getInput();
+        DBSPType inputRowType = this.convertType(input.getRowType());
+        DBSPOperator opInput = this.getOperator(input);
+
+        DBSPVariableReference t = new DBSPVariableReference("t", inputRowType);
+        DBSPExpression groupKeys = new DBSPClosureExpression(
+                new DBSPRawTupleExpression(
+                        new DBSPRawTupleExpression(),
+                        DBSPTupleExpression.flatten(t)),
+                t.asRefParameter());
+        DBSPIndexOperator index = new DBSPIndexOperator(
+                sort, this.circuit.declareLocal("index", groupKeys).getVarReference(),
+                new DBSPTypeRawTuple(), inputRowType, opInput);
+        this.circuit.addOperator(index);
+        // apply an aggregation function that just creates a vector.
+        DBSPTypeVec vecType = new DBSPTypeVec(inputRowType);
+        DBSPExpression constructor = new DBSPPathExpression(DBSPTypeAny.instance,
+                new DBSPPath("Fold", "new"));
+        DBSPExpression zero = new DBSPApplyExpression(new DBSPPathExpression(DBSPTypeAny.instance,
+                new DBSPPath(vecType.name, "new")));
+        DBSPVariableReference accum = new DBSPVariableReference("a", vecType);
+        DBSPVariableReference row = new DBSPVariableReference("v", inputRowType);
+        DBSPExpression wPush = new DBSPApplyExpression("weighted_push", null, accum, row, weight);
+        DBSPExpression push = new DBSPClosureExpression(wPush,
+                accum.asRefParameter(true), row.asRefParameter(), CalciteToDBSPCompiler.weight.asParameter());
+        DBSPExpression folder = new DBSPApplyExpression(constructor, zero, push);
+        DBSPAggregateOperator agg = new DBSPAggregateOperator(sort,
+                this.circuit.declareLocal("tovec", folder).getVarReference(),
+                new DBSPTypeRawTuple(), new DBSPTypeVec(inputRowType), index);
+        this.circuit.addOperator(agg);
+
+        // Generate comparison function
+        DBSPExpression comparators = null;
+        for (RelFieldCollation collation: sort.getCollation().getFieldCollations()) {
+            int field = collation.getFieldIndex();
+            RelFieldCollation.Direction direction = collation.getDirection();
+            DBSPExpression comparator = new DBSPApplyExpression(
+                    new DBSPPathExpression(DBSPTypeAny.instance,
+                            new DBSPPath("Extract", "new")),
+                    new DBSPClosureExpression(new DBSPFieldExpression(row, field), row.asRefParameter()));
+            switch (direction) {
+                case ASCENDING:
+                    break;
+                case DESCENDING:
+                    comparator = new DBSPApplyMethodExpression("rev", DBSPTypeAny.instance, comparator);
+                    break;
+                case STRICTLY_ASCENDING:
+                case STRICTLY_DESCENDING:
+                case CLUSTERED:
+                    throw new Unimplemented(sort);
+            }
+            if (comparators == null)
+                comparators = comparator;
+            else
+                comparators = new DBSPApplyMethodExpression("then", DBSPTypeAny.instance, comparators, comparator);
+        }
+        if (comparators == null)
+            throw new TranslationException("ORDER BY without order?", sort);
+        DBSPLetStatement comp = this.circuit.declareLocal("comp", comparators);
+        DBSPVariableReference k = new DBSPVariableReference("k", new DBSPTypeRef(new DBSPTypeRawTuple()));
+        DBSPVariableReference v = new DBSPVariableReference("v", new DBSPTypeRef(vecType));
+        DBSPVariableReference v1 = new DBSPVariableReference("v1", vecType);
+
+        DBSPVariableReference a = new DBSPVariableReference("a", inputRowType);
+        DBSPVariableReference b = new DBSPVariableReference("b", inputRowType);
+        DBSPExpression sorter = new DBSPClosureExpression(
+                new DBSPBlockExpression(
+                    Linq.list(
+                            new DBSPLetStatement(v1.variable,
+                                    new DBSPApplyMethodExpression("clone", v.getNonVoidType(), v),
+                                    true),
+                            new DBSPExpressionStatement(
+                                    new DBSPApplyMethodExpression("sort_by", vecType, v1,
+                                            new DBSPClosureExpression(
+                                                    new DBSPApplyMethodExpression("compare", DBSPTypeAny.instance, comp.getVarReference(), a, b),
+                                                    a.asRefParameter(), b.asRefParameter())))),
+                    v1),
+                new DBSPClosureExpression.Parameter(k, v));
+        DBSPOperator sortElement = new DBSPMapOperator(sort,
+                this.circuit.declareLocal("sort", sorter).getVarReference(), vecType, agg);
+        this.assignOperator(sort, sortElement);
+    }
+
+    public void visitCorrelate(LogicalCorrelate correlate) {
+
+    }
+
+    @Override
+    public void visit(
             RelNode node, int ordinal,
             @org.checkerframework.checker.nullness.qual.Nullable RelNode parent) {
         stack.add(new Context(parent, ordinal));
@@ -759,7 +853,9 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 this.visitIfMatches(node, LogicalFilter.class, this::visitFilter) ||
                 this.visitIfMatches(node, LogicalValues.class, this::visitLogicalValues) ||
                 this.visitIfMatches(node, LogicalAggregate.class, this::visitAggregate) ||
-                this.visitIfMatches(node, LogicalJoin.class, this::visitJoin);
+                this.visitIfMatches(node, LogicalCorrelate.class, this::visitCorrelate) ||
+                this.visitIfMatches(node, LogicalJoin.class, this::visitJoin) ||
+                this.visitIfMatches(node, LogicalSort.class, this::visitSort);
         if (!success)
             throw new Unimplemented(node);
         if (stack.size() == 0)
@@ -816,15 +912,9 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     }
 
     private DBSPSinkOperator createOutput(ViewDDL v, DBSPOperator source) {
-        List<DBSPType> fields = new ArrayList<>();
         if (v.compiled == null)
             throw new TranslationException("Could not compile ", v.getNode());
-        for (RelDataTypeField field: v.compiled.validatedRowType.getFieldList()) {
-            DBSPType fType = this.convertType(field.getType());
-            fields.add(fType);
-        }
-        DBSPTypeTuple type = new DBSPTypeTuple(v, fields);
-        DBSPSinkOperator result = new DBSPSinkOperator(v, this.makeZSet(type), v.name, source);
+        DBSPSinkOperator result = new DBSPSinkOperator(v, source.getNonVoidType(), v.name, source);
         return Utilities.putNew(this.ioOperator, v.name, result);
     }
 }

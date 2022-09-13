@@ -62,8 +62,9 @@ public class DBSPVariableReference extends DBSPExpression {
     }
 
     public DBSPClosureExpression.Parameter asRefParameter(boolean mutable) {
-        return new DBSPClosureExpression.Parameter(this.asPattern(mutable),
-                new DBSPTypeRef(this.getNonVoidType()));
+        return new DBSPClosureExpression.Parameter(
+                this.asPattern(),
+                new DBSPTypeRef(this.getNonVoidType(), mutable));
     }
 
     public DBSPClosureExpression.Parameter asRefParameter() {

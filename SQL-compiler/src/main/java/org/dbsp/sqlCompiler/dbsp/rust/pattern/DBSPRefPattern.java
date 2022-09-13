@@ -42,6 +42,7 @@ public class DBSPRefPattern extends DBSPPattern {
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append("&")
-                .append(this.mutable ? "mut " : "");
+                .append(this.mutable ? "mut " : "")
+                .append(this.pattern);
     }
 }

@@ -157,7 +157,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPExpression left = operands.get(0);
         DBSPExpression right = operands.get(1);
         if (left == null || right == null)
-            throw new Unimplemented("Found unimplemented expression in " + node);
+            throw new Unimplemented(node);
         DBSPType leftType = left.getNonVoidType();
         DBSPType rightType = right.getNonVoidType();
         DBSPType commonBase = reduceType(leftType, rightType);

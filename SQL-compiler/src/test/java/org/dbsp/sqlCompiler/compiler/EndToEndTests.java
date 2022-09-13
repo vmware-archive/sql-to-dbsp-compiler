@@ -6,10 +6,7 @@ import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLiteral;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
@@ -437,5 +434,32 @@ public class EndToEndTests {
         this.testQuery(query, new DBSPZSetLiteral(
                 CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
                 new DBSPLiteral(184, true))));
+    }
+
+    @Test
+    public void orderbyTest() {
+        String query = "SELECT * FROM T ORDER BY T.COL2";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType,
+                new DBSPVecLiteral(this.e1, this.e0)
+        ));
+    }
+
+    @Test
+    public void orderbyDescendingTest() {
+        String query = "SELECT * FROM T ORDER BY T.COL2 DESC";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType,
+                new DBSPVecLiteral(this.e0, this.e1)
+        ));
+    }
+
+    @Test
+    public void orderby2Test() {
+        String query = "SELECT * FROM T ORDER BY T.COL2, T.COL1";
+        this.testQuery(query, new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType,
+                new DBSPVecLiteral(this.e1, this.e0)
+        ));
     }
 }

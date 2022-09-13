@@ -63,6 +63,7 @@ public class DBSPCircuit extends DBSPNode {
             "use crate::test::sqllib::*;\n" +
             "use deepsize::DeepSizeOf;\n" +
             "use ::serde::{Deserialize,Serialize};\n" +
+            "use compare::{Compare, Extract};\n" +
             "use std::{\n" +
             "    convert::identity,\n" +
             "    fmt::{Debug, Formatter, Result as FmtResult},\n" +
@@ -70,7 +71,7 @@ public class DBSPCircuit extends DBSPNode {
             "    rc::Rc,\n" +
             "};\n" +
             "use tuple::declare_tuples;\n" +
-            "use sqllibbool::*;\n" +
+            "use ::sqllib::*;\n" +
             "use sqlvalue::*;\n" +
             "use hashing::*;\n" +
             "type Weight = isize;\n";

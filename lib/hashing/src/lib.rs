@@ -117,3 +117,36 @@ where
     let digest = md5::compute(builder);
     return format!("{:x}", digest)
 }
+
+/// Version of hash that takes the result of orderby: a zset that is expected
+/// to contain a single vector with all the data.
+pub fn hash_vectors<K, W>(set: &OrdZSet<Vec<K>, W>, format: String, _order: SortOrder) -> String
+where
+    K: Ord + Clone + Debug + 'static + ToSqlRow,
+    W: ZRingValue,
+{
+    // Result of orderby - there should be at most one row in the set.
+    let mut builder = String::default();
+    let mut cursor = set.cursor();
+    while cursor.key_valid() {
+        let w = cursor.weight();
+        if w != W::one() {
+            panic!("Weight is not one!");
+        }
+        let row_vec: Vec<K> = cursor.key().to_vec();
+        let sql_rows = row_vec.iter().map(|k| k.to_row());
+        let mut vec = Vec::<Vec::<String>>::with_capacity(sql_rows.len());
+        for row in sql_rows {
+            let row_vec = row.to_slt_strings(&format);
+            vec.push(row_vec);
+        }
+        for row in vec {
+            for col in row {
+                builder = builder + &col + "\n"
+            }
+        }
+        cursor.step_key();
+    }
+    let digest = md5::compute(builder);
+    return format!("{:x}", digest)
+}

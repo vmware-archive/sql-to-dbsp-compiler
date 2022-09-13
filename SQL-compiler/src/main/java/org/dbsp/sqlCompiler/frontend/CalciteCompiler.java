@@ -120,6 +120,7 @@ public class CalciteCompiler {
 
         SqlToRelConverter.Config converterConfig = SqlToRelConverter.config()
                 .withTrimUnusedFields(true)
+                .withDecorrelationEnabled(true)
                 .withExpand(true);
         this.converter = new SqlToRelConverter(
                 (type, query, schema, path) -> null,

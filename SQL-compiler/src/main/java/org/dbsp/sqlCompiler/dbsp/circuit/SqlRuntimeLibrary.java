@@ -390,8 +390,9 @@ public class SqlRuntimeLibrary {
             DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
             if (description.hash == null)
                 throw new RuntimeException("Expected hash to be supplied");
+            String hash = description.order.equals(SqlTestOutputDescription.SortOrder.None) ? "hash_vectors" : "hash";
             list.add(new DBSPLetStatement("_hash",
-                    new DBSPApplyExpression("hash", DBSPTypeString.instance,
+                    new DBSPApplyExpression(hash, DBSPTypeString.instance,
                             new DBSPBorrowExpression(output0),
                             columnTypes,
                             sort)));

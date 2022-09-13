@@ -21,32 +21,10 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.expression;
+package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPStatement;
-import org.dbsp.util.IndentStringBuilder;
-
-import javax.annotation.Nullable;
-import java.util.List;
-
-public class DBSPBlockExpression extends DBSPExpression {
-    public final List<DBSPStatement> contents;
-    @Nullable
-    public final DBSPExpression lastExpression;
-
-    public DBSPBlockExpression(List<DBSPStatement> contents, @Nullable DBSPExpression last) {
-        super(null, last != null ? last.getType() : null);
-        this.contents = contents;
-        this.lastExpression = last;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append("{").increase()
-                .intercalate("\n", this.contents);
-        if (this.lastExpression != null)
-            builder.append(this.lastExpression)
-                    .append("\n");
-        return builder.decrease().append("}");
+public class DBSPTypeVec extends DBSPTypeUser {
+    public DBSPTypeVec(DBSPType typeArg) {
+        super(null, "Vec", false, typeArg);
     }
 }
