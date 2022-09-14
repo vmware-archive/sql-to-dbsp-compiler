@@ -21,14 +21,8 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.type;
+package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
-public class DBSPTypeVec extends DBSPTypeUser {
-    public DBSPTypeVec(DBSPType typeArg) {
-        super(null, "Vec", false, typeArg);
-    }
-
-    public DBSPType getElementType() {
-        return this.getTypeArg(0);
-    }
+public interface IDBSPContainter {
+    void add(DBSPExpression expression);
 }

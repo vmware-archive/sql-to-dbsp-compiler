@@ -26,8 +26,6 @@
 package org.dbsp.sqlCompiler.frontend;
 
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.ddl.SqlColumnDeclaration;
-import org.apache.calcite.sql.validate.SqlValidator;
 
 /**
  * Describes information about a column in a SQL table.

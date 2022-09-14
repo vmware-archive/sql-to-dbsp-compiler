@@ -7,6 +7,7 @@ use dbsp::{
     algebra::{
         ZRingValue,
         ZSet,
+        MulByRef,
     },
 };
 use core::{
@@ -98,6 +99,31 @@ where
     vec
 }
 
+/// Version of hash that takes the result of orderby: a zset that is expected
+/// to contain a single vector with all the data.
+pub fn zset_of_vectors_to_strings<K, W>(set: &OrdZSet<Vec<K>, W>, format: String, _order: SortOrder) -> Vec<Vec<String>>
+where
+    K: Ord + Clone + Debug + 'static + ToSqlRow,
+    W: ZRingValue,
+{
+    let mut vec = Vec::<Vec::<String>>::new();
+    let mut cursor = set.cursor();
+    while cursor.key_valid() {
+        let w = cursor.weight();
+        if w != W::one() {
+            panic!("Weight is not one!");
+        }
+        let row_vec: Vec<K> = cursor.key().to_vec();
+        let sql_rows = row_vec.iter().map(|k| k.to_row());
+        for row in sql_rows {
+            let row_vec = row.to_slt_strings(&format);
+            vec.push(row_vec);
+        }
+        cursor.step_key();
+    }
+    vec
+}
+
 /// This function mimics the md5 checksum computation from SqlLogicTest
 /// The format is from the SqlLogicTest query output string format
 pub fn hash<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> String
@@ -147,6 +173,26 @@ where
         }
         cursor.step_key();
     }
+    // println!("{}", builder);
     let digest = md5::compute(builder);
     return format!("{:x}", digest)
+}
+
+// The count of elements in a zset that contains a vector is
+// given by the count of the elements of the vector times the
+// weight of the vector.
+pub fn weighted_vector_count<K, W>(set: &OrdZSet<Vec<K>, W>) -> isize
+where
+    K: Ord + Clone + Debug + 'static + ToSqlRow,
+    W: ZRingValue,
+    isize: MulByRef<W, Output = isize>,
+{
+    let mut sum: isize = 0;
+    let mut cursor = set.cursor();
+    while cursor.key_valid() {
+        let key = cursor.key();
+        sum = sum + (key.len() as isize).mul_by_ref(&cursor.weight());
+        cursor.step_key();
+    }
+    sum
 }

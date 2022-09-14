@@ -46,8 +46,10 @@ import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
 import org.apache.calcite.sql.util.SqlOperatorTables;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
+import org.apache.calcite.sql2rel.RelDecorrelator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
+import org.apache.calcite.tools.RelBuilder;
 import org.dbsp.util.TranslationException;
 import org.dbsp.util.Unimplemented;
 
@@ -73,6 +75,7 @@ public class CalciteCompiler {
     public final RelDataTypeFactory typeFactory;
     @Nullable
     private CalciteProgram program;
+    private final SqlToRelConverter.Config converterConfig;
 
     // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
     public CalciteCompiler() {
@@ -108,17 +111,16 @@ public class CalciteCompiler {
                 this.typeFactory,
                 validatorConfig
         );
-        RelOptPlanner planner = new VolcanoPlanner(
-                RelOptCostImpl.FACTORY,
-                Contexts.of(connectionConfig)
-        );
+        RelOptPlanner planner= new VolcanoPlanner(
+                    RelOptCostImpl.FACTORY,
+                    Contexts.of(connectionConfig));
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
         this.cluster = RelOptCluster.create(
                 planner,
                 new RexBuilder(this.typeFactory)
         );
 
-        SqlToRelConverter.Config converterConfig = SqlToRelConverter.config()
+        this.converterConfig = SqlToRelConverter.config()
                 .withTrimUnusedFields(true)
                 .withDecorrelationEnabled(true)
                 .withExpand(true);
@@ -128,7 +130,7 @@ public class CalciteCompiler {
                 catalogReader,
                 this.cluster,
                 StandardConvertletTable.INSTANCE,
-                converterConfig
+                this.converterConfig
         );
         this.simulator = new SqlSimulator(this.simple, this.typeFactory, this.validator);
     }
@@ -187,12 +189,9 @@ public class CalciteCompiler {
             ViewDDL view = result.as(ViewDDL.class);
             if (view != null) {
                 RelRoot relRoot = this.converter.convertQuery(view.query, true, true);
+                RelBuilder relBuilder = this.converterConfig.getRelBuilderFactory().create(cluster, null);
+                relRoot = relRoot.withRel(RelDecorrelator.decorrelateQuery(relRoot.rel, relBuilder));
                 view.setCompiledQuery(relRoot);
-                /*
-                if (!relRoot.collation.getKeys().isEmpty()) {
-                    throw new UnsupportedException("ORDER BY", relRoot);
-                }
-                 */
                 this.program.addView(view);
                 return view;
             }

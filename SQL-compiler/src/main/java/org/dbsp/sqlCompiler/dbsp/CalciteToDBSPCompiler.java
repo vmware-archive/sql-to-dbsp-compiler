@@ -36,8 +36,7 @@ import org.apache.calcite.rel.logical.*;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.sql.SqlExplainFormat;
-import org.apache.calcite.sql.SqlExplainLevel;
+import org.apache.calcite.sql.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.*;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
@@ -54,7 +53,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class CalciteToDBSPCompiler extends RelVisitor {
-    final boolean debug = true;
+    final boolean debug = false;
 
     /**
      * Type of weight used in generated z-sets.
@@ -650,42 +649,105 @@ public class CalciteToDBSPCompiler extends RelVisitor {
      */
     static class DMLTranslation {
         /**
-         * Type of the table that is being inserted into.
-         */
-        @Nullable
-        public DBSPType tableType;
-        /**
          * Translation result.
          */
         @Nullable
         private DBSPZSetLiteral logicalValueTranslation;
+        /**
+         * Maps each column index to the actual destination column index.
+         * This handles SQL statements such as
+         * INSERT INTO t1(e,c,b,d,a) VALUES(103,102,100,101,104);
+         * which specify explicitly the order of columns.
+         */
+        @Nullable
+        private HashMap<Integer, Integer> columnPermutation;
+        /**
+         * Circuit input operator representing the table that is being written.
+         */
+        @Nullable
+        public DBSPSourceOperator source;
+        @Nullable
+        DBSPTypeTuple resultType;
 
         DMLTranslation() {
-            this.tableType = null;
             this.logicalValueTranslation = null;
+            this.source = null;
         }
 
-        void prepare(DBSPType type) {
+        void prepare(SqlNode rootNode, DBSPSourceOperator source, @Nullable SqlNodeList columnList) {
             this.logicalValueTranslation = null;
-            this.tableType = type;
+            this.source = source;
+            DBSPTypeTuple sourceType = this.source
+                    .getNonVoidType()
+                    .to(DBSPTypeZSet.class)
+                    .elementType
+                    .to(DBSPTypeTuple.class);
+            if (columnList != null) {
+                // The column list specifies an order for the columns that are assigned,
+                // which may not be the order of the columns in the table.  We need to
+                // compute a permutation.
+                this.columnPermutation = new HashMap<>();
+                int index = 0;
+                DBSPType[] columnTypes = new DBSPType[columnList.size()];
+                for (SqlNode node : columnList) {
+                    if (!(node instanceof SqlIdentifier))
+                        throw new Unimplemented(rootNode);
+                    SqlIdentifier id = (SqlIdentifier) node;
+                    int actualIndex = this.source.ddlDef.getColumnIndex(id);
+                    // This must be a permutation
+                    for (int value: this.columnPermutation.values())
+                        if (value == actualIndex)
+                            throw new TranslationException("Not a column permutation " +
+                                    this.columnPermutation, rootNode);
+                    Utilities.putNew(this.columnPermutation, index, actualIndex);
+                    columnTypes[index] = sourceType.getFieldType(actualIndex);
+                    index++;
+                }
+                this.resultType = new DBSPTypeTuple(columnTypes);
+            } else {
+                this.resultType = sourceType;
+            }
         }
 
         public DBSPZSetLiteral getTranslation() {
             return Objects.requireNonNull(this.logicalValueTranslation);
         }
 
-        public DBSPType getResultType() {
-            return Objects.requireNonNull(this.tableType);
+        public DBSPTypeTuple getResultType() {
+            return Objects.requireNonNull(this.resultType);
+        }
+
+        DBSPExpression permuteColumns(DBSPExpression expression) {
+            assert this.columnPermutation != null;
+            DBSPExpression[] columns = new DBSPExpression[this.columnPermutation.size()];
+            DBSPTupleExpression tuple = expression.to(DBSPTupleExpression.class);
+            for (Map.Entry<Integer, Integer> e: this.columnPermutation.entrySet()) {
+                columns[e.getValue()] = tuple.get(e.getKey());
+            }
+            return new DBSPTupleExpression(columns);
+        }
+
+        DBSPZSetLiteral permuteColumns(DBSPZSetLiteral source) {
+            assert this.resultType != null;
+            if (this.columnPermutation == null)
+                return source;
+            DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPTypeZSet(
+                    this.resultType, CalciteToDBSPCompiler.weightType));
+            for (Map.Entry<DBSPExpression, Integer> e: source.data.entrySet()) {
+                DBSPExpression perm = this.permuteColumns(e.getKey());
+                result.add(perm, e.getValue());
+            }
+            return result;
         }
 
         public void setResult(DBSPZSetLiteral literal) {
             if (this.logicalValueTranslation != null)
                 throw new RuntimeException("Overwriting logical value translation");
-            this.logicalValueTranslation = literal;
+            this.logicalValueTranslation = this.permuteColumns(literal);
         }
 
         public boolean prepared() {
-            return this.tableType != null;
+            return this.source != null;
         }
     }
 
@@ -702,11 +764,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
 
         DBSPTypeTuple resultType;
         if (ddmTranslation) {
-            resultType = this.dmTranslation
-                    .getResultType()
-                    .to(DBSPTypeZSet.class)
-                    .elementType
-                    .to(DBSPTypeTuple.class);
+            resultType = this.dmTranslation.getResultType();
             if (sourceType.size() != resultType.size())
                 throw new TranslationException("Expected a tuple with " + resultType.size() +
                         " values but got " + values, values);
@@ -832,7 +890,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     }
 
     public void visitCorrelate(LogicalCorrelate correlate) {
-
+        // TODO
     }
 
     @Override
@@ -842,6 +900,10 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         stack.add(new Context(parent, ordinal));
         if (debug)
             System.out.println("Visiting " + node);
+        if (this.nodeOperator.containsKey(node))
+            // We have already done this one.  This can happen because the
+            // plan can be a DAG, not just a tree.
+            return;
         // First process children
         super.visit(node, ordinal, parent);
         // Synthesize current node
@@ -870,7 +932,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             this.circuit.addOperator(si);
         }
         for (ViewDDL view: program.views) {
-            RelNode rel = Objects.requireNonNull(view.compiled).rel;
+            RelNode rel = view.getRelNode();
             // Dump plan
             if (this.debug)
                 System.out.println(
@@ -894,8 +956,12 @@ public class CalciteToDBSPCompiler extends RelVisitor {
      */
     public void extendTransaction(DBSPTransaction transaction, TableModifyStatement statement) {
         // The type of the data must be extracted from the modified table
-        DBSPOperator op = Utilities.getExists(this.ioOperator, statement.table);
-        this.dmTranslation.prepare(op.getNonVoidType());
+        DBSPSourceOperator op = Utilities.getExists(this.ioOperator, statement.table).to(DBSPSourceOperator.class);
+        if (!(statement.node instanceof SqlInsert))
+            throw new Unimplemented(statement);
+        SqlInsert insert = (SqlInsert) statement.node;
+        this.dmTranslation.prepare(
+                statement.node, op, insert.getTargetColumnList());
         this.go(statement.rel);
         transaction.addSet(statement.table, this.dmTranslation.getTranslation());
     }
@@ -912,8 +978,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     }
 
     private DBSPSinkOperator createOutput(ViewDDL v, DBSPOperator source) {
-        if (v.compiled == null)
-            throw new TranslationException("Could not compile ", v.getNode());
         DBSPSinkOperator result = new DBSPSinkOperator(v, source.getNonVoidType(), v.name, source);
         return Utilities.putNew(this.ioOperator, v.name, result);
     }

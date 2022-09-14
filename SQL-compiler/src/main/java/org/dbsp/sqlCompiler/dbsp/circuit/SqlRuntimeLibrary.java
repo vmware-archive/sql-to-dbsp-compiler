@@ -90,6 +90,7 @@ public class SqlRuntimeLibrary {
         this.arithmeticFunctions.put("bxor", "^");
         this.arithmeticFunctions.put("min", "min");
         this.arithmeticFunctions.put("max", "max");
+        this.arithmeticFunctions.put("abs", "abs");
 
         this.doubleFunctions.put("eq", "==");
         this.doubleFunctions.put("neq", "!=");
@@ -102,6 +103,7 @@ public class SqlRuntimeLibrary {
         this.doubleFunctions.put("mod", "%");
         this.doubleFunctions.put("times", "*");
         this.doubleFunctions.put("div", "/");
+        this.doubleFunctions.put("abs", "abs");
 
         //this.stringFunctions.put("s_concat", "+");
         this.stringFunctions.put("eq", "==");
@@ -111,6 +113,8 @@ public class SqlRuntimeLibrary {
         this.booleanFunctions.put("neq", "!=");
         this.booleanFunctions.put("and", "&&");
         this.booleanFunctions.put("or", "||");
+        this.booleanFunctions.put("min", "min");
+        this.booleanFunctions.put("max", "max");
 
         this.comparisons.add("==");
         this.comparisons.add("!=");
@@ -217,7 +221,6 @@ public class SqlRuntimeLibrary {
                         op.equals("/"))
                     // Hand-written rules in a separate library
                     continue;
-                boolean method = false;
                 for (int i = 0; i < 4; i++) {
                     DBSPType leftType;
                     DBSPType rightType;
@@ -267,19 +270,11 @@ public class SqlRuntimeLibrary {
                         if (i == 0) {
                             DBSPExpression leftVar = new DBSPVariableReference("left", rawType);
                             DBSPExpression rightVar = new DBSPVariableReference("right", rawType);
-                            if (method)
-                                def = new DBSPApplyMethodExpression(op, type, leftVar, rightVar);
-                            else
-                                def = new DBSPBinaryExpression(type, op, leftVar, rightVar);
+                            def = new DBSPBinaryExpression(type, op, leftVar, rightVar);
                         } else {
-                            if (method)
-                                def = new DBSPApplyMethodExpression(op, type,
-                                        new DBSPVariableReference("l", rawType),
-                                        new DBSPVariableReference("r", rawType));
-                            else
-                                def = new DBSPBinaryExpression(type, op,
-                                        new DBSPVariableReference("l", rawType),
-                                        new DBSPVariableReference("r", rawType));
+                            def = new DBSPBinaryExpression(type, op,
+                                    new DBSPVariableReference("l", rawType),
+                                    new DBSPVariableReference("r", rawType));
                             def = new DBSPMatchExpression(
                                     new DBSPRawTupleExpression(
                                             new DBSPVariableReference("left", leftType),
@@ -365,14 +360,23 @@ public class SqlRuntimeLibrary {
             if (description.columnTypes != null) {
                 DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
                 DBSPTypeZSet otype = output.getNonVoidType().to(DBSPTypeZSet.class);
+                String functionProducingStrings;
+                DBSPType elementType;
+                if (otype.elementType.is(DBSPTypeVec.class)) {
+                    functionProducingStrings = "zset_of_vectors_to_strings";
+                    elementType = otype.elementType.to(DBSPTypeVec.class).getElementType();
+                } else {
+                     functionProducingStrings = "zset_to_strings";
+                     elementType = otype.elementType;
+                }
                 DBSPExpression zset_to_strings = new DBSPQualifyTypeExpression(
-                        new DBSPVariableReference("zset_to_strings", DBSPTypeAny.instance),
-                        otype.elementType,
+                        new DBSPVariableReference(functionProducingStrings, DBSPTypeAny.instance),
+                        elementType,
                         otype.weightType
                 );
                 list.add(new DBSPExpressionStatement(
                         new DBSPApplyExpression("assert_eq!", null,
-                                new DBSPApplyExpression("zset_to_strings", DBSPTypeAny.instance,
+                                new DBSPApplyExpression(functionProducingStrings, DBSPTypeAny.instance,
                                         new DBSPBorrowExpression(output0),
                                     columnTypes,
                                     sort),
@@ -403,12 +407,19 @@ public class SqlRuntimeLibrary {
                                     new DBSPLiteral(description.hash))));
         }
         if (description.getExpectedOutputSize() >= 0) {
+            DBSPExpression count;
+            if (description.order.equals(SqlTestOutputDescription.SortOrder.None)) {
+                count = new DBSPApplyExpression("weighted_vector_count",
+                        DBSPTypeUSize.instance,
+                        new DBSPBorrowExpression(output0));
+            } else {
+                count = new DBSPApplyMethodExpression("weighted_count",
+                        DBSPTypeUSize.instance,
+                        output0);
+            }
             list.add(new DBSPExpressionStatement(
                     new DBSPApplyExpression("assert_eq!", null,
-                            new DBSPApplyMethodExpression("weighted_count",
-                                    DBSPTypeUSize.instance,
-                                    output0),
-                            new DBSPLiteral(description.getExpectedOutputSize()))));
+                            count, new DBSPLiteral(description.getExpectedOutputSize()))));
         }
         DBSPExpression body = new DBSPBlockExpression(list, null);
         return new DBSPFunction(name, new ArrayList<>(), null, body);

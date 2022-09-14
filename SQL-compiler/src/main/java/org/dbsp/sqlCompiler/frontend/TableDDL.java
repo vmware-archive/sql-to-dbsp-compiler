@@ -31,7 +31,9 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
+import org.dbsp.util.TranslationException;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
@@ -74,5 +76,16 @@ public class TableDDL extends AbstractTable implements ScannableTable, Simulator
     @Override
     public SqlNode getNode() {
         return this.node;
+    }
+
+    /**
+     * Return the index of the specified column.
+     */
+    public int getColumnIndex(SqlIdentifier id) {
+        for (int i = 0; i < this.columns.size(); i++) {
+            if (this.columns.get(i).name.equals(id.toString()))
+                return i;
+        }
+        throw new TranslationException("Column not found", id);
     }
 }

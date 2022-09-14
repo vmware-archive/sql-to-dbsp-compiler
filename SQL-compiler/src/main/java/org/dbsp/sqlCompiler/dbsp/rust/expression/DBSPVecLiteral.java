@@ -33,9 +33,15 @@ import java.util.List;
 /**
  * Represents a (constant) vector described by its elements.
  */
-public class DBSPVecLiteral extends DBSPExpression {
+public class DBSPVecLiteral extends DBSPExpression implements IDBSPContainter {
     private final List<DBSPExpression> data;
     public final DBSPTypeVec vecType;
+
+    public DBSPVecLiteral(DBSPType elementType) {
+        super(null, new DBSPTypeVec(elementType));
+        this.data = new ArrayList<>();
+        this.vecType = new DBSPTypeVec(elementType);
+    }
 
     public DBSPVecLiteral(DBSPExpression... data) {
         super(null, new DBSPTypeVec(data[0].getNonVoidType()));
