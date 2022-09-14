@@ -1,5 +1,5 @@
 [package]
-name = "sqllibbool"
+name = "sqllib"
 version = "0.1.0"
 edition = "2021"
 

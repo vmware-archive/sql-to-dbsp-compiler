@@ -157,7 +157,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPExpression left = operands.get(0);
         DBSPExpression right = operands.get(1);
         if (left == null || right == null)
-            throw new Unimplemented("Found unimplemented expression in " + node);
+            throw new Unimplemented(node);
         DBSPType leftType = left.getNonVoidType();
         DBSPType rightType = right.getNonVoidType();
         DBSPType commonBase = reduceType(leftType, rightType);
@@ -281,7 +281,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
             case CAST:
                 return makeCast(ops.get(0), type);
             case IS_NULL:
-            case IS_NOT_NULL:
+            case IS_NOT_NULL: {
                 if (!type.same(DBSPTypeBool.instance))
                     throw new TranslationException("Expected expression to produce a boolean result", call);
                 DBSPExpression arg = ops.get(0);
@@ -300,7 +300,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                     else
                         return new DBSPLiteral(true);
                 }
-            case CASE:
+            }
+            case CASE: {
                 /*
                 A switched case (CASE x WHEN x1 THEN v1 ... ELSE e END)
                 has an even number of arguments and odd-numbered arguments are predicates.
@@ -313,7 +314,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                     // Compute casts if needed.
                     DBSPType finalType = result.getNonVoidType();
                     for (int i = 1; i < ops.size() - 1; i += 2) {
-                        if (ops.get(i+1).getNonVoidType().mayBeNull)
+                        if (ops.get(i + 1).getNonVoidType().mayBeNull)
                             finalType = finalType.setMayBeNull(true);
                     }
                     if (!result.getNonVoidType().same(finalType))
@@ -349,6 +350,19 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                     }
                 }
                 return result;
+            }
+            case OTHER_FUNCTION: {
+                if (call.op.getName().equals("ABS")) {
+                    if (call.operands.size() != 1)
+                        throw new Unimplemented(call);
+                    DBSPExpression arg = ops.get(0);
+                    DBSPType argType = arg.getNonVoidType();
+                    SqlRuntimeLibrary.FunctionDescription abs =
+                            SqlRuntimeLibrary.instance.getFunction("abs", argType, null, false);
+                    return new DBSPApplyExpression(abs.function, abs.returnType, arg);
+                }
+            }
+            // fall through
             case FLOOR:
             case CEIL:
             default:

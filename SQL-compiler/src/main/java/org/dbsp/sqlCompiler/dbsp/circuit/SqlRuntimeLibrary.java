@@ -29,11 +29,7 @@ import org.dbsp.sqlCompiler.dbsp.rust.DBSPFile;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.*;
-import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPExpressionStatement;
-import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPLetStatement;
-import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
-import org.dbsp.sqllogictest.SqlTestOutputDescription;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Unimplemented;
 
@@ -90,6 +86,7 @@ public class SqlRuntimeLibrary {
         this.arithmeticFunctions.put("bxor", "^");
         this.arithmeticFunctions.put("min", "min");
         this.arithmeticFunctions.put("max", "max");
+        this.arithmeticFunctions.put("abs", "abs");
 
         this.doubleFunctions.put("eq", "==");
         this.doubleFunctions.put("neq", "!=");
@@ -102,6 +99,7 @@ public class SqlRuntimeLibrary {
         this.doubleFunctions.put("mod", "%");
         this.doubleFunctions.put("times", "*");
         this.doubleFunctions.put("div", "/");
+        this.doubleFunctions.put("abs", "abs");
 
         //this.stringFunctions.put("s_concat", "+");
         this.stringFunctions.put("eq", "==");
@@ -111,6 +109,8 @@ public class SqlRuntimeLibrary {
         this.booleanFunctions.put("neq", "!=");
         this.booleanFunctions.put("and", "&&");
         this.booleanFunctions.put("or", "||");
+        this.booleanFunctions.put("min", "min");
+        this.booleanFunctions.put("max", "max");
 
         this.comparisons.add("==");
         this.comparisons.add("!=");
@@ -217,7 +217,6 @@ public class SqlRuntimeLibrary {
                         op.equals("/"))
                     // Hand-written rules in a separate library
                     continue;
-                boolean method = false;
                 for (int i = 0; i < 4; i++) {
                     DBSPType leftType;
                     DBSPType rightType;
@@ -267,19 +266,11 @@ public class SqlRuntimeLibrary {
                         if (i == 0) {
                             DBSPExpression leftVar = new DBSPVariableReference("left", rawType);
                             DBSPExpression rightVar = new DBSPVariableReference("right", rawType);
-                            if (method)
-                                def = new DBSPApplyMethodExpression(op, type, leftVar, rightVar);
-                            else
-                                def = new DBSPBinaryExpression(type, op, leftVar, rightVar);
+                            def = new DBSPBinaryExpression(type, op, leftVar, rightVar);
                         } else {
-                            if (method)
-                                def = new DBSPApplyMethodExpression(op, type,
-                                        new DBSPVariableReference("l", rawType),
-                                        new DBSPVariableReference("r", rawType));
-                            else
-                                def = new DBSPBinaryExpression(type, op,
-                                        new DBSPVariableReference("l", rawType),
-                                        new DBSPVariableReference("r", rawType));
+                            def = new DBSPBinaryExpression(type, op,
+                                    new DBSPVariableReference("l", rawType),
+                                    new DBSPVariableReference("r", rawType));
                             def = new DBSPMatchExpression(
                                     new DBSPRawTupleExpression(
                                             new DBSPVariableReference("left", leftType),
@@ -323,93 +314,5 @@ public class SqlRuntimeLibrary {
         this.program.toRustString(builder);
         writer.append(builder.toString());
         writer.close();
-    }
-
-    /**
-     * Generates a Rust function which tests a DBSP circuit.
-     * @param name          Name of the generated function.
-     * @param inputFunction Name of function which generates the input data.
-     * @param circuit       DBSP circuit that will be tested.
-     * @param output        Expected data from the circuit.
-     * @param description   Description of the expected outputs.
-     * @return              The code for a function that runs the circuit with the specified
-     *                      input and tests the produced output.
-     */
-    public static DBSPFunction createTesterCode(
-            String name,
-            String inputFunction,
-            DBSPCircuit circuit,
-            @Nullable DBSPZSetLiteral output,
-            SqlTestOutputDescription description) {
-        List<DBSPStatement> list = new ArrayList<>();
-        list.add(new DBSPLetStatement("circuit",
-                new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true));
-        // the following may not be the same, since SqlLogicTest sometimes lies about the output type
-        DBSPType outputType = output != null ? new DBSPTypeRawTuple(output.getNonVoidType()) : circuit.getOutputtype();
-        DBSPExpression[] arguments = new DBSPExpression[circuit.getInputTables().size()];
-
-        list.add(new DBSPLetStatement("_in",
-                new DBSPApplyExpression(inputFunction, DBSPTypeAny.instance)));
-        for (int i = 0; i < arguments.length; i++) {
-            arguments[i] = new DBSPFieldExpression(null,
-                    new DBSPVariableReference("_in", DBSPTypeAny.instance), i);
-        }
-        list.add(new DBSPLetStatement("output",
-                new DBSPApplyExpression("circuit", outputType, arguments)));
-
-        DBSPExpression sort = new DBSPEnumValue("SortOrder", description.order.toString());
-        DBSPExpression output0 = new DBSPFieldExpression(null,
-                new DBSPVariableReference("output", outputType), 0);
-
-        if (output != null) {
-            if (description.columnTypes != null) {
-                DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
-                DBSPTypeZSet otype = output.getNonVoidType().to(DBSPTypeZSet.class);
-                DBSPExpression zset_to_strings = new DBSPQualifyTypeExpression(
-                        new DBSPVariableReference("zset_to_strings", DBSPTypeAny.instance),
-                        otype.elementType,
-                        otype.weightType
-                );
-                list.add(new DBSPExpressionStatement(
-                        new DBSPApplyExpression("assert_eq!", null,
-                                new DBSPApplyExpression("zset_to_strings", DBSPTypeAny.instance,
-                                        new DBSPBorrowExpression(output0),
-                                    columnTypes,
-                                    sort),
-                                new DBSPApplyExpression(zset_to_strings,
-                                        new DBSPBorrowExpression(output),
-                                        columnTypes,
-                                        sort))));
-            } else {
-                list.add(new DBSPExpressionStatement(new DBSPApplyExpression(
-                        "assert_eq!", null, output0, output)));
-            }
-        } else {
-            if (description.columnTypes == null)
-                throw new RuntimeException("Expected column types to be supplied");
-            DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
-            if (description.hash == null)
-                throw new RuntimeException("Expected hash to be supplied");
-            list.add(new DBSPLetStatement("_hash",
-                    new DBSPApplyExpression("hash", DBSPTypeString.instance,
-                            new DBSPBorrowExpression(output0),
-                            columnTypes,
-                            sort)));
-            list.add(
-                    new DBSPExpressionStatement(
-                            new DBSPApplyExpression("assert_eq!", null,
-                                    new DBSPVariableReference("_hash", DBSPTypeString.instance),
-                                    new DBSPLiteral(description.hash))));
-        }
-        if (description.getExpectedOutputSize() >= 0) {
-            list.add(new DBSPExpressionStatement(
-                    new DBSPApplyExpression("assert_eq!", null,
-                            new DBSPApplyMethodExpression("weighted_count",
-                                    DBSPTypeUSize.instance,
-                                    output0),
-                            new DBSPLiteral(description.getExpectedOutputSize()))));
-        }
-        DBSPExpression body = new DBSPBlockExpression(list, null);
-        return new DBSPFunction(name, new ArrayList<>(), null, body);
     }
 }

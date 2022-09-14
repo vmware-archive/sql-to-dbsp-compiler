@@ -25,10 +25,12 @@
 
 package org.dbsp.sqlCompiler.frontend;
 
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.sql.SqlNode;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * The representation of a CREATE VIEW AS ... DDL statement.
@@ -47,7 +49,7 @@ public class ViewDDL implements SimulatorResult {
      * Compiled and optimized query.
      */
     @Nullable
-    public RelRoot compiled;
+    private RelRoot compiled;
 
     public ViewDDL(SqlNode node, String name, SqlNode query) {
         this.node = node;
@@ -63,5 +65,9 @@ public class ViewDDL implements SimulatorResult {
 
     public void setCompiledQuery(RelRoot compiled) {
         this.compiled = compiled;
+    }
+
+    public RelNode getRelNode() {
+        return Objects.requireNonNull(this.compiled).rel;
     }
 }

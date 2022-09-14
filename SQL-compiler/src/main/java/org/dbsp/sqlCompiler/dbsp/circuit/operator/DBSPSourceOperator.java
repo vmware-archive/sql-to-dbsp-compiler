@@ -26,13 +26,15 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.frontend.TableDDL;
 import org.dbsp.util.IndentStringBuilder;
 
-import javax.annotation.Nullable;
-
 public class DBSPSourceOperator extends DBSPOperator {
-    public DBSPSourceOperator(@Nullable Object node, DBSPType outputType, String name) {
-        super(node, "", null, outputType, name);
+    public final TableDDL ddlDef;
+
+    public DBSPSourceOperator(TableDDL ddlDef, DBSPType outputType, String name) {
+        super(ddlDef.getNode(), "", null, outputType, name);
+        this.ddlDef = ddlDef;
     }
 
     @Override

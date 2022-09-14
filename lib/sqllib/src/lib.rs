@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use std::ops::Add;
-use dbsp::algebra::{F32, F64};
+use dbsp::algebra::{F32, F64, ZRingValue};
 
 #[inline(always)]
 pub fn or_b_b(left: bool, right: bool) -> bool
@@ -371,5 +371,93 @@ pub fn div_dN_dN(left: Option<F64>, right: Option<F64>) -> Option<F64>
         (None, _) => None,
         (_, None) => None,
         (Some(left), Some(right)) => Some(F64::new(left.into_inner() / right.into_inner())),
+    }
+}
+
+#[inline(always)]
+pub fn abs_i16_(left: i16) -> i16
+{
+    left.abs()
+}
+
+#[inline(always)]
+pub fn abs_i32_(left: i32) -> i32
+{
+    left.abs()
+}
+
+#[inline(always)]
+pub fn abs_i64_(left: i64) -> i64
+{
+    left.abs()
+}
+
+#[inline(always)]
+pub fn abs_i16N_(left: Option<i16>) -> Option<i16>
+{
+    match left {
+        Some(l) => Some(l.abs()),
+        _ => None::<i16>,
+    }
+}
+
+#[inline(always)]
+pub fn abs_i32N_(left: Option<i32>) -> Option<i32>
+{
+    match left {
+        Some(l) => Some(l.abs()),
+        _ => None::<i32>,
+    }
+}
+
+#[inline(always)]
+pub fn abs_i64N_(left: Option<i64>) -> Option<i64>
+{
+    match left {
+        Some(l) => Some(l.abs()),
+        _ => None::<i64>,
+    }
+}
+
+#[inline(always)]
+pub fn abs_f_(left: F32) -> F32
+{
+    left.abs()
+}
+
+#[inline(always)]
+pub fn abs_fN_(left: Option<F32>) -> Option<F32>
+{
+    match left {
+        Some(left) => Some(left.abs()),
+        None => None,
+    }
+}
+
+#[inline(always)]
+pub fn abs_d(left: F64) -> F64
+{
+    left.abs()
+}
+
+#[inline(always)]
+pub fn abs_dN(left: Option<F64>) -> Option<F64>
+{
+    match left {
+        Some(left) => Some(left.abs()),
+        None => None,
+    }
+}
+
+pub fn weighted_push<T, W>(vec: &mut Vec<T>, value: &T, weight: W)
+where
+    W: ZRingValue,
+    T: Clone,
+{
+    let mut w = weight;
+    let negone = W::one().neg();
+    while w != W::zero() {
+        vec.push(value.clone());
+        w = w.add_by_ref(&negone);
     }
 }

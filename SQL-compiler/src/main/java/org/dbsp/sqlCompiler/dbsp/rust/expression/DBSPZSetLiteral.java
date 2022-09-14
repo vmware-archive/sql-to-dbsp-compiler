@@ -35,9 +35,9 @@ import java.util.Map;
  * A ZSet is a map from tuples to integer weights.
  * In general weights should not be zero.
  */
-public class DBSPZSetLiteral extends DBSPExpression {
-    private final Map<DBSPExpression, Integer> data;
-    private final DBSPTypeZSet zsetType;
+public class DBSPZSetLiteral extends DBSPExpression implements IDBSPContainter {
+    public final Map<DBSPExpression, Integer> data;
+    public final DBSPTypeZSet zsetType;
 
     /**
      * Create a ZSet literal from a set of data values.

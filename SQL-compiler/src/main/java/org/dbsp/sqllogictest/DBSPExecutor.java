@@ -31,7 +31,6 @@ import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.ExpressionCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
-import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
@@ -128,12 +127,22 @@ public class DBSPExecutor implements ISqlTestExecutor {
 
         DBSPZSetLiteral expectedOutput = null;
         if (output.queryResults != null) {
+            IDBSPContainter container;
             if (dbsp.getOutputCount() != 1)
                 throw new RuntimeException(
                         "Didn't expect a query to have " + dbsp.getOutputCount() + " outputs");
-            DBSPType outputType = dbsp.getOutputType(0);
-            expectedOutput = new DBSPZSetLiteral(outputType);
-            DBSPTypeTuple outputElementType = expectedOutput.getElementType().to(DBSPTypeTuple.class);
+            DBSPTypeZSet outputType = dbsp.getOutputType(0).to(DBSPTypeZSet.class);
+            DBSPType elementType = outputType.elementType;
+            if (elementType.is(DBSPTypeVec.class)) {
+                elementType = elementType.to(DBSPTypeVec.class).getElementType();
+                DBSPVecLiteral vec = new DBSPVecLiteral(elementType);
+                container = vec;
+                expectedOutput = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, vec);
+            } else {
+                expectedOutput = new DBSPZSetLiteral(outputType);
+                container = expectedOutput;
+            }
+            DBSPTypeTuple outputElementType = elementType.to(DBSPTypeTuple.class);
 
             List<DBSPExpression> fields = new ArrayList<>();
             int col = 0;
@@ -157,7 +166,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
                 fields.add(field);
                 col++;
                 if (col == outputElementType.size()) {
-                    expectedOutput.add(new DBSPTupleExpression(outputElementType, fields));
+                    container.add(new DBSPTupleExpression(outputElementType, fields));
                     fields = new ArrayList<>();
                     col = 0;
                 }
@@ -186,7 +195,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
         }
 
         String rust = dbsp.toRustString();
-        DBSPFunction func = SqlRuntimeLibrary.createTesterCode(
+        DBSPFunction func = RustTestGenerator.createTesterCode(
                 "tester" + this.queryNo, inputFunctionName,
                 dbsp, expectedOutput, output);
         this.queries.add(new ProgramAndTester(rust, func));
