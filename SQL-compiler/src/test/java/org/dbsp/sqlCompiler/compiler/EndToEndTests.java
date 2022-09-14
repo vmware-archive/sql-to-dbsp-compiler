@@ -10,6 +10,7 @@ import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
+import org.dbsp.sqllogictest.RustTestGenerator;
 import org.dbsp.sqllogictest.SqlTestOutputDescription;
 import org.dbsp.util.Utilities;
 import org.junit.Before;
@@ -113,7 +114,7 @@ public class EndToEndTests {
         description.columnTypes = null;
         description.setValueCount(expectedOutput.size());
         description.order = SqlTestOutputDescription.SortOrder.Row;
-        DBSPFunction tester = SqlRuntimeLibrary.createTesterCode(
+        DBSPFunction tester = RustTestGenerator.createTesterCode(
                 "tester", "input",
                 circuit, expectedOutput, description);
         writer.println("#[test]");

@@ -31,7 +31,6 @@ import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.ExpressionCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
-import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
@@ -196,7 +195,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
         }
 
         String rust = dbsp.toRustString();
-        DBSPFunction func = SqlRuntimeLibrary.createTesterCode(
+        DBSPFunction func = RustTestGenerator.createTesterCode(
                 "tester" + this.queryNo, inputFunctionName,
                 dbsp, expectedOutput, output);
         this.queries.add(new ProgramAndTester(rust, func));

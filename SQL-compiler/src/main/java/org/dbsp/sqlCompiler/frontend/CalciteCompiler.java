@@ -190,6 +190,7 @@ public class CalciteCompiler {
             if (view != null) {
                 RelRoot relRoot = this.converter.convertQuery(view.query, true, true);
                 RelBuilder relBuilder = this.converterConfig.getRelBuilderFactory().create(cluster, null);
+                // This converts correlated sub-queries into standard joins.
                 relRoot = relRoot.withRel(RelDecorrelator.decorrelateQuery(relRoot.rel, relBuilder));
                 view.setCompiledQuery(relRoot);
                 this.program.addView(view);

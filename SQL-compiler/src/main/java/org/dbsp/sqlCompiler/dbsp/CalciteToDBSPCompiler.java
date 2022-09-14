@@ -811,13 +811,13 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         DBSPOperator opInput = this.getOperator(input);
 
         DBSPVariableReference t = new DBSPVariableReference("t", inputRowType);
-        DBSPExpression groupKeys = new DBSPClosureExpression(
+        DBSPExpression emptyGroupKeys = new DBSPClosureExpression(
                 new DBSPRawTupleExpression(
                         new DBSPRawTupleExpression(),
                         DBSPTupleExpression.flatten(t)),
                 t.asRefParameter());
         DBSPIndexOperator index = new DBSPIndexOperator(
-                sort, this.circuit.declareLocal("index", groupKeys).getVarReference(),
+                sort, this.circuit.declareLocal("index", emptyGroupKeys).getVarReference(),
                 new DBSPTypeRawTuple(), inputRowType, opInput);
         this.circuit.addOperator(index);
         // apply an aggregation function that just creates a vector.
@@ -828,6 +828,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 new DBSPPath(vecType.name, "new")));
         DBSPVariableReference accum = new DBSPVariableReference("a", vecType);
         DBSPVariableReference row = new DBSPVariableReference("v", inputRowType);
+        // An element with weight 'w' is pushed 'w' times into the vector
         DBSPExpression wPush = new DBSPApplyExpression("weighted_push", null, accum, row, weight);
         DBSPExpression push = new DBSPClosureExpression(wPush,
                 accum.asRefParameter(true), row.asRefParameter(), CalciteToDBSPCompiler.weight.asParameter());
@@ -837,7 +838,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 new DBSPTypeRawTuple(), new DBSPTypeVec(inputRowType), index);
         this.circuit.addOperator(agg);
 
-        // Generate comparison function
+        // Generate comparison function for sorting the vector
         DBSPExpression comparators = null;
         for (RelFieldCollation collation: sort.getCollation().getFieldCollations()) {
             int field = collation.getFieldIndex();
@@ -889,10 +890,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         this.assignOperator(sort, sortElement);
     }
 
-    public void visitCorrelate(LogicalCorrelate correlate) {
-        // TODO
-    }
-
     @Override
     public void visit(
             RelNode node, int ordinal,
@@ -915,7 +912,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 this.visitIfMatches(node, LogicalFilter.class, this::visitFilter) ||
                 this.visitIfMatches(node, LogicalValues.class, this::visitLogicalValues) ||
                 this.visitIfMatches(node, LogicalAggregate.class, this::visitAggregate) ||
-                this.visitIfMatches(node, LogicalCorrelate.class, this::visitCorrelate) ||
                 this.visitIfMatches(node, LogicalJoin.class, this::visitJoin) ||
                 this.visitIfMatches(node, LogicalSort.class, this::visitSort);
         if (!success)
