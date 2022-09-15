@@ -33,7 +33,7 @@ public class DBSPSourceOperator extends DBSPOperator {
     public final TableDDL ddlDef;
 
     public DBSPSourceOperator(TableDDL ddlDef, DBSPType outputType, String name) {
-        super(ddlDef.getNode(), "", null, outputType, name);
+        super(ddlDef.getNode(), "", null, outputType, false, name);
         this.ddlDef = ddlDef;
     }
 

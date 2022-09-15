@@ -34,9 +34,9 @@ import javax.annotation.Nullable;
 public class DBSPJoinOperator extends DBSPOperator {
     public DBSPJoinOperator(@Nullable Object node, DBSPType resultType,
                             // Closure from key, valueLeft, valueRight to result type
-                            DBSPExpression function,
+                            DBSPExpression function, boolean isMultiset,
                             DBSPOperator left, DBSPOperator right) {
-        super(node, "stream_join", function, TypeCompiler.makeZSet(resultType));
+        super(node, "stream_join", function, TypeCompiler.makeZSet(resultType), isMultiset);
         this.addInput(left);
         this.addInput(right);
         this.checkResultType(function, resultType);

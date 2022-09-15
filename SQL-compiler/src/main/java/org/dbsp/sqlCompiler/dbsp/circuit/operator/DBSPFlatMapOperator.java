@@ -34,7 +34,7 @@ import javax.annotation.Nullable;
 public class DBSPFlatMapOperator extends DBSPOperator {
     public DBSPFlatMapOperator(@Nullable Object node, DBSPExpression expression,
                                DBSPType resultType, DBSPOperator input) {
-        super(node, "flat_map", expression, TypeCompiler.makeZSet(resultType));
+        super(node, "flat_map", expression, TypeCompiler.makeZSet(resultType), true);
         this.addInput(input);
         this.checkArgumentFunctionType(expression, 0, input);
     }

@@ -29,8 +29,8 @@ import org.dbsp.util.IndentStringBuilder;
 import javax.annotation.Nullable;
 
 public class DBSPConstantOperator extends DBSPOperator {
-    public DBSPConstantOperator(@Nullable Object node, DBSPExpression value) {
-        super(node, "", value, value.getNonVoidType());
+    public DBSPConstantOperator(@Nullable Object node, DBSPExpression value, boolean isMultiset) {
+        super(node, "", value, value.getNonVoidType(), isMultiset);
     }
 
     @Override
