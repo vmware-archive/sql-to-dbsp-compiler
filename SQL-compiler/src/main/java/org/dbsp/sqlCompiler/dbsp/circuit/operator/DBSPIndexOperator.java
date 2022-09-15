@@ -34,9 +34,11 @@ import javax.annotation.Nullable;
 
 public class DBSPIndexOperator extends DBSPOperator {
     public DBSPIndexOperator(@Nullable Object node, DBSPExpression indexFunction,
-                             DBSPType keyType, DBSPType resultType, DBSPOperator input) {
+                             DBSPType keyType, DBSPType resultType, boolean isMultiset,
+                             DBSPOperator input) {
         super(node, "index_with", indexFunction,
-                new DBSPTypeIndexedZSet(node, keyType, resultType, CalciteToDBSPCompiler.weightType));
+                new DBSPTypeIndexedZSet(node, keyType, resultType, CalciteToDBSPCompiler.weightType),
+                isMultiset);
         this.addInput(input);
     }
 }

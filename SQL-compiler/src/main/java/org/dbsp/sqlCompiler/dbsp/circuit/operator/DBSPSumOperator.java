@@ -36,7 +36,7 @@ import java.util.List;
 
 public class DBSPSumOperator extends DBSPOperator {
     public DBSPSumOperator(@Nullable Object node, List<DBSPOperator> inputs) {
-        super(node, "sum", null, inputs.get(0).outputType);
+        super(node, "sum", null, inputs.get(0).outputType, true);
         for (DBSPOperator op: inputs) {
             this.addInput(op);
             if (!op.outputType.same(this.outputType)) {

@@ -58,20 +58,28 @@ public class DBSPOperator extends DBSPNode implements IHasName, IHasType {
      * Type of output produced.
      */
     final DBSPType outputType;
+    /**
+     * True if the output of the operator is a multiset.
+     */
+    public final boolean isMultiset;
 
     protected DBSPOperator(@Nullable Object node, String operation,
-                           @Nullable DBSPExpression function, DBSPType outputType, String outputName) {
+                           @Nullable DBSPExpression function, DBSPType outputType,
+                           boolean isMultiset, String outputName) {
         super(node);
         this.inputs = new ArrayList<>();
         this.operation = operation;
         this.function = function;
         this.outputName = outputName;
         this.outputType = outputType;
+        this.isMultiset = isMultiset;
     }
 
     public DBSPOperator(@Nullable Object node, String operation,
-                        @Nullable DBSPExpression function, DBSPType outputType) {
-        this(node, operation, function, outputType, new NameGen("stream").toString());
+                        @Nullable DBSPExpression function,
+                        DBSPType outputType, boolean isMultiset) {
+        this(node, operation, function, outputType, isMultiset,
+                new NameGen("stream").toString());
     }
 
     /**

@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 
 public class DBSPNegateOperator extends DBSPOperator {
     public DBSPNegateOperator(@Nullable Object node, DBSPOperator input) {
-        super(node, "neg", null, input.outputType);
+        super(node, "neg", null, input.outputType, input.isMultiset);
         this.addInput(input);
     }
 }

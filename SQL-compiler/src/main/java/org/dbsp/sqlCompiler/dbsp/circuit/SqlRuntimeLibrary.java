@@ -214,7 +214,7 @@ public class SqlRuntimeLibrary {
                 String op = h.get(f);
                 if (op.equals("&&") || op.equals("||") ||
                         op.equals("min") || op.equals("max") ||
-                        op.equals("/"))
+                        op.equals("/") || op.equals("abs"))
                     // Hand-written rules in a separate library
                     continue;
                 for (int i = 0; i < 4; i++) {
@@ -309,6 +309,7 @@ public class SqlRuntimeLibrary {
             throw new RuntimeException("No source program for writing the sql library");
         builder.append("// Automatically-generated file\n");
         builder.append("#![allow(unused_parens)]\n");
+        builder.append("#![allow(non_snake_case)]\n");
         builder.append("use dbsp::algebra::{F32, F64};\n");
         builder.append("\n");
         this.program.toRustString(builder);

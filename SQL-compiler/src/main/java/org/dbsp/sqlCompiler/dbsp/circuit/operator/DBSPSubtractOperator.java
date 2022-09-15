@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 
 public class DBSPSubtractOperator extends DBSPOperator {
     public DBSPSubtractOperator(@Nullable Object node, DBSPOperator left, DBSPOperator right) {
-        super(node, "minus", null, left.outputType);
+        super(node, "minus", null, left.outputType, false);
         this.addInput(left);
         this.addInput(right);
         if (!left.outputType.same(right.outputType))

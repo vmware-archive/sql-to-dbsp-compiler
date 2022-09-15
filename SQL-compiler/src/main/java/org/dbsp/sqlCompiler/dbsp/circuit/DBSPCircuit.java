@@ -59,8 +59,7 @@ public class DBSPCircuit extends DBSPNode {
             "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
             "    zset,\n" +
             "};\n" +
-            "mod sqllib;\n" +
-            "use crate::test::sqllib::*;\n" +
+            "use genlib::*;\n" +
             "use deepsize::DeepSizeOf;\n" +
             "use ::serde::{Deserialize,Serialize};\n" +
             "use compare::{Compare, Extract};\n" +
@@ -71,7 +70,7 @@ public class DBSPCircuit extends DBSPNode {
             "    rc::Rc,\n" +
             "};\n" +
             "use tuple::declare_tuples;\n" +
-            "use ::sqllib::*;\n" +
+            "use sqllib::*;\n" +
             "use sqlvalue::*;\n" +
             "use hashing::*;\n" +
             "type Weight = isize;\n";

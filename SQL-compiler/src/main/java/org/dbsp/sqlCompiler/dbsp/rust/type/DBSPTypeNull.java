@@ -31,21 +31,22 @@ import javax.annotation.Nullable;
  * This type has a single value, NULL.
  */
 public class DBSPTypeNull extends DBSPType {
-    public static final DBSPType instance = new DBSPTypeNull(null);
+    public static final DBSPType instance = new DBSPTypeNull(null, true);
 
     @SuppressWarnings("SameParameterValue")
-    protected DBSPTypeNull(@Nullable Object node) {
-        super(node, true);
+    protected DBSPTypeNull(@Nullable Object node, boolean mayBeNull) {
+        super(node, mayBeNull);
     }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
-        // Ignore
-        return this;
+        if (mayBeNull == this.mayBeNull)
+            return this;
+        return new DBSPTypeNull(null, mayBeNull);
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("Option<()>");
+        return this.wrapOption(builder, "()");
     }
 }

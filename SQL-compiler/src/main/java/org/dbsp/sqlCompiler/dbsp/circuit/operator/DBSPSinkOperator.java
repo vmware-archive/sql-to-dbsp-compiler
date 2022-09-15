@@ -31,8 +31,8 @@ import org.dbsp.util.IndentStringBuilder;
 import javax.annotation.Nullable;
 
 public class DBSPSinkOperator extends DBSPOperator {
-    public DBSPSinkOperator(@Nullable Object node, DBSPType outputType, String outputName, DBSPOperator input) {
-        super(node, "inspect", null, outputType, outputName);
+    public DBSPSinkOperator(@Nullable Object node, DBSPType outputType, String outputName, boolean isMultiset, DBSPOperator input) {
+        super(node, "inspect", null, outputType, isMultiset, outputName);
         this.addInput(input);
     }
 

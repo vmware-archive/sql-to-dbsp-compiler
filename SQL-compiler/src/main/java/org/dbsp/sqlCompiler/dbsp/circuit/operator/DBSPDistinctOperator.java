@@ -25,14 +25,11 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
-import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-
 import javax.annotation.Nullable;
 
 public class DBSPDistinctOperator extends DBSPOperator {
     public DBSPDistinctOperator(@Nullable Object node, DBSPOperator input) {
-        super(node, "distinct", null, input.outputType);
+        super(node, "distinct", null, input.outputType, false);
         this.addInput(input);
     }
 }

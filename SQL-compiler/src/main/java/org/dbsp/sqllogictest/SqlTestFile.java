@@ -124,11 +124,18 @@ public class SqlTestFile {
             if (line.startsWith("statement")) {
                 boolean ok = line.startsWith("statement ok");
                 line = this.nextLine(false);
+                StringBuilder statement = new StringBuilder();
+                while (!line.isEmpty()) {
+                    statement.append(line);
+                    line = this.nextLine(false);
+                }
+
+                String stat = statement.toString();
                 if (ok) {
-                    if (line.toLowerCase().contains("create table")) {
-                        this.prepareTables.add(line);
+                    if (stat.toLowerCase().contains("create table")) {
+                        this.prepareTables.add(stat);
                     } else {
-                        this.prepareInput.add(line);
+                        this.prepareInput.add(stat);
                     }
                 }
                 // Should we ignore the statements that should produce an error when executed,
@@ -277,32 +284,45 @@ public class SqlTestFile {
         long start = System.nanoTime();
         executor.run();
         long end = System.nanoTime();
-        System.out.println("Running " + executor.getQueryCount() +
-                " queries took " + (end - start) / 1000000000 + " seconds");
+        System.out.println("Running took " + (end - start) / 1000000000 + " seconds");
         executor.reset();
     }
 
-    void execute(ISqlTestExecutor executor, int batchSize, HashSet<String> calciteBugs)
+    @SuppressWarnings("SameParameterValue")
+    void execute(ISqlTestExecutor executor, int batchSize, int parallelism, HashSet<String> calciteBugs)
             throws SqlParseException, IOException, InterruptedException {
+        int index = 0;
+        int queryCount = 0;
         executor.reset();
         for (SqlTestQuery testQuery : this.tests) {
-            executor.prepareTables(this.prepareTables);
             if (calciteBugs.contains(testQuery.query)) {
                 System.err.println("Skipping query that cannot be handled by Calcite " + testQuery.query);
                 continue;
             }
             try {
+                // For each query we generate a complete circuit, with all tables, containing the same data.
+                executor.createTables(this.prepareTables);
                 executor.addQuery(testQuery.query, this.prepareInput, testQuery.outputDescription);
+                queryCount++;
             } catch (Throwable ex) {
                 System.err.println("Error while compiling " + testQuery.query);
                 throw ex;
             }
-            if (executor.getQueryCount() % batchSize == 0) {
+            if (queryCount % batchSize == 0) {
+                executor.generateCode(index);
+                index++;
+            }
+            if (queryCount % (batchSize * parallelism) == 0) {
                 this.run(executor);
+                executor.reset();
+                queryCount = 0;
+                index = 0;
             }
         }
-        if ((executor.getQueryCount() % batchSize) != 0)
+        if ((queryCount % batchSize) != 0) {
             // left overs
+            executor.generateCode(index);
             this.run(executor);
+        }
     }
 }

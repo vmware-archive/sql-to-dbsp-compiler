@@ -34,7 +34,7 @@ import javax.annotation.Nullable;
 public class DBSPMapOperator extends DBSPOperator {
     public DBSPMapOperator(@Nullable Object node, DBSPExpression expression,
                            DBSPType resultType, DBSPOperator input) {
-        super(node, "map", expression, TypeCompiler.makeZSet(resultType));
+        super(node, "map", expression, TypeCompiler.makeZSet(resultType), true);
         this.addInput(input);
         this.checkResultType(expression, resultType);
         this.checkArgumentFunctionType(expression, 0, input);

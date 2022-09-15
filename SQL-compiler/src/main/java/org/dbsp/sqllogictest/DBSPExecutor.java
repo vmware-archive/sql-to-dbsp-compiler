@@ -40,9 +40,7 @@ import org.dbsp.sqlCompiler.frontend.TableModifyStatement;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,8 +65,8 @@ public class DBSPExecutor implements ISqlTestExecutor {
     }
 
     private final boolean debug = false;
-    static final String rustDirectory = "../temp";
-    static final String testFilePath = rustDirectory + "/src/test.rs";
+    static final String rustDirectory = "../temp/src/";
+    static final String testFileName = "test";
     int queryNo;
     @Nullable
     private CalciteCompiler calcite;
@@ -78,27 +76,35 @@ public class DBSPExecutor implements ISqlTestExecutor {
     private DBSPFunction inputFunction = null;
     // If this is 'false' we just parse and compile the tests.
     private final boolean execute;
+    private final List<String> filesGenerated;
 
     public DBSPExecutor(boolean execute) {
         this.calcite = null;
         this.execute = execute;
         this.queryNo = 0;
         this.queries = new ArrayList<>();
-    }
-
-    @Override
-    public int getQueryCount() {
-        return this.queries.size();
+        this.filesGenerated = new ArrayList<>();
     }
 
     @Override
     public void reset() {
         this.calcite = new CalciteCompiler();
         this.queries.clear();
+        this.filesGenerated.clear();
+        File directory = new File(rustDirectory);
+        FilenameFilter filter = (dir, name) -> name.startsWith(testFileName);
+        File[] files = directory.listFiles(filter);
+        if (files == null)
+            return;
+        for (File file: files) {
+            boolean deleted = file.delete();
+            if (!deleted)
+                throw new RuntimeException("Cannot delete file " + file);
+        }
     }
 
     @Override
-    public void prepareTables(SqlTestPrepareTables prepare) throws SqlParseException {
+    public void createTables(SqlTestPrepareTables prepare) throws SqlParseException {
         if (this.calcite == null)
             throw new RuntimeException("Calcite compiler not initialized yet");
         this.calcite.startCompilation();
@@ -202,13 +208,13 @@ public class DBSPExecutor implements ISqlTestExecutor {
         this.queryNo++;
     }
 
-    public void run() throws IOException, InterruptedException {
+    @Override
+    public void generateCode(int index) throws FileNotFoundException, UnsupportedEncodingException {
         if (this.inputFunction == null)
             return;
-
-        File file = new File(testFilePath);
-        //noinspection ResultOfMethodCallIgnored
-        file.delete();
+        String genFileName = testFileName + index + ".rs";
+        this.filesGenerated.add(testFileName + index);
+        String testFilePath = rustDirectory + "/" + genFileName;
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
         writer.println(DBSPCircuit.generatePreamble());
 
@@ -219,7 +225,13 @@ public class DBSPExecutor implements ISqlTestExecutor {
             writer.println(pt.tester.toRustString());
         }
         writer.close();
-        if (this.execute)
+        this.queries.clear();
+    }
+
+    public void run() throws IOException, InterruptedException {
+        if (this.execute) {
+            Utilities.writeRustMain(rustDirectory + "/main.rs", this.filesGenerated);
             Utilities.compileAndTestRust(rustDirectory);
+        }
     }
 }

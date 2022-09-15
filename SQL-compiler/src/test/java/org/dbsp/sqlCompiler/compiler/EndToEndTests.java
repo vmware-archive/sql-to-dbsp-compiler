@@ -12,8 +12,9 @@ import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
 import org.dbsp.sqllogictest.RustTestGenerator;
 import org.dbsp.sqllogictest.SqlTestOutputDescription;
+import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.*;
@@ -25,12 +26,14 @@ import java.io.*;
  * from the declared views.
  */
 public class EndToEndTests {
-    static final String rustDirectory = "../temp";
-    static final String testFilePath = rustDirectory + "/src/test.rs";
+    static final String rustDirectory = "../temp/src";
+    static final String testFilePath = rustDirectory + "/test.rs";
 
-    @Before
-    public void generateLib() throws IOException {
-        SqlRuntimeLibrary.instance.writeSqlLibrary(rustDirectory + "/src/test/sqllib.rs");
+    @BeforeClass
+    public static void generateLib() throws IOException {
+        SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
+        Utilities.writeRustMain(rustDirectory + "/main.rs",
+                Linq.list("test"));
     }
 
     private CalciteCompiler compileDef() throws SqlParseException {
@@ -143,6 +146,12 @@ public class EndToEndTests {
                 new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
                         new DBSPTupleExpression(new DBSPLiteral(true)),
                         new DBSPTupleExpression(new DBSPLiteral(false))));
+    }
+
+    @Test
+    public void intersectTest() {
+        String query = "SELECT * FROM T INTERSECT (SELECT * FROM T)";
+        this.testQuery(query, this.createInput());
     }
 
     @Test

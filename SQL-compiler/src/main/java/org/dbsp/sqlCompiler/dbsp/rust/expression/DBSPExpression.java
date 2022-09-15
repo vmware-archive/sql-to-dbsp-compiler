@@ -39,6 +39,13 @@ public abstract class DBSPExpression extends DBSPNode implements IHasType {
         this.type = type;
     }
 
+    /**
+     * Generates an expression that calls clone() on this
+     */
+    public DBSPExpression applyClone() {
+        return new DBSPApplyMethodExpression("clone", this.getNonVoidType(), this);
+    }
+
     @Override
     @Nullable
     public DBSPType getType() {
