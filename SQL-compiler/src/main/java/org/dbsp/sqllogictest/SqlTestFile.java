@@ -126,6 +126,9 @@ public class SqlTestFile {
                 line = this.nextLine(false);
                 StringBuilder statement = new StringBuilder();
                 while (!line.isEmpty()) {
+                    // TODO: this is wrong, but I can't get the Calcite parser
+                    // to accept Postgres-like PRIMARY KEY statements.
+                    line = line.replace("PRIMARY KEY", "");
                     statement.append(line);
                     line = this.nextLine(false);
                 }
@@ -284,7 +287,7 @@ public class SqlTestFile {
         long start = System.nanoTime();
         executor.run();
         long end = System.nanoTime();
-        System.out.println("Running took " + (end - start) / 1000000000 + " seconds");
+        System.out.println("Test took " + (end - start) / 1000000000 + " seconds");
         executor.reset();
     }
 

@@ -347,7 +347,7 @@ public class EndToEndTests {
                 new DBSPTupleExpression(new DBSPLiteral(Double.NaN, true))));
     }
 
-    //@Test
+    @Test
     public void aggregateDistinctTest() {
         String query = "SELECT SUM(DISTINCT T.COL1), SUM(T.COL2) FROM T";
         this.testQuery(query, new DBSPZSetLiteral(

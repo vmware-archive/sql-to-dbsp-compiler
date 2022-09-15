@@ -32,10 +32,13 @@ import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.*;
-import org.apache.calcite.plan.volcano.VolcanoPlanner;
+import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
+import org.apache.calcite.rel.rules.*;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.*;
@@ -44,17 +47,20 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
 import org.apache.calcite.sql.util.SqlOperatorTables;
+import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.RelDecorrelator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.tools.RelBuilder;
+import org.dbsp.util.Linq;
 import org.dbsp.util.TranslationException;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -76,6 +82,32 @@ public class CalciteCompiler {
     @Nullable
     private CalciteProgram program;
     private final SqlToRelConverter.Config converterConfig;
+    private static final boolean debug = false;
+
+    /**
+     * List of calcite optimizations to apply.
+     */
+    static List<RelOptRule> getOptRules() {
+        return Linq.list(
+                CoreRules.PROJECT_MERGE,
+                CoreRules.AGGREGATE_PROJECT_PULL_UP_CONSTANTS,
+                CoreRules.AGGREGATE_REMOVE,
+                CoreRules.AGGREGATE_EXPAND_DISTINCT_AGGREGATES_TO_JOIN,
+                CoreRules.AGGREGATE_UNION_AGGREGATE,
+                CoreRules.FILTER_INTO_JOIN,
+                CoreRules.JOIN_CONDITION_PUSH,
+                PruneEmptyRules.UNION_INSTANCE,
+                PruneEmptyRules.INTERSECT_INSTANCE,
+                PruneEmptyRules.MINUS_INSTANCE,
+                PruneEmptyRules.PROJECT_INSTANCE,
+                PruneEmptyRules.FILTER_INSTANCE,
+                PruneEmptyRules.SORT_INSTANCE,
+                PruneEmptyRules.AGGREGATE_INSTANCE,
+                PruneEmptyRules.JOIN_LEFT_INSTANCE,
+                PruneEmptyRules.JOIN_RIGHT_INSTANCE,
+                PruneEmptyRules.SORT_FETCH_ZERO_INSTANCE
+        );
+    }
 
     // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
     public CalciteCompiler() {
@@ -86,7 +118,9 @@ public class CalciteCompiler {
         connConfigProp.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
         // Add support for DDL language
-        this.parserConfig = SqlParser.config().withParserFactory(SqlDdlParserImpl.FACTORY);
+        this.parserConfig = SqlParser.config()
+                .withParserFactory(SqlDdlParserImpl.FACTORY)
+                .withConformance(SqlConformanceEnum.BABEL);
         this.typeFactory = new JavaTypeFactoryImpl();
         this.simple = new Catalog("schema");
         CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
@@ -111,10 +145,16 @@ public class CalciteCompiler {
                 this.typeFactory,
                 validatorConfig
         );
-        RelOptPlanner planner= new VolcanoPlanner(
+
+        HepProgramBuilder builder = new HepProgramBuilder();
+        getOptRules().forEach(builder::addRuleInstance);
+        HepPlanner planner = new HepPlanner(builder.build());
+        /*
+        RelOptPlanner planner = new VolcanoPlanner(
                     RelOptCostImpl.FACTORY,
                     Contexts.of(connectionConfig));
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
+         */
         this.cluster = RelOptCluster.create(
                 planner,
                 new RexBuilder(this.typeFactory)
@@ -133,6 +173,12 @@ public class CalciteCompiler {
                 this.converterConfig
         );
         this.simulator = new SqlSimulator(this.simple, this.typeFactory, this.validator);
+    }
+
+    public static String getPlan(RelNode rel) {
+        return RelOptUtil.dumpPlan("[Logical plan]", rel,
+                SqlExplainFormat.TEXT,
+                SqlExplainLevel.NON_COST_ATTRIBUTES);
     }
 
     public RexBuilder getRexBuilder() {
@@ -162,6 +208,23 @@ public class CalciteCompiler {
         this.program = new CalciteProgram();
     }
 
+    RelNode optimize(RelNode rel) {
+        if (debug)
+            System.out.println("Before planner " + getPlan(rel));
+        RelOptPlanner planner = this.converter.getCluster().getPlanner();
+        planner.setRoot(rel);
+        rel = planner.findBestExp();
+        if (debug)
+            System.out.println("After planner " + getPlan(rel));
+        RelBuilder relBuilder = this.converterConfig.getRelBuilderFactory().create(
+                cluster, null);
+        // This converts correlated sub-queries into standard joins.
+        rel = RelDecorrelator.decorrelateQuery(rel, relBuilder);
+        if (debug)
+            System.out.println("After decorrelator " + getPlan(rel));
+        return rel;
+    }
+
     /**
      * Given a SQL query statement it compiles.
      * If the statement is a DDL statement (CREATE TABLE, CREATE VIEW),
@@ -189,9 +252,7 @@ public class CalciteCompiler {
             ViewDDL view = result.as(ViewDDL.class);
             if (view != null) {
                 RelRoot relRoot = this.converter.convertQuery(view.query, true, true);
-                RelBuilder relBuilder = this.converterConfig.getRelBuilderFactory().create(cluster, null);
-                // This converts correlated sub-queries into standard joins.
-                relRoot = relRoot.withRel(RelDecorrelator.decorrelateQuery(relRoot.rel, relBuilder));
+                relRoot = relRoot.withRel(this.optimize(relRoot.rel));
                 view.setCompiledQuery(relRoot);
                 this.program.addView(view);
                 return view;
