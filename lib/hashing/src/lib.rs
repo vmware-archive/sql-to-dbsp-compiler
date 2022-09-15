@@ -73,6 +73,45 @@ where
     result
 }
 
+struct DataRows<'a> {
+    rows: Vec<Vec<String>>,
+    order: &'a SortOrder,
+    format: &'a String,
+}
+
+impl<'a> DataRows<'a> {
+    pub fn new(format: &'a String, order: &'a SortOrder) -> Self {
+        Self {
+            rows: Vec::new(),
+            order: order,
+            format: format,
+        }
+    }
+    pub fn with_capacity(format: &'a String, order: &'a SortOrder, capacity: usize) -> Self {
+        Self {
+            rows: Vec::with_capacity(capacity),
+            order: order,
+            format: format,
+        }
+    }
+    pub fn push(self: &mut Self, sql_row: SqlRow) {
+        let row_vec = sql_row.to_slt_strings(&self.format);
+        if *self.order == SortOrder::Row || *self.order == SortOrder::None {
+            self.rows.push(row_vec);
+        } else if *self.order == SortOrder::Value {
+            for r in row_vec {
+                self.rows.push(vec!(r))
+            }
+        }
+    }
+
+    pub fn get(mut self: Self) -> Vec<Vec<String>> {
+        if *self.order != SortOrder::None {
+            self.rows.sort_unstable_by(&compare);
+        }
+        self.rows
+    }
+}
 /// The format is from the SqlLogicTest query output string format
 pub fn zset_to_strings<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> Vec<Vec<String>>
 where
@@ -82,31 +121,21 @@ where
     <usize as TryFrom<W>>::Error: Debug,
 {
     let rows = zset_to_rows(set);
-    let mut vec = Vec::<Vec::<String>>::with_capacity(rows.len());
+    let mut data_rows = DataRows::with_capacity(&format, &order, rows.len());
     for row in rows {
-        let row_vec = row.to_slt_strings(&format);
-        if order == SortOrder::Row {
-            vec.push(row_vec);
-        } else if order == SortOrder::Value {
-            for r in row_vec {
-                vec.push(vec!(r))
-            }
-        } else {
-            panic!("Didn't expect sort order 'None'");
-        }
+        data_rows.push(row)
     }
-    vec.sort_unstable_by(&compare);
-    vec
+    data_rows.get()
 }
 
 /// Version of hash that takes the result of orderby: a zset that is expected
 /// to contain a single vector with all the data.
-pub fn zset_of_vectors_to_strings<K, W>(set: &OrdZSet<Vec<K>, W>, format: String, _order: SortOrder) -> Vec<Vec<String>>
+pub fn zset_of_vectors_to_strings<K, W>(set: &OrdZSet<Vec<K>, W>, format: String, order: SortOrder) -> Vec<Vec<String>>
 where
     K: Ord + Clone + Debug + 'static + ToSqlRow,
     W: ZRingValue,
 {
-    let mut vec = Vec::<Vec::<String>>::new();
+    let mut data_rows = DataRows::new(&format, &order);
     let mut cursor = set.cursor();
     while cursor.key_valid() {
         let w = cursor.weight();
@@ -116,12 +145,11 @@ where
         let row_vec: Vec<K> = cursor.key().to_vec();
         let sql_rows = row_vec.iter().map(|k| k.to_row());
         for row in sql_rows {
-            let row_vec = row.to_slt_strings(&format);
-            vec.push(row_vec);
+            data_rows.push(row);
         }
         cursor.step_key();
     }
-    vec
+    data_rows.get()
 }
 
 /// This function mimics the md5 checksum computation from SqlLogicTest
@@ -146,7 +174,7 @@ where
 
 /// Version of hash that takes the result of orderby: a zset that is expected
 /// to contain a single vector with all the data.
-pub fn hash_vectors<K, W>(set: &OrdZSet<Vec<K>, W>, format: String, _order: SortOrder) -> String
+pub fn hash_vectors<K, W>(set: &OrdZSet<Vec<K>, W>, format: String, order: SortOrder) -> String
 where
     K: Ord + Clone + Debug + 'static + ToSqlRow,
     W: ZRingValue,
@@ -161,12 +189,11 @@ where
         }
         let row_vec: Vec<K> = cursor.key().to_vec();
         let sql_rows = row_vec.iter().map(|k| k.to_row());
-        let mut vec = Vec::<Vec::<String>>::with_capacity(sql_rows.len());
+        let mut data_rows = DataRows::with_capacity(&format, &order, sql_rows.len());
         for row in sql_rows {
-            let row_vec = row.to_slt_strings(&format);
-            vec.push(row_vec);
+            data_rows.push(row);
         }
-        for row in vec {
+        for row in data_rows.get() {
             for col in row {
                 builder = builder + &col + "\n"
             }
