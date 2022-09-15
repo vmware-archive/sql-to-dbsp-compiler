@@ -25,7 +25,6 @@
 
 package org.dbsp.sqlCompiler.dbsp;
 
-import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
@@ -1005,10 +1004,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             RelNode rel = view.getRelNode();
             // Dump plan
             if (this.debug)
-                System.out.println(
-                        RelOptUtil.dumpPlan("[Logical plan]", rel,
-                                SqlExplainFormat.TEXT,
-                                SqlExplainLevel.NON_COST_ATTRIBUTES));
+                System.out.println(CalciteCompiler.getPlan(rel));
             this.go(rel);
             // TODO: connect the result of the query compilation with
             // the fields of rel; for now we assume that these are 1/1
