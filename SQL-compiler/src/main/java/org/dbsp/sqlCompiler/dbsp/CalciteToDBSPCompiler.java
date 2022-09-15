@@ -109,8 +109,9 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     }
 
     /**
-     * A project does not apply distinct -- except it must if it
-     * is a subquer.
+     * This retrieves the operator that is an input.  If the operator may
+     * produce multiset results and this is not desired (asMultiset = false),
+     * a distinct operator is introduced in the circuit.
      */
     private DBSPOperator getInputAs(RelNode input, boolean asMultiset) {
         assert this.circuit != null;
