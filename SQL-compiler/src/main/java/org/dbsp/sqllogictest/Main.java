@@ -26,6 +26,7 @@
 package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -52,12 +53,20 @@ public class Main {
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
         int tests = 0;
-        final int batchSize;
+        final int testsInFile;
+        final int parallelism;
         final ISqlTestExecutor executor;
 
-        TestLoader(int batchSize, ISqlTestExecutor executor) {
-            this.batchSize = batchSize;
+        /**
+         * Creates a new class that reads tests from a directory tree and executes them.
+         * @param testsInFile     How many tests in a file.
+         * @param parallelism     How many files tested concurrently.
+         * @param executor        Program that knows how to generate and run the tests.
+         */
+        TestLoader(int testsInFile, int parallelism, ISqlTestExecutor executor) {
+            this.testsInFile = testsInFile;
             this.executor = executor;
+            this.parallelism = parallelism;
         }
 
         @Override
@@ -83,7 +92,7 @@ public class Main {
                 if (test != null) {
                     try {
                         System.out.println(file);
-                        test.execute(this.executor, this.batchSize, calciteBugs);
+                        test.execute(this.executor, this.testsInFile, this.parallelism, calciteBugs);
                     } catch (SqlParseException | IOException | InterruptedException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -100,6 +109,8 @@ public class Main {
         // Calcite types /0 as not nullable!
         calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
         int batchSize = 100;
+        int parallelism = 1;
+        SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         ISqlTestExecutor executor = new DBSPExecutor(true);
         String files =
             //"../../sqllogictest/test/s.test"
@@ -107,12 +118,12 @@ public class Main {
             //"../../sqllogictest/test/random/expr"
             //"../../sqllogictest/test/random/aggregates/"
             //"../../sqllogictest/test/random/groupby"
-            "../../sqllogictest/test/select1.test"
+            "../../sqllogictest/test/select4.test"
         ;
         if (argv.length > 1)
             files = argv[1];
         Path path = Paths.get(files);
-        TestLoader loader = new TestLoader(batchSize, executor);
+        TestLoader loader = new TestLoader(batchSize, parallelism, executor);
         Files.walkFileTree(path, loader);
         System.out.println("Could not parse: " + loader.errors);
         System.out.println("Parsed tests: " + String.format("%,3d", loader.tests));

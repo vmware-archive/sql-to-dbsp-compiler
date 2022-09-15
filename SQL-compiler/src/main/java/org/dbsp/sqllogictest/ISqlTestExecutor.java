@@ -36,17 +36,13 @@ import java.io.UnsupportedEncodingException;
  */
 public interface ISqlTestExecutor {
     /**
-     * Number of queries added so far.
-     */
-    int getQueryCount();
-    /**
      * Prepare for a new test.
      */
     void reset();
     /**
      * Prepare the input tables.
      */
-    void prepareTables(SqlTestPrepareTables prepare) throws SqlParseException;
+    void createTables(SqlTestPrepareTables prepare) throws SqlParseException;
 
     /**
      * Add code for a query to be tested.
@@ -59,7 +55,14 @@ public interface ISqlTestExecutor {
                   SqlTestOutputDescription description) throws SqlParseException;
 
     /**
-     * Run all the generated tests.
+     * Generate code for the test.
+     * @param index  Index of the file generated.  When running
+     *               in parallel multiple files may be generated for a single run.
+     */
+    void generateCode(int index) throws FileNotFoundException, UnsupportedEncodingException;
+
+    /**
+     * Run all the generated code.
      */
     void run() throws IOException, InterruptedException;
 }

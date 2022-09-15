@@ -49,10 +49,27 @@ package org.dbsp.util;/*
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 
 public class Utilities {
+    /**
+     * Generate a rust "main" file which does nothing but includes the specified modules.
+     * @param file     File to write to.
+     * @param modules  List of modules to include.
+     */
+    public static void writeRustMain(String file, List<String> modules) throws FileNotFoundException {
+        PrintWriter writer = new PrintWriter(file);
+        writer.println("// automatically-generated file");
+        for (String module: modules) {
+            writer.println("mod " + module + ";");
+        }
+        writer.println("fn main(){}");
+        writer.close();
+    }
+
     public static String escapeString(String value) {
          StringBuilder builder = new StringBuilder();
          builder.append("\"");

@@ -58,9 +58,12 @@ public class RustTestGenerator {
         List<DBSPStatement> list = new ArrayList<>();
         list.add(new DBSPLetStatement("circuit",
                 new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true));
+        DBSPType circuitOutputType = circuit.getOutputType(0);
         // the following may not be the same, since SqlLogicTest sometimes lies about the output type
-        DBSPType outputType = output != null ? new DBSPTypeRawTuple(output.getNonVoidType()) : circuit.getOutputtype();
+        DBSPType outputType = output != null ? new DBSPTypeRawTuple(output.getNonVoidType()) : circuitOutputType;
         DBSPExpression[] arguments = new DBSPExpression[circuit.getInputTables().size()];
+        // True if the output is a zset of vectors (generated for orderby queries)
+        boolean isVector = circuitOutputType.to(DBSPTypeZSet.class).elementType.is(DBSPTypeVec.class);
 
         list.add(new DBSPLetStatement("_in",
                 new DBSPApplyExpression(inputFunction, DBSPTypeAny.instance)));
@@ -73,7 +76,7 @@ public class RustTestGenerator {
 
         DBSPExpression sort = new DBSPEnumValue("SortOrder", description.order.toString());
         DBSPExpression output0 = new DBSPFieldExpression(null,
-                new DBSPVariableReference("output", outputType), 0);
+                new DBSPVariableReference("output", DBSPTypeAny.instance), 0);
 
         if (output != null) {
             if (description.columnTypes != null) {
@@ -81,7 +84,7 @@ public class RustTestGenerator {
                 DBSPTypeZSet otype = output.getNonVoidType().to(DBSPTypeZSet.class);
                 String functionProducingStrings;
                 DBSPType elementType;
-                if (otype.elementType.is(DBSPTypeVec.class)) {
+                if (isVector) {
                     functionProducingStrings = "zset_of_vectors_to_strings";
                     elementType = otype.elementType.to(DBSPTypeVec.class).getElementType();
                 } else {
@@ -113,7 +116,7 @@ public class RustTestGenerator {
             DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
             if (description.hash == null)
                 throw new RuntimeException("Expected hash to be supplied");
-            String hash = description.order.equals(SqlTestOutputDescription.SortOrder.None) ? "hash_vectors" : "hash";
+            String hash = isVector ? "hash_vectors" : "hash";
             list.add(new DBSPLetStatement("_hash",
                     new DBSPApplyExpression(hash, DBSPTypeString.instance,
                             new DBSPBorrowExpression(output0),
@@ -127,7 +130,7 @@ public class RustTestGenerator {
         }
         if (description.getExpectedOutputSize() >= 0) {
             DBSPExpression count;
-            if (description.order.equals(SqlTestOutputDescription.SortOrder.None)) {
+            if (isVector) {
                 count = new DBSPApplyExpression("weighted_vector_count",
                         DBSPTypeUSize.instance,
                         new DBSPBorrowExpression(output0));

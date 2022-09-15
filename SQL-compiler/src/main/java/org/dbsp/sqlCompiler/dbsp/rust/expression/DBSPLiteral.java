@@ -32,9 +32,14 @@ import javax.annotation.Nullable;
 public class DBSPLiteral extends DBSPExpression {
     @Nullable
     private final String value;
+    /**
+     * True if this literal is the null value of some type.
+     */
+    public final boolean isNull;
 
     public DBSPLiteral(@Nullable Object node, DBSPType type, String value) {
         super(node, type);
+        this.isNull = false;
         this.value = type.mayBeNull ? "Some(" + value + ")" : value;
     }
 
@@ -104,6 +109,7 @@ public class DBSPLiteral extends DBSPExpression {
      */
     public DBSPLiteral(DBSPType type) {
         super(null, type);
+        this.isNull = true;
         if (!type.mayBeNull)
             throw new RuntimeException("Type " + type + " cannot represent the NULL value");
         this.value = "None::<" + this.getNonVoidType().setMayBeNull(false) + ">";
