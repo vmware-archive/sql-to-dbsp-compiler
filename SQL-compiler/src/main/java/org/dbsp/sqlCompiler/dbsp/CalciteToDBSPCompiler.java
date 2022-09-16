@@ -38,6 +38,9 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.*;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPBoolLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.*;
@@ -464,7 +467,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 new DBSPApplyMethodExpression("clone", var.getNonVoidType(), var));
         cases.add(new DBSPMatchExpression.Case(tup, some));
         cases.add(new DBSPMatchExpression.Case(
-                DBSPWildcardPattern.instance, new DBSPLiteral(some.getNonVoidType())));
+                DBSPWildcardPattern.instance, DBSPLiteral.none(some.getNonVoidType())));
         DBSPMatchExpression match = new DBSPMatchExpression(var, cases, some.getNonVoidType());
         DBSPClosureExpression filterFunc = new DBSPClosureExpression(match, var.asRefParameter());
         DBSPOperator filter = new DBSPFlatMapOperator(join, filterFunc, rowType, input);
@@ -560,9 +563,16 @@ public class CalciteToDBSPCompiler extends RelVisitor {
 
         DBSPOperator inner = joinResult;
         if (condition != null) {
-            DBSPFilterOperator fop = new DBSPFilterOperator(join, condition, resultType, joinResult);
-            this.circuit.addOperator(joinResult);
-            inner = fop;
+            DBSPBoolLiteral blit = condition.as(DBSPBoolLiteral.class);
+            if (blit == null || blit.value == null || !blit.value) {
+                // Technically if blit.value == null or !blit.value then
+                // the filter is false, and the result is empty.  But hopefully
+                // the calcite optimizer won't allow that.
+                DBSPFilterOperator fop = new DBSPFilterOperator(join, condition, resultType, joinResult);
+                this.circuit.addOperator(joinResult);
+                inner = fop;
+            }
+            // if blit it true we don't need to filter.
         }
 
         // Handle outer joins
@@ -602,7 +612,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             // fill nulls in the right relation fields
             DBSPTupleExpression rEmpty = new DBSPTupleExpression(
                     Linq.map(rightElementType.tupFields,
-                             et -> new DBSPLiteral(et.setMayBeNull(true)), DBSPExpression.class));
+                             et -> DBSPLiteral.none(et.setMayBeNull(true)), DBSPExpression.class));
             DBSPClosureExpression leftRow = new DBSPClosureExpression(
                     DBSPTupleExpression.flatten(lCasted, rEmpty),
                     lCasted.asRefParameter());
@@ -646,7 +656,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             // fill nulls in the left relation fields
             DBSPTupleExpression lEmpty = new DBSPTupleExpression(
                     Linq.map(leftElementType.tupFields,
-                            et -> new DBSPLiteral(et.setMayBeNull(true)), DBSPExpression.class));
+                            et -> DBSPLiteral.none(et.setMayBeNull(true)), DBSPExpression.class));
             DBSPClosureExpression rightRow = new DBSPClosureExpression(
                     DBSPTupleExpression.flatten(lEmpty, rCasted),
                     rCasted.asRefParameter());
@@ -802,7 +812,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                     // so the nulls produced will have the wrong type.
                     DBSPLiteral lit = expr.to(DBSPLiteral.class);
                     if (lit.isNull)
-                        expr = new DBSPLiteral(resultFieldType);
+                        expr = DBSPLiteral.none(resultFieldType);
                 }
                 if (!expr.getNonVoidType().same(resultFieldType)) {
                     DBSPExpression cast = ExpressionCompiler.makeCast(expr, resultFieldType);

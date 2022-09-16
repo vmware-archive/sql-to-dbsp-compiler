@@ -21,21 +21,40 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.pattern;
+package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeFloat;
 import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPLiteralPattern extends DBSPPattern {
-    public final DBSPLiteral literal;
+import javax.annotation.Nullable;
 
-    public DBSPLiteralPattern(DBSPLiteral literal) {
-        super(literal.getNode());
-        this.literal = literal;
+public class DBSPFloatLiteral extends DBSPLiteral {
+    @Nullable
+    public final Float value;
+
+    @SuppressWarnings("unused")
+    public DBSPFloatLiteral() {
+        this(null, true);
+    }
+
+    public DBSPFloatLiteral(float value) {
+        this(value, false);
+    }
+
+    public DBSPFloatLiteral(@Nullable Float f, boolean nullable) {
+        super(null, DBSPTypeFloat.instance.setMayBeNull(nullable), f);
+        if (f == null && !nullable)
+            throw new RuntimeException("Null value with non-nullable type");
+        this.value = f;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.literal);
+        if (this.value == null)
+            return builder.append(this.noneString());
+        String val = Float.toString(this.value);
+        if (Float.isNaN(value))
+            val = "std::f32::NAN";
+        return builder.append(this.wrapSome("F32::new(" + val + ")"));
     }
 }

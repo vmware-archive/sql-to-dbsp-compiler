@@ -21,21 +21,58 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.pattern;
+package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPISizeLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPUSizeLiteral;
 import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPLiteralPattern extends DBSPPattern {
-    public final DBSPLiteral literal;
+import javax.annotation.Nullable;
 
-    public DBSPLiteralPattern(DBSPLiteral literal) {
-        super(literal.getNode());
-        this.literal = literal;
+/**
+ * Represents the usize Rust type.
+ */
+public class DBSPTypeISize extends DBSPType
+        implements IsNumericType, IDBSPBaseType {
+    public static final DBSPTypeISize instance = new DBSPTypeISize(null, false);
+
+    @SuppressWarnings("SameParameterValue")
+    protected DBSPTypeISize(@Nullable Object node, boolean mayBeNull) {
+        super(node, mayBeNull);
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.literal);
+        return this.wrapOption(builder, "isize"); }
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        if (mayBeNull)
+            throw new UnsupportedOperationException();
+        return this;
+    }
+
+    @Override
+    public String shortName() {
+        return "i";
+    }
+
+    @Override
+    public boolean same(@Nullable DBSPType type) {
+        if (!super.same(type))
+            return false;
+        assert type != null;
+        return type.is(DBSPTypeISize.class);
+    }
+
+    @Override
+    public DBSPLiteral getZero() {
+        return new DBSPISizeLiteral(0);
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        return new DBSPISizeLiteral(1);
     }
 }

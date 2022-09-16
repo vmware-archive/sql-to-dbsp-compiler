@@ -26,7 +26,8 @@ package org.dbsp.sqlCompiler.dbsp.rust.type;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPApplyMethodExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPBinaryExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPIntegerLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Unimplemented;
 
@@ -66,7 +67,7 @@ public class DBSPTypeBool extends DBSPType implements IDBSPBaseType {
         if (argtype.is(DBSPTypeFP.class)) {
             return new DBSPBinaryExpression(this, "!=",
                     new DBSPApplyMethodExpression("into_inner", this.setMayBeNull(false), source),
-                    new DBSPLiteral(0));
+                    new DBSPIntegerLiteral(0));
         } else {
             throw new Unimplemented("Cast from " + source.getNonVoidType());
         }

@@ -21,21 +21,42 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.pattern;
+package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeBool;
 import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPLiteralPattern extends DBSPPattern {
-    public final DBSPLiteral literal;
+import javax.annotation.Nullable;
 
-    public DBSPLiteralPattern(DBSPLiteral literal) {
-        super(literal.getNode());
-        this.literal = literal;
+public class DBSPBoolLiteral extends DBSPLiteral {
+    @Nullable
+    public final Boolean value;
+
+    public static DBSPBoolLiteral None = new DBSPBoolLiteral();
+    public static DBSPBoolLiteral True = new DBSPBoolLiteral(true);
+    public static DBSPBoolLiteral False = new DBSPBoolLiteral(false);
+    public static DBSPBoolLiteral NullableTrue = new DBSPBoolLiteral(true, true);
+    public static DBSPBoolLiteral NullableFalse = new DBSPBoolLiteral(false, true);
+
+    public DBSPBoolLiteral() {
+        this(null, true);
+    }
+
+    public DBSPBoolLiteral(boolean value) {
+        this(value, false);
+    }
+
+    public DBSPBoolLiteral(@Nullable Boolean b, boolean nullable) {
+        super(null, DBSPTypeBool.instance.setMayBeNull(nullable), b);
+        if (b == null && !nullable)
+            throw new RuntimeException("Null value with non-nullable type");
+        this.value = b;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.literal);
+        if (this.value == null)
+            return builder.append(this.noneString());
+        return builder.append(this.wrapSome(Boolean.toString(value)));
     }
 }

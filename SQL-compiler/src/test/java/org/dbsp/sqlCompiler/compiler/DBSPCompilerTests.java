@@ -29,7 +29,7 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
 import org.dbsp.sqlCompiler.frontend.SimulatorResult;

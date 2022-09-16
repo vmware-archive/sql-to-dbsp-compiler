@@ -21,21 +21,48 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.pattern;
+package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPLiteralPattern extends DBSPPattern {
-    public final DBSPLiteral literal;
+import javax.annotation.Nullable;
 
-    public DBSPLiteralPattern(DBSPLiteral literal) {
-        super(literal.getNode());
-        this.literal = literal;
+public class DBSPLiteral extends DBSPExpression {
+    public final boolean isNull;
+
+    protected DBSPLiteral(@Nullable Object node, DBSPType type, @Nullable Object value) {
+        super(node, type);
+        this.isNull = value == null;
+        if (this.isNull && !type.mayBeNull)
+            throw new RuntimeException("Type " + type + " cannot represent null");
     }
 
+    /**
+     * Represents a "null" value of the specified type.
+     */
+    public static DBSPLiteral none(DBSPType type) {
+        return new DBSPLiteral(null, type, null);
+    }
+
+    public String noneString() {
+        return "None::<" + this.getNonVoidType().setMayBeNull(false) + ">";
+    }
+
+    protected String wrapSome(String value) {
+        if (this.getNonVoidType().mayBeNull)
+            return "Some(" + value + ")";
+        return value;
+    }
+
+    /**
+     * Base case handling only nulls.  Should be overridden.
+     */
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.literal);
+        if (!this.isNull)
+            throw new RuntimeException("toRustString method for abstract class called on non-null value");
+        return builder.append(this.noneString());
     }
 }
