@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
 
 /**
  * Interface implemented by numeric types.

@@ -24,6 +24,8 @@
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPDoubleLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -70,11 +72,11 @@ public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType, IDBSPBa
 
     @Override
     public DBSPLiteral getZero() {
-        return new DBSPLiteral(0D, this.mayBeNull);
+        return new DBSPDoubleLiteral(0D, this.mayBeNull);
     }
 
     @Override
     public DBSPLiteral getOne() {
-        return new DBSPLiteral(1D, this.mayBeNull);
+        return new DBSPDoubleLiteral(1D, this.mayBeNull);
     }
 }

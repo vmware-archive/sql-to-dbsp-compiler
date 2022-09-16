@@ -28,6 +28,8 @@ package org.dbsp.sqlCompiler.dbsp.circuit;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFile;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPBoolLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.*;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.util.IndentStringBuilder;
@@ -187,7 +189,8 @@ public class SqlRuntimeLibrary {
                                             new DBSPVariableReference("x", DBSPTypeBool.instance)
                                     ),
                                     new DBSPMatchExpression.Case(
-                                            DBSPWildcardPattern.instance, new DBSPLiteral(false)
+                                            DBSPWildcardPattern.instance,
+                                            new DBSPBoolLiteral(false)
                                     )
                                 ),
                                 DBSPTypeBool.instance)));
@@ -283,7 +286,7 @@ public class SqlRuntimeLibrary {
                                                     new DBSPTuplePattern(
                                                             DBSPWildcardPattern.instance,
                                                             DBSPWildcardPattern.instance),
-                                                    new DBSPLiteral(type))),
+                                                    DBSPLiteral.none(type))),
                                     type);
                         }
                         DBSPFunction func = new DBSPFunction(function.function, Arrays.asList(left, right), type, def);

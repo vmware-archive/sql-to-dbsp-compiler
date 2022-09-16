@@ -19,23 +19,20 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ *
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.pattern;
+/**
+ * Package that doesn't allow null values as method parameters.
+ */
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
-import org.dbsp.util.IndentStringBuilder;
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
-public class DBSPLiteralPattern extends DBSPPattern {
-    public final DBSPLiteral literal;
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
 
-    public DBSPLiteralPattern(DBSPLiteral literal) {
-        super(literal.getNode());
-        this.literal = literal;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.literal);
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

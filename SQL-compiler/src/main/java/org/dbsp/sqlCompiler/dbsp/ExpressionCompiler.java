@@ -29,6 +29,7 @@ import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlKind;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.*;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPTupleStructPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPWildcardPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
@@ -72,17 +73,17 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     public DBSPExpression visitLiteral(RexLiteral literal) {
         DBSPType type = this.typeCompiler.convertType(literal.getType());
         if (literal.isNull())
-            return new DBSPLiteral(type);
+            return DBSPLiteral.none(type);
         if (type.is(DBSPTypeInteger.class))
-            return new DBSPLiteral(Objects.requireNonNull(literal.getValueAs(Integer.class)));
+            return new DBSPLongLiteral(Objects.requireNonNull(literal.getValueAs(Integer.class)));
         else if (type.is(DBSPTypeDouble.class))
-            return new DBSPLiteral(Objects.requireNonNull(literal.getValueAs(Double.class)));
+            return new DBSPDoubleLiteral(Objects.requireNonNull(literal.getValueAs(Double.class)));
         else if (type.is(DBSPTypeFloat.class))
-            return new DBSPLiteral(Objects.requireNonNull(literal.getValueAs(Float.class)));
+            return new DBSPFloatLiteral(Objects.requireNonNull(literal.getValueAs(Float.class)));
         else if (type.is(DBSPTypeString.class))
-            return new DBSPLiteral(Objects.requireNonNull(literal.getValueAs(String.class)));
+            return new DBSPStringLiteral(Objects.requireNonNull(literal.getValueAs(String.class)));
         else if (type.is(DBSPTypeBool.class))
-            return new DBSPLiteral(Objects.requireNonNull(literal.getValueAs(Boolean.class)));
+            return new DBSPBoolLiteral(Objects.requireNonNull(literal.getValueAs(Boolean.class)));
         throw new Unimplemented(literal);
     }
 
@@ -131,7 +132,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPType rightType = right.getNonVoidType();
         DBSPType commonBase = reduceType(leftType, rightType);
         if (commonBase.is(DBSPTypeNull.class)) {
-            return new DBSPLiteral(type);
+            return DBSPLiteral.none(type);
         }
         SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
                 op, commonBase.setMayBeNull(leftType.mayBeNull), commonBase.setMayBeNull(rightType.mayBeNull), true);
@@ -163,7 +164,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         DBSPType commonBase = reduceType(leftType, rightType);
         if (commonBase.is(DBSPTypeNull.class)) {
             // Result is always NULL.  Perhaps we should give a warning?
-            return new DBSPLiteral(type);
+            return DBSPLiteral.none(type);
         }
         if (!leftType.setMayBeNull(false).same(commonBase))
             left = makeCast(left, commonBase.setMayBeNull(leftType.mayBeNull));
@@ -182,7 +183,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
         if (fromType.mayBeNull) {
             if (to.mayBeNull) {
                 DBSPMatchExpression.Case none = new DBSPMatchExpression.Case(
-                        DBSPWildcardPattern.instance, new DBSPLiteral(to));
+                        DBSPWildcardPattern.instance, DBSPLiteral.none(to));
                 DBSPVariableReference x = new DBSPVariableReference("x", fromType.setMayBeNull(false));
                 DBSPMatchExpression.Case some = new DBSPMatchExpression.Case(
                         DBSPTupleStructPattern.somePattern(x.asPattern()),
@@ -296,9 +297,9 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                                 new DBSPApplyExpression("is_null", type, ops.get(0)));
                 } else {
                     if (call.op.kind == SqlKind.IS_NULL)
-                        return new DBSPLiteral(false);
+                        return new DBSPBoolLiteral(false);
                     else
-                        return new DBSPLiteral(true);
+                        return new DBSPBoolLiteral(true);
                 }
             }
             case CASE: {

@@ -23,7 +23,8 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPUSizeLiteral;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -46,7 +47,9 @@ public class DBSPTypeUSize extends DBSPType
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
-        throw new UnsupportedOperationException();
+        if (mayBeNull)
+            throw new UnsupportedOperationException();
+        return this;
     }
 
     @Override
@@ -64,11 +67,11 @@ public class DBSPTypeUSize extends DBSPType
 
     @Override
     public DBSPLiteral getZero() {
-        return new DBSPLiteral(null, this, "0usize");
+        return new DBSPUSizeLiteral(0);
     }
 
     @Override
     public DBSPLiteral getOne() {
-        return new DBSPLiteral(null, this, "1usize");
+        return new DBSPUSizeLiteral(1);
     }
 }

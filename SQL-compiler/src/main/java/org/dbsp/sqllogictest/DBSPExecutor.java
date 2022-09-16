@@ -32,6 +32,7 @@ import org.dbsp.sqlCompiler.dbsp.ExpressionCompiler;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.*;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
@@ -156,15 +157,15 @@ public class DBSPExecutor implements ISqlTestExecutor {
             for (String s: output.queryResults) {
                 DBSPType colType = outputElementType.tupFields[col];
                 if (s.equalsIgnoreCase("null"))
-                    field = new DBSPLiteral(colType);
+                    field = DBSPLiteral.none(colType);
                 else if (colType.is(DBSPTypeInteger.class))
-                    field = new DBSPLiteral(Integer.parseInt(s));
+                    field = new DBSPIntegerLiteral(Integer.parseInt(s));
                 else if (colType.is(DBSPTypeDouble.class))
-                    field = new DBSPLiteral(Double.parseDouble(s));
+                    field = new DBSPDoubleLiteral(Double.parseDouble(s));
                 else if (colType.is(DBSPTypeFloat.class))
-                    field = new DBSPLiteral(Float.parseFloat(s));
+                    field = new DBSPFloatLiteral(Float.parseFloat(s));
                 else if (colType.is(DBSPTypeString.class))
-                    field = new DBSPLiteral(s);
+                    field = new DBSPStringLiteral(s);
                 else
                     throw new RuntimeException("Unexpected type " + colType);
                 if (!colType.same(field.getNonVoidType()))

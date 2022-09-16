@@ -10,6 +10,7 @@ use dbsp::{
         MulByRef,
     },
 };
+use size_of::SizeOf;
 use core::{
     cmp::Ordering,
     fmt::Debug,
@@ -51,7 +52,7 @@ where
 /// if any of the zset weights is negative
 pub fn zset_to_rows<K, W>(set: &OrdZSet<K, W>) -> Vec<SqlRow>
 where
-    K: Ord + Clone + Debug + 'static + ToSqlRow,
+    K: Ord + Clone + Debug + 'static + ToSqlRow + SizeOf,
     W: ZRingValue,
     usize: TryFrom<W>,
     <usize as TryFrom<W>>::Error: Debug,
@@ -115,7 +116,7 @@ impl<'a> DataRows<'a> {
 /// The format is from the SqlLogicTest query output string format
 pub fn zset_to_strings<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> Vec<Vec<String>>
 where
-    K: Ord + Clone + Debug + 'static + ToSqlRow,
+    K: Ord + Clone + Debug + 'static + ToSqlRow + SizeOf,
     W: ZRingValue,
     usize: TryFrom<W>,
     <usize as TryFrom<W>>::Error: Debug,
@@ -156,7 +157,7 @@ where
 /// The format is from the SqlLogicTest query output string format
 pub fn hash<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> String
 where
-    K: Ord + Clone + Debug + 'static + ToSqlRow,
+    K: Ord + Clone + Debug + 'static + ToSqlRow + SizeOf,
     W: ZRingValue,
     usize: TryFrom<W>,
     <usize as TryFrom<W>>::Error: Debug,

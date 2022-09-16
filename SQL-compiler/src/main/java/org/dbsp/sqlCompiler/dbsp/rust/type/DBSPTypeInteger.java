@@ -26,7 +26,9 @@ package org.dbsp.sqlCompiler.dbsp.rust.type;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPApplyMethodExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPAsExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPIntegerLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLongLiteral;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Unimplemented;
 
@@ -62,18 +64,18 @@ public class DBSPTypeInteger extends DBSPType
     @Override
     public DBSPLiteral getZero() {
         if (this.width <= 32) {
-            return new DBSPLiteral(0, this.mayBeNull);
+            return new DBSPIntegerLiteral(0, this.mayBeNull);
         } else {
-            return new DBSPLiteral(0L, this.mayBeNull);
+            return new DBSPLongLiteral(0L, this.mayBeNull);
         }
     }
 
     @Override
     public DBSPLiteral getOne() {
         if (this.width <= 32) {
-            return new DBSPLiteral(1, this.mayBeNull);
+            return new DBSPIntegerLiteral(1, this.mayBeNull);
         } else {
-            return new DBSPLiteral(1L, this.mayBeNull);
+            return new DBSPLongLiteral(1L, this.mayBeNull);
         }
     }
 

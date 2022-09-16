@@ -26,6 +26,10 @@ package org.dbsp.sqllogictest;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPISizeLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPIntegerLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPStringLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPStatement;
@@ -80,7 +84,7 @@ public class RustTestGenerator {
 
         if (output != null) {
             if (description.columnTypes != null) {
-                DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
+                DBSPExpression columnTypes = new DBSPStringLiteral(description.columnTypes);
                 DBSPTypeZSet otype = output.getNonVoidType().to(DBSPTypeZSet.class);
                 String functionProducingStrings;
                 DBSPType elementType;
@@ -113,7 +117,7 @@ public class RustTestGenerator {
         } else {
             if (description.columnTypes == null)
                 throw new RuntimeException("Expected column types to be supplied");
-            DBSPExpression columnTypes = new DBSPLiteral(description.columnTypes);
+            DBSPExpression columnTypes = new DBSPStringLiteral(description.columnTypes);
             if (description.hash == null)
                 throw new RuntimeException("Expected hash to be supplied");
             String hash = isVector ? "hash_vectors" : "hash";
@@ -126,7 +130,7 @@ public class RustTestGenerator {
                     new DBSPExpressionStatement(
                             new DBSPApplyExpression("assert_eq!", null,
                                     new DBSPVariableReference("_hash", DBSPTypeString.instance),
-                                    new DBSPLiteral(description.hash))));
+                                    new DBSPStringLiteral(description.hash))));
         }
         if (description.getExpectedOutputSize() >= 0) {
             DBSPExpression count;
@@ -141,7 +145,7 @@ public class RustTestGenerator {
             }
             list.add(new DBSPExpressionStatement(
                     new DBSPApplyExpression("assert_eq!", null,
-                            count, new DBSPLiteral(description.getExpectedOutputSize()))));
+                            count, new DBSPISizeLiteral(description.getExpectedOutputSize()))));
         }
         DBSPExpression body = new DBSPBlockExpression(list, null);
         return new DBSPFunction(name, new ArrayList<>(), null, body);

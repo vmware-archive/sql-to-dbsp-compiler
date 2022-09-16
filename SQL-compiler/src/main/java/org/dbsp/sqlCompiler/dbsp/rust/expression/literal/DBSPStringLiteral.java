@@ -21,21 +21,39 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.pattern;
+package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeString;
 import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.Utilities;
 
-public class DBSPLiteralPattern extends DBSPPattern {
-    public final DBSPLiteral literal;
+import javax.annotation.Nullable;
 
-    public DBSPLiteralPattern(DBSPLiteral literal) {
-        super(literal.getNode());
-        this.literal = literal;
+public class DBSPStringLiteral extends DBSPLiteral {
+    @Nullable
+    public final String value;
+
+    @SuppressWarnings("unused")
+    public DBSPStringLiteral() {
+        this(null, true);
+    }
+
+    public DBSPStringLiteral(String value) {
+        this(value, false);
+    }
+
+    public DBSPStringLiteral(@Nullable String value, boolean nullable) {
+        super(null, DBSPTypeString.instance.setMayBeNull(nullable), value);
+        if (value == null && !nullable)
+            throw new RuntimeException("Null value with non-nullable type");
+        this.value = value;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.literal);
+        if (this.value == null)
+            return builder.append(this.noneString());
+        return builder.append(this.wrapSome(
+                "String::from(" + Utilities.escapeString(this.value) + ")"));
     }
 }

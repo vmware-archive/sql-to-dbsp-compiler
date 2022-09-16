@@ -29,6 +29,8 @@ import org.apache.calcite.sql.fun.SqlCountAggFunction;
 import org.apache.calcite.sql.fun.SqlMinMaxAggFunction;
 import org.apache.calcite.sql.fun.SqlSumAggFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLongLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.dbsp.rust.type.IsNumericType;
@@ -195,7 +197,7 @@ public class AggregateCompiler {
     }
 
     void processMinMax(SqlMinMaxAggFunction function) {
-        DBSPExpression zero = new DBSPLiteral(this.nullableResultType);
+        DBSPExpression zero = DBSPLiteral.none(this.nullableResultType);
         String call;
         switch (function.getKind()) {
             case MIN:
@@ -215,7 +217,7 @@ public class AggregateCompiler {
     }
 
     void processSum(SqlSumAggFunction function) {
-        DBSPExpression zero = new DBSPLiteral(this.nullableResultType);
+        DBSPExpression zero = DBSPLiteral.none(this.nullableResultType);
         DBSPExpression increment;
         DBSPExpression aggregatedValue = this.getAggregatedValue();
         DBSPVariableReference accum = new DBSPVariableReference("a", this.nullableResultType);
@@ -237,7 +239,8 @@ public class AggregateCompiler {
     void processAvg(SqlAvgAggFunction function) {
         DBSPType aggregatedValueType = this.getAggregatedValueType();
         DBSPType i64 = DBSPTypeInteger.signed64.setMayBeNull(true);
-        DBSPExpression zero = new DBSPRawTupleExpression(new DBSPLiteral(i64), new DBSPLiteral(i64));
+        DBSPExpression zero = new DBSPRawTupleExpression(
+                DBSPLiteral.none(i64), DBSPLiteral.none(i64));
         DBSPType pairType = zero.getNonVoidType();
         DBSPExpression count, sum;
         DBSPVariableReference accum = new DBSPVariableReference("a", pairType);
@@ -246,7 +249,7 @@ public class AggregateCompiler {
         DBSPExpression countAccumulator = new DBSPFieldExpression(accum, countIndex);
         DBSPExpression sumAccumulator = new DBSPFieldExpression(accum, sumIndex);
         DBSPExpression aggregatedValue = ExpressionCompiler.makeCast(this.getAggregatedValue(), i64);
-        DBSPExpression plusOne = new DBSPLiteral(1L);
+        DBSPExpression plusOne = new DBSPLongLiteral(1L);
         if (aggregatedValueType.mayBeNull)
             plusOne = new DBSPApplyExpression("indicator", DBSPTypeInteger.signed64, aggregatedValue);
         if (call.isDistinct()) {
@@ -278,7 +281,7 @@ public class AggregateCompiler {
         divide = ExpressionCompiler.makeCast(divide, this.nullableResultType);
         DBSPClosureExpression post = new DBSPClosureExpression(
                 null, divide, a.asParameter());
-        DBSPExpression postZero = new DBSPLiteral(this.nullableResultType);
+        DBSPExpression postZero = DBSPLiteral.none(this.nullableResultType);
         this.foldingFunction = new FoldDescription(zero,
                 this.makeRowClosure(increment, accum), post, postZero);
     }

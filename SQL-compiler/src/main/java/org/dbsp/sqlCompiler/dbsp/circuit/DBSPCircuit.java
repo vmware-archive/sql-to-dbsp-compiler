@@ -60,7 +60,7 @@ public class DBSPCircuit extends DBSPNode {
             "    zset,\n" +
             "};\n" +
             "use genlib::*;\n" +
-            "use deepsize::DeepSizeOf;\n" +
+            "use size_of::*;\n" +
             "use ::serde::{Deserialize,Serialize};\n" +
             "use compare::{Compare, Extract};\n" +
             "use std::{\n" +

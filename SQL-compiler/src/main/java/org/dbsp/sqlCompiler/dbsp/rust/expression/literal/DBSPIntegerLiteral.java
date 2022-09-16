@@ -21,21 +21,37 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.dbsp.rust.pattern;
+package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeInteger;
 import org.dbsp.util.IndentStringBuilder;
 
-public class DBSPLiteralPattern extends DBSPPattern {
-    public final DBSPLiteral literal;
+import javax.annotation.Nullable;
 
-    public DBSPLiteralPattern(DBSPLiteral literal) {
-        super(literal.getNode());
-        this.literal = literal;
+public class DBSPIntegerLiteral extends DBSPLiteral {
+    @Nullable
+    public final Integer value;
+
+    public DBSPIntegerLiteral() {
+        this(null, true);
+    }
+
+    public DBSPIntegerLiteral(int value) {
+        this(value, false);
+    }
+
+    public DBSPIntegerLiteral(@Nullable Integer value, boolean nullable) {
+        super(null, DBSPTypeInteger.signed32.setMayBeNull(nullable), value);
+        if (value == null && !nullable)
+            throw new RuntimeException("Null value with non-nullable type");
+        this.value = value;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.literal);
+        if (this.value == null)
+            return builder.append(this.noneString());
+        String val = Integer.toString(this.value);
+        return builder.append(this.wrapSome(val + "i32"));
     }
 }
