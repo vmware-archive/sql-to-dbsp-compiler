@@ -33,18 +33,13 @@ public class DBSPStringLiteral extends DBSPLiteral {
     @Nullable
     public final String value;
 
+    @SuppressWarnings("unused")
     public DBSPStringLiteral() {
         this(null, true);
     }
 
     public DBSPStringLiteral(String value) {
         this(value, false);
-    }
-
-    static String toString(@Nullable String value) {
-        if (value == null)
-            return "None::<" + DBSPTypeString.instance.toString() + ">";
-        return value;
     }
 
     public DBSPStringLiteral(@Nullable String value, boolean nullable) {

@@ -58,6 +58,7 @@ public class DBSPLiteral extends DBSPExpression {
 
     /**
      * Base case handling only nulls.  Should be overridden.
+     * This is useful to handle nulls of types that may not have literal classes defined.
      */
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
