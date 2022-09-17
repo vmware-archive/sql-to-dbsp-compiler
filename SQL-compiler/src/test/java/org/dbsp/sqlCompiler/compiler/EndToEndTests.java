@@ -28,13 +28,13 @@ import java.io.*;
  */
 public class EndToEndTests {
     static final String rustDirectory = "../temp/src";
-    static final String testFilePath = rustDirectory + "/test.rs";
+    static final String testFilePath = rustDirectory + "/test0.rs";
 
     @BeforeClass
     public static void generateLib() throws IOException {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         Utilities.writeRustMain(rustDirectory + "/main.rs",
-                Linq.list("test"));
+                Linq.list("test0"));
     }
 
     private CalciteCompiler compileDef() throws SqlParseException {

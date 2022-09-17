@@ -1012,7 +1012,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         }
         for (ViewDDL view: program.views) {
             RelNode rel = view.getRelNode();
-            // Dump plan
             if (this.debug)
                 System.out.println(CalciteCompiler.getPlan(rel));
             this.go(rel);

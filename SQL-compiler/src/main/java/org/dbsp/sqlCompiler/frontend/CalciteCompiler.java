@@ -32,12 +32,16 @@ import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.*;
+import org.apache.calcite.plan.hep.HepMatchOrder;
 import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgram;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
+import org.apache.calcite.rel.RelVisitor;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.rules.*;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
@@ -83,30 +87,87 @@ public class CalciteCompiler {
     private CalciteProgram program;
     private final SqlToRelConverter.Config converterConfig;
     private static final boolean debug = false;
+    private final RelOptPlanner optimizer;
+
+    public static boolean hasOuterJoins(RelNode rootRel) {
+        class OuterJoinFinder extends RelVisitor {
+            int outerJoinCount;
+            @Override public void visit(RelNode node, int ordinal,
+                                        @org.checkerframework.checker.nullness.qual.Nullable RelNode parent) {
+                if (node instanceof Join) {
+                    Join join = (Join)node;
+                    if (join.getJoinType().isOuterJoin())
+                    ++outerJoinCount;
+                }
+                super.visit(node, ordinal, parent);
+            }
+
+            int run(RelNode node) {
+                this.go(node);
+                return this.outerJoinCount;
+            }
+        }
+
+        return new OuterJoinFinder().run(rootRel) > 0;
+    }
 
     /**
-     * List of calcite optimizations to apply.
+     * We do program-dependent optimization, since some optimizations
+     * are buggy and don't always work.
      */
-    static List<RelOptRule> getOptRules() {
+    static List<HepProgram> getOptimizationStages(RelNode rel) {
+        HepProgram stage1 = new HepProgramBuilder()
+                    // Convert DISTINCT aggregates into separate computations and join the results
+                    .addRuleInstance(CoreRules.AGGREGATE_EXPAND_DISTINCT_AGGREGATES_TO_JOIN)
+                    // Join order optimization
+                    .addRuleInstance(CoreRules.FILTER_INTO_JOIN)
+                    .addMatchOrder(HepMatchOrder.BOTTOM_UP)
+                    .addRuleInstance(CoreRules.JOIN_TO_MULTI_JOIN)
+                    .addRuleInstance(CoreRules.PROJECT_MULTI_JOIN_MERGE)
+                    .addRuleInstance(CoreRules.MULTI_JOIN_OPTIMIZE_BUSHY)
+                    .build();
+        HepProgram stage2 = new HepProgramBuilder()
+                    .addRuleInstance(CoreRules.PROJECT_MERGE)
+                    .addRuleInstance(CoreRules.PROJECT_JOIN_TRANSPOSE)
+                    /*
+                    // Remove empty collections
+                    .addRuleInstance(PruneEmptyRules.UNION_INSTANCE)
+                    .addRuleInstance(PruneEmptyRules.INTERSECT_INSTANCE)
+                    .addRuleInstance(PruneEmptyRules.MINUS_INSTANCE)
+                    .addRuleInstance(PruneEmptyRules.PROJECT_INSTANCE)
+                    .addRuleInstance(PruneEmptyRules.FILTER_INSTANCE)
+                    .addRuleInstance(PruneEmptyRules.SORT_INSTANCE)
+                    .addRuleInstance(PruneEmptyRules.AGGREGATE_INSTANCE)
+                    .addRuleInstance(PruneEmptyRules.JOIN_LEFT_INSTANCE)
+                    .addRuleInstance(PruneEmptyRules.JOIN_RIGHT_INSTANCE)
+                    .addRuleInstance(PruneEmptyRules.SORT_FETCH_ZERO_INSTANCE)
+                    // Merging nodes
+                    .addRuleInstance(CoreRules.MINUS_MERGE)
+                    .addRuleInstance(CoreRules.UNION_MERGE)
+                    .addRuleInstance(CoreRules.AGGREGATE_MERGE)
+                    .addRuleInstance(CoreRules.INTERSECT_MERGE)
+                    // Remove unused code
+                    .addRuleInstance(CoreRules.AGGREGATE_REMOVE)
+                    .addRuleInstance(CoreRules.UNION_REMOVE)
+                    .addRuleInstance(CoreRules.PROJECT_JOIN_JOIN_REMOVE)
+                    .addRuleInstance(CoreRules.PROJECT_JOIN_REMOVE)
+                     */
+                    .build();
+            if (hasOuterJoins(rel))
+                return Linq.list(stage2);
+            return Linq.list(stage1, stage2);
+        /*
         return Linq.list(
-                CoreRules.PROJECT_MERGE,
                 CoreRules.AGGREGATE_PROJECT_PULL_UP_CONSTANTS,
-                CoreRules.AGGREGATE_REMOVE,
-                CoreRules.AGGREGATE_EXPAND_DISTINCT_AGGREGATES_TO_JOIN,
                 CoreRules.AGGREGATE_UNION_AGGREGATE,
-                CoreRules.FILTER_INTO_JOIN,
+                CoreRules.FILTER_REDUCE_EXPRESSIONS,
+                CoreRules.JOIN_PUSH_EXPRESSIONS,
                 CoreRules.JOIN_CONDITION_PUSH,
-                PruneEmptyRules.UNION_INSTANCE,
-                PruneEmptyRules.INTERSECT_INSTANCE,
-                PruneEmptyRules.MINUS_INSTANCE,
-                PruneEmptyRules.PROJECT_INSTANCE,
-                PruneEmptyRules.FILTER_INSTANCE,
-                PruneEmptyRules.SORT_INSTANCE,
-                PruneEmptyRules.AGGREGATE_INSTANCE,
-                PruneEmptyRules.JOIN_LEFT_INSTANCE,
-                PruneEmptyRules.JOIN_RIGHT_INSTANCE,
-                PruneEmptyRules.SORT_FETCH_ZERO_INSTANCE
+                CoreRules.PROJECT_REDUCE_EXPRESSIONS,
+                CoreRules.PROJECT_FILTER_TRANSPOSE,
+                CoreRules.PROJECT_SET_OP_TRANSPOSE,
         );
+         */
     }
 
     // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
@@ -146,9 +207,8 @@ public class CalciteCompiler {
                 validatorConfig
         );
 
-        HepProgramBuilder builder = new HepProgramBuilder();
-        getOptRules().forEach(builder::addRuleInstance);
-        HepPlanner planner = new HepPlanner(builder.build());
+        // The optimizer does not seem to be invoked anywhere.
+        this.optimizer = new HepPlanner(new HepProgramBuilder().build());
         /*
         RelOptPlanner planner = new VolcanoPlanner(
                     RelOptCostImpl.FACTORY,
@@ -156,7 +216,7 @@ public class CalciteCompiler {
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
          */
         this.cluster = RelOptCluster.create(
-                planner,
+                this.optimizer,
                 new RexBuilder(this.typeFactory)
         );
 
@@ -210,12 +270,15 @@ public class CalciteCompiler {
 
     RelNode optimize(RelNode rel) {
         if (debug)
-            System.out.println("Before planner " + getPlan(rel));
-        RelOptPlanner planner = this.converter.getCluster().getPlanner();
-        planner.setRoot(rel);
-        rel = planner.findBestExp();
-        if (debug)
-            System.out.println("After planner " + getPlan(rel));
+            System.out.println("Before optimizer " + getPlan(rel));
+
+        for (HepProgram program: getOptimizationStages(rel)) {
+            HepPlanner planner = new HepPlanner(program);
+            planner.setRoot(rel);
+            rel = planner.findBestExp();
+            if (debug)
+                System.out.println("After optimizer stage " + getPlan(rel));
+        }
         RelBuilder relBuilder = this.converterConfig.getRelBuilderFactory().create(
                 cluster, null);
         // This converts correlated sub-queries into standard joins.
