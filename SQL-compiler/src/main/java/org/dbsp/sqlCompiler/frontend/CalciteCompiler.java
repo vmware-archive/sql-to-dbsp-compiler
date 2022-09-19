@@ -89,26 +89,34 @@ public class CalciteCompiler {
     private static final boolean debug = false;
     private final RelOptPlanner optimizer;
 
-    public static boolean hasOuterJoins(RelNode rootRel) {
+    /**
+     * Policy which decides whether to run the busy join optimization.
+     * @param rootRel Current plan.
+     */
+    public static boolean avoidBushyJoin(RelNode rootRel) {
         class OuterJoinFinder extends RelVisitor {
-            int outerJoinCount;
+            public int outerJoinCount = 0;
+            public int joinCount = 0;
             @Override public void visit(RelNode node, int ordinal,
                                         @org.checkerframework.checker.nullness.qual.Nullable RelNode parent) {
                 if (node instanceof Join) {
                     Join join = (Join)node;
+                    ++joinCount;
                     if (join.getJoinType().isOuterJoin())
                     ++outerJoinCount;
                 }
                 super.visit(node, ordinal, parent);
             }
 
-            int run(RelNode node) {
+            void run(RelNode node) {
                 this.go(node);
-                return this.outerJoinCount;
             }
         }
 
-        return new OuterJoinFinder().run(rootRel) > 0;
+        OuterJoinFinder finder = new OuterJoinFinder();
+        finder.run(rootRel);
+        // Bushy join optimization fails when the query contains outer joins.
+        return (finder.outerJoinCount > 0) || (finder.joinCount < 4);
     }
 
     /**
@@ -153,7 +161,7 @@ public class CalciteCompiler {
                     .addRuleInstance(CoreRules.PROJECT_JOIN_REMOVE)
                      */
                     .build();
-            if (hasOuterJoins(rel))
+            if (avoidBushyJoin(rel))
                 return Linq.list(stage2);
             return Linq.list(stage1, stage2);
         /*

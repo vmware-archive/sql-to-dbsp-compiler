@@ -153,8 +153,9 @@ public class DBSPCircuit extends DBSPNode {
                 .newline();
 
         builder.append("declare_tuples! {").increase();
-        // Do not generate Tuple1
-        for (int i = 1; i <= DBSPTypeTuple.maxTupleSize; i++) {
+        for (int i: DBSPTypeTuple.tupleSizesUsed) {
+            if (i == 0)
+                continue;
             builder.append("Tuple")
                     .append(i)
                     .append("<");
@@ -166,6 +167,7 @@ public class DBSPCircuit extends DBSPNode {
             }
             builder.append(">,\n");
         }
+        DBSPTypeTuple.clearSizesUsed();
         return builder.decrease()
                 .append("}\n\n")
                 .toString();

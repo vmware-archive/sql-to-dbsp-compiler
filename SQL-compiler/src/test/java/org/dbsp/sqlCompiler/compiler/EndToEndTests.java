@@ -326,7 +326,6 @@ public class EndToEndTests {
     // Calcite seems to handle this query incorrectly, since
     // it claims that 1 / 0 is an integer instead of NULL
     //@Test
-    @SuppressWarnings("unused")
     public void divZeroTest() {
         String query = "SELECT 1 / 0";
         this.testQuery(query, new DBSPZSetLiteral(

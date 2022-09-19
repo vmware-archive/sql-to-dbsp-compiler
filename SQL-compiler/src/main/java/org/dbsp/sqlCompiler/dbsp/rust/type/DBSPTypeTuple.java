@@ -30,13 +30,20 @@ import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DBSPTypeTuple extends DBSPType {
     /**
-     * Keep track of the size of the maximum tuple size allocated.
+     * Keep track of the tuple sizes that appear in the program to properly generate
+     * Rust macros to instantiate them.
      */
-    public static int maxTupleSize = 0;
+    public static final Set<Integer> tupleSizesUsed = new HashSet<>();
+
+    public static void clearSizesUsed() {
+        tupleSizesUsed.clear();
+    }
 
     public final DBSPType[] tupFields;
 
@@ -46,8 +53,7 @@ public class DBSPTypeTuple extends DBSPType {
     protected DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
         super(node, mayBeNull);
         this.tupFields = tupFields;
-        if (this.tupFields.length > maxTupleSize)
-            maxTupleSize = this.tupFields.length;
+        tupleSizesUsed.add(this.tupFields.length);
     }
 
     public DBSPTypeTuple(@Nullable Object node, DBSPType... tupFields) {
