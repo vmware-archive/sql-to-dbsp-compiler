@@ -317,7 +317,6 @@ public class SqlTestFile {
             }
             if (queryCount % (batchSize * parallelism) == 0) {
                 this.run(executor);
-                executor.reset();
                 queryCount = 0;
                 index = 0;
             }

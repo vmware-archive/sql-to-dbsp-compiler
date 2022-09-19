@@ -484,8 +484,8 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         DBSPTypeTuple resultType = this.convertType(join.getRowType()).to(DBSPTypeTuple.class);
         if (join.getInputs().size() != 2)
             throw new TranslationException("Unexpected join with " + join.getInputs().size() + " inputs", join);
-        DBSPOperator left = this.getInputAs(join.getInput(0), false);
-        DBSPOperator right = this.getInputAs(join.getInput(1), false);
+        DBSPOperator left = this.getInputAs(join.getInput(0), true);
+        DBSPOperator right = this.getInputAs(join.getInput(1), true);
         DBSPTypeTuple leftElementType = left.getNonVoidType().to(DBSPTypeZSet.class).elementType
                 .to(DBSPTypeTuple.class);
 

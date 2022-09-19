@@ -108,17 +108,17 @@ public class Main {
         calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");       
         // Calcite types /0 as not nullable!
         calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
-        int batchSize = 135;
+        int batchSize = 500;
         int parallelism = 1;
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         ISqlTestExecutor executor = new DBSPExecutor(true);
         String files =
             //"../../sqllogictest/test/s.test"
-            //"../../sqllogictest/test/random/select"
+            "../../sqllogictest/test/random/select"
             //"../../sqllogictest/test/random/expr"
             //"../../sqllogictest/test/random/aggregates/"
             //"../../sqllogictest/test/random/groupby"
-            "../../sqllogictest/test/select5.test"
+            //"../../sqllogictest/test/select5.test"
         ;
         if (argv.length > 1)
             files = argv[1];
