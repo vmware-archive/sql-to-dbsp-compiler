@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# dbsp = { git = "https://github.com/vmware/database-stream-processor.git" }
+dbsp = { git = "https://github.com/vmware/database-stream-processor.git" }
 # The following is used while I have outstanding PRs not yet merged
-dbsp = { path = "/home/mbudiu/git/database-stream-processor" }
+# dbsp = { path = "/home/mbudiu/git/database-stream-processor" }
 
 tuple = { path = "../lib/tuple" }
 sqllib = { path = "../lib/sqllib" }
