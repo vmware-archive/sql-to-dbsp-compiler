@@ -1,10 +1,11 @@
 # SQL to DBSP compiler
 
-This repository holds the source code for a compiler translating SQL view definitions into DBSP circuits.
-DBSP is implemented in Rust in the repository
-https://github.com/vmware/database-stream-processor
+This repository holds the source code for a compiler translating SQL
+view definitions into DBSP circuits.  DBSP is implemented in Rust in
+the repository https://github.com/vmware/database-stream-processor
 
-The SQL compiler is based on the Apache Calcite compiler infrastructure https://calcite.apache.org/
+The SQL compiler is based on the Apache Calcite compiler
+infrastructure https://calcite.apache.org/
 
 ## Dependencies
 
@@ -22,9 +23,10 @@ $> ./run-tests.sh
 
 ## Incremental view maintenance
 
-The DBSP runtime is optimized for performing incremental view maintenance.  In consequence,
-DBSP programs in SQL are expressed as VIEWS, or *standing queries*.  A view is a function
-of one or more tables and other views.
+The DBSP runtime is optimized for performing incremental view
+maintenance.  In consequence, DBSP programs in SQL are expressed as
+VIEWS, or *standing queries*.  A view is a function of one or more
+tables and other views.
 
 For example, the following query defines a view:
 
@@ -46,7 +48,11 @@ CREATE TABLE T
 ```
 
 The compiler must be given the table definition first, and then the
-view definition.  The compiler generates a library which will
+view definition.  The compiler generates a Rust library which
+implements the query as a function: given the input data, it produces
+the output data.
+
+In the future the compiler generates a library which will
 incrementally maintain the view `V` when presented with changes to
 table `T`.
 
@@ -85,11 +91,11 @@ with respect to the root directory of the compiler project
 (we only need the .test files).  One way the source tree can be obtained
 is from the git mirror: https://github.com/gregrahn/sqllogictest.git
 
-The model of SQLLogicTest has to be adapted for testing DBSP.
-In SQLLogicTest a test is composed of a series of alternating SQL
-DDL (data definition language) and DML statements (data modification language)
-(CREATE TABLE, INSERT VALUES), and queries (SELECT).
-The statements can fail in a test.
+The model of SQLLogicTest has to be adapted for testing DBSP.  In
+SQLLogicTest a test is composed of a series of alternating SQL DDL
+(data definition language) and DML statements (data modification
+language) (CREATE TABLE, INSERT VALUES), and queries (SELECT).  The
+statements are allowed to fail in a test.
 
 Since DBSP is not a database, but a streaming system, we have to turn around
 this model.
@@ -104,6 +110,7 @@ compiled into circuits.
 * The validation rules in SQLLogicTest are compiled into Rust functions that compare
 the outputs of queries.
 
-So a SqlLogicTest script is turned into multiple DBSP tests, each of which creates
-a circuit, feeds it one input, reads the output, and validates it, executing exactly
-one transaction.  No incremental or streaming aspects are tested currently.
+So a SqlLogicTest script is turned into multiple DBSP tests, each of
+which creates a circuit, feeds it one input, reads the output, and
+validates it, executing exactly one transaction.  No incremental or
+streaming aspects are tested currently.

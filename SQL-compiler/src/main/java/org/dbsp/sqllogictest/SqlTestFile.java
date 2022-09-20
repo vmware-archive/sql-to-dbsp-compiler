@@ -291,10 +291,16 @@ public class SqlTestFile {
         executor.reset();
     }
 
+    /**
+     * Execute batch of tests from this file.
+     * @param executor    Program that knows how to execute tests.
+     * @param batchSize   Number of tests to execute.
+     * @param skipFromFile Number of tests to skip.
+     * @param calciteBugs Queries that need to be skipped.
+     */
     @SuppressWarnings("SameParameterValue")
-    void execute(ISqlTestExecutor executor, int batchSize, int parallelism, HashSet<String> calciteBugs)
+    void execute(ISqlTestExecutor executor, int batchSize, int skipFromFile, HashSet<String> calciteBugs)
             throws SqlParseException, IOException, InterruptedException {
-        int index = 0;
         int queryCount = 0;
         executor.reset();
         for (SqlTestQuery testQuery : this.tests) {
@@ -305,25 +311,26 @@ public class SqlTestFile {
             try {
                 // For each query we generate a complete circuit, with all tables, containing the same data.
                 executor.createTables(this.prepareTables);
-                executor.addQuery(testQuery.query, this.prepareInput, testQuery.outputDescription);
-                queryCount++;
+                if (skipFromFile > 0) {
+                    skipFromFile--;
+                } else {
+                    executor.addQuery(testQuery.query, this.prepareInput, testQuery.outputDescription);
+                    queryCount++;
+                }
             } catch (Throwable ex) {
                 System.err.println("Error while compiling " + testQuery.query);
                 throw ex;
             }
-            if (queryCount % batchSize == 0) {
-                executor.generateCode(index);
-                index++;
-            }
-            if (queryCount % (batchSize * parallelism) == 0) {
+            if (queryCount > 0 &&
+                    queryCount % batchSize == 0) {
+                executor.generateCode(0);
                 this.run(executor);
                 queryCount = 0;
-                index = 0;
             }
         }
         if ((queryCount % batchSize) != 0) {
             // left overs
-            executor.generateCode(index);
+            executor.generateCode(0);
             this.run(executor);
         }
     }
