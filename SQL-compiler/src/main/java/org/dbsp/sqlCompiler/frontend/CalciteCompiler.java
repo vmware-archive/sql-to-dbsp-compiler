@@ -119,59 +119,71 @@ public class CalciteCompiler {
         return (finder.outerJoinCount > 0) || (finder.joinCount < 4);
     }
 
+    static HepProgram createProgram(RelOptRule... rules) {
+        HepProgramBuilder builder = new HepProgramBuilder();
+        for (RelOptRule r: rules)
+            builder.addRuleInstance(r);
+        return builder.build();
+    }
+
     /**
      * We do program-dependent optimization, since some optimizations
      * are buggy and don't always work.
      */
     static List<HepProgram> getOptimizationStages(RelNode rel) {
-        HepProgram stage1 = new HepProgramBuilder()
-                    // Convert DISTINCT aggregates into separate computations and join the results
-                    .addRuleInstance(CoreRules.AGGREGATE_EXPAND_DISTINCT_AGGREGATES_TO_JOIN)
-                    // Join order optimization
-                    .addRuleInstance(CoreRules.FILTER_INTO_JOIN)
-                    .addMatchOrder(HepMatchOrder.BOTTOM_UP)
-                    .addRuleInstance(CoreRules.JOIN_TO_MULTI_JOIN)
-                    .addRuleInstance(CoreRules.PROJECT_MULTI_JOIN_MERGE)
-                    .addRuleInstance(CoreRules.MULTI_JOIN_OPTIMIZE_BUSHY)
-                    .build();
-        HepProgram stage2 = new HepProgramBuilder()
-                    .addRuleInstance(CoreRules.PROJECT_MERGE)
-                    .addRuleInstance(CoreRules.PROJECT_JOIN_TRANSPOSE)
-                    /*
-                    // Remove empty collections
-                    .addRuleInstance(PruneEmptyRules.UNION_INSTANCE)
-                    .addRuleInstance(PruneEmptyRules.INTERSECT_INSTANCE)
-                    .addRuleInstance(PruneEmptyRules.MINUS_INSTANCE)
-                    .addRuleInstance(PruneEmptyRules.PROJECT_INSTANCE)
-                    .addRuleInstance(PruneEmptyRules.FILTER_INSTANCE)
-                    .addRuleInstance(PruneEmptyRules.SORT_INSTANCE)
-                    .addRuleInstance(PruneEmptyRules.AGGREGATE_INSTANCE)
-                    .addRuleInstance(PruneEmptyRules.JOIN_LEFT_INSTANCE)
-                    .addRuleInstance(PruneEmptyRules.JOIN_RIGHT_INSTANCE)
-                    .addRuleInstance(PruneEmptyRules.SORT_FETCH_ZERO_INSTANCE)
-                    // Merging nodes
-                    .addRuleInstance(CoreRules.MINUS_MERGE)
-                    .addRuleInstance(CoreRules.UNION_MERGE)
-                    .addRuleInstance(CoreRules.AGGREGATE_MERGE)
-                    .addRuleInstance(CoreRules.INTERSECT_MERGE)
-                    // Remove unused code
-                    .addRuleInstance(CoreRules.AGGREGATE_REMOVE)
-                    .addRuleInstance(CoreRules.UNION_REMOVE)
-                    .addRuleInstance(CoreRules.PROJECT_JOIN_JOIN_REMOVE)
-                    .addRuleInstance(CoreRules.PROJECT_JOIN_REMOVE)
-                     */
-                    .build();
+        HepProgram constantFold = createProgram(
+                CoreRules.FILTER_REDUCE_EXPRESSIONS,
+                CoreRules.PROJECT_REDUCE_EXPRESSIONS,
+                CoreRules.JOIN_REDUCE_EXPRESSIONS,
+                CoreRules.WINDOW_REDUCE_EXPRESSIONS,
+                CoreRules.CALC_REDUCE_EXPRESSIONS);
+        // Remove empty collections
+        HepProgram removeEmpty = createProgram(
+                PruneEmptyRules.UNION_INSTANCE,
+                PruneEmptyRules.INTERSECT_INSTANCE,
+                PruneEmptyRules.MINUS_INSTANCE,
+                PruneEmptyRules.PROJECT_INSTANCE,
+                PruneEmptyRules.FILTER_INSTANCE,
+                PruneEmptyRules.SORT_INSTANCE,
+                PruneEmptyRules.AGGREGATE_INSTANCE,
+                PruneEmptyRules.JOIN_LEFT_INSTANCE,
+                PruneEmptyRules.JOIN_RIGHT_INSTANCE,
+                PruneEmptyRules.SORT_FETCH_ZERO_INSTANCE);
+        HepProgram distinctAaggregates = createProgram(
+                // Convert DISTINCT aggregates into separate computations and join the results
+                CoreRules.AGGREGATE_EXPAND_DISTINCT_AGGREGATES_TO_JOIN);
+        HepProgram multiJoins = new HepProgramBuilder()
+                // Join order optimization
+                .addRuleInstance(CoreRules.FILTER_INTO_JOIN)
+                .addMatchOrder(HepMatchOrder.BOTTOM_UP)
+                .addRuleInstance(CoreRules.JOIN_TO_MULTI_JOIN)
+                .addRuleInstance(CoreRules.PROJECT_MULTI_JOIN_MERGE)
+                .addRuleInstance(CoreRules.MULTI_JOIN_OPTIMIZE_BUSHY)
+                .build();
+        HepProgram mergeNodes = createProgram(
+                CoreRules.PROJECT_MERGE,
+                CoreRules.MINUS_MERGE,
+                CoreRules.UNION_MERGE,
+                CoreRules.AGGREGATE_MERGE,
+                CoreRules.INTERSECT_MERGE);
+        // Remove unused code
+        HepProgram remove = createProgram(
+                CoreRules.AGGREGATE_REMOVE,
+                CoreRules.UNION_REMOVE,
+                CoreRules.PROJECT_REMOVE,
+                CoreRules.PROJECT_JOIN_JOIN_REMOVE,
+                CoreRules.PROJECT_JOIN_REMOVE
+                );
             if (avoidBushyJoin(rel))
-                return Linq.list(stage2);
-            return Linq.list(stage1, stage2);
-        /*
+                return Linq.list(constantFold, removeEmpty, distinctAaggregates, mergeNodes, remove);
+            return Linq.list(constantFold, removeEmpty, distinctAaggregates, multiJoins, mergeNodes, remove);
+            /*
         return Linq.list(
+                CoreRules.PROJECT_JOIN_TRANSPOSE)
                 CoreRules.AGGREGATE_PROJECT_PULL_UP_CONSTANTS,
                 CoreRules.AGGREGATE_UNION_AGGREGATE,
-                CoreRules.FILTER_REDUCE_EXPRESSIONS,
                 CoreRules.JOIN_PUSH_EXPRESSIONS,
                 CoreRules.JOIN_CONDITION_PUSH,
-                CoreRules.PROJECT_REDUCE_EXPRESSIONS,
                 CoreRules.PROJECT_FILTER_TRANSPOSE,
                 CoreRules.PROJECT_SET_OP_TRANSPOSE,
         );
@@ -338,6 +350,7 @@ public class CalciteCompiler {
                 if (tbl == null)
                     throw new TranslationException("Could not find translation", stat.table);
                 RelRoot values = this.converter.convertQuery(stat.data, true, true);
+                values = values.withRel(this.optimize(values.rel));
                 stat.setTranslation(values.rel);
                 return stat;
             }

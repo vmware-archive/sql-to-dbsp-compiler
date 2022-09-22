@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPZSetLiteral;
+import org.dbsp.util.Utilities;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -69,5 +70,9 @@ public class DBSPTransaction {
         DBSPRawTupleExpression result = new DBSPRawTupleExpression(tuple);
         return new DBSPFunction(name, new ArrayList<>(),
                 result.getType(), result);
+    }
+
+    public DBSPZSetLiteral getSet(String tableName) {
+        return Utilities.getExists(this.perInputChange, tableName);
     }
 }

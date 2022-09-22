@@ -242,6 +242,12 @@ public class EndToEndTests {
     }
 
     @Test
+    public void emptyWhereTest() {
+        String query = "SELECT * FROM T WHERE FALSE";
+        this.testQuery(query, this.empty);
+    }
+
+    @Test
     public void whereTest() {
         String query = "SELECT * FROM T WHERE COL3";
         this.testQuery(query, this.z0);

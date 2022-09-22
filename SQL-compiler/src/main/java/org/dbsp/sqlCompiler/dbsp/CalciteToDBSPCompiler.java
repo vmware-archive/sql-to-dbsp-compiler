@@ -1037,8 +1037,19 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         SqlInsert insert = (SqlInsert) statement.node;
         this.dmTranslation.prepare(
                 statement.node, op, insert.getTargetColumnList());
-        this.go(statement.rel);
-        transaction.addSet(statement.table, this.dmTranslation.getTranslation());
+        if (statement.rel instanceof LogicalTableScan) {
+            // Fake support for INSERT INTO table (SELECT * FROM othertable)
+            LogicalTableScan scan = (LogicalTableScan)statement.rel;
+            List<String> name = scan.getTable().getQualifiedName();
+            String tableName = name.get(name.size() - 1);
+            DBSPZSetLiteral data = transaction.getSet(tableName);
+            transaction.addSet(statement.table, data);
+        } else if (statement.rel instanceof LogicalValues) {
+            this.go(statement.rel);
+            transaction.addSet(statement.table, this.dmTranslation.getTranslation());
+        } else {
+            throw new Unimplemented(statement.node);
+        }
     }
 
     private DBSPSourceOperator createInput(TableDDL i) {

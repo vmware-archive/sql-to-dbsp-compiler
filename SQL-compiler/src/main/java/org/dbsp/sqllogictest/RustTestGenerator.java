@@ -27,7 +27,6 @@ import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPISizeLiteral;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPIntegerLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPStringLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPExpressionStatement;
@@ -82,7 +81,21 @@ public class RustTestGenerator {
         DBSPExpression output0 = new DBSPFieldExpression(null,
                 new DBSPVariableReference("output", DBSPTypeAny.instance), 0);
 
-        if (output != null) {
+        if (description.getExpectedOutputSize() >= 0) {
+            DBSPExpression count;
+            if (isVector) {
+                count = new DBSPApplyExpression("weighted_vector_count",
+                        DBSPTypeUSize.instance,
+                        new DBSPBorrowExpression(output0));
+            } else {
+                count = new DBSPApplyMethodExpression("weighted_count",
+                        DBSPTypeUSize.instance,
+                        output0);
+            }
+            list.add(new DBSPExpressionStatement(
+                    new DBSPApplyExpression("assert_eq!", null,
+                            count, new DBSPISizeLiteral(description.getExpectedOutputSize()))));
+        }if (output != null) {
             if (description.columnTypes != null) {
                 DBSPExpression columnTypes = new DBSPStringLiteral(description.columnTypes);
                 DBSPTypeZSet otype = output.getNonVoidType().to(DBSPTypeZSet.class);
@@ -131,21 +144,6 @@ public class RustTestGenerator {
                             new DBSPApplyExpression("assert_eq!", null,
                                     new DBSPVariableReference("_hash", DBSPTypeString.instance),
                                     new DBSPStringLiteral(description.hash))));
-        }
-        if (description.getExpectedOutputSize() >= 0) {
-            DBSPExpression count;
-            if (isVector) {
-                count = new DBSPApplyExpression("weighted_vector_count",
-                        DBSPTypeUSize.instance,
-                        new DBSPBorrowExpression(output0));
-            } else {
-                count = new DBSPApplyMethodExpression("weighted_count",
-                        DBSPTypeUSize.instance,
-                        output0);
-            }
-            list.add(new DBSPExpressionStatement(
-                    new DBSPApplyExpression("assert_eq!", null,
-                            count, new DBSPISizeLiteral(description.getExpectedOutputSize()))));
         }
         DBSPExpression body = new DBSPBlockExpression(list, null);
         return new DBSPFunction(name, new ArrayList<>(), null, body);
