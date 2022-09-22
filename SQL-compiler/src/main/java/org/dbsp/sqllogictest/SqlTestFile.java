@@ -129,12 +129,19 @@ public class SqlTestFile {
                     // TODO: this is wrong, but I can't get the Calcite parser
                     // to accept Postgres-like PRIMARY KEY statements.
                     line = line.replace("PRIMARY KEY", "");
+                    // TODO: Calcite does not accept "TEXT"
+                    line = line.replace(" TEXT", " VARCHAR");
                     statement.append(line);
                     line = this.nextLine(false);
                 }
 
                 String stat = statement.toString();
                 if (ok) {
+                    if (stat.toLowerCase().startsWith("create index"))
+                        // just ignore
+                        continue;
+                    if (stat.toLowerCase().startsWith("create unique index"))
+                        this.error("Unique index not supported " + stat);
                     if (stat.toLowerCase().contains("create table")) {
                         this.prepareTables.add(stat);
                     } else {
@@ -161,6 +168,9 @@ public class SqlTestFile {
             return null;
         List<String> skip = new ArrayList<>();
         List<String> only = new ArrayList<>();
+        while (line.isEmpty())
+            line = this.nextLine(false);
+
         while (line.startsWith("onlyif") || line.startsWith("skipif")) {
             boolean sk = line.startsWith("skipif");
             String cond = line.substring("onlyif".length()).trim();
