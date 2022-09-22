@@ -116,7 +116,7 @@ public class Main {
         String benchDir = "../../sqllogictest/test";
         // These are all the files we support from sqllogictest.
         String[] files = new String[]{
-                        "s.test",
+                        //"s.test",
                         "random/",
                         "select1.test",
                         "select2.test",
