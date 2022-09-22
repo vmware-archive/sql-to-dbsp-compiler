@@ -125,6 +125,10 @@ public class Main {
         if (argv.length > 1)
             files = Utilities.arraySlice(argv, 1);
         for (String file : files) {
+            if (file.startsWith("select"))
+                batchSize = 50;
+            if (file.startsWith("select5"))
+                batchSize = 5;
             Path path = Paths.get(benchDir + "/" + file);
             TestLoader loader = new TestLoader(batchSize, 0, executor);
             Files.walkFileTree(path, loader);
