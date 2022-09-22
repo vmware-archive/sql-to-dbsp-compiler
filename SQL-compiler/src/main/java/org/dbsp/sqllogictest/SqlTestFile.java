@@ -293,11 +293,21 @@ public class SqlTestFile {
         return this.tests.size();
     }
 
-    void run(ISqlTestExecutor executor) throws IOException, InterruptedException {
+    static long first = -1;
+
+    long seconds(long end, long start) {
+        return (end - start) / 1000000000;
+    }
+
+    void run(ISqlTestExecutor executor, int testsSoFar) throws IOException, InterruptedException {
         long start = System.nanoTime();
+        if (first == -1)
+            first = start;
         executor.run();
         long end = System.nanoTime();
-        System.out.println("Test took " + (end - start) / 1000000000 + " seconds");
+        System.out.println("Finished " + testsSoFar + " tests; " +
+                "last one=" + seconds(end, start) + "s" +
+                "; total=" + seconds(end, first) + "s");
         executor.reset();
     }
 
@@ -305,11 +315,12 @@ public class SqlTestFile {
      * Execute batch of tests from this file.
      * @param executor    Program that knows how to execute tests.
      * @param batchSize   Number of tests to execute.
+     * @param testsSoFar  Total tests executed so far.
      * @param skipFromFile Number of tests to skip.
      * @param calciteBugs Queries that need to be skipped.
      */
     @SuppressWarnings("SameParameterValue")
-    void execute(ISqlTestExecutor executor, int batchSize, int skipFromFile, HashSet<String> calciteBugs)
+    void execute(ISqlTestExecutor executor, int batchSize, int testsSoFar, int skipFromFile, HashSet<String> calciteBugs)
             throws SqlParseException, IOException, InterruptedException {
         int queryCount = 0;
         executor.reset();
@@ -334,14 +345,13 @@ public class SqlTestFile {
             if (queryCount > 0 &&
                     queryCount % batchSize == 0) {
                 executor.generateCode(0);
-                this.run(executor);
-                queryCount = 0;
+                this.run(executor, testsSoFar + queryCount);
             }
         }
         if ((queryCount % batchSize) != 0) {
             // left overs
             executor.generateCode(0);
-            this.run(executor);
+            this.run(executor, testsSoFar + queryCount);
         }
     }
 }

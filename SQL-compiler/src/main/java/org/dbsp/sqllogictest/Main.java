@@ -52,7 +52,7 @@ public class Main {
 
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
-        int tests = 0;
+        int testsCompleted = 0;
         final int testsInFile;
         final int skipFromFile;
         final ISqlTestExecutor executor;
@@ -80,9 +80,10 @@ public class Main {
             if (attrs.isRegularFile() && extension != null && extension.equals("test")) {
                 // validates the test
                 SqlTestFile test = null;
+                int currentTests = 0;
                 try {
                     test = new SqlTestFile(file.toString(), new NoMySql());
-                    this.tests += test.getTestCount();
+                    currentTests = test.getTestCount();
                 } catch (Exception ex) {
                     // We can't yet parse all kinds of tests
                     //noinspection UnnecessaryToStringCall
@@ -92,7 +93,8 @@ public class Main {
                 if (test != null) {
                     try {
                         System.out.println(file);
-                        test.execute(this.executor, this.testsInFile, this.skipFromFile, calciteBugs);
+                        test.execute(this.executor, this.testsInFile, this.testsCompleted, this.skipFromFile, calciteBugs);
+                        this.testsCompleted += currentTests;
                     } catch (SqlParseException | IOException | InterruptedException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -108,13 +110,13 @@ public class Main {
         calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");       
         // Calcite types /0 as not nullable!
         calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
-        int batchSize = 500;
+        int batchSize = 50;
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         ISqlTestExecutor executor = new DBSPExecutor(true);
         String benchDir = "../../sqllogictest/test";
         // These are all the files we support from sqllogictest.
         String[] files = new String[]{
-                        //"s.test"
+                        "s.test",
                         "random/",
                         "select1.test",
                         "select2.test",
@@ -133,7 +135,7 @@ public class Main {
             TestLoader loader = new TestLoader(batchSize, 0, executor);
             Files.walkFileTree(path, loader);
             System.out.println("Could not parse: " + loader.errors);
-            System.out.println("Parsed tests: " + String.format("%,3d", loader.tests));
+            System.out.println("Parsed tests: " + String.format("%,3d", loader.testsCompleted));
         }
     }
 }
