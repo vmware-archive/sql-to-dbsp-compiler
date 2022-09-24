@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeFloat;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -56,5 +57,11 @@ public class DBSPFloatLiteral extends DBSPLiteral {
         if (Float.isNaN(value))
             val = "std::f32::NAN";
         return builder.append(this.wrapSome("F32::new(" + val + ")"));
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.TranslationException;
@@ -30,9 +31,9 @@ import org.dbsp.util.TranslationException;
 import javax.annotation.Nullable;
 
 public class DBSPBinaryExpression extends DBSPExpression {
-    private final DBSPExpression left;
-    private final DBSPExpression right;
-    private final String operation;
+    public final DBSPExpression left;
+    public final DBSPExpression right;
+    public final String operation;
 
     @SuppressWarnings("ConstantConditions")
     public DBSPBinaryExpression(@Nullable Object node, DBSPType type, String operation,
@@ -77,5 +78,15 @@ public class DBSPBinaryExpression extends DBSPExpression {
                     .append(this.right)
                     .append(")");
         }
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        this.left.accept(visitor);
+        this.right.accept(visitor);
+        visitor.postorder(this);
     }
 }

@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.util.ICastable;
 import org.dbsp.sqlCompiler.dbsp.rust.ToRustString;
 import org.dbsp.util.TranslationException;
@@ -58,4 +59,6 @@ public interface IDBSPNode extends ICastable, ToRustString {
      */
     @Nullable
     Object getNode();
+
+    void accept(Visitor visitor);
 }

@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPApplyMethodExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPBinaryExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
@@ -71,5 +72,11 @@ public class DBSPTypeBool extends DBSPType implements IDBSPBaseType {
         } else {
             throw new Unimplemented("Cast from " + source.getNonVoidType());
         }
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

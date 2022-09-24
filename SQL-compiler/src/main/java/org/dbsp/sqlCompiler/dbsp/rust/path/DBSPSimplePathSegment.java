@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.path;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -44,5 +45,13 @@ public class DBSPSimplePathSegment extends DBSPPathSegment {
                     .join(", ", this.genericArgs)
                     .append(">");
         return builder;
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        for (DBSPType arg: this.genericArgs)
+            arg.accept(visitor);
+        visitor.postorder(this);
     }
 }

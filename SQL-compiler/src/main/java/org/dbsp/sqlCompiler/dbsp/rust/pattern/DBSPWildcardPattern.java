@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPWildcardPattern extends DBSPPattern {
@@ -35,5 +36,11 @@ public class DBSPWildcardPattern extends DBSPPattern {
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append("_");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

@@ -26,6 +26,7 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 
@@ -38,5 +39,15 @@ public class DBSPMapOperator extends DBSPOperator {
         this.addInput(input);
         this.checkResultType(expression, resultType);
         this.checkArgumentFunctionType(expression, 0, input);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.function != null)
+            this.function.accept(visitor);
+        for (DBSPOperator input: this.inputs)
+            input.accept(visitor);
+        visitor.postorder(this);
     }
 }

@@ -27,13 +27,9 @@ import org.dbsp.util.IndentStringBuilder;
 
 /**
  * Interface implemented by objects that can be serialized as Rust programs.
+ * To be removed once the new ToRustString visitor has been debugged.
  */
+@Deprecated()
 public interface ToRustString {
     IndentStringBuilder toRustString(IndentStringBuilder builder);
-
-    default String toRustString() {
-        IndentStringBuilder builder = new IndentStringBuilder();
-        this.toRustString(builder);
-        return builder.toString();
-    }
 }

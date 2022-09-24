@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -34,7 +35,7 @@ import java.util.Objects;
  */
 public class DBSPTypeUser extends DBSPType {
     public final String name;
-    private final DBSPType[] typeArgs;
+    public final DBSPType[] typeArgs;
 
     public DBSPTypeUser(@Nullable Object node, String name, boolean mayBeNull, DBSPType... typeArgs) {
         super(node, mayBeNull);
@@ -100,5 +101,13 @@ public class DBSPTypeUser extends DBSPType {
         int result = Objects.hash(name);
         result = 31 * result + Arrays.hashCode(typeArgs);
         return result;
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        for (DBSPType type: this.typeArgs)
+            type.accept(visitor);
+        visitor.postorder(this);
     }
 }

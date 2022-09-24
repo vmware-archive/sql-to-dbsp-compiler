@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeString;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Utilities;
@@ -55,5 +56,11 @@ public class DBSPStringLiteral extends DBSPLiteral {
             return builder.append(this.noneString());
         return builder.append(this.wrapSome(
                 "String::from(" + Utilities.escapeString(this.value) + ")"));
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

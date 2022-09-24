@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.dbsp.circuit.operator.DBSPSourceOperator;
@@ -43,42 +44,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DBSPCircuit extends DBSPNode {
-    @SuppressWarnings("SpellCheckingInspection")
-    static final String rustPreamble =
-            "// Automatically-generated file\n" +
-            "#![allow(dead_code)]\n" +
-            "#![allow(non_snake_case)]\n" +
-            "#![allow(unused_imports)]\n" +
-            "#![allow(unused_parens)]\n" +
-            "#![allow(unused_variables)]\n" +
-            "\n" +
-            "use dbsp::{\n" +
-            "    algebra::{ZSet, MulByRef, F32, F64},\n" +
-            "    circuit::{Circuit, Stream},\n" +
-            "    operator::{Generator, FilterMap, Fold},\n" +
-            "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
-            "    zset,\n" +
-            "};\n" +
-            "use genlib::*;\n" +
-            "use size_of::*;\n" +
-            "use ::serde::{Deserialize,Serialize};\n" +
-            "use compare::{Compare, Extract};\n" +
-            "use std::{\n" +
-            "    convert::identity,\n" +
-            "    fmt::{Debug, Formatter, Result as FmtResult},\n" +
-            "    cell::RefCell,\n" +
-            "    rc::Rc,\n" +
-            "};\n" +
-            "use tuple::declare_tuples;\n" +
-            "use sqllib::*;\n" +
-            "use sqlvalue::*;\n" +
-            "use hashing::*;\n" +
-            "type Weight = isize;\n";
-
-    private final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
-    private final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
-    private final List<DBSPOperator> operators = new ArrayList<>();
-    private final List<IDBSPDeclaration> declarations = new ArrayList<>();
+    public final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
+    public final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
+    public final List<DBSPOperator> operators = new ArrayList<>();
+    public final List<IDBSPDeclaration> declarations = new ArrayList<>();
     public final String name;
     public final String query;
 
@@ -145,32 +114,6 @@ public class DBSPCircuit extends DBSPNode {
                     .append(".borrow().clone());")
                     .newline();
         }
-    }
-
-    public static String generatePreamble() {
-        IndentStringBuilder builder = new IndentStringBuilder();
-        builder.append(rustPreamble)
-                .newline();
-
-        builder.append("declare_tuples! {").increase();
-        for (int i: DBSPTypeTuple.tupleSizesUsed) {
-            if (i == 0)
-                continue;
-            builder.append("Tuple")
-                    .append(i)
-                    .append("<");
-            for (int j = 0; j < i; j++) {
-                if (j > 0)
-                    builder.append(", ");
-                builder.append("T")
-                        .append(j);
-            }
-            builder.append(">,\n");
-        }
-        DBSPTypeTuple.clearSizesUsed();
-        return builder.decrease()
-                .append("}\n\n")
-                .toString();
     }
 
     /**
@@ -261,9 +204,16 @@ public class DBSPCircuit extends DBSPNode {
     }
 
     @Override
-    public String toString() {
-        IndentStringBuilder builder = new IndentStringBuilder();
-        this.toRustString(builder);
-        return builder.toString();
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        for (IDBSPDeclaration decl: this.declarations)
+            decl.accept(visitor);
+        for (DBSPSourceOperator source: this.inputOperators)
+            source.accept(visitor);
+        for (DBSPOperator op: this.operators)
+            op.accept(visitor);
+        for (DBSPSinkOperator sink: this.outputOperators)
+            sink.accept(visitor);
+        visitor.postorder(this);
     }
 }

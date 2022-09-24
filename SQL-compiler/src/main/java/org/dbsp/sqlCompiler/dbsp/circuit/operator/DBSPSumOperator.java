@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeStream;
 import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
@@ -66,5 +67,15 @@ public class DBSPSumOperator extends DBSPOperator {
             builder.append("&").append(this.inputs.get(i).getName());
         }
         return builder.append("]);");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.function != null)
+            this.function.accept(visitor);
+        for (DBSPOperator input: this.inputs)
+            input.accept(visitor);
+        visitor.postorder(this);
     }
 }

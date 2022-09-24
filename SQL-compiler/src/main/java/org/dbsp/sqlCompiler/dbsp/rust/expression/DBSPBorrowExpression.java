@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRef;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -30,8 +31,8 @@ import org.dbsp.util.IndentStringBuilder;
  * An expression of the form &expression.
  */
 public class DBSPBorrowExpression extends DBSPExpression {
-    private final DBSPExpression expression;
-    private final boolean mut;
+    public final DBSPExpression expression;
+    public final boolean mut;
 
     public DBSPBorrowExpression(DBSPExpression expression, boolean mutable) {
         super(null, new DBSPTypeRef(expression.getNonVoidType()));
@@ -48,5 +49,14 @@ public class DBSPBorrowExpression extends DBSPExpression {
         return builder.append("&")
                 .append(this.mut ? "mut " : "")
                 .append(this.expression);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        this.expression.accept(visitor);
+        visitor.postorder(this);
     }
 }

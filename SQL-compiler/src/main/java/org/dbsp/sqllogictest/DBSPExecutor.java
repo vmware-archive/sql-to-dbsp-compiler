@@ -34,6 +34,7 @@ import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.*;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
+import org.dbsp.sqlCompiler.dbsp.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
 import org.dbsp.sqlCompiler.frontend.SimulatorResult;
@@ -92,6 +93,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
         this.calcite = new CalciteCompiler();
         this.queries.clear();
         this.filesGenerated.clear();
+        this.inputFunction = null;
         File directory = new File(rustDirectory);
         FilenameFilter filter = (dir, name) -> name.startsWith(testFileName);
         File[] files = directory.listFiles(filter);
@@ -115,7 +117,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
 
     @Override
     public void addQuery(
-            String query, SqlTestPrepareInput inputs,
+            String query, SqlTestPrepareInput inputDescription,
             SqlTestOutputDescription output) throws SqlParseException {
         //if (!query.equals("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )")) return;
         if (this.calcite == null)
@@ -193,7 +195,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
             // So we generate a single input function to produce this input.
             // Makes for shorter code.
             DBSPTransaction transaction = new DBSPTransaction();
-            for (String statement : inputs.statements) {
+            for (String statement : inputDescription.statements) {
                 SimulatorResult result = this.calcite.compile(statement);
                 TableModifyStatement stat = (TableModifyStatement) result;
                 compiler.extendTransaction(transaction, stat);
@@ -201,7 +203,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
             this.inputFunction = transaction.inputGeneratingFunction(inputFunctionName, dbsp);
         }
 
-        String rust = dbsp.toRustString();
+        String rust = ToRustVisitor.toRustString(dbsp);
         DBSPFunction func = RustTestGenerator.createTesterCode(
                 "tester" + this.queryNo, inputFunctionName,
                 dbsp, expectedOutput, output);
@@ -217,13 +219,13 @@ public class DBSPExecutor implements ISqlTestExecutor {
         this.filesGenerated.add(testFileName + index);
         String testFilePath = rustDirectory + "/" + genFileName;
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        writer.println(DBSPCircuit.generatePreamble());
+        writer.println(ToRustVisitor.generatePreamble());
 
-        writer.println(this.inputFunction.toRustString());
+        writer.println(ToRustVisitor.toRustString(this.inputFunction));
         for (ProgramAndTester pt: this.queries) {
             writer.println(pt.program);
             writer.println("#[test]");
-            writer.println(pt.tester.toRustString());
+            writer.println(ToRustVisitor.toRustString(pt.tester));
         }
         writer.close();
         this.queries.clear();

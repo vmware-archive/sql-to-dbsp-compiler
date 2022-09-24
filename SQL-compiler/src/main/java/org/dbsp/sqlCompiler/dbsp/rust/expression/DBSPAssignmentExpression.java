@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPAssignmentExpression extends DBSPExpression {
@@ -40,5 +41,15 @@ public class DBSPAssignmentExpression extends DBSPExpression {
         return builder.append(this.left)
                 .append(" = ")
                 .append(this.right);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        this.left.accept(visitor);
+        this.right.accept(visitor);
+        visitor.postorder(this);
     }
 }

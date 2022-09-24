@@ -697,11 +697,13 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         DMLTranslation() {
             this.logicalValueTranslation = null;
             this.source = null;
+            this.columnPermutation = null;
         }
 
         void prepare(SqlNode rootNode, DBSPSourceOperator source, @Nullable SqlNodeList columnList) {
             this.logicalValueTranslation = null;
             this.source = source;
+            this.columnPermutation = null;
             DBSPTypeTuple sourceType = this.source
                     .getNonVoidType()
                     .to(DBSPTypeZSet.class)

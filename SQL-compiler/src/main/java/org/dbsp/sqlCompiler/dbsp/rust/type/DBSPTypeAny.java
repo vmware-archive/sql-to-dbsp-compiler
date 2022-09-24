@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.util.IndentStringBuilder;
 
 /**
@@ -43,5 +44,11 @@ public class DBSPTypeAny extends DBSPType {
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append("_");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

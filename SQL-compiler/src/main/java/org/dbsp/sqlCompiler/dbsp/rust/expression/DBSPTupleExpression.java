@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.ExpressionCompiler;
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
 import org.dbsp.util.IndentStringBuilder;
@@ -105,5 +106,15 @@ public class DBSPTupleExpression extends DBSPExpression {
                     .join(", ", this.fields)
                     .append(")");
         }
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        for (DBSPExpression expression: this.fields)
+            expression.accept(visitor);
+        visitor.postorder(this);
     }
 }

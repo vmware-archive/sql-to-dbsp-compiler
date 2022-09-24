@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.IDBSPContainter;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
@@ -35,18 +36,18 @@ import java.util.List;
 /**
  * Represents a (constant) vector described by its elements.
  */
-public class DBSPVecLiteral extends DBSPExpression implements IDBSPContainter {
-    private final List<DBSPExpression> data;
+public class DBSPVecLiteral extends DBSPLiteral implements IDBSPContainter {
+    public final List<DBSPExpression> data;
     public final DBSPTypeVec vecType;
 
     public DBSPVecLiteral(DBSPType elementType) {
-        super(null, new DBSPTypeVec(elementType));
+        super(null, new DBSPTypeVec(elementType), 0); // The 0 is not used
         this.data = new ArrayList<>();
         this.vecType = new DBSPTypeVec(elementType);
     }
 
     public DBSPVecLiteral(DBSPExpression... data) {
-        super(null, new DBSPTypeVec(data[0].getNonVoidType()));
+        super(null, new DBSPTypeVec(data[0].getNonVoidType()), 0); // The 0 is not used
         this.vecType = this.getNonVoidType().to(DBSPTypeVec.class);
         this.data = new ArrayList<>();
         for (DBSPExpression e: data) {
@@ -87,5 +88,13 @@ public class DBSPVecLiteral extends DBSPExpression implements IDBSPContainter {
 
     public int size() {
         return this.data.size();
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        for (DBSPExpression expr: this.data)
+            expr.accept(visitor);
+        visitor.postorder(this);
     }
 }

@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.circuit.IDBSPDeclaration;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPBlockExpression;
@@ -39,11 +40,11 @@ import java.util.List;
  * A (Rust) function.
  */
 public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
-    public static class DBSPArgument extends DBSPNode implements IHasType {
+    public static class Argument extends DBSPNode implements IHasType {
         public final String name;
         public final DBSPType type;
 
-        public DBSPArgument(String name, DBSPType type) {
+        public Argument(String name, DBSPType type) {
             super(null);
             this.name = name;
             this.type = type;
@@ -60,17 +61,23 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
         public DBSPType getType() {
             return this.type;
         }
+
+        @Override
+        public void accept(Visitor visitor) {
+            if (!visitor.preorder(this)) return;
+            visitor.postorder(this);
+        }
     }
 
     public final String name;
-    public final List<DBSPArgument> arguments;
+    public final List<Argument> arguments;
     // Null if function returns void.
     @Nullable
     public final DBSPType returnType;
     public final DBSPExpression body;
     public final List<String> annotations;
 
-    public DBSPFunction(String name, List<DBSPArgument> arguments, @Nullable DBSPType returnType, DBSPExpression body) {
+    public DBSPFunction(String name, List<Argument> arguments, @Nullable DBSPType returnType, DBSPExpression body) {
         super(null);
         this.name = name;
         this.arguments = arguments;
@@ -104,5 +111,16 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
     @Override
     public String getName() {
         return this.name;
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.returnType != null)
+            this.returnType.accept(visitor);
+        for (Argument argument: this.arguments)
+            argument.accept(visitor);
+        this.body.accept(visitor);
+        visitor.postorder(this);
     }
 }

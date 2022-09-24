@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.circuit.IDBSPDeclaration;
 import org.dbsp.util.IndentStringBuilder;
@@ -44,5 +45,13 @@ public class DBSPFile extends DBSPNode {
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.join("\n\n", this.declarations);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        for (IDBSPDeclaration decl: this.declarations)
+            decl.accept(visitor);
+        visitor.postorder(this);
     }
 }

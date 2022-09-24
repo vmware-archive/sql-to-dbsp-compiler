@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.IDBSPContainter;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
@@ -37,7 +38,7 @@ import java.util.Map;
  * A ZSet is a map from tuples to integer weights.
  * In general weights should not be zero.
  */
-public class DBSPZSetLiteral extends DBSPExpression implements IDBSPContainter {
+public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainter {
     public final Map<DBSPExpression, Integer> data;
     public final DBSPTypeZSet zsetType;
 
@@ -50,7 +51,8 @@ public class DBSPZSetLiteral extends DBSPExpression implements IDBSPContainter {
      *             with just a type argument.
      */
     public DBSPZSetLiteral(DBSPType weightType, DBSPExpression... data) {
-        super(null, new DBSPTypeZSet(data[0].getNonVoidType(), weightType));
+        super(null, new DBSPTypeZSet(data[0].getNonVoidType(), weightType), 0);
+        // value 0 is not used
         this.zsetType = this.getNonVoidType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
         for (DBSPExpression e: data) {
@@ -62,7 +64,7 @@ public class DBSPZSetLiteral extends DBSPExpression implements IDBSPContainter {
     }
 
     public DBSPZSetLiteral(DBSPType type) {
-        super(null, type);
+        super(null, type, 0); // Value is unused, but needs to be non-null
         this.zsetType = this.getNonVoidType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
     }
@@ -129,5 +131,13 @@ public class DBSPZSetLiteral extends DBSPExpression implements IDBSPContainter {
         }
         builder.append("}");
         return builder.toString();
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        for (DBSPExpression expr: this.data.keySet())
+            expr.accept(visitor);
+        visitor.postorder(this);
     }
 }

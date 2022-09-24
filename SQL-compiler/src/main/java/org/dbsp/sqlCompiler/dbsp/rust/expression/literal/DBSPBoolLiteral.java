@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeBool;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -58,5 +59,11 @@ public class DBSPBoolLiteral extends DBSPLiteral {
         if (this.value == null)
             return builder.append(this.noneString());
         return builder.append(this.wrapSome(Boolean.toString(value)));
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

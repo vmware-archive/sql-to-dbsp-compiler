@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeDouble;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -55,5 +56,11 @@ public class DBSPDoubleLiteral extends DBSPLiteral {
         if (Double.isNaN(value))
             val = "std::f64::NAN";
         return builder.append(this.wrapSome("F64::new(" + val + ")"));
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

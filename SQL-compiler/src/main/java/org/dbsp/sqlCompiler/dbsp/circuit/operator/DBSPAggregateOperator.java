@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeIndexedZSet;
@@ -36,5 +37,15 @@ public class DBSPAggregateOperator extends DBSPOperator {
                 new DBSPTypeIndexedZSet(node, keyType, outputElementType, CalciteToDBSPCompiler.weightType), false);
         this.addInput(input);
         this.checkResultType(function, outputElementType);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.function != null)
+            this.function.accept(visitor);
+        for (DBSPOperator input: this.inputs)
+            input.accept(visitor);
+        visitor.postorder(this);
     }
 }

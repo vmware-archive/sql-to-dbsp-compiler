@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.statement;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.IDBSPDeclaration;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPVariableReference;
@@ -61,5 +62,12 @@ public class DBSPLetStatement extends DBSPStatement implements IDBSPDeclaration 
 
     public DBSPVariableReference getVarReference() {
         return new DBSPVariableReference(this.variable, initializer.getNonVoidType());
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        this.initializer.accept(visitor);
+        visitor.postorder(this);
     }
 }

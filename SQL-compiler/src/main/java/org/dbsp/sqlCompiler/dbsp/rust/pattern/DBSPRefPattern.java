@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPRefPattern extends DBSPPattern {
@@ -44,5 +45,12 @@ public class DBSPRefPattern extends DBSPPattern {
         return builder.append("&")
                 .append(this.mutable ? "mut " : "")
                 .append(this.pattern);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        this.pattern.accept(visitor);
+        visitor.postorder(this);
     }
 }

@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit;
 
+import org.dbsp.sqlCompiler.dbsp.visitors.ToRustVisitor;
 import org.dbsp.util.IdGen;
 
 import javax.annotation.Nullable;
@@ -51,6 +52,6 @@ public abstract class DBSPNode
 
     @Override
     public String toString() {
-        return this.toRustString();
+        return ToRustVisitor.toRustString(this);
     }
 }

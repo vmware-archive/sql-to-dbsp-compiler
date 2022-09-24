@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
@@ -38,5 +39,14 @@ public class DBSPPathExpression extends DBSPExpression {
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append(this.path);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        this.path.accept(visitor);
+        visitor.postorder(this);
     }
 }

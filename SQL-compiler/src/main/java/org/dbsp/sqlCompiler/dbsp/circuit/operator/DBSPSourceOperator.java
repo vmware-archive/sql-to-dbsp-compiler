@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.frontend.TableDDL;
 import org.dbsp.util.IndentStringBuilder;
@@ -45,5 +46,15 @@ public class DBSPSourceOperator extends DBSPOperator {
                 .append("circuit.add_source(")
                 .append(this.outputName)
                 .append(");");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.function != null)
+            this.function.accept(visitor);
+        for (DBSPOperator input: this.inputs)
+            input.accept(visitor);
+        visitor.postorder(this);
     }
 }

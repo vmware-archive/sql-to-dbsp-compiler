@@ -46,7 +46,7 @@ public abstract class DBSPType extends DBSPNode {
         this.mayBeNull = mayBeNull;
     }
 
-    IndentStringBuilder wrapOption(IndentStringBuilder builder, String type) {
+    public IndentStringBuilder wrapOption(IndentStringBuilder builder, String type) {
         if (this.mayBeNull)
             return builder.append("Option<" + type + ">");
         return builder.append(type);
