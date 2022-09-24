@@ -144,8 +144,8 @@ public class Utilities {
     public static void compileAndTestRust(String directory) throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command("cargo", "test",
-                //"-q"
-                "--", "--show-output"
+                "-q"
+                //"--", "--show-output"
         );
         processBuilder.directory(new File(directory));
         processBuilder.inheritIO();

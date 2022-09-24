@@ -134,7 +134,7 @@ public class Main {
             if (file.startsWith("select5"))
                 batchSize = Math.min(batchSize, 5);
             Path path = Paths.get(benchDir + "/" + file);
-            TestLoader loader = new TestLoader(batchSize, 998, executor);
+            TestLoader loader = new TestLoader(batchSize, 0, executor);
             Files.walkFileTree(path, loader);
             System.out.println("Could not parse: " + loader.errors);
             System.out.println("Parsed tests: " + String.format("%,3d", loader.testsCompleted));
