@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -37,5 +38,12 @@ public class DBSPLiteralPattern extends DBSPPattern {
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append(this.literal);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        this.literal.accept(visitor);
+        visitor.postorder(this);
     }
 }

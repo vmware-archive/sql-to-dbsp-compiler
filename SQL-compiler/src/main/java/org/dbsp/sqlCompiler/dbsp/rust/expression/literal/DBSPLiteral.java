@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.util.IndentStringBuilder;
@@ -50,7 +51,7 @@ public class DBSPLiteral extends DBSPExpression {
         return "None::<" + this.getNonVoidType().setMayBeNull(false) + ">";
     }
 
-    protected String wrapSome(String value) {
+    public String wrapSome(String value) {
         if (this.getNonVoidType().mayBeNull)
             return "Some(" + value + ")";
         return value;
@@ -65,5 +66,11 @@ public class DBSPLiteral extends DBSPExpression {
         if (!this.isNull)
             throw new RuntimeException("toRustString method for abstract class called on non-null value");
         return builder.append(this.noneString());
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

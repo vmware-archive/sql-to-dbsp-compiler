@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPApplyMethodExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPAsExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
@@ -119,5 +120,11 @@ public class DBSPTypeInteger extends DBSPType
             return false;
         DBSPTypeInteger other = type.to(DBSPTypeInteger.class);
         return this.width == other.width;
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

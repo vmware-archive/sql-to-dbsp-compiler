@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -66,5 +67,12 @@ public class DBSPTypeRef extends DBSPType {
         return builder.append("&")
                 .append(this.mutable ? "mut " : "")
                 .append(this.type);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        this.type.accept(visitor);
+        visitor.postorder(this);
     }
 }

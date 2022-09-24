@@ -110,9 +110,9 @@ public class Main {
         calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");       
         // Calcite types /0 as not nullable!
         calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
-        int batchSize = 50;
+        int batchSize = 10000;
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
-        ISqlTestExecutor executor = new DBSPExecutor(true);
+        ISqlTestExecutor executor = new DBSPExecutor(false);
         String benchDir = "../../sqllogictest/test";
         // These are all the files we support from sqllogictest.
         String[] files = new String[]{
@@ -128,11 +128,11 @@ public class Main {
             files = Utilities.arraySlice(argv, 1);
         for (String file : files) {
             if (file.startsWith("select"))
-                batchSize = 50;
+                batchSize = Math.min(batchSize, 20);
             if (file.startsWith("select5"))
-                batchSize = 5;
+                batchSize = Math.min(batchSize, 5);
             Path path = Paths.get(benchDir + "/" + file);
-            TestLoader loader = new TestLoader(batchSize, 0, executor);
+            TestLoader loader = new TestLoader(batchSize, 998, executor);
             Files.walkFileTree(path, loader);
             System.out.println("Could not parse: " + loader.errors);
             System.out.println("Parsed tests: " + String.format("%,3d", loader.testsCompleted));

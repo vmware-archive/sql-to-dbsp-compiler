@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeInteger;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -53,5 +54,11 @@ public class DBSPLongLiteral extends DBSPLiteral {
             return builder.append(this.noneString());
         String val = Long.toString(this.value);
         return builder.append(this.wrapSome(val + "i64"));
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

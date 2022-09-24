@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -99,5 +100,13 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
             if (!this.tupFields[i].same(other.tupFields[i]))
                 return false;
         return true;
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        for (DBSPType type: this.tupFields)
+            type.accept(visitor);
+        visitor.postorder(this);
     }
 }

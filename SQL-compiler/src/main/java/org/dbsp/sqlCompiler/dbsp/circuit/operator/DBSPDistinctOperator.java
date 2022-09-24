@@ -25,11 +25,23 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
+
 import javax.annotation.Nullable;
 
 public class DBSPDistinctOperator extends DBSPOperator {
     public DBSPDistinctOperator(@Nullable Object node, DBSPOperator input) {
         super(node, "distinct", null, input.outputType, false);
         this.addInput(input);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.function != null)
+            this.function.accept(visitor);
+        for (DBSPOperator input: this.inputs)
+            input.accept(visitor);
+        visitor.postorder(this);
     }
 }

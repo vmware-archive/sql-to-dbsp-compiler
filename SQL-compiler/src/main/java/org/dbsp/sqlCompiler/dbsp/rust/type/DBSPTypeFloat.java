@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPFloatLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
@@ -77,5 +78,11 @@ public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType, IDBSPBas
     @Override
     public DBSPLiteral getOne() {
         return new DBSPFloatLiteral(1F, this.mayBeNull);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

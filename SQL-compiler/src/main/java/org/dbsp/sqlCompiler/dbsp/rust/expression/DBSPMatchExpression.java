@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
@@ -50,6 +51,15 @@ public class DBSPMatchExpression extends DBSPExpression {
                     .append(" => ")
                     .append(this.result);
         }
+
+
+        @Override
+        public void accept(Visitor visitor) {
+            if (!visitor.preorder(this)) return;
+            this.against.accept(visitor);
+            this.result.accept(visitor);
+            visitor.postorder(this);
+        }
     }
 
     public final DBSPExpression matched;
@@ -76,5 +86,14 @@ public class DBSPMatchExpression extends DBSPExpression {
                 .intercalate(",\n", this.cases)
                 .decrease()
                 .append("})");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        this.matched.accept(visitor);
+        for (Case c: this.cases)
+            c.accept(visitor);
+        visitor.postorder(this);
     }
 }

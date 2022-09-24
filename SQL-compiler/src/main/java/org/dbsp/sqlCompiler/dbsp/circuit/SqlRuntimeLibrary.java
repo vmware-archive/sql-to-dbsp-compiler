@@ -174,7 +174,7 @@ public class SqlRuntimeLibrary {
 
     void generateProgram() {
         List<IDBSPDeclaration> declarations = new ArrayList<>();
-        DBSPFunction.DBSPArgument arg = new DBSPFunction.DBSPArgument(
+        DBSPFunction.Argument arg = new DBSPFunction.Argument(
                 "b", DBSPTypeBool.instance.setMayBeNull(true));
         declarations.add(
                 new DBSPFunction("wrap_bool",
@@ -262,8 +262,8 @@ public class SqlRuntimeLibrary {
 
                         // The general rule is: if any operand is NULL, the result is NULL.
                         FunctionDescription function = this.getFunction(op, leftType, rightType, false);
-                        DBSPFunction.DBSPArgument left = new DBSPFunction.DBSPArgument("left", leftType);
-                        DBSPFunction.DBSPArgument right = new DBSPFunction.DBSPArgument("right", rightType);
+                        DBSPFunction.Argument left = new DBSPFunction.Argument("left", leftType);
+                        DBSPFunction.Argument right = new DBSPFunction.Argument("right", rightType);
                         DBSPType type = function.returnType;
                         DBSPExpression def;
                         if (i == 0) {

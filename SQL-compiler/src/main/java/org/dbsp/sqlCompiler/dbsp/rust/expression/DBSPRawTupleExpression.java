@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRawTuple;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
@@ -55,5 +56,15 @@ public class DBSPRawTupleExpression extends DBSPTupleExpression {
         return builder.append("(")
                 .intercalate(", ", this.fields)
                 .append(")");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        for (DBSPExpression expression: this.fields)
+            expression.accept(visitor);
+        visitor.postorder(this);
     }
 }

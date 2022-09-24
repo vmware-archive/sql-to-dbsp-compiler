@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPTuplePattern extends DBSPPattern {
@@ -38,5 +39,13 @@ public class DBSPTuplePattern extends DBSPPattern {
         return builder.append("(")
                 .intercalate(", ", this.fields)
                 .append(")");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        for (DBSPPattern pattern: this.fields)
+            pattern.accept(visitor);
+        visitor.postorder(this);
     }
 }

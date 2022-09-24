@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeUser;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -44,5 +45,13 @@ public class DBSPEnumValue extends DBSPExpression {
         return builder.append(this.enumName)
                 .append("::")
                 .append(this.constructor);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        visitor.postorder(this);
     }
 }

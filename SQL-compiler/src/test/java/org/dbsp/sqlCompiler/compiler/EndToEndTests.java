@@ -9,6 +9,7 @@ import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.*;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
+import org.dbsp.sqlCompiler.dbsp.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
 import org.dbsp.sqllogictest.RustTestGenerator;
@@ -113,7 +114,7 @@ public class EndToEndTests {
         DBSPTransaction transaction = new DBSPTransaction();
         transaction.addSet("T", input);
         DBSPFunction inputGen = transaction.inputGeneratingFunction("input", circuit);
-        writer.println(inputGen.toRustString());
+        writer.println(ToRustVisitor.toRustString(inputGen));
         SqlTestOutputDescription description = new SqlTestOutputDescription();
         description.columnTypes = null;
         description.setValueCount(expectedOutput.size());
@@ -122,7 +123,7 @@ public class EndToEndTests {
                 "tester", "input",
                 circuit, expectedOutput, description);
         writer.println("#[test]");
-        writer.println(tester.toRustString());
+        writer.println(ToRustVisitor.toRustString(tester));
     }
 
     private void testQuery(String query, DBSPZSetLiteral expectedOutput) {
@@ -130,8 +131,9 @@ public class EndToEndTests {
             query = "CREATE VIEW V AS " + query;
             DBSPCircuit circuit = this.compileQuery(query);
             PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-            writer.println(DBSPCircuit.generatePreamble());
-            writer.println(circuit.toRustString());
+            writer.println(ToRustVisitor.generatePreamble());
+            writer.println(ToRustVisitor.toRustString(circuit));
+            //writer.println(circuit.toRustString());
             this.createTester(writer, circuit, expectedOutput);
             writer.close();
             Utilities.compileAndTestRust(rustDirectory);
@@ -332,6 +334,7 @@ public class EndToEndTests {
     // Calcite seems to handle this query incorrectly, since
     // it claims that 1 / 0 is an integer instead of NULL
     //@Test
+    @SuppressWarnings("unused")
     public void divZeroTest() {
         String query = "SELECT 1 / 0";
         this.testQuery(query, new DBSPZSetLiteral(

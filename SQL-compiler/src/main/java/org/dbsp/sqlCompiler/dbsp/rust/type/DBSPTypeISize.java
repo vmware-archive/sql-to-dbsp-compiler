@@ -23,9 +23,9 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPISizeLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPUSizeLiteral;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
@@ -74,5 +74,11 @@ public class DBSPTypeISize extends DBSPType
     @Override
     public DBSPLiteral getOne() {
         return new DBSPISizeLiteral(1);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

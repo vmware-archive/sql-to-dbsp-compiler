@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.apache.calcite.rex.RexNode;
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeAny;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeString;
@@ -73,12 +74,20 @@ public class DBSPFieldExpression extends DBSPExpression {
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        IndentStringBuilder result = builder
-                .append(this.expression)
+        builder.append(this.expression)
                 .append(".")
                 .append(this.fieldNo);
         if (this.getNonVoidType().is(DBSPTypeString.class))
-            result.append(".clone()");
-        return result;
+            builder.append(".clone()");
+        return builder;
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        this.expression.accept(visitor);
+        visitor.postorder(this);
     }
 }

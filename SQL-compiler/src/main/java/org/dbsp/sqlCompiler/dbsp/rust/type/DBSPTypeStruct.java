@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -33,8 +34,8 @@ import java.util.Objects;
 
 public class DBSPTypeStruct extends DBSPType {
     public static class Field extends DBSPNode implements IHasType {
-        private final String name;
-        private final DBSPType type;
+        public final String name;
+        public final DBSPType type;
 
         public Field(@Nullable Object node, String name, DBSPType type) {
             super(node);
@@ -70,10 +71,17 @@ public class DBSPTypeStruct extends DBSPType {
                     .append(":")
                     .append(this.type);
         }
+
+        @Override
+        public void accept(Visitor visitor) {
+            if (!visitor.preorder(this)) return;
+            this.type.accept(visitor);
+            visitor.postorder(this);
+        }
     }
 
-    private final String name;
-    private final List<Field> args;
+    public final String name;
+    public final List<Field> args;
     private final HashSet<String> fields = new HashSet<>();
 
     public DBSPTypeStruct(@Nullable Object node, String name, List<Field> args) {
@@ -137,5 +145,13 @@ public class DBSPTypeStruct extends DBSPType {
         }
         this.error("Field " + col + " not present in struct " + this.name);
         throw new RuntimeException("unreachable");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        for (Field f: this.getFields())
+            f.accept(visitor);
+        visitor.postorder(this);
     }
 }

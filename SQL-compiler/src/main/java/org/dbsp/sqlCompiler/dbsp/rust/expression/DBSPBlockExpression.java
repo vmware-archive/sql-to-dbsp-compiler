@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPStatement;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -48,5 +49,17 @@ public class DBSPBlockExpression extends DBSPExpression {
             builder.append(this.lastExpression)
                     .append("\n");
         return builder.decrease().append("}");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        for (DBSPStatement stat: this.contents)
+            stat.accept(visitor);
+        if (this.lastExpression != null)
+            this.lastExpression.accept(visitor);
+        visitor.postorder(this);
     }
 }

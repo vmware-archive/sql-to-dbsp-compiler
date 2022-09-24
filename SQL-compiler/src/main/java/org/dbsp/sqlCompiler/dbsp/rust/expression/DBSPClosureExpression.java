@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPTuplePattern;
@@ -37,7 +38,7 @@ import javax.annotation.Nullable;
  */
 public class DBSPClosureExpression extends DBSPExpression {
     public final DBSPExpression body;
-    private final Parameter[] parameters;
+    public final Parameter[] parameters;
 
     public static class Parameter extends DBSPNode implements IHasType {
         public final DBSPPattern pattern;
@@ -69,6 +70,15 @@ public class DBSPClosureExpression extends DBSPExpression {
         @Override
         public DBSPType getType() {
             return this.type;
+        }
+
+        @Override
+        public void accept(Visitor visitor) {
+            if (!visitor.preorder(this)) return;
+            if (this.type != null)
+                this.type.accept(visitor);
+            this.pattern.accept(visitor);
+            visitor.postorder(this);
         }
     }
 
@@ -109,5 +119,16 @@ public class DBSPClosureExpression extends DBSPExpression {
                 .append(this.body)
                 .decrease()
                 .append("\n}");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        for (Parameter param: this.parameters)
+            param.accept(visitor);
+        this.body.accept(visitor);
+        visitor.postorder(this);
     }
 }

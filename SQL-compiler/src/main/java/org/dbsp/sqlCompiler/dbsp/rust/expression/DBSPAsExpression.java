@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.IsNumericType;
 import org.dbsp.util.IndentStringBuilder;
@@ -42,5 +43,14 @@ public class DBSPAsExpression extends DBSPExpression {
                 .append(" as ")
                 .append(this.getNonVoidType().to(IsNumericType.class).getRustString())
                 .append(")");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        this.source.accept(visitor);
+        if (this.type != null)
+            this.type.accept(visitor);
+        visitor.postorder(this);
     }
 }

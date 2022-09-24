@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
+
 public class DBSPTypeVec extends DBSPTypeUser {
     public DBSPTypeVec(DBSPType typeArg) {
         super(null, "Vec", false, typeArg);
@@ -30,5 +32,13 @@ public class DBSPTypeVec extends DBSPTypeUser {
 
     public DBSPType getElementType() {
         return this.getTypeArg(0);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        for (DBSPType type: this.typeArgs)
+            type.accept(visitor);
+        visitor.postorder(this);
     }
 }

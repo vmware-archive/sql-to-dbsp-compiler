@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 
@@ -56,5 +57,11 @@ public abstract class DBSPTypeFP extends DBSPType implements IsNumericType {
         return new DBSPApplyExpression(
                 new DBSPPathExpression(func, new DBSPPath(destType, "from")),
                 new DBSPAsExpression(source, this));
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
+
 import javax.annotation.Nullable;
 
 public class DBSPTypeZSet extends DBSPTypeUser {
@@ -37,5 +39,13 @@ public class DBSPTypeZSet extends DBSPTypeUser {
 
     public DBSPTypeZSet(DBSPType elementType, DBSPType weightType) {
         this(null, elementType, weightType);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        this.elementType.accept(visitor);
+        this.weightType.accept(visitor);
+        visitor.postorder(this);
     }
 }

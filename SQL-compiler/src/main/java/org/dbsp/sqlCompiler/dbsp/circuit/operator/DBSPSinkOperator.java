@@ -25,6 +25,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -34,6 +35,10 @@ public class DBSPSinkOperator extends DBSPOperator {
     public DBSPSinkOperator(@Nullable Object node, DBSPType outputType, String outputName, boolean isMultiset, DBSPOperator input) {
         super(node, "inspect", null, outputType, isMultiset, outputName);
         this.addInput(input);
+    }
+
+    public DBSPOperator input() {
+        return this.inputs.get(0);
     }
 
     @Override
@@ -46,5 +51,15 @@ public class DBSPSinkOperator extends DBSPOperator {
                 .append(this.getName())
                 .append(".borrow_mut() = ")
                 .append("m.clone() });");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.function != null)
+            this.function.accept(visitor);
+        for (DBSPOperator input: this.inputs)
+            input.accept(visitor);
+        visitor.postorder(this);
     }
 }

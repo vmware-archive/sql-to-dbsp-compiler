@@ -19,41 +19,20 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ *
  */
-
-package org.dbsp.sqlCompiler.dbsp.rust.type;
-
-import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 /**
- * A type of the form 'Stream<_, elementType>'
+ * Package that doesn't allow null values as method parameters.
  */
-public class DBSPTypeStream extends DBSPType {
-    public final DBSPType elementType;
 
-    public DBSPTypeStream(DBSPType elementType) {
-        super(elementType.getNode(), elementType.mayBeNull);
-        this.elementType = elementType;
-    }
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqlCompiler.dbsp.visitors;
 
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        throw new UnsupportedOperationException();
-    }
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
 
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("Stream<")
-                .append("_, ") // Circuit type
-                .append(this.elementType)
-                .append(">");
-    }
-
-    @Override
-    public void accept(Visitor visitor) {
-        if (!visitor.preorder(this)) return;
-        this.elementType.accept(visitor);
-        visitor.postorder(this);
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

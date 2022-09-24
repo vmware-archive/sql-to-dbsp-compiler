@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
@@ -69,5 +70,13 @@ public class DBSPVariableReference extends DBSPExpression {
 
     public DBSPClosureExpression.Parameter asRefParameter() {
         return this.asRefParameter(false);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        visitor.postorder(this);
     }
 }

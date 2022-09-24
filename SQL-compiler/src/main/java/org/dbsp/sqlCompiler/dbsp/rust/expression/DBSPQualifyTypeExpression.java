@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -31,19 +32,30 @@ import org.dbsp.util.IndentStringBuilder;
  */
 public class DBSPQualifyTypeExpression extends DBSPExpression {
     public final DBSPExpression expression;
-    public final DBSPType[] type;
+    public final DBSPType[] types;
 
-    public DBSPQualifyTypeExpression(DBSPExpression expression, DBSPType... type) {
+    public DBSPQualifyTypeExpression(DBSPExpression expression, DBSPType... types) {
         super(null, expression.getType());
         this.expression = expression;
-        this.type = type;
+        this.types = types;
     }
 
     @Override
     public IndentStringBuilder toRustString(IndentStringBuilder builder) {
         return builder.append(this.expression)
                 .append("::<")
-                .join(", ", this.type)
+                .join(", ", this.types)
                 .append(">");
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        this.expression.accept(visitor);
+        for (DBSPType type: this.types)
+            type.accept(visitor);
+        visitor.postorder(this);
     }
 }

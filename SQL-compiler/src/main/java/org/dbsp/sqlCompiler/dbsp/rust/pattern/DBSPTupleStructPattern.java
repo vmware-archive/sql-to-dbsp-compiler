@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
+import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.util.IndentStringBuilder;
 
@@ -49,5 +50,14 @@ public class DBSPTupleStructPattern extends DBSPPattern {
      */
     public static DBSPPattern somePattern(DBSPPattern argument) {
         return new DBSPTupleStructPattern(new DBSPPath("Some"), argument);
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        if (!visitor.preorder(this)) return;
+        this.path.accept(visitor);
+        for (DBSPPattern pattern: this.arguments)
+            pattern.accept(visitor);
+        visitor.postorder(this);
     }
 }

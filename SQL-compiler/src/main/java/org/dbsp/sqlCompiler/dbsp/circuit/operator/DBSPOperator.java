@@ -39,25 +39,25 @@ import java.util.List;
 /**
  * A DBSP operator that applies a function to the inputs and produces an output.
  */
-public class DBSPOperator extends DBSPNode implements IHasName, IHasType {
-    final List<DBSPOperator> inputs;
+public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasType {
+    public final List<DBSPOperator> inputs;
     /**
      * Operation that is invoked on inputs; corresponds to a DBSP operator name, e.g., join.
      */
-    final String operation;
+    public final String operation;
     /**
      * Computation invoked by the operator, usually a closure.
      */
     @Nullable
-    final DBSPExpression function;
+    public final DBSPExpression function;
     /**
      * Output assigned to this variable.
      */
-    final String outputName;
+    public final String outputName;
     /**
      * Type of output produced.
      */
-    final DBSPType outputType;
+    public final DBSPType outputType;
     /**
      * True if the output of the operator is a multiset.
      */

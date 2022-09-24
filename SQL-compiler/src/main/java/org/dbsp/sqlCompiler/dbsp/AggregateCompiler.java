@@ -24,10 +24,7 @@
 package org.dbsp.sqlCompiler.dbsp;
 
 import org.apache.calcite.rel.core.AggregateCall;
-import org.apache.calcite.sql.fun.SqlAvgAggFunction;
-import org.apache.calcite.sql.fun.SqlCountAggFunction;
-import org.apache.calcite.sql.fun.SqlMinMaxAggFunction;
-import org.apache.calcite.sql.fun.SqlSumAggFunction;
+import org.apache.calcite.sql.fun.*;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLongLiteral;
@@ -236,6 +233,26 @@ public class AggregateCompiler {
         this.foldingFunction = new FoldDescription(zero, this.makeRowClosure(increment, accum), zero);
     }
 
+    void processSumZero(SqlSumEmptyIsZeroAggFunction function) {
+        DBSPExpression zero = this.resultType.to(IsNumericType.class).getZero();
+        DBSPExpression increment;
+        DBSPExpression aggregatedValue = this.getAggregatedValue();
+        DBSPVariableReference accum = new DBSPVariableReference("a", this.resultType);
+
+        if (call.isDistinct()) {
+            increment = ExpressionCompiler.aggregateOperation(
+                    "+", this.resultType, accum, aggregatedValue);
+        } else {
+            increment = ExpressionCompiler.aggregateOperation(
+                    "+", this.resultType,
+                    accum, new DBSPApplyMethodExpression("mul_by_ref",
+                            aggregatedValue.getNonVoidType(),
+                            aggregatedValue,
+                            new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
+        }
+        this.foldingFunction = new FoldDescription(zero, this.makeRowClosure(increment, accum), zero);
+    }
+
     void processAvg(SqlAvgAggFunction function) {
         DBSPType aggregatedValueType = this.getAggregatedValueType();
         DBSPType i64 = DBSPTypeInteger.signed64.setMayBeNull(true);
@@ -291,6 +308,7 @@ public class AggregateCompiler {
                 this.process(this.call, SqlCountAggFunction.class, this::processCount) ||
                 this.process(this.call, SqlMinMaxAggFunction.class, this::processMinMax) ||
                 this.process(this.call, SqlSumAggFunction.class, this::processSum) ||
+                this.process(this.call, SqlSumEmptyIsZeroAggFunction.class, this::processSumZero) ||
                 this.process(this.call, SqlAvgAggFunction.class, this::processAvg);
         if (!success || this.foldingFunction == null)
             throw new Unimplemented(this.call);
