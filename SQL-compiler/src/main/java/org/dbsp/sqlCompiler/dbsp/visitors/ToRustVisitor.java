@@ -181,7 +181,7 @@ public class ToRustVisitor extends Visitor {
     public boolean preorder(DBSPUSizeLiteral literal) {
         assert literal.value != null;
         String val = Long.toString(literal.value);
-        this.builder.append(literal.wrapSome(val) + "usize");
+        this.builder.append(literal.wrapSome(val + "usize"));
         return false;
     }
 
@@ -189,7 +189,7 @@ public class ToRustVisitor extends Visitor {
     public boolean preorder(DBSPISizeLiteral literal) {
         assert literal.value != null;
         String val = Long.toString(literal.value);
-        this.builder.append(literal.wrapSome(val) + "isize");
+        this.builder.append(literal.wrapSome(val + "isize"));
         return false;
     }
 
@@ -197,7 +197,7 @@ public class ToRustVisitor extends Visitor {
     public boolean preorder(DBSPIntegerLiteral literal) {
         assert literal.value != null;
         String val = Integer.toString(literal.value);
-        this.builder.append(literal.wrapSome(val) + "i32");
+        this.builder.append(literal.wrapSome(val + "i32"));
         return false;
     }
 
@@ -205,7 +205,7 @@ public class ToRustVisitor extends Visitor {
     public boolean preorder(DBSPLongLiteral literal) {
         assert literal.value != null;
         String val = Long.toString(literal.value);
-        this.builder.append(literal.wrapSome(val) + "i64");
+        this.builder.append(literal.wrapSome(val + "i64"));
         return false;
     }
 
