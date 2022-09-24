@@ -253,7 +253,9 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
             case GREATER_THAN_OR_EQUAL:
                 return makeBinaryExpression(call, type, ">=", ops);
             case EQUALS:
+            case IS_NOT_DISTINCT_FROM:
                 return makeBinaryExpression(call, type, "==", ops);
+            case IS_DISTINCT_FROM:
             case NOT_EQUALS:
                 return makeBinaryExpression(call, type, "!=", ops);
             case OR:

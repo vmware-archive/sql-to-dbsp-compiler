@@ -110,20 +110,22 @@ public class Main {
         calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");       
         // Calcite types /0 as not nullable!
         calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
-        int batchSize = 10000;
+        int batchSize = 500;
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
-        ISqlTestExecutor executor = new DBSPExecutor(false);
+        ISqlTestExecutor executor = new DBSPExecutor(true);
         String benchDir = "../../sqllogictest/test";
         // These are all the files we support from sqllogictest.
         String[] files = new String[]{
-                        //"s.test",
-                        "random/",
-                        "select1.test",
-                        "select2.test",
-                        "select3.test",
-                        "select4.test",
-                        "select5.test",
-                };
+                //"s.test",
+                "random/groupby",
+                "random/expr",
+                "random/aggregates",
+                "select1.test",
+                "select2.test",
+                "select3.test",
+                "select4.test",
+                "select5.test",
+        };
         if (argv.length > 1)
             files = Utilities.arraySlice(argv, 1);
         for (String file : files) {
