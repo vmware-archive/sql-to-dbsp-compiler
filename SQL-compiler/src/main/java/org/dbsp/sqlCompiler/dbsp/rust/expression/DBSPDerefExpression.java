@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRef;
-import org.dbsp.util.IndentStringBuilder;
 
 /**
  * An expression of the form *expression.
@@ -36,12 +35,6 @@ public class DBSPDerefExpression extends DBSPExpression {
     public DBSPDerefExpression(DBSPExpression expression) {
         super(null, expression.getNonVoidType().to(DBSPTypeRef.class).type);
         this.expression = expression;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("*")
-                .append(this.expression);
     }
 
     @Override

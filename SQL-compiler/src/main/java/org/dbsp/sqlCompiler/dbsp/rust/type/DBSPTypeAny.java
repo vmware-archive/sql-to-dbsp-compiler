@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 /**
  * An unknown type, represented in code as _.
@@ -39,11 +38,6 @@ public class DBSPTypeAny extends DBSPType {
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("_");
     }
 
     @Override

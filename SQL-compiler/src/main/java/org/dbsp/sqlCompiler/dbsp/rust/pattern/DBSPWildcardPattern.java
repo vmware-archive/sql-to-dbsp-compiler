@@ -24,18 +24,12 @@
 package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPWildcardPattern extends DBSPPattern {
-    public static DBSPWildcardPattern instance = new DBSPWildcardPattern();
+    public static final DBSPWildcardPattern instance = new DBSPWildcardPattern();
 
     private DBSPWildcardPattern() {
         super(null);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("_");
     }
 
     @Override

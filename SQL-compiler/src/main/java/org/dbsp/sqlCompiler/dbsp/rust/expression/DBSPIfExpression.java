@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeBool;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -46,29 +45,6 @@ public class DBSPIfExpression extends DBSPExpression {
         if (!this.positive.getNonVoidType().same(this.negative.getNonVoidType()))
             throw new RuntimeException("Mismatched types in conditional expression " + this.positive +
                     "/" + this.positive.getType() + " vs" + this.negative + "/" + this.negative.getType());
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append("(if ")
-                .append(this.condition)
-                .append(" ");
-        if (!this.positive.is(DBSPBlockExpression.class))
-            builder.append("{")
-                    .increase();
-        builder.append(this.positive);
-        if (!this.positive.is(DBSPBlockExpression.class))
-            builder.decrease()
-                    .append("\n}");
-        builder.append(" else ");
-        if (!this.negative.is(DBSPBlockExpression.class))
-            builder.append("{")
-                    .increase();
-        builder.append(this.negative);
-        if (!this.negative.is(DBSPBlockExpression.class))
-            builder.decrease()
-                    .append("\n}");
-        return builder.append(")");
     }
 
     @Override

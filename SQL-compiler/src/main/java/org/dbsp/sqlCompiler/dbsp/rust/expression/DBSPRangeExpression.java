@@ -26,7 +26,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeUser;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -51,17 +50,6 @@ public class DBSPRangeExpression extends DBSPExpression {
             throw new RuntimeException("Range expression type mismatch " + this.right + " vs " + type);
     }
 
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.left != null)
-            builder.append(this.left);
-        builder.append("..");
-        if (this.endInclusive)
-            builder.append("=");
-        if (this.right != null)
-            builder.append(this.right);
-        return builder;
-    }
     @Override
     public void accept(Visitor visitor) {
         if (!visitor.preorder(this)) return;

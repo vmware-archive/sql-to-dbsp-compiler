@@ -26,7 +26,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -55,17 +54,6 @@ public class DBSPLiteral extends DBSPExpression {
         if (this.getNonVoidType().mayBeNull)
             return "Some(" + value + ")";
         return value;
-    }
-
-    /**
-     * Base case handling only nulls.  Should be overridden.
-     * This is useful to handle nulls of types that may not have literal classes defined.
-     */
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (!this.isNull)
-            throw new RuntimeException("toRustString method for abstract class called on non-null value");
-        return builder.append(this.noneString());
     }
 
     @Override

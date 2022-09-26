@@ -27,7 +27,6 @@ import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.IDBSPDeclaration;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPVariableReference;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPLetStatement extends DBSPStatement implements IDBSPDeclaration {
     public final String variable;
@@ -43,16 +42,6 @@ public class DBSPLetStatement extends DBSPStatement implements IDBSPDeclaration 
 
     public DBSPLetStatement(String variable, DBSPExpression initializer) {
         this(variable, initializer, false);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("let ")
-                .append(this.mutable ? "mut " : "")
-                .append(variable)
-                .append(" = ")
-                .append(this.initializer)
-                .append(";");
     }
 
     @Override

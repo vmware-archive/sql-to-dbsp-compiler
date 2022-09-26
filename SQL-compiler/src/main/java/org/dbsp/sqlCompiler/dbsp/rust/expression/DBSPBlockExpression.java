@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPStatement;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -39,16 +38,6 @@ public class DBSPBlockExpression extends DBSPExpression {
         super(null, last != null ? last.getType() : null);
         this.contents = contents;
         this.lastExpression = last;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append("{").increase()
-                .intercalate("\n", this.contents);
-        if (this.lastExpression != null)
-            builder.append(this.lastExpression)
-                    .append("\n");
-        return builder.decrease().append("}");
     }
 
     @Override

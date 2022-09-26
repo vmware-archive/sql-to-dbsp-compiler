@@ -30,7 +30,6 @@ import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPIntegerLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLongLiteral;
-import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
@@ -52,10 +51,6 @@ public class DBSPTypeInteger extends DBSPType
     public int hashCode() {
         return Objects.hash(width);
     }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder, this.getRustString()); }
 
     @Override
     public String getRustString() {

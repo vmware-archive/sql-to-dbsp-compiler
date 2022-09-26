@@ -26,11 +26,9 @@ package org.dbsp.sqlCompiler.dbsp.rust;
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.circuit.IDBSPDeclaration;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPBlockExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.IHasType;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -48,13 +46,6 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
             super(null);
             this.name = name;
             this.type = type;
-        }
-
-        @Override
-        public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-            return builder.append(this.name)
-                    .append(": ")
-                    .append(this.type);
         }
 
         @Override
@@ -88,24 +79,6 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
 
     public void addAnnotation(String annotation) {
         this.annotations.add(annotation);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.intercalateS("\n", this.annotations)
-                .append("pub fn ")
-                .append(this.name)
-                .append("(")
-                .join(", ", this.arguments)
-                .append(") ");
-        if (this.returnType != null)
-            builder.append("-> ")
-                .append(this.returnType);
-        if (this.body.is(DBSPBlockExpression.class))
-            return builder.append(this.body);
-        return builder.append("\n{").increase()
-                .append(this.body).decrease()
-                .append("\n}");
     }
 
     @Override

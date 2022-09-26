@@ -28,8 +28,6 @@ import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPApplyMethodExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPBinaryExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPIntegerLiteral;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
-import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
@@ -49,18 +47,14 @@ public class DBSPTypeBool extends DBSPType implements IDBSPBaseType {
         return "b";
     }
 
-    public boolean same(DBSPType type) {
+    public boolean same(@Nullable DBSPType type) {
         if (!super.same(type))
             return false;
+        assert type != null;
         return type.is(DBSPTypeBool.class);
     }
 
     public static final DBSPTypeBool instance = new DBSPTypeBool(null, false);
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder, "bool");
-    }
 
     @Override
     public DBSPExpression castFrom(DBSPExpression source) {

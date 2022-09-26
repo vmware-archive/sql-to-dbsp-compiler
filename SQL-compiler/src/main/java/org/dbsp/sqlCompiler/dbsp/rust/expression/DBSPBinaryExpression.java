@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.TranslationException;
 
 import javax.annotation.Nullable;
@@ -51,33 +50,6 @@ public class DBSPBinaryExpression extends DBSPExpression {
     public DBSPBinaryExpression(DBSPType type, String operation,
                                 DBSPExpression left, DBSPExpression right) {
         this(null, type, operation, left, right);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.left.getNonVoidType().mayBeNull) {
-            return builder.append("(")
-                    .append("match (")
-                    .append(this.left)
-                    .append(", ")
-                    .append(this.right)
-                    .append(") {").increase()
-                    .append("(Some(x), Some(y)) => Some(x ")
-                    .append(this.operation)
-                    .append(" y),\n")
-                    .append("_ => None,\n")
-                    .decrease()
-                    .append("}")
-                    .append(")");
-        } else {
-            return builder.append("(")
-                    .append(this.left)
-                    .append(" ")
-                    .append(this.operation)
-                    .append(" ")
-                    .append(this.right)
-                    .append(")");
-        }
     }
 
     @Override

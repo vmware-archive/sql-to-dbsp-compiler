@@ -29,7 +29,6 @@ import org.dbsp.sqlCompiler.dbsp.*;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
-import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.NameGen;
 
 import javax.annotation.Nullable;
@@ -133,32 +132,6 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
         if (node == null)
             throw new RuntimeException("Null input to operator");
         this.inputs.add(node);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append("let ")
-                .append(this.getName())
-                .append(": ")
-                .append(new DBSPTypeStream(this.outputType))
-                .append(" = ");
-        if (!this.inputs.isEmpty())
-            builder.append(this.inputs.get(0).getName())
-                   .append(".");
-        builder.append(this.operation)
-                .append("(");
-        for (int i = 1; i < this.inputs.size(); i++) {
-            if (i > 1)
-                builder.append(",");
-            builder.append("&")
-                    .append(this.inputs.get(i).getName());
-        }
-        if (this.function != null) {
-            if (this.inputs.size() > 1)
-                builder.append(", ");
-            this.function.toRustString(builder);
-        }
-        return builder.append(");");
     }
 
     @Override

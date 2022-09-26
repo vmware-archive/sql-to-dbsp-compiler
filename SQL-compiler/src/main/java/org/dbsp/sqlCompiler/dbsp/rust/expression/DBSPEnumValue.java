@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeUser;
-import org.dbsp.util.IndentStringBuilder;
 
 /**
  * For now only support simple enums, with no additional arguments.
@@ -40,14 +39,7 @@ public class DBSPEnumValue extends DBSPExpression {
         this.constructor = constructor;
     }
 
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.enumName)
-                .append("::")
-                .append(this.constructor);
-    }
-
-    @Override
+   @Override
     public void accept(Visitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.type != null)

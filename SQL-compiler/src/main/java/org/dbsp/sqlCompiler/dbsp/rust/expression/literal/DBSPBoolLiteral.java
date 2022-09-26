@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeBool;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -33,11 +32,11 @@ public class DBSPBoolLiteral extends DBSPLiteral {
     @Nullable
     public final Boolean value;
 
-    public static DBSPBoolLiteral None = new DBSPBoolLiteral();
-    public static DBSPBoolLiteral True = new DBSPBoolLiteral(true);
-    public static DBSPBoolLiteral False = new DBSPBoolLiteral(false);
-    public static DBSPBoolLiteral NullableTrue = new DBSPBoolLiteral(true, true);
-    public static DBSPBoolLiteral NullableFalse = new DBSPBoolLiteral(false, true);
+    public static final DBSPBoolLiteral None = new DBSPBoolLiteral();
+    public static final DBSPBoolLiteral True = new DBSPBoolLiteral(true);
+    public static final DBSPBoolLiteral False = new DBSPBoolLiteral(false);
+    public static final DBSPBoolLiteral NullableTrue = new DBSPBoolLiteral(true, true);
+    public static final DBSPBoolLiteral NullableFalse = new DBSPBoolLiteral(false, true);
 
     public DBSPBoolLiteral() {
         this(null, true);
@@ -52,13 +51,6 @@ public class DBSPBoolLiteral extends DBSPLiteral {
         if (b == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = b;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.value == null)
-            return builder.append(this.noneString());
-        return builder.append(this.wrapSome(Boolean.toString(value)));
     }
 
     @Override

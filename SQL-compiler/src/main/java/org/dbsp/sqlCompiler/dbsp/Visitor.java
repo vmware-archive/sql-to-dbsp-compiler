@@ -46,11 +46,12 @@ import java.util.List;
 /**
  * Depth-first traversal of an DBSPNode hierarchy.
  */
+@SuppressWarnings("SameReturnValue")
 public abstract class Visitor {
     public final List<IDBSPNode> context;
 
     /// If true each visit call will visit by default the superclass.
-    boolean visitSuper;
+    final boolean visitSuper;
 
     public Visitor(boolean visitSuper) {
         this.visitSuper = visitSuper;
@@ -373,6 +374,7 @@ public abstract class Visitor {
     
     // Expressions
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean preorder(DBSPStructExpression node) {
         if (this.visitSuper) return this.preorder((DBSPExpression) node);
         else return true;
@@ -537,8 +539,10 @@ public abstract class Visitor {
 
     /*************************** POSTORDER *****************************/
 
+    @SuppressWarnings("EmptyMethod")
     public void postorder(IDBSPNode ignored) {}
 
+    @SuppressWarnings("EmptyMethod")
     public void postorder(DBSPNode ignored) {}
 
     public void postorder(DBSPExpression node) {

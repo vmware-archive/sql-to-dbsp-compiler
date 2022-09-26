@@ -26,7 +26,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.type;
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPUSizeLiteral;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -41,10 +40,6 @@ public class DBSPTypeUSize extends DBSPType
     protected DBSPTypeUSize(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);
     }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder, "usize"); }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {

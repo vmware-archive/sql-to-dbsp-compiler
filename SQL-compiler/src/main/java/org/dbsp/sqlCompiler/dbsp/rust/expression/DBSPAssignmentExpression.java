@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPAssignmentExpression extends DBSPExpression {
     public final DBSPExpression left;
@@ -34,13 +33,6 @@ public class DBSPAssignmentExpression extends DBSPExpression {
         super(null, null);
         this.left = left;
         this.right = right;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.left)
-                .append(" = ")
-                .append(this.right);
     }
 
     @Override

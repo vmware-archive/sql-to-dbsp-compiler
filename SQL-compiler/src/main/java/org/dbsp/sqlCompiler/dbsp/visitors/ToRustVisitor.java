@@ -293,21 +293,23 @@ public class ToRustVisitor extends Visitor {
         return false;
     }
 
-    private void genRcCell(IndentStringBuilder builder, DBSPOperator op) {
-        builder.append("let ")
+    //////////////// Operators
+
+    private void genRcCell(DBSPOperator op) {
+        this.builder.append("let ")
                 .append(op.getName())
-                .append(" = Rc::new(RefCell::<")
-                .append(op.getNonVoidType())
-                .append(">::new(Default::default()));")
+                .append(" = Rc::new(RefCell::<");
+        op.getNonVoidType().accept(this);
+        this.builder.append(">::new(Default::default()));")
                 .newline();
-        builder.append("let ")
+        this.builder.append("let ")
                 .append(op.getName())
                 .append("_external = ")
                 .append(op.getName())
                 .append(".clone();")
                 .newline();
         if (op instanceof DBSPSourceOperator) {
-            builder.append("let ")
+            this.builder.append("let ")
                     .append(op.getName())
                     .append(" = Generator::new(move || ")
                     .append(op.getName())
@@ -330,7 +332,7 @@ public class ToRustVisitor extends Visitor {
             if (!first)
                 this.builder.append(",");
             first = false;
-            this.builder.append(i.getNonVoidType());
+            i.getNonVoidType().accept(this);
         }
         this.builder.append(") -> ");
         DBSPTypeTuple tuple = new DBSPTypeRawTuple(null, Linq.map(circuit.outputOperators, DBSPOperator::getNonVoidType));
@@ -341,21 +343,22 @@ public class ToRustVisitor extends Visitor {
                 .append("\n");
         // For each input and output operator a corresponding Rc cell
         for (DBSPOperator i : circuit.inputOperators)
-            this.genRcCell(builder, i);
+            this.genRcCell(i);
 
         for (DBSPOperator o : circuit.outputOperators)
-            this.genRcCell(builder, o);
+            this.genRcCell(o);
 
         // Circuit body
         this.builder.append("let root = Circuit::build(|circuit| {")
                 .increase();
-        for (
-                IDBSPDeclaration decl : circuit.declarations)
-            this.builder.append(decl)
-                    .newline();
-        for (DBSPOperator i : circuit.inputOperators)
-            this.builder.append(i)
-                    .newline();
+        for (IDBSPDeclaration decl : circuit.declarations) {
+            decl.accept(this);
+            this.builder.newline();
+        }
+        for (DBSPOperator i : circuit.inputOperators) {
+            i.accept(this);
+            this.builder.newline();
+        }
         for (DBSPOperator op : circuit.operators) {
             op.accept(this);
             this.builder.newline();
@@ -427,11 +430,12 @@ public class ToRustVisitor extends Visitor {
 
     @Override
     public boolean preorder(DBSPOperator operator) {
+        DBSPType streamType = new DBSPTypeStream(operator.outputType);
         builder.append("let ")
                 .append(operator.getName())
-                .append(": ")
-                .append(new DBSPTypeStream(operator.outputType))
-                .append(" = ");
+                .append(": ");
+        streamType.accept(this);
+        this.builder.append(" = ");
         if (!operator.inputs.isEmpty())
             builder.append(operator.inputs.get(0).getName())
                     .append(".");
@@ -456,9 +460,9 @@ public class ToRustVisitor extends Visitor {
     public boolean preorder(DBSPSumOperator operator) {
         this.builder.append("let ")
                     .append(operator.getName())
-                    .append(": ")
-                    .append(new DBSPTypeStream(operator.outputType))
-                    .append(" = ");
+                    .append(": ");
+        new DBSPTypeStream(operator.outputType).accept(this);
+        this.builder.append(" = ");
         if (!operator.inputs.isEmpty())
             this.builder.append(operator.inputs.get(0).getName())
                         .append(".");
@@ -485,8 +489,8 @@ public class ToRustVisitor extends Visitor {
     @Override
     public boolean preorder(DBSPFunction.Argument argument) {
         this.builder.append(argument.name)
-                .append(": ")
-                .append(argument.type);
+                .append(": ");
+        argument.type.accept(this);
         return false;
     }
 
@@ -496,9 +500,12 @@ public class ToRustVisitor extends Visitor {
                 .append("pub fn ")
                 .append(function.name)
                 .append("(");
+        boolean first = true;
         for (DBSPFunction.Argument arg: function.arguments) {
+            if (!first)
+                this.builder.append(", ");
+            first = false;
             arg.accept(this);
-            this.builder.append(", ");
         }
         this.builder.append(") ");
         if (function.returnType != null) {
@@ -689,10 +696,10 @@ public class ToRustVisitor extends Visitor {
     }
 
     @Override
-    public boolean preorder(DBSPMatchExpression.Case mcase) {
-        mcase.against.accept(this);
+    public boolean preorder(DBSPMatchExpression.Case mCase) {
+        mCase.against.accept(this);
         this.builder.append(" => ");
-        mcase.result.accept(this);
+        mCase.result.accept(this);
         return false;
     }
 
@@ -701,8 +708,8 @@ public class ToRustVisitor extends Visitor {
         this.builder.append("(match ");
         expression.matched.accept(this);
         this.builder.append(" {").increase();
-        for (DBSPMatchExpression.Case mcase : expression.cases) {
-            mcase.accept(this);
+        for (DBSPMatchExpression.Case mCase : expression.cases) {
+            mCase.accept(this);
             this.builder.append(",\n");
         }
         this.builder.decrease()
@@ -776,9 +783,12 @@ public class ToRustVisitor extends Visitor {
         expression.function.accept(this);
         if (expression.arguments.length > 0) {
             this.builder.append("(");
+            boolean first = true;
             for (DBSPExpression arg: expression.arguments) {
+                if (!first)
+                    this.builder.append(", ");
+                first = false;
                 arg.accept(this);
-                this.builder.append(", ");
             }
             this.builder.append(")");
         }
@@ -838,9 +848,12 @@ public class ToRustVisitor extends Visitor {
     @Override
     public boolean preorder(DBSPTuplePattern pattern) {
         this.builder.append("(");
+        boolean first = true;
         for (DBSPPattern field: pattern.fields) {
+            if (!first)
+                this.builder.append(", ");
+            first = false;
             field.accept(this);
-            this.builder.append(", ");
         }
         this.builder.append(")");
         return false;
@@ -848,11 +861,14 @@ public class ToRustVisitor extends Visitor {
 
     @Override
     public boolean preorder(DBSPTupleStructPattern pattern) {
-        this.builder.append(pattern.path)
-                .append("(");
+        pattern.path.accept(this);
+        this.builder.append("(");
+        boolean first = true;
         for (DBSPPattern field: pattern.arguments) {
+            if (!first)
+                this.builder.append(", ");
+            first = false;
             field.accept(this);
-            this.builder.append(", ");
         }
         this.builder.append(")");
         return false;
@@ -929,8 +945,8 @@ public class ToRustVisitor extends Visitor {
         if (type.mayBeNull)
             this.builder.append("Option<");
         this.builder.append("(");
-        for (DBSPType ftype: type.tupFields) {
-            ftype.accept(this);
+        for (DBSPType fType: type.tupFields) {
+            fType.accept(this);
             this.builder.append(", ");
         }
         this.builder.append(")");
@@ -991,11 +1007,11 @@ public class ToRustVisitor extends Visitor {
                 .append(type.tupFields.length)
                 .append("<");
         boolean first = true;
-        for (DBSPType ftype: type.tupFields) {
+        for (DBSPType fType: type.tupFields) {
             if (!first)
                 this.builder.append(", ");
             first = false;
-            ftype.accept(this);
+            fType.accept(this);
         }
         this.builder.append(">");
         if (type.mayBeNull)
@@ -1011,11 +1027,11 @@ public class ToRustVisitor extends Visitor {
         if (type.typeArgs.length > 0) {
             this.builder.append("<");
             boolean first = true;
-            for (DBSPType ftype: type.typeArgs) {
+            for (DBSPType fType: type.typeArgs) {
                 if (!first)
                     this.builder.append(", ");
                 first = false;
-                ftype.accept(this);
+                fType.accept(this);
             }
             this.builder.append(">");
         }

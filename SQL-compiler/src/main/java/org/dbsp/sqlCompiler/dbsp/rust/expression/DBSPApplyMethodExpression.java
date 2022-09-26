@@ -27,7 +27,6 @@ import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeAny;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -56,16 +55,6 @@ public class DBSPApplyMethodExpression extends DBSPExpression {
         this.function = function;
         this.self = self;
         this.arguments = arguments;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.self)
-                .append(".")
-                .append(this.function)
-                .append("(")
-                .join(", ", this.arguments)
-                .append(")");
     }
 
     @Override

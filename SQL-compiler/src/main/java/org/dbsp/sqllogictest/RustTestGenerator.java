@@ -98,20 +98,20 @@ public class RustTestGenerator {
         }if (output != null) {
             if (description.columnTypes != null) {
                 DBSPExpression columnTypes = new DBSPStringLiteral(description.columnTypes);
-                DBSPTypeZSet otype = output.getNonVoidType().to(DBSPTypeZSet.class);
+                DBSPTypeZSet oType = output.getNonVoidType().to(DBSPTypeZSet.class);
                 String functionProducingStrings;
                 DBSPType elementType;
                 if (isVector) {
                     functionProducingStrings = "zset_of_vectors_to_strings";
-                    elementType = otype.elementType.to(DBSPTypeVec.class).getElementType();
+                    elementType = oType.elementType.to(DBSPTypeVec.class).getElementType();
                 } else {
                     functionProducingStrings = "zset_to_strings";
-                    elementType = otype.elementType;
+                    elementType = oType.elementType;
                 }
                 DBSPExpression zset_to_strings = new DBSPQualifyTypeExpression(
                         new DBSPVariableReference(functionProducingStrings, DBSPTypeAny.instance),
                         elementType,
-                        otype.weightType
+                        oType.weightType
                 );
                 list.add(new DBSPExpressionStatement(
                         new DBSPApplyExpression("assert_eq!", null,

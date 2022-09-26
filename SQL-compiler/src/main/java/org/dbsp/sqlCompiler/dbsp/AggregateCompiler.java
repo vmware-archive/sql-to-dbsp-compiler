@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.dbsp;
 
 import org.apache.calcite.rel.core.AggregateCall;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.*;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
@@ -50,6 +51,7 @@ public class AggregateCompiler {
      * and a postprocessing step of |a| a.1/a.0.
      */
     public static class FoldDescription {
+        public final SqlOperator operator;
         /**
          * Zero of the fold function.
          */
@@ -69,11 +71,13 @@ public class AggregateCompiler {
         public final DBSPExpression emptySetResult;
 
         public FoldDescription(
+                SqlOperator operator,
                 DBSPExpression zero,
                 DBSPClosureExpression increment,
                 @Nullable
                 DBSPClosureExpression postprocess,
                 DBSPExpression emptySetResult) {
+            this.operator = operator;
             this.zero = zero;
             this.increment = increment;
             this.postprocess = postprocess;
@@ -82,10 +86,11 @@ public class AggregateCompiler {
         }
 
         public FoldDescription(
+                SqlOperator operator,
                 DBSPExpression zero,
                 DBSPClosureExpression increment,
                 DBSPExpression emptySetResult) {
-            this(zero, increment, null, emptySetResult);
+            this(operator, zero, increment, null, emptySetResult);
         }
 
         void validate() {
@@ -179,7 +184,8 @@ public class AggregateCompiler {
                             argument,
                             new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
         }
-        this.foldingFunction = new FoldDescription(zero, this.makeRowClosure(increment, accum), zero);
+        this.foldingFunction = new FoldDescription(
+                function, zero, this.makeRowClosure(increment, accum), zero);
     }
 
     private DBSPExpression getAggregatedValue() {
@@ -210,7 +216,8 @@ public class AggregateCompiler {
         DBSPVariableReference accum = new DBSPVariableReference("a", this.nullableResultType);
         DBSPExpression increment = ExpressionCompiler.aggregateOperation(
                 call, this.nullableResultType, accum, aggregatedValue);
-        this.foldingFunction = new FoldDescription(zero, this.makeRowClosure(increment, accum), zero);
+        this.foldingFunction = new FoldDescription(
+                function, zero, this.makeRowClosure(increment, accum), zero);
     }
 
     void processSum(SqlSumAggFunction function) {
@@ -230,7 +237,8 @@ public class AggregateCompiler {
                             aggregatedValue,
                             new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
         }
-        this.foldingFunction = new FoldDescription(zero, this.makeRowClosure(increment, accum), zero);
+        this.foldingFunction = new FoldDescription(
+                function, zero, this.makeRowClosure(increment, accum), zero);
     }
 
     void processSumZero(SqlSumEmptyIsZeroAggFunction function) {
@@ -250,7 +258,8 @@ public class AggregateCompiler {
                             aggregatedValue,
                             new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
         }
-        this.foldingFunction = new FoldDescription(zero, this.makeRowClosure(increment, accum), zero);
+        this.foldingFunction = new FoldDescription(
+                function, zero, this.makeRowClosure(increment, accum), zero);
     }
 
     void processAvg(SqlAvgAggFunction function) {
@@ -299,8 +308,8 @@ public class AggregateCompiler {
         DBSPClosureExpression post = new DBSPClosureExpression(
                 null, divide, a.asParameter());
         DBSPExpression postZero = DBSPLiteral.none(this.nullableResultType);
-        this.foldingFunction = new FoldDescription(zero,
-                this.makeRowClosure(increment, accum), post, postZero);
+        this.foldingFunction = new FoldDescription(
+                function, zero, this.makeRowClosure(increment, accum), post, postZero);
     }
 
     public FoldDescription compile() {

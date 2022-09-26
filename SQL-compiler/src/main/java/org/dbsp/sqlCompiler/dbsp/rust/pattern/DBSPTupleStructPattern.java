@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPTupleStructPattern extends DBSPPattern {
     public final DBSPPath path;
@@ -35,14 +34,6 @@ public class DBSPTupleStructPattern extends DBSPPattern {
         super(null);
         this.path = path;
         this.arguments = arguments;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.path)
-                .append("(")
-                .join(", ", this.arguments)
-                .append(")");
     }
 
     /**

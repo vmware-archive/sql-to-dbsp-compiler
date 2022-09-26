@@ -25,10 +25,9 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.IDBSPContainter;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.IDBSPContainer;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeZSet;
-import org.dbsp.util.IndentStringBuilder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +37,7 @@ import java.util.Map;
  * A ZSet is a map from tuples to integer weights.
  * In general weights should not be zero.
  */
-public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainter {
+public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
     public final Map<DBSPExpression, Integer> data;
     public final DBSPTypeZSet zsetType;
 
@@ -99,18 +98,6 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainter {
             throw new RuntimeException("Added zsets do not have the same type " +
                     this.getElementType() + " vs " + other.getElementType());
         other.data.forEach(this::add);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append("zset!(").increase();
-        for (Map.Entry<DBSPExpression, Integer> e: data.entrySet()) {
-            builder.append(e.getKey())
-                    .append(" => ")
-                    .append(e.getValue())
-                    .append(",\n");
-        }
-        return builder.decrease().append(")");
     }
 
     public int size() {

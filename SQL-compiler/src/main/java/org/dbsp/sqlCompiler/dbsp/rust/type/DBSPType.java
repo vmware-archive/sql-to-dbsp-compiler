@@ -46,10 +46,12 @@ public abstract class DBSPType extends DBSPNode {
         this.mayBeNull = mayBeNull;
     }
 
-    public IndentStringBuilder wrapOption(IndentStringBuilder builder, String type) {
-        if (this.mayBeNull)
-            return builder.append("Option<" + type + ">");
-        return builder.append(type);
+    public void wrapOption(IndentStringBuilder builder, String type) {
+        if (this.mayBeNull) {
+            builder.append("Option<" + type + ">");
+            return;
+        }
+        builder.append(type);
     }
 
     public boolean same(@Nullable DBSPType other) {

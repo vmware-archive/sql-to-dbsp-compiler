@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
 
 /**
  * An expression qualified with a type.
@@ -38,14 +37,6 @@ public class DBSPQualifyTypeExpression extends DBSPExpression {
         super(null, expression.getType());
         this.expression = expression;
         this.types = types;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.expression)
-                .append("::<")
-                .join(", ", this.types)
-                .append(">");
     }
 
     @Override

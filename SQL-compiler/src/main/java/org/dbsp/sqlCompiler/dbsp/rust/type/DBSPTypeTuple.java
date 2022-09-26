@@ -26,7 +26,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.type;
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPSimplePathSegment;
-import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
@@ -79,22 +78,6 @@ public class DBSPTypeTuple extends DBSPType {
 
     public int size() {
         return this.tupFields.length;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.tupFields.length == 0)
-            return builder.append("()");
-        if (this.mayBeNull)
-            builder.append("Option<");
-        builder.append("Tuple")
-                .append(this.tupFields.length)
-                .append("<")
-                .join(", ", this.tupFields)
-                .append(">");
-        if (this.mayBeNull)
-            builder.append(">");
-        return builder;
     }
 
     public DBSPPath toPath() {

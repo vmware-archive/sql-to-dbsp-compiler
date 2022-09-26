@@ -33,11 +33,9 @@ import org.apache.calcite.rel.type.RelDataType;
 public class ColumnInfo {
     public final String name;
     public final RelDataType type;
-    public final boolean nullable;
 
-    public ColumnInfo(String name, RelDataType type, boolean nullable) {
+    public ColumnInfo(String name, RelDataType type) {
         this.name = name;
         this.type = type;
-        this.nullable = nullable;
     }
 }

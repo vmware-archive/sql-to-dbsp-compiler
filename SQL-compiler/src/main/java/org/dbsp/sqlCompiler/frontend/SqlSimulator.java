@@ -66,8 +66,8 @@ public class SqlSimulator {
             if (col.getKind().equals(SqlKind.COLUMN_DECL)) {
                 SqlColumnDeclaration cd = (SqlColumnDeclaration)col;
                 RelDataType type = this.convertType(cd.dataType);
-                ColumnInfo ci = new ColumnInfo(Catalog.identifierToString(cd.name), type,
-                        Objects.requireNonNull(cd.dataType.getNullable()));
+                ColumnInfo ci = new ColumnInfo(Catalog.identifierToString(cd.name), type
+                );
                 result.add(ci);
                 continue;
             }

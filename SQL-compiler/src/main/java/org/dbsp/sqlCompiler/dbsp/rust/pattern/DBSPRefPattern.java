@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPRefPattern extends DBSPPattern {
     public final DBSPPattern pattern;
@@ -38,13 +37,6 @@ public class DBSPRefPattern extends DBSPPattern {
 
     public DBSPRefPattern(DBSPPattern pattern) {
         this(pattern, false);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("&")
-                .append(this.mutable ? "mut " : "")
-                .append(this.pattern);
     }
 
     @Override

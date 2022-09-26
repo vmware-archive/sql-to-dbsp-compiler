@@ -149,7 +149,7 @@ public class CalciteCompiler {
                 PruneEmptyRules.JOIN_LEFT_INSTANCE,
                 PruneEmptyRules.JOIN_RIGHT_INSTANCE,
                 PruneEmptyRules.SORT_FETCH_ZERO_INSTANCE);
-        HepProgram distinctAaggregates = createProgram(
+        HepProgram distinctAggregates = createProgram(
                 // Convert DISTINCT aggregates into separate computations and join the results
                 CoreRules.AGGREGATE_EXPAND_DISTINCT_AGGREGATES_TO_JOIN);
         HepProgram multiJoins = new HepProgramBuilder()
@@ -175,8 +175,8 @@ public class CalciteCompiler {
                 CoreRules.PROJECT_JOIN_REMOVE
                 );
             if (avoidBushyJoin(rel))
-                return Linq.list(constantFold, removeEmpty, distinctAaggregates, mergeNodes, remove);
-            return Linq.list(constantFold, removeEmpty, distinctAaggregates, multiJoins, mergeNodes, remove);
+                return Linq.list(constantFold, removeEmpty, distinctAggregates, mergeNodes, remove);
+            return Linq.list(constantFold, removeEmpty, distinctAggregates, multiJoins, mergeNodes, remove);
             /*
         return Linq.list(
                 CoreRules.PROJECT_JOIN_TRANSPOSE)

@@ -23,6 +23,6 @@
 
 package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
-public interface IDBSPContainter {
+public interface IDBSPContainer {
     void add(DBSPExpression expression);
 }

@@ -27,7 +27,6 @@ package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -39,18 +38,6 @@ public class DBSPSinkOperator extends DBSPOperator {
 
     public DBSPOperator input() {
         return this.inputs.get(0);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder
-                .append(this.inputs.get(0).getName())
-                .append(".")
-                .append(this.operation) // inspect
-                .append("(move |m| { *")
-                .append(this.getName())
-                .append(".borrow_mut() = ")
-                .append("m.clone() });");
     }
 
     @Override

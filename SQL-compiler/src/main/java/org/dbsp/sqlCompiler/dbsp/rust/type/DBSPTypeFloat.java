@@ -27,16 +27,11 @@ import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPFloatLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
 public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType, IDBSPBaseType {
     protected DBSPTypeFloat(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder,"F32"); }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {

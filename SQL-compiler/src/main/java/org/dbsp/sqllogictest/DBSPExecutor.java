@@ -136,7 +136,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
 
         DBSPZSetLiteral expectedOutput = null;
         if (output.queryResults != null) {
-            IDBSPContainter container;
+            IDBSPContainer container;
             if (dbsp.getOutputCount() != 1)
                 throw new RuntimeException(
                         "Didn't expect a query to have " + dbsp.getOutputCount() + " outputs");

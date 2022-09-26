@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
@@ -66,13 +65,6 @@ public class DBSPTypeStruct extends DBSPType {
         }
 
         @Override
-        public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-            return builder.append(this.name)
-                    .append(":")
-                    .append(this.type);
-        }
-
-        @Override
         public void accept(Visitor visitor) {
             if (!visitor.preorder(this)) return;
             this.type.accept(visitor);
@@ -93,14 +85,6 @@ public class DBSPTypeStruct extends DBSPType {
                 this.error("Field name " + f + " is duplicated");
             fields.add(f.getName());
         }
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.name)
-                .append("{")
-                .join(", ", this.args)
-                .append("}");
     }
 
     @Override

@@ -33,9 +33,7 @@ import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRawTuple;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.dbsp.rust.type.IHasType;
-import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
 import org.dbsp.util.NameGen;
 
@@ -73,7 +71,7 @@ public class DBSPCircuit extends DBSPNode {
         return this.outputOperators.get(outputNo).getNonVoidType();
     }
 
-    public DBSPTypeRawTuple getOutputtype() {
+    public DBSPTypeRawTuple getOutputType() {
         return new DBSPTypeRawTuple(null, Linq.map(this.outputOperators, IHasType::getNonVoidType));
     }
 
@@ -91,116 +89,6 @@ public class DBSPCircuit extends DBSPNode {
         DBSPLetStatement let = new DBSPLetStatement(name, init);
         this.declarations.add(let);
         return let;
-    }
-
-    private void genRcCell(IndentStringBuilder builder, DBSPOperator op) {
-        builder.append("let ")
-                .append(op.getName())
-                .append(" = Rc::new(RefCell::<")
-                .append(op.getNonVoidType())
-                .append(">::new(Default::default()));")
-                .newline();
-        builder.append("let ")
-                .append(op.getName())
-                .append("_external = ")
-                .append(op.getName())
-                .append(".clone();")
-                .newline();
-        if (op instanceof DBSPSourceOperator) {
-            builder.append("let ")
-                    .append(op.getName())
-                    .append(" = Generator::new(move || ")
-                    .append(op.getName())
-                    .append(".borrow().clone());")
-                    .newline();
-        }
-    }
-
-    /**
-     * Generates a Rust function that returns a closure which evaluates the circuit.
-     * TODO: generate an IR node.
-     */
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        // function prototype:
-        // fn name() -> impl FnMut(T0, T1) -> (O0, O1) {
-        builder.append("fn ")
-                .append(this.name)
-                .append("() -> impl FnMut(");
-
-        boolean first = true;
-        for (DBSPOperator i: this.inputOperators) {
-            if (!first)
-                builder.append(",");
-            first = false;
-            builder.append(i.getNonVoidType());
-        }
-        builder.append(") -> ");
-        DBSPTypeTuple tuple = new DBSPTypeRawTuple(null, Linq.map(this.outputOperators, DBSPOperator::getNonVoidType));
-        builder.append(tuple)
-                .append(" {")
-                .increase();
-
-        builder.append("// ")
-                .append(this.query)
-                .append("\n");
-        // For each input and output operator a corresponding Rc cell
-        for (DBSPOperator i: this.inputOperators)
-            this.genRcCell(builder, i);
-
-        for (DBSPOperator o: this.outputOperators)
-            this.genRcCell(builder, o);
-
-        // Circuit body
-        builder.append("let root = Circuit::build(|circuit| {")
-                .increase();
-        for (IDBSPDeclaration decl: this.declarations)
-            builder.append(decl)
-                    .newline();
-        for (DBSPOperator i: this.inputOperators)
-            builder.append(i)
-                    .newline();
-        for (DBSPOperator op: this.operators)
-            op.toRustString(builder)
-                    .newline();
-        for (DBSPOperator i: this.outputOperators)
-            builder.append(i)
-                    .newline();
-
-        builder.decrease()
-                .append("})")
-                .append(".unwrap();")
-                .newline();
-
-        // Create the closure and return it.
-        builder.append("return move |")
-                .joinS(", ", Linq.map(this.inputOperators, DBSPOperator::getName))
-                .append("| {")
-                .increase();
-
-        for (DBSPOperator i: this.inputOperators)
-            builder.append("*")
-                    .append(i.getName())
-                    .append("_external.borrow_mut() = ")
-                    .append(i.getName())
-                    .append(";")
-                    .newline();
-        builder.append("root.0.step().unwrap();")
-                .newline()
-                .append("return ")
-                .append("(")
-                .intercalateS(", ",
-                        Linq.map(this.outputOperators, o -> o.getName() + "_external.borrow().clone()"))
-                .append(")")
-                .append(";")
-                .newline()
-                .decrease()
-                .append("};")
-                .newline()
-                .decrease()
-                .append("}")
-                .newline();
-        return builder;
     }
 
     @Override

@@ -28,7 +28,6 @@ import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRef;
-import org.dbsp.util.IndentStringBuilder;
 
 /**
  * Reference to a variable by name.
@@ -39,11 +38,6 @@ public class DBSPVariableReference extends DBSPExpression {
     public DBSPVariableReference(String variable, DBSPType type) {
         super(null, type);
         this.variable = variable;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.variable);
     }
 
     public DBSPPattern asPattern(boolean mutable) {

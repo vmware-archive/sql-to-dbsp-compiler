@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.path;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPSimplePathSegment extends DBSPPathSegment {
     public final String identifier;
@@ -35,16 +34,6 @@ public class DBSPSimplePathSegment extends DBSPPathSegment {
         super(null);
         this.identifier = identifier;
         this.genericArgs = genericArgs;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append(this.identifier);
-        if (this.genericArgs.length > 0)
-            builder.append("::<")
-                    .join(", ", this.genericArgs)
-                    .append(">");
-        return builder;
     }
 
     @Override

@@ -26,7 +26,6 @@ package org.dbsp.sqlCompiler.dbsp.rust;
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.circuit.IDBSPDeclaration;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -40,11 +39,6 @@ public class DBSPFile extends DBSPNode {
     public DBSPFile(@Nullable Object node, List<IDBSPDeclaration> declarations) {
         super(node);
         this.declarations = declarations;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.join("\n\n", this.declarations);
     }
 
     @Override
