@@ -55,6 +55,7 @@ public class SqlRuntimeLibrary {
     private final HashMap<String, String> stringFunctions = new HashMap<>();
     private final HashMap<String, String> booleanFunctions = new HashMap<>();
     private final Set<String> comparisons = new HashSet<>();
+    private final Set<String> handWritten = new HashSet<>();
 
     public static final SqlRuntimeLibrary instance = new SqlRuntimeLibrary();
 
@@ -89,6 +90,20 @@ public class SqlRuntimeLibrary {
         this.arithmeticFunctions.put("min", "min");
         this.arithmeticFunctions.put("max", "max");
         this.arithmeticFunctions.put("abs", "abs");
+        this.arithmeticFunctions.put("is_distinct", "is_distinct");
+
+        this.handWritten.add("is_false");
+        this.handWritten.add("is_not_true");
+        this.handWritten.add("is_not_false");
+        this.handWritten.add("is_true");
+        this.handWritten.add("&&");
+        this.handWritten.add("||");
+        this.handWritten.add("min");
+        this.handWritten.add("max");
+        this.handWritten.add("/");
+        this.handWritten.add("abs");
+        this.handWritten.add("is_distinct");
+        this.handWritten.add("is_not_distinct");
 
         this.doubleFunctions.put("eq", "==");
         this.doubleFunctions.put("neq", "!=");
@@ -102,10 +117,12 @@ public class SqlRuntimeLibrary {
         this.doubleFunctions.put("times", "*");
         this.doubleFunctions.put("div", "/");
         this.doubleFunctions.put("abs", "abs");
+        this.arithmeticFunctions.put("is_distinct", "is_distinct");
 
         //this.stringFunctions.put("s_concat", "+");
         this.stringFunctions.put("eq", "==");
         this.stringFunctions.put("neq", "!=");
+        this.arithmeticFunctions.put("is_distinct", "is_distinct");
 
         this.booleanFunctions.put("eq", "==");
         this.booleanFunctions.put("neq", "!=");
@@ -113,6 +130,11 @@ public class SqlRuntimeLibrary {
         this.booleanFunctions.put("or", "||");
         this.booleanFunctions.put("min", "min");
         this.booleanFunctions.put("max", "max");
+        this.booleanFunctions.put("is_false", "is_false");
+        this.booleanFunctions.put("is_not_true", "is_not_true");
+        this.booleanFunctions.put("is_true", "is_true");
+        this.booleanFunctions.put("is_not_false", "is_not_false");
+        this.arithmeticFunctions.put("is_distinct", "is_distinct");
 
         this.comparisons.add("==");
         this.comparisons.add("!=");
@@ -120,6 +142,7 @@ public class SqlRuntimeLibrary {
         this.comparisons.add("<=");
         this.comparisons.add(">");
         this.comparisons.add("<");
+        this.comparisons.add("is_distinct");
     }
 
     boolean isComparison(String op) {
@@ -133,6 +156,10 @@ public class SqlRuntimeLibrary {
         public FunctionDescription(String function, DBSPType returnType) {
             this.function = function;
             this.returnType = returnType;
+        }
+
+        public DBSPApplyExpression getCall(DBSPExpression... arguments) {
+            return new DBSPApplyExpression(this.function, this.returnType, arguments);
         }
     }
     
@@ -150,17 +177,21 @@ public class SqlRuntimeLibrary {
         } else {
             map = this.stringFunctions;
         }
-
         if (isComparison(op))
             returnType = DBSPTypeBool.instance.setMayBeNull(anyNull);
         if (op.equals("/"))
             // Always, for division by 0
             returnType = returnType.setMayBeNull(true);
+        if (op.equals("is_true") || op.equals("is_not_true") ||
+                op.equals("is_false") || op.equals("is_not_false") ||
+                op.equals("is_distinct"))
+            returnType = DBSPTypeBool.instance;
+
         String suffixl = ltype.mayBeNull ? "N" : "";
         String suffixr = rtype == null ? "" : (rtype.mayBeNull ? "N" : "");
         String tsuffixl = ltype.to(IDBSPBaseType.class).shortName();
         String tsuffixr = (rtype == null) ? "" : rtype.to(IDBSPBaseType.class).shortName();
-        if (aggregate) {
+        if (aggregate || op.equals("is_distinct")) {
             tsuffixl = "";
             tsuffixr = "";
         }
@@ -215,9 +246,7 @@ public class SqlRuntimeLibrary {
                 this.arithmeticFunctions, this.booleanFunctions, this.stringFunctions, this.doubleFunctions)) {
             for (String f : h.keySet()) {
                 String op = h.get(f);
-                if (op.equals("&&") || op.equals("||") ||
-                        op.equals("min") || op.equals("max") ||
-                        op.equals("/") || op.equals("abs"))
+                if (this.handWritten.contains(op))
                     // Hand-written rules in a separate library
                     continue;
                 for (int i = 0; i < 4; i++) {

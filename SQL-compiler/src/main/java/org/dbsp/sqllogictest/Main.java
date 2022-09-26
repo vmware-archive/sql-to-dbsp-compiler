@@ -117,6 +117,7 @@ public class Main {
         // These are all the files we support from sqllogictest.
         String[] files = new String[]{
                 //"s.test",
+                //"random/select",  //done
                 "random/groupby",
                 "random/expr",
                 "random/aggregates",

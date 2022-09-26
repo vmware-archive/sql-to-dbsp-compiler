@@ -449,6 +449,107 @@ pub fn abs_dN(left: Option<F64>) -> Option<F64>
     }
 }
 
+#[inline(always)]
+pub fn is_true(left: bool) -> bool
+{
+    left
+}
+
+#[inline(always)]
+pub fn is_true_bN_(left: Option<bool>) -> bool
+{
+    match left {
+        Some(true) => true,
+        _ => false,
+    }
+}
+
+#[inline(always)]
+pub fn is_false(left: bool) -> bool
+{
+    !left
+}
+
+#[inline(always)]
+pub fn is_false_bN_(left: Option<bool>) -> bool
+{
+    match left {
+        Some(false) => true,
+        _ => false,
+    }
+}
+
+#[inline(always)]
+pub fn is_not_true(left: bool) -> bool
+{
+    !left
+}
+
+#[inline(always)]
+pub fn is_not_true_bN_(left: Option<bool>) -> bool
+{
+    match left {
+        Some(true) => false,
+        Some(false) => true,
+        _ => true,
+    }
+}
+
+#[inline(always)]
+pub fn is_not_false(left: bool) -> bool
+{
+    left
+}
+
+#[inline(always)]
+pub fn is_not_false_bN_(left: Option<bool>) -> bool
+{
+    match left {
+        Some(true) => true,
+        Some(false) => false,
+        _ => true,
+    }
+}
+
+#[inline(always)]
+pub fn is_distinct__<T>(left: T, right: T) -> bool
+    where T: Eq
+{
+    left != right
+}
+
+#[inline(always)]
+pub fn is_distinct_N_N<T>(left: Option<T>, right: Option<T>) -> bool
+    where T: Eq
+{
+    match (left, right) {
+        (Some(a), Some(b)) => a != b,
+        (None, None) => false,
+        _ => true,
+    }
+}
+
+#[inline(always)]
+pub fn is_distinct__N<T>(left: T, right: Option<T>) -> bool
+    where T: Eq
+{
+    match right {
+        Some(b) => left != b,
+        None => true,
+    }
+}
+
+#[inline(always)]
+pub fn is_distinct_N_<T>(left: Option<T>, right: T) -> bool
+    where T: Eq
+{
+    match left {
+        Some(a) => a != right,
+        None => true,
+    }
+}
+
+
 pub fn weighted_push<T, W>(vec: &mut Vec<T>, value: &T, weight: W)
 where
     W: ZRingValue,
