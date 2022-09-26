@@ -172,7 +172,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
             right = makeCast(right, commonBase.setMayBeNull(rightType.mayBeNull));
         SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
                 op, commonBase.setMayBeNull(leftType.mayBeNull), commonBase.setMayBeNull(rightType.mayBeNull), false);
-        return new DBSPApplyExpression(function.function, function.returnType, left, right);
+        return function.getCall(left, right);
     }
 
     public static DBSPExpression makeCast(DBSPExpression from, DBSPType to) {
@@ -253,9 +253,13 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
             case GREATER_THAN_OR_EQUAL:
                 return makeBinaryExpression(call, type, ">=", ops);
             case EQUALS:
-            case IS_NOT_DISTINCT_FROM:
                 return makeBinaryExpression(call, type, "==", ops);
             case IS_DISTINCT_FROM:
+                return makeBinaryExpression(call, type, "is_distinct", ops);
+            case IS_NOT_DISTINCT_FROM: {
+                DBSPExpression op = makeBinaryExpression(call, type, "is_distinct", ops);
+                return makeUnaryExpression(call, DBSPTypeBool.instance, "!", Linq.list(op));
+            }
             case NOT_EQUALS:
                 return makeBinaryExpression(call, type, "!=", ops);
             case OR:
@@ -265,18 +269,40 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
             case DOT:
                 return makeBinaryExpression(call, type, ".", ops);
             case NOT:
+                return makeUnaryExpression(call, type, "!", ops);
             case IS_FALSE:
             case IS_NOT_TRUE:
-                return makeUnaryExpression(call, type, "!", ops);
+            case IS_TRUE:
+            case IS_NOT_FALSE: {
+                if (ops.size() != 1)
+                    throw new TranslationException("Expected 1 operand", call);
+                DBSPExpression arg = ops.get(0);
+                String functionName;
+                switch (call.op.kind) {
+                    case IS_FALSE:
+                        functionName = "is_false";
+                        break;
+                    case IS_TRUE:
+                        functionName = "is_true";
+                        break;
+                    case IS_NOT_TRUE:
+                        functionName = "is_not_true";
+                        break;
+                    case IS_NOT_FALSE:
+                        functionName = "is_not_false";
+                        break;
+                    default:
+                        throw new RuntimeException("Should not be reachable");
+                }
+                SqlRuntimeLibrary.FunctionDescription function =
+                        SqlRuntimeLibrary.instance.getFunction(
+                                functionName, arg.getNonVoidType(), null, false);
+                return function.getCall(arg);
+            }
             case PLUS_PREFIX:
                 return makeUnaryExpression(call, type, "+", ops);
             case MINUS_PREFIX:
                 return makeUnaryExpression(call, type, "-", ops);
-            case IS_TRUE:
-            case IS_NOT_FALSE:
-                if (ops.size() != 1)
-                    throw new TranslationException("Expected 1 operand", call);
-                return ops.get(0);
             case BIT_AND:
                 return makeBinaryExpressions(call, type, "&", ops);
             case BIT_OR:
@@ -364,7 +390,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                     DBSPType argType = arg.getNonVoidType();
                     SqlRuntimeLibrary.FunctionDescription abs =
                             SqlRuntimeLibrary.instance.getFunction("abs", argType, null, false);
-                    return new DBSPApplyExpression(abs.function, abs.returnType, arg);
+                    return abs.getCall(arg);
                 }
             }
             // fall through
