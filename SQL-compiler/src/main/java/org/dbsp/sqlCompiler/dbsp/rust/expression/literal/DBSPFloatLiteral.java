@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeFloat;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -47,16 +46,6 @@ public class DBSPFloatLiteral extends DBSPLiteral {
         if (f == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = f;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.value == null)
-            return builder.append(this.noneString());
-        String val = Float.toString(this.value);
-        if (Float.isNaN(value))
-            val = "std::f32::NAN";
-        return builder.append(this.wrapSome("F32::new(" + val + ")"));
     }
 
     @Override

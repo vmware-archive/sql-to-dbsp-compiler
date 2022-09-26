@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPLiteralPattern extends DBSPPattern {
     public final DBSPLiteral literal;
@@ -33,11 +32,6 @@ public class DBSPLiteralPattern extends DBSPPattern {
     public DBSPLiteralPattern(DBSPLiteral literal) {
         super(literal.getNode());
         this.literal = literal;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.literal);
     }
 
     @Override

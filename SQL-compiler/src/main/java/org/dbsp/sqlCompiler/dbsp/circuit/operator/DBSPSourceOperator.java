@@ -28,7 +28,6 @@ package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.frontend.TableDDL;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPSourceOperator extends DBSPOperator {
     public final TableDDL ddlDef;
@@ -36,16 +35,6 @@ public class DBSPSourceOperator extends DBSPOperator {
     public DBSPSourceOperator(TableDDL ddlDef, DBSPType outputType, String name) {
         super(ddlDef.getNode(), "", null, outputType, false, name);
         this.ddlDef = ddlDef;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("let ")
-                .append(this.getName())
-                .append(" = ")
-                .append("circuit.add_source(")
-                .append(this.outputName)
-                .append(");");
     }
 
     @Override

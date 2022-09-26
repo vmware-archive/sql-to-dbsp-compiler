@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -56,17 +55,10 @@ public class DBSPTypeRef extends DBSPType {
         if (!super.same(other))
             return false;
         assert other != null;
-        DBSPTypeRef oref = other.as(DBSPTypeRef.class);
-        if (oref == null)
+        DBSPTypeRef oRef = other.as(DBSPTypeRef.class);
+        if (oRef == null)
             return false;
-        return this.type.same(oref.type);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("&")
-                .append(this.mutable ? "mut " : "")
-                .append(this.type);
+        return this.type.same(oRef.type);
     }
 
     @Override

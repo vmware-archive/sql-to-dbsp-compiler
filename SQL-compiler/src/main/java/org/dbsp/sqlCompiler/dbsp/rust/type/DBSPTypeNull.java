@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -44,11 +43,6 @@ public class DBSPTypeNull extends DBSPType {
         if (mayBeNull == this.mayBeNull)
             return this;
         return new DBSPTypeNull(null, mayBeNull);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder, "()");
     }
 
     @Override

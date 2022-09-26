@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -49,17 +48,6 @@ public class DBSPTypeUser extends DBSPType {
 
     public String getName() {
         return this.name;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        String result = this.name;
-        IndentStringBuilder tmp = new IndentStringBuilder();
-        tmp.join(", ", this.typeArgs);
-
-        if (this.typeArgs.length > 0)
-            result += "<" + tmp + ">";
-        return this.wrapOption(builder, result);
     }
 
     @Override

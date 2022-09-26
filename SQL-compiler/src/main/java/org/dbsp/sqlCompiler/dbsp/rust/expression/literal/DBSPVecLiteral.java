@@ -25,10 +25,9 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.IDBSPContainter;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.IDBSPContainer;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeVec;
-import org.dbsp.util.IndentStringBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +35,7 @@ import java.util.List;
 /**
  * Represents a (constant) vector described by its elements.
  */
-public class DBSPVecLiteral extends DBSPLiteral implements IDBSPContainter {
+public class DBSPVecLiteral extends DBSPLiteral implements IDBSPContainer {
     public final List<DBSPExpression> data;
     public final DBSPTypeVec vecType;
 
@@ -75,15 +74,6 @@ public class DBSPVecLiteral extends DBSPLiteral implements IDBSPContainter {
             throw new RuntimeException("Added vectors do not have the same type " +
                     this.getElementType() + " vs " + other.getElementType());
         other.data.forEach(this::add);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("vec!(")
-                .increase()
-                .intercalate(", ", this.data)
-                .decrease()
-                .append(")");
     }
 
     public int size() {

@@ -27,7 +27,6 @@ import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRawTuple;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -49,13 +48,6 @@ public class DBSPRawTupleExpression extends DBSPTupleExpression {
 
     public <T extends DBSPExpression> DBSPRawTupleExpression(List<T> fields) {
         this(fields.toArray(new DBSPExpression[0]));
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("(")
-                .intercalate(", ", this.fields)
-                .append(")");
     }
 
     @Override

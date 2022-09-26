@@ -31,6 +31,7 @@ public class EndToEndTests {
     static final String rustDirectory = "../temp/src";
     static final String testFilePath = rustDirectory + "/test0.rs";
 
+    @SuppressWarnings("SpellCheckingInspection")
     @BeforeClass
     public static void generateLib() throws IOException {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");

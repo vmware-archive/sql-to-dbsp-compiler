@@ -26,7 +26,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.path.DBSPPath;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPPathExpression extends DBSPExpression {
     public final DBSPPath path;
@@ -34,11 +33,6 @@ public class DBSPPathExpression extends DBSPExpression {
     public DBSPPathExpression(DBSPType type, DBSPPath path) {
         super(null, type);
         this.path = path;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.path);
     }
 
     @Override

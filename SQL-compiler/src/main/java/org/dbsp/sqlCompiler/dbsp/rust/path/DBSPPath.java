@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.path;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
-import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
 
 public class DBSPPath extends DBSPNode {
@@ -38,11 +37,6 @@ public class DBSPPath extends DBSPNode {
 
     public DBSPPath(String... components) {
         this(Linq.map(components, DBSPSimplePathSegment::new, DBSPSimplePathSegment.class));
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.join("::", this.components);
     }
 
     @Override

@@ -28,7 +28,6 @@ import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPTuplePattern;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
-import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
@@ -55,15 +54,6 @@ public class DBSPClosureExpression extends DBSPExpression {
             super(null);
             this.pattern = new DBSPTuplePattern(Linq.map(variables, DBSPVariableReference::asPattern, DBSPPattern.class));
             this.type = new DBSPTypeRawTuple(Linq.map(variables, DBSPExpression::getType, DBSPType.class));
-        }
-
-        @Override
-        public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-            builder.append(this.pattern);
-            if (this.type != null)
-                builder.append(": ")
-                        .append(this.type);
-            return builder;
         }
 
         @Nullable
@@ -100,25 +90,6 @@ public class DBSPClosureExpression extends DBSPExpression {
 
     public DBSPClosureExpression(DBSPExpression body, Parameter... variables) {
         this(null, body, variables);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append("move |")
-                .intercalate(", ", this.parameters)
-                .append("| ");
-        DBSPType resultType = this.getResultType();
-        if (resultType != null)
-            builder.append("-> ")
-                    .append(resultType)
-                    .append(" ");
-        if (this.body.is(DBSPBlockExpression.class))
-            return builder.append(this.body);
-        return builder.append("{")
-                .increase()
-                .append(this.body)
-                .decrease()
-                .append("\n}");
     }
 
     @Override

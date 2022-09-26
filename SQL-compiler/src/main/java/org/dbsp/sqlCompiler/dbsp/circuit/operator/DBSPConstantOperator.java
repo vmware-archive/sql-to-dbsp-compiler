@@ -25,24 +25,12 @@ package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
 public class DBSPConstantOperator extends DBSPOperator {
     public DBSPConstantOperator(@Nullable Object node, DBSPExpression value, boolean isMultiset) {
         super(node, "", value, value.getNonVoidType(), isMultiset);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        assert this.function != null;
-        return builder.append("let ")
-                .append(this.getName())
-                .append(" = ")
-                .append("circuit.add_source(Generator::new(|| ")
-                .append(this.function)
-                .append("));");
     }
 
     @Override

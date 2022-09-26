@@ -27,7 +27,6 @@ import org.dbsp.sqlCompiler.dbsp.ExpressionCompiler;
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
-import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;
 
@@ -93,19 +92,6 @@ public class DBSPTupleExpression extends DBSPExpression {
 
     public DBSPExpression get(int index) {
         return this.fields[index];
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.size() == 0) {
-            return builder.append("()");
-        } else {
-            return builder.append("Tuple")
-                    .append(this.size())
-                    .append("::new(")
-                    .join(", ", this.fields)
-                    .append(")");
-        }
     }
 
     @Override

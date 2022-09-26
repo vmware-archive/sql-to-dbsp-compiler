@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeRef;
-import org.dbsp.util.IndentStringBuilder;
 
 /**
  * An expression of the form &expression.
@@ -42,13 +41,6 @@ public class DBSPBorrowExpression extends DBSPExpression {
 
     public DBSPBorrowExpression(DBSPExpression expression) {
         this(expression, false);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("&")
-                .append(this.mut ? "mut " : "")
-                .append(this.expression);
     }
 
     @Override

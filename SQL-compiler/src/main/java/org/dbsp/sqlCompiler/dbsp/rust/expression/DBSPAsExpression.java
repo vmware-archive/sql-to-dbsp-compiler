@@ -25,8 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.sqlCompiler.dbsp.rust.type.IsNumericType;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPAsExpression extends DBSPExpression {
     public final DBSPExpression source;
@@ -34,15 +32,6 @@ public class DBSPAsExpression extends DBSPExpression {
     public DBSPAsExpression(DBSPExpression source, DBSPType type) {
         super(null, type);
         this.source = source;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("(")
-                .append(this.source)
-                .append(" as ")
-                .append(this.getNonVoidType().to(IsNumericType.class).getRustString())
-                .append(")");
     }
 
     @Override

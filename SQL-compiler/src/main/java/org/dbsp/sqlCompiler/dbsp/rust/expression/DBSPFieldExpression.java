@@ -27,9 +27,7 @@ import org.apache.calcite.rex.RexNode;
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeAny;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeString;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -70,16 +68,6 @@ public class DBSPFieldExpression extends DBSPExpression {
             return this.expression.to(DBSPTupleExpression.class).get(this.fieldNo);
         }
         return this;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append(this.expression)
-                .append(".")
-                .append(this.fieldNo);
-        if (this.getNonVoidType().is(DBSPTypeString.class))
-            builder.append(".clone()");
-        return builder;
     }
 
     @Override

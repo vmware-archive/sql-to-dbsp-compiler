@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -32,11 +31,6 @@ public class DBSPTypeString extends DBSPType implements IDBSPBaseType {
     public static final DBSPTypeString instance = new DBSPTypeString(null,false);
 
     protected DBSPTypeString(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return this.wrapOption(builder, "String");
-    }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {

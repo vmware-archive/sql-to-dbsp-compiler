@@ -27,7 +27,6 @@ import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
 
 import java.util.List;
 
@@ -44,14 +43,6 @@ public class DBSPMatchExpression extends DBSPExpression {
             this.against = against;
             this.result = result;
         }
-
-        @Override
-        public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-            return builder.append(this.against)
-                    .append(" => ")
-                    .append(this.result);
-        }
-
 
         @Override
         public void accept(Visitor visitor) {
@@ -76,16 +67,6 @@ public class DBSPMatchExpression extends DBSPExpression {
                 throw new RuntimeException("Type mismatch in case " + c +
                         " expected " + type + " got " + c.result.getNonVoidType());
         }
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("(match ")
-                .append(this.matched)
-                .append(" {").increase()
-                .intercalate(",\n", this.cases)
-                .decrease()
-                .append("})");
     }
 
     @Override

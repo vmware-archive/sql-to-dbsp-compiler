@@ -25,7 +25,7 @@
 
 package org.dbsp.util;
 
-import org.dbsp.sqlCompiler.dbsp.rust.ToRustString;
+import org.dbsp.sqlCompiler.dbsp.rust.ToIndentableString;
 
 import java.util.List;
 
@@ -61,8 +61,8 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public <T extends ToRustString> IndentStringBuilder append(T value) {
-        return value.toRustString(this);
+    public <T extends ToIndentableString> void append(T value) {
+        value.toRustString(this);
     }
 
     public IndentStringBuilder append(int value) {
@@ -92,9 +92,9 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public <T extends ToRustString> IndentStringBuilder join(String separator, T[] data) {
+    public <T extends ToIndentableString> IndentStringBuilder join(String separator, T[] data) {
         boolean first = true;
-        for (ToRustString d: data) {
+        for (ToIndentableString d: data) {
             if (!first)
                 this.append(separator);
             first = false;
@@ -103,9 +103,9 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public <T extends ToRustString> IndentStringBuilder join(String separator, List<T> data) {
+    public <T extends ToIndentableString> IndentStringBuilder join(String separator, List<T> data) {
         boolean first = true;
-        for (ToRustString d: data) {
+        for (ToIndentableString d: data) {
             if (!first)
                 this.append(separator);
             first = false;
@@ -114,16 +114,16 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public <T extends ToRustString> IndentStringBuilder intercalate(String separator, List<T> data) {
-        for (ToRustString d: data) {
+    public <T extends ToIndentableString> IndentStringBuilder intercalate(String separator, List<T> data) {
+        for (ToIndentableString d: data) {
             this.append(d);
             this.append(separator);
         }
         return this;
     }
 
-    public <T extends ToRustString> IndentStringBuilder intercalate(String separator, T[] data) {
-        for (ToRustString d: data) {
+    public <T extends ToIndentableString> IndentStringBuilder intercalate(String separator, T[] data) {
+        for (ToIndentableString d: data) {
             this.append(d);
             this.append(separator);
         }

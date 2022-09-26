@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeDouble;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -46,16 +45,6 @@ public class DBSPDoubleLiteral extends DBSPLiteral {
         if (f == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = f;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.value == null)
-            return builder.append(this.noneString());
-        String val = Double.toString(this.value);
-        if (Double.isNaN(value))
-            val = "std::f64::NAN";
-        return builder.append(this.wrapSome("F64::new(" + val + ")"));
     }
 
     @Override

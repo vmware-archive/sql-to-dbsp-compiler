@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
 
 /**
  * Invocation of a Rust constructor with some arguments.
@@ -38,17 +37,6 @@ public class DBSPStructExpression extends DBSPExpression {
         super(null, type);
         this.function = function;
         this.arguments = arguments;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        builder.append(this.function);
-        if (this.arguments.length > 0) {
-            builder.append("(")
-                    .join(", ", this.arguments)
-                    .append(")");
-        }
-        return builder;
     }
 
     @Override

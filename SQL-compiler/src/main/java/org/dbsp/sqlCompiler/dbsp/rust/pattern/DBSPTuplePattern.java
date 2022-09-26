@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.pattern;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPTuplePattern extends DBSPPattern {
     public final DBSPPattern[] fields;
@@ -32,13 +31,6 @@ public class DBSPTuplePattern extends DBSPPattern {
     public DBSPTuplePattern(DBSPPattern... fields) {
         super(null);
         this.fields = fields;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("(")
-                .intercalate(", ", this.fields)
-                .append(")");
     }
 
     @Override

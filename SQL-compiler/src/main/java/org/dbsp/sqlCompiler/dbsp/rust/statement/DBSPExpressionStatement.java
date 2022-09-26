@@ -24,9 +24,7 @@
 package org.dbsp.sqlCompiler.dbsp.rust.statement;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPBlockExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.util.IndentStringBuilder;
 
 public class DBSPExpressionStatement extends DBSPStatement {
     public final DBSPExpression expression;
@@ -34,12 +32,6 @@ public class DBSPExpressionStatement extends DBSPStatement {
     public DBSPExpressionStatement(DBSPExpression expression) {
         super(null);
         this.expression = expression;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append(this.expression)
-                .append(this.expression.is(DBSPBlockExpression.class) ? "" : ";");
     }
 
     @Override

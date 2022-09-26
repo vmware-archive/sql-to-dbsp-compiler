@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeUSize;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
@@ -49,14 +48,6 @@ public class DBSPUSizeLiteral extends DBSPLiteral {
         if (value != null && value < 0)
             throw new RuntimeException("Negative usize value " + value);
         this.value = value;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.value == null)
-            return builder.append(this.noneString());
-        String val = Long.toString(this.value);
-        return builder.append(this.wrapSome(val) + "usize");
     }
 
     @Override

@@ -32,7 +32,7 @@ import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.dbsp.rust.pattern.*;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
-import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.sqlCompiler.dbsp.visitors.ToRustVisitor;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
@@ -336,16 +336,14 @@ public class SqlRuntimeLibrary {
         this.generateProgram();
         File file = new File(filename);
         FileWriter writer = new FileWriter(file);
-        IndentStringBuilder builder = new IndentStringBuilder();
         if (this.program == null)
             throw new RuntimeException("No source program for writing the sql library");
-        builder.append("// Automatically-generated file\n");
-        builder.append("#![allow(unused_parens)]\n");
-        builder.append("#![allow(non_snake_case)]\n");
-        builder.append("use dbsp::algebra::{F32, F64};\n");
-        builder.append("\n");
-        this.program.toRustString(builder);
-        writer.append(builder.toString());
+        writer.append("// Automatically-generated file\n");
+        writer.append("#![allow(unused_parens)]\n");
+        writer.append("#![allow(non_snake_case)]\n");
+        writer.append("use dbsp::algebra::{F32, F64};\n");
+        writer.append("\n");
+        writer.append(ToRustVisitor.toRustString(this.program));
         writer.close();
     }
 }

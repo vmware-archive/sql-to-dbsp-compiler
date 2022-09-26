@@ -25,8 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression.literal;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeString;
-import org.dbsp.util.IndentStringBuilder;
-import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 
@@ -48,14 +46,6 @@ public class DBSPStringLiteral extends DBSPLiteral {
         if (value == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = value;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.value == null)
-            return builder.append(this.noneString());
-        return builder.append(this.wrapSome(
-                "String::from(" + Utilities.escapeString(this.value) + ")"));
     }
 
     @Override

@@ -26,10 +26,9 @@ package org.dbsp.sqlCompiler.dbsp.rust;
 import org.dbsp.util.IndentStringBuilder;
 
 /**
- * Interface implemented by objects that can be serialized as Rust programs.
- * To be removed once the new ToRustString visitor has been debugged.
+ * Interface implemented by objects that can be as nicely indented strings.
  */
-@Deprecated()
-public interface ToRustString {
+public interface ToIndentableString {
+    @SuppressWarnings("UnusedReturnValue")
     IndentStringBuilder toRustString(IndentStringBuilder builder);
 }

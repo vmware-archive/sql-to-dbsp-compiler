@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.dbsp.rust.expression;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
-import org.dbsp.util.IndentStringBuilder;
 import org.dbsp.util.TranslationException;
 
 import javax.annotation.Nullable;
@@ -43,28 +42,6 @@ public class DBSPUnaryExpression extends DBSPExpression {
             throw new RuntimeException("Unary operation produces non-nullable from nullable " + this);
         if (this.left == null)
             throw new TranslationException("Null operand", node);
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.left.getNonVoidType().mayBeNull) {
-            return builder.append("(")
-                    .append("match ")
-                    .append(this.left)
-                    .append(" {").increase()
-                    .append("Some(x) => Some(")
-                    .append(this.operation)
-                    .append("(x)),\n")
-                    .append("_ => None,\n")
-                    .decrease()
-                    .append("}")
-                    .append(")");
-        } else {
-            return builder.append("(")
-                    .append(this.operation)
-                    .append(this.left)
-                    .append(")");
-        }
     }
 
     @Override

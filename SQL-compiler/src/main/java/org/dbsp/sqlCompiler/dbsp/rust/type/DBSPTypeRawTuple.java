@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -52,18 +51,6 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
 
     public int size() {
         return this.tupFields.length;
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        if (this.mayBeNull)
-            builder.append("Option<");
-        builder.append("(")
-                .intercalate(", ", this.tupFields)
-                .append(")");
-        if (this.mayBeNull)
-            builder.append(">");
-        return builder;
     }
 
     @Override

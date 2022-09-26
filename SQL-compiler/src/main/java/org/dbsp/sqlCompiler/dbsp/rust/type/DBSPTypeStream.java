@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.dbsp.rust.type;
 
 import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.util.IndentStringBuilder;
 
 /**
  * A type of the form 'Stream<_, elementType>'
@@ -40,14 +39,6 @@ public class DBSPTypeStream extends DBSPType {
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public IndentStringBuilder toRustString(IndentStringBuilder builder) {
-        return builder.append("Stream<")
-                .append("_, ") // Circuit type
-                .append(this.elementType)
-                .append(">");
     }
 
     @Override

@@ -66,23 +66,9 @@ public class CalciteToDBSPCompiler extends RelVisitor {
      */
     public static final DBSPVariableReference weight = new DBSPVariableReference("w", CalciteToDBSPCompiler.weightType);
 
-    static class Context {
-        @Nullable
-        final
-        RelNode parent;
-        final int inputNo;
-
-        public Context(@Nullable RelNode parent, int inputNo) {
-            this.parent = parent;
-            this.inputNo = inputNo;
-        }
-    }
-
     private final CalciteCompiler calciteCompiler;
     @Nullable
     private DBSPCircuit circuit;
-    // The path in the IR tree used to reach the current node.
-    final List<Context> stack;
     // Map an input or output name to the corresponding operator
     final Map<String, DBSPOperator> ioOperator;
     // Map a RelNode operator to its DBSP implementation.
@@ -93,7 +79,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public CalciteToDBSPCompiler(CalciteCompiler calciteCompiler) {
         this.circuit = null;
         this.calciteCompiler = calciteCompiler;
-        this.stack = new ArrayList<>();
         this.ioOperator = new HashMap<>();
         this.nodeOperator = new HashMap<>();
     }
@@ -392,7 +377,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         this.assignOperator(project, op);
     }
 
-    @SuppressWarnings("DuplicatedCode")
     private void visitUnion(LogicalUnion union) {
         assert this.circuit != null;
         List<DBSPOperator> inputs = Linq.map(union.getInputs(), this::getOperator);
@@ -919,7 +903,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 accum.asRefParameter(true), row.asRefParameter(), CalciteToDBSPCompiler.weight.asParameter());
         DBSPExpression folder = new DBSPApplyExpression(constructor, zero, push);
         DBSPAggregateOperator agg = new DBSPAggregateOperator(sort,
-                this.circuit.declareLocal("tovec", folder).getVarReference(),
+                this.circuit.declareLocal("toVec", folder).getVarReference(),
                 new DBSPTypeRawTuple(), new DBSPTypeVec(inputRowType), index);
         this.circuit.addOperator(agg);
 
@@ -978,7 +962,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public void visit(
             RelNode node, int ordinal,
             @org.checkerframework.checker.nullness.qual.Nullable RelNode parent) {
-        stack.add(new Context(parent, ordinal));
         if (debug)
             System.out.println("Visiting " + node);
         if (this.nodeOperator.containsKey(node))
@@ -1001,9 +984,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 this.visitIfMatches(node, LogicalSort.class, this::visitSort);
         if (!success)
             throw new Unimplemented(node);
-        if (stack.size() == 0)
-            throw new TranslationException("Empty stack", node);
-        stack.remove(stack.size() - 1);
     }
 
     public DBSPCircuit compile(CalciteProgram program, String circuitName) {
@@ -1040,7 +1020,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         this.dmTranslation.prepare(
                 statement.node, op, insert.getTargetColumnList());
         if (statement.rel instanceof LogicalTableScan) {
-            // Fake support for INSERT INTO table (SELECT * FROM othertable)
+            // Fake support for INSERT INTO table (SELECT * FROM otherTable)
             LogicalTableScan scan = (LogicalTableScan)statement.rel;
             List<String> name = scan.getTable().getQualifiedName();
             String tableName = name.get(name.size() - 1);

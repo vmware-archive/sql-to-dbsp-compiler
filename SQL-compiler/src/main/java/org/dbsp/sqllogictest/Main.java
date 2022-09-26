@@ -105,6 +105,7 @@ public class Main {
         }
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     public static void main(String[] argv) throws IOException {
         // Calcite cannot parse this query
         calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");       
@@ -118,8 +119,8 @@ public class Main {
         String[] files = new String[]{
                 //"s.test",
                 //"random/select",  //done
-                "random/groupby",
-                "random/expr",
+                //"random/groupby",
+                //"random/expr",
                 "random/aggregates",
                 "select1.test",
                 "select2.test",
