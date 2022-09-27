@@ -35,11 +35,12 @@ public class SqlStatementList {
     /**
      * List of SQL statements that are used to create tables.
      */
-    public final List<String> statements;
+    public final List<SqlStatement> statements;
     public SqlStatementList() {
         this.statements = new ArrayList<>();
     }
-    public void add(String statement) {
+    public void add(SqlStatement statement) {
         this.statements.add(statement);
     }
+    public void clear() { this.statements.clear(); }
 }

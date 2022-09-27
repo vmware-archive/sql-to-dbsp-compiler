@@ -76,10 +76,10 @@ public class DBSPCircuit extends DBSPNode {
     }
 
     public void addOperator(DBSPOperator operator) {
-        if (operator instanceof DBSPSourceOperator)
-            this.inputOperators.add((DBSPSourceOperator)operator);
-        else if (operator instanceof DBSPSinkOperator)
-            this.outputOperators.add((DBSPSinkOperator)operator);
+        if (operator.is(DBSPSourceOperator.class))
+            this.inputOperators.add(operator.to(DBSPSourceOperator.class));
+        else if (operator.is(DBSPSinkOperator.class))
+            this.outputOperators.add(operator.to(DBSPSinkOperator.class));
         else
             this.operators.add(operator);
     }

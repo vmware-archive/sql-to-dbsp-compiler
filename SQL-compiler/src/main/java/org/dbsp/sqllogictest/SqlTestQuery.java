@@ -27,14 +27,14 @@ package org.dbsp.sqllogictest;
 
 import javax.annotation.Nullable;
 
-public class SqlTestQuery {
+public class SqlTestQuery implements ISqlTestOperation {
     /**
      * Query that is executed.
      */
     public String query;
     @SuppressWarnings("FieldCanBeLocal")
     @Nullable private String name;
-    public final SqlTestOutputDescription outputDescription;
+    public final SqlTestQueryOutputDescription outputDescription;
 
     public void setName(String name) {
         this.name = name;
@@ -42,7 +42,7 @@ public class SqlTestQuery {
 
     SqlTestQuery() {
         this.query = "";
-        this.outputDescription = new SqlTestOutputDescription();
+        this.outputDescription = new SqlTestQueryOutputDescription();
     }
 
     void setQuery(String query) {

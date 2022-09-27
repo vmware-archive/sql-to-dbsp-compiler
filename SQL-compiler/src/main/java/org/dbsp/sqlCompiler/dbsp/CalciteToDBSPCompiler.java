@@ -66,11 +66,9 @@ public class CalciteToDBSPCompiler extends RelVisitor {
      */
     public static final DBSPVariableReference weight = new DBSPVariableReference("w", CalciteToDBSPCompiler.weightType);
 
-    private final CalciteCompiler calciteCompiler;
+    public final CalciteCompiler calciteCompiler;
     @Nullable
     private DBSPCircuit circuit;
-    // Map an input or output name to the corresponding operator
-    final Map<String, DBSPOperator> ioOperator;
     // Map a RelNode operator to its DBSP implementation.
     final Map<RelNode, DBSPOperator> nodeOperator;
 
@@ -79,7 +77,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public CalciteToDBSPCompiler(CalciteCompiler calciteCompiler) {
         this.circuit = null;
         this.calciteCompiler = calciteCompiler;
-        this.ioOperator = new HashMap<>();
         this.nodeOperator = new HashMap<>();
     }
 
@@ -331,15 +328,15 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public void visitScan(LogicalTableScan scan) {
         List<String> name = scan.getTable().getQualifiedName();
         String tableName = name.get(name.size() - 1);
-        DBSPOperator op = Utilities.getExists(this.ioOperator, tableName);
-        this.assignOperator(scan, op);
+        DBSPType type = this.convertType(scan.getRowType());
+        DBSPSourceOperator result = new DBSPSourceOperator(scan, this.makeZSet(type), tableName);
+        this.assignOperator(scan, result);
     }
 
     void assignOperator(RelNode rel, DBSPOperator op) {
+        assert this.circuit != null;
         Utilities.putNew(this.nodeOperator, rel, op);
-        if (!(op instanceof DBSPSourceOperator))
-            // These are already added
-            Objects.requireNonNull(this.circuit).addOperator(op);
+        this.circuit.addOperator(op);
     }
 
     DBSPOperator getOperator(RelNode node) {
@@ -670,29 +667,22 @@ public class CalciteToDBSPCompiler extends RelVisitor {
          */
         @Nullable
         private HashMap<Integer, Integer> columnPermutation;
-        /**
-         * Circuit input operator representing the table that is being written.
-         */
-        @Nullable
-        public DBSPSourceOperator source;
         @Nullable
         DBSPTypeTuple resultType;
+        @Nullable
+        TableModifyStatement statement;
 
         DMLTranslation() {
             this.logicalValueTranslation = null;
-            this.source = null;
+            this.statement = null;
             this.columnPermutation = null;
         }
 
-        void prepare(SqlNode rootNode, DBSPSourceOperator source, @Nullable SqlNodeList columnList) {
+        void prepare(TableModifyStatement statement, TableDDL def, @Nullable SqlNodeList columnList) {
             this.logicalValueTranslation = null;
-            this.source = source;
             this.columnPermutation = null;
-            DBSPTypeTuple sourceType = this.source
-                    .getNonVoidType()
-                    .to(DBSPTypeZSet.class)
-                    .elementType
-                    .to(DBSPTypeTuple.class);
+            this.statement = statement;
+            DBSPTypeTuple sourceType = def.getType();
             if (columnList != null) {
                 // The column list specifies an order for the columns that are assigned,
                 // which may not be the order of the columns in the table.  We need to
@@ -702,14 +692,14 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 DBSPType[] columnTypes = new DBSPType[columnList.size()];
                 for (SqlNode node : columnList) {
                     if (!(node instanceof SqlIdentifier))
-                        throw new Unimplemented(rootNode);
+                        throw new Unimplemented(statement.node);
                     SqlIdentifier id = (SqlIdentifier) node;
-                    int actualIndex = this.source.ddlDef.getColumnIndex(id);
+                    int actualIndex = def.getColumnIndex(id);
                     // This must be a permutation
                     for (int value: this.columnPermutation.values())
                         if (value == actualIndex)
                             throw new TranslationException("Not a column permutation " +
-                                    this.columnPermutation, rootNode);
+                                    this.columnPermutation, statement.node);
                     Utilities.putNew(this.columnPermutation, index, actualIndex);
                     columnTypes[index] = sourceType.getFieldType(actualIndex);
                     index++;
@@ -758,7 +748,11 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         }
 
         public boolean prepared() {
-            return this.source != null;
+            return this.statement != null;
+        }
+
+        public void done() {
+            this.statement = null;
         }
     }
 
@@ -988,10 +982,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
 
     public DBSPCircuit compile(CalciteProgram program, String circuitName) {
         this.circuit = new DBSPCircuit(null, circuitName, program.query);
-        for (TableDDL i: program.inputTables) {
-            DBSPSourceOperator si = this.createInput(i);
-            this.circuit.addOperator(si);
-        }
         for (ViewDDL view: program.views) {
             RelNode rel = view.getRelNode();
             if (this.debug)
@@ -1000,7 +990,8 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             // TODO: connect the result of the query compilation with
             // the fields of rel; for now we assume that these are 1/1
             DBSPOperator op = this.getOperator(rel);
-            DBSPSinkOperator o = this.createOutput(view, op);
+            DBSPSinkOperator o = new DBSPSinkOperator(view, op.getNonVoidType(), view.name,
+                    op.isMultiset, op);
             this.circuit.addOperator(o);
         }
         return this.getProgram();
@@ -1013,12 +1004,11 @@ public class CalciteToDBSPCompiler extends RelVisitor {
      */
     public void extendTransaction(DBSPTransaction transaction, TableModifyStatement statement) {
         // The type of the data must be extracted from the modified table
-        DBSPSourceOperator op = Utilities.getExists(this.ioOperator, statement.table).to(DBSPSourceOperator.class);
         if (!(statement.node instanceof SqlInsert))
             throw new Unimplemented(statement);
         SqlInsert insert = (SqlInsert) statement.node;
-        this.dmTranslation.prepare(
-                statement.node, op, insert.getTargetColumnList());
+        TableDDL def = transaction.perInputDefinition.get(statement.table);
+        this.dmTranslation.prepare(statement, def, insert.getTargetColumnList());
         if (statement.rel instanceof LogicalTableScan) {
             // Fake support for INSERT INTO table (SELECT * FROM otherTable)
             LogicalTableScan scan = (LogicalTableScan)statement.rel;
@@ -1032,22 +1022,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         } else {
             throw new Unimplemented(statement.node);
         }
-    }
-
-    private DBSPSourceOperator createInput(TableDDL i) {
-        List<DBSPType> fields = new ArrayList<>();
-        for (ColumnInfo col: i.columns) {
-            DBSPType fType = this.convertType(col.type);
-            fields.add(fType);
-        }
-        DBSPTypeTuple type = new DBSPTypeTuple(i, fields);
-        DBSPSourceOperator result = new DBSPSourceOperator(i, this.makeZSet(type), i.name);
-        return Utilities.putNew(this.ioOperator, i.name, result);
-    }
-
-    private DBSPSinkOperator createOutput(ViewDDL v, DBSPOperator source) {
-        DBSPSinkOperator result = new DBSPSinkOperator(v, source.getNonVoidType(), v.name,
-                source.isMultiset, source);
-        return Utilities.putNew(this.ioOperator, v.name, result);
+        this.dmTranslation.done();
     }
 }
