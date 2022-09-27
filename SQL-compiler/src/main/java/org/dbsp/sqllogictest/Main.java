@@ -27,6 +27,8 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqllogictest.executors.DBSPExecutor;
+import org.dbsp.sqllogictest.executors.ISqlTestExecutor;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -43,7 +45,7 @@ public class Main {
     static final HashSet<String> calciteBugs = new HashSet<>();
     static final String[] skipFiles = {};
 
-    static class NoMySql implements TestAcceptancePolicy {
+    static class NoMySql implements QueryAcceptancePolicy {
         @Override
         public boolean accept(List<String> skip, List<String> only) {
             return !only.contains("mysql") && !skip.contains("postgresql");
@@ -52,21 +54,16 @@ public class Main {
 
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
-        int testsCompleted = 0;
-        final int testsInFile;
-        final int skipFromFile;
         final ISqlTestExecutor executor;
+        ISqlTestExecutor.TestStatistics statistics;
 
         /**
          * Creates a new class that reads tests from a directory tree and executes them.
-         * @param testsInFile     How many tests in a file.
-         * @param skipFromFile    Skip this many tests from each file.
          * @param executor        Program that knows how to generate and run the tests.
          */
-        TestLoader(int testsInFile, int skipFromFile, ISqlTestExecutor executor) {
-            this.testsInFile = testsInFile;
+        TestLoader(ISqlTestExecutor executor) {
             this.executor = executor;
-            this.skipFromFile = skipFromFile;
+            this.statistics = new ISqlTestExecutor.TestStatistics();
         }
 
         @Override
@@ -80,10 +77,9 @@ public class Main {
             if (attrs.isRegularFile() && extension != null && extension.equals("test")) {
                 // validates the test
                 SqlTestFile test = null;
-                int currentTests = 0;
                 try {
-                    test = new SqlTestFile(file.toString(), new NoMySql());
-                    currentTests = test.getTestCount();
+                    test = new SqlTestFile(file.toString());
+                    test.parse(new NoMySql());
                 } catch (Exception ex) {
                     // We can't yet parse all kinds of tests
                     //noinspection UnnecessaryToStringCall
@@ -93,8 +89,8 @@ public class Main {
                 if (test != null) {
                     try {
                         System.out.println(file);
-                        test.execute(this.executor, this.testsInFile, this.testsCompleted, this.skipFromFile, calciteBugs);
-                        this.testsCompleted += currentTests;
+                        ISqlTestExecutor.TestStatistics stats = this.executor.execute(test);
+                        this.statistics.add(stats);
                     } catch (SqlParseException | IOException | InterruptedException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -112,15 +108,19 @@ public class Main {
         // Calcite types /0 as not nullable!
         calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
         int batchSize = 500;
+        int skipPerFile = 0;
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
-        ISqlTestExecutor executor = new DBSPExecutor(true);
+        DBSPExecutor dExec = new DBSPExecutor(true);
+        dExec.avoid(calciteBugs);
+        ISqlTestExecutor executor = dExec;
+        //executor = new NoExecutor();
         String benchDir = "../../sqllogictest/test";
         // These are all the files we support from sqllogictest.
         String[] files = new String[]{
                 //"s.test",
                 //"random/select",  //done
-                //"random/groupby",
-                //"random/expr",
+                "random/expr",
+                "random/groupby",
                 "random/aggregates",
                 "select1.test",
                 "select2.test",
@@ -130,16 +130,18 @@ public class Main {
         };
         if (argv.length > 1)
             files = Utilities.arraySlice(argv, 1);
+        TestLoader loader = new TestLoader(executor);
         for (String file : files) {
             if (file.startsWith("select"))
                 batchSize = Math.min(batchSize, 20);
             if (file.startsWith("select5"))
                 batchSize = Math.min(batchSize, 5);
             Path path = Paths.get(benchDir + "/" + file);
-            TestLoader loader = new TestLoader(batchSize, 0, executor);
+            if (executor.is(DBSPExecutor.class))
+                executor.to(DBSPExecutor.class).setBatchSize(batchSize, skipPerFile);
             Files.walkFileTree(path, loader);
-            System.out.println("Could not parse: " + loader.errors);
-            System.out.println("Parsed tests: " + String.format("%,3d", loader.testsCompleted));
         }
+        System.out.println("Files that could not be not parsed: " + loader.errors);
+        System.out.println(loader.statistics);
     }
 }

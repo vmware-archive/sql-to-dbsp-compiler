@@ -28,10 +28,13 @@ package org.dbsp.sqlCompiler.frontend;
 import org.apache.calcite.sql.SqlNode;
 import org.dbsp.util.ICastable;
 
+import javax.annotation.Nullable;
+
 /**
  * This class is a base class for the results produced by the DDL execution simulator.
  */
 public interface SimulatorResult extends ICastable {
+    @Nullable
     SqlNode getNode();
 
     @Override

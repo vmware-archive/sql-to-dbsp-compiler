@@ -33,9 +33,13 @@ import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
+import org.dbsp.sqlCompiler.dbsp.TypeCompiler;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPTypeTuple;
 import org.dbsp.util.TranslationException;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,11 +47,12 @@ import java.util.List;
  * Describes the schema of a table as produced by a CREATE TABLE DDL statement.
  */
 public class TableDDL extends AbstractTable implements ScannableTable, SimulatorResult {
+    @Nullable
     private final SqlNode node;
     public final String name;
     public final List<ColumnInfo> columns;
 
-    public TableDDL(SqlNode node, String name) {
+    public TableDDL(@Nullable SqlNode node, String name) {
         this.node = node;
         this.name = name;
         this.columns = new ArrayList<>();
@@ -74,6 +79,7 @@ public class TableDDL extends AbstractTable implements ScannableTable, Simulator
     }
 
     @Override
+    @Nullable
     public SqlNode getNode() {
         return this.node;
     }
@@ -87,5 +93,15 @@ public class TableDDL extends AbstractTable implements ScannableTable, Simulator
                 return i;
         }
         throw new TranslationException("Column not found", id);
+    }
+
+    public DBSPTypeTuple getType() {
+        TypeCompiler compiler = new TypeCompiler();
+        List<DBSPType> fields = new ArrayList<>();
+        for (ColumnInfo col: this.columns) {
+            DBSPType fType = compiler.convertType(col.type);
+            fields.add(fType);
+        }
+        return new DBSPTypeTuple(fields);
     }
 }

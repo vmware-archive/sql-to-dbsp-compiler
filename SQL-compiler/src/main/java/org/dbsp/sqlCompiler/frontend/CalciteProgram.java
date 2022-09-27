@@ -38,14 +38,9 @@ public class CalciteProgram {
      * Views declared in SQL.
      */
     public final List<ViewDDL> views;
-    /**
-     * Declarations of tables that these views depend on.
-     */
-    public final List<TableDDL> inputTables;
 
     public CalciteProgram() {
         this.views = new ArrayList<>();
-        this.inputTables = new ArrayList<>();
     }
 
     public void setQuery(String query) {
@@ -54,17 +49,5 @@ public class CalciteProgram {
 
     public void addView(ViewDDL result) {
         this.views.add(result);
-    }
-
-    public void addInput(TableDDL table) {
-        this.inputTables.add(table);
-    }
-
-    @Nullable
-    public TableDDL getInputTable(String table) {
-        for (TableDDL t : this.inputTables)
-            if (t.name.equals(table))
-                return t;
-        return null;
     }
 }

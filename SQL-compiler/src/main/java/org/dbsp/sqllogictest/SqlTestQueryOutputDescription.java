@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SqlTestOutputDescription {
+public class SqlTestQueryOutputDescription {
     public enum SortOrder {
         None,
         Row,
@@ -48,7 +48,7 @@ public class SqlTestOutputDescription {
     @Nullable
     public List<String> queryResults;
 
-    public SqlTestOutputDescription() {
+    public SqlTestQueryOutputDescription() {
         this.columnTypes = null;
         this.valueCount = 0;
         this.hash = null;

@@ -450,7 +450,7 @@ pub fn abs_dN(left: Option<F64>) -> Option<F64>
 }
 
 #[inline(always)]
-pub fn is_true(left: bool) -> bool
+pub fn is_true_b_(left: bool) -> bool
 {
     left
 }
@@ -465,7 +465,7 @@ pub fn is_true_bN_(left: Option<bool>) -> bool
 }
 
 #[inline(always)]
-pub fn is_false(left: bool) -> bool
+pub fn is_false_b_(left: bool) -> bool
 {
     !left
 }
@@ -480,7 +480,7 @@ pub fn is_false_bN_(left: Option<bool>) -> bool
 }
 
 #[inline(always)]
-pub fn is_not_true(left: bool) -> bool
+pub fn is_not_true_b_(left: bool) -> bool
 {
     !left
 }
@@ -496,7 +496,7 @@ pub fn is_not_true_bN_(left: Option<bool>) -> bool
 }
 
 #[inline(always)]
-pub fn is_not_false(left: bool) -> bool
+pub fn is_not_false_b_(left: bool) -> bool
 {
     left
 }

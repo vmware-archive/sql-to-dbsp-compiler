@@ -19,20 +19,13 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
 package org.dbsp.sqllogictest;
 
-import java.util.List;
+import org.dbsp.util.ICastable;
 
-public interface TestAcceptancePolicy {
-    /**
-     * Returns true if a test is accepted.
-     * @param skip  List of dbs to skip.
-     * @param only  List of dbs to accept.
-     */
-    @SuppressWarnings("unused")
-    boolean accept(List<String> skip, List<String> only);
-}
+/**
+ * Base interface for SqlLogicTest operations: either statements or queries.
+ */
+public interface ISqlTestOperation extends ICastable { }

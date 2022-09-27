@@ -25,18 +25,40 @@
 
 package org.dbsp.sqllogictest;
 
-import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 /**
  * Represents the data from a .test file from the
  * SqlLogicTest test framework.
+ *
+ *         The Test file format is described at
+ *         https://www.sqlite.org/sqllogictest/doc/tip/about.wiki.
+ *
+ *         Here is an example:
+ *
+ *         hash-threshold 8
+ *
+ *         statement ok
+ *         CREATE TABLE t1(a INTEGER, b INTEGER, c INTEGER, d INTEGER, e INTEGER)
+ *
+ *         statement ok
+ *         INSERT INTO t1(e,c,b,d,a) VALUES(NULL,102,NULL,101,104)
+ *
+ *         statement ok
+ *         INSERT INTO t1(a,c,d,e,b) VALUES(107,106,108,109,105)
+ *
+ *         query I nosort
+ *         SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END
+ *           FROM t1
+ *          ORDER BY 1
+ *         ----
+ *         30 values hashing to 3c13dee48d9356ae19af2515e05e6b54
+ *
  */
 public class SqlTestFile {
     /**
@@ -44,26 +66,24 @@ public class SqlTestFile {
      */
     private int lineno;
 
-    public final SqlTestPrepareTables prepareTables;
-    public final SqlTestPrepareInput prepareInput;
-    public final List<SqlTestQuery> tests;
+    public final List<ISqlTestOperation> fileContents;
+
     private final BufferedReader reader;
     // To support undo for reading
     @Nullable
     private String nextLine;
     private final String testFile;
     private boolean done;
+    private int testCount;
 
-    public SqlTestFile(String testFile, TestAcceptancePolicy policy) throws IOException {
-        this.tests = new ArrayList<>();
-        this.prepareTables = new SqlTestPrepareTables();
-        this.prepareInput = new SqlTestPrepareInput();
+    public SqlTestFile(String testFile) throws IOException {
         File file = new File(testFile);
         this.reader = new BufferedReader(new FileReader(file));
+        this.fileContents = new ArrayList<>();
         this.lineno = 0;
         this.testFile = testFile;
         this.done = false;
-        this.parse(policy);
+        this.testCount = 0;
     }
 
     void error(String message) {
@@ -110,59 +130,11 @@ public class SqlTestFile {
     }
 
     /**
-     * Parse the beginning of a SqlLogicTest .test file, which prepares the test data
-     */
-    private void parsePrepare() throws IOException {
-        String line;
-        while (!this.done) {
-            line = this.nextLine(false);
-            if (line.isEmpty())
-                continue;
-            if (line.startsWith("hash-threshold"))
-                continue;
-
-            if (line.startsWith("statement")) {
-                boolean ok = line.startsWith("statement ok");
-                line = this.nextLine(false);
-                StringBuilder statement = new StringBuilder();
-                while (!line.isEmpty()) {
-                    // TODO: this is wrong, but I can't get the Calcite parser
-                    // to accept Postgres-like PRIMARY KEY statements.
-                    line = line.replace("PRIMARY KEY", "");
-                    // TODO: Calcite does not accept "TEXT"
-                    line = line.replace(" TEXT", " VARCHAR");
-                    statement.append(line);
-                    line = this.nextLine(false);
-                }
-
-                String stat = statement.toString();
-                if (ok) {
-                    if (stat.toLowerCase().startsWith("create index"))
-                        // just ignore
-                        continue;
-                    if (stat.toLowerCase().startsWith("create unique index"))
-                        this.error("Unique index not supported " + stat);
-                    if (stat.toLowerCase().contains("create table")) {
-                        this.prepareTables.add(stat);
-                    } else {
-                        this.prepareInput.add(stat);
-                    }
-                }
-                // Should we ignore the statements that should produce an error when executed,
-                // or ignore the whole test?  Right now we ignore such statements.
-            } else {
-                this.undoRead(line);
-                break;
-            }
-        }
-    }
-
-    /**
      * Parse a query that executes a SqlLogicTest test.
      */
     @SuppressWarnings("SpellCheckingInspection")
     @Nullable
-    private SqlTestQuery parseTestQuery(TestAcceptancePolicy policy) throws IOException {
+    private SqlTestQuery parseTestQuery(QueryAcceptancePolicy policy) throws IOException {
         @Nullable String line = this.nextLine(true);
         if (this.done)
             return null;
@@ -247,111 +219,55 @@ public class SqlTestFile {
                 result.outputDescription.clearResults();
             }
         }
-
-        if (!policy.accept(skip, only)) {
-            // Invoke recursively to parse the next query.
-            return this.parseTestQuery(policy);
-        }
+        if (!policy.accept(skip, only))
+            return null;
         return result;
     }
 
-    /*
-        The Test file format is described at
-        https://www.sqlite.org/sqllogictest/doc/tip/about.wiki.
+     public void parse(QueryAcceptancePolicy policy) throws IOException {
+         String line;
+         while (!this.done) {
+             line = this.nextLine(true);
+             if (this.done)
+                 return;
+             if (line.isEmpty())
+                 continue;
+             if (line.startsWith("hash-threshold"))
+                 continue;
 
-        Here is an example:
+             if (line.startsWith("statement")) {
+                 boolean ok = line.startsWith("statement ok");
+                 line = this.nextLine(false);
+                 StringBuilder statement = new StringBuilder();
+                 while (!line.isEmpty()) {
+                     // TODO: this is wrong, but I can't get the Calcite parser
+                     // to accept Postgres-like PRIMARY KEY statements.
+                     line = line.replace("PRIMARY KEY", "");
+                     // TODO: Calcite does not accept "TEXT"
+                     line = line.replace(" TEXT", " VARCHAR");
+                     statement.append(line);
+                     line = this.nextLine(false);
+                 }
 
-        hash-threshold 8
-
-        statement ok
-        CREATE TABLE t1(a INTEGER, b INTEGER, c INTEGER, d INTEGER, e INTEGER)
-
-        statement ok
-        INSERT INTO t1(e,c,b,d,a) VALUES(NULL,102,NULL,101,104)
-
-        statement ok
-        INSERT INTO t1(a,c,d,e,b) VALUES(107,106,108,109,105)
-
-        query I nosort
-        SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END
-          FROM t1
-         ORDER BY 1
-        ----
-        30 values hashing to 3c13dee48d9356ae19af2515e05e6b54
-     */
-    private void parse(TestAcceptancePolicy policy) throws IOException {
-        this.parsePrepare();
-        while (!this.done) {
-            @Nullable
-            SqlTestQuery test = this.parseTestQuery(policy);
-            if (test != null)
-                this.tests.add(test);
+                 String command = statement.toString();
+                 SqlStatement stat = new SqlStatement(command, ok);
+                 this.add(stat);
+             } else {
+                 this.undoRead(line);
+                 SqlTestQuery test = this.parseTestQuery(policy);
+                 if (test != null)
+                     this.add(test);
+             }
         }
+    }
+
+    private void add(ISqlTestOperation operation) {
+        this.fileContents.add(operation);
+        if (operation.is(SqlTestQuery.class))
+            this.testCount++;
     }
 
     public int getTestCount() {
-        return this.tests.size();
-    }
-
-    static long first = -1;
-
-    long seconds(long end, long start) {
-        return (end - start) / 1000000000;
-    }
-
-    void run(ISqlTestExecutor executor, int testsSoFar) throws IOException, InterruptedException {
-        long start = System.nanoTime();
-        if (first == -1)
-            first = start;
-        executor.run();
-        long end = System.nanoTime();
-        System.out.println("Finished " + testsSoFar + " tests; " +
-                "last one=" + seconds(end, start) + "s" +
-                "; total=" + seconds(end, first) + "s");
-        executor.reset();
-    }
-
-    /**
-     * Execute batch of tests from this file.
-     * @param executor    Program that knows how to execute tests.
-     * @param batchSize   Number of tests to execute.
-     * @param testsSoFar  Total tests executed so far.
-     * @param skipFromFile Number of tests to skip.
-     * @param calciteBugs Queries that need to be skipped.
-     */
-    @SuppressWarnings("SameParameterValue")
-    void execute(ISqlTestExecutor executor, int batchSize, int testsSoFar, int skipFromFile, HashSet<String> calciteBugs)
-            throws SqlParseException, IOException, InterruptedException {
-        int queryCount = 0;
-        executor.reset();
-        for (SqlTestQuery testQuery : this.tests) {
-            if (calciteBugs.contains(testQuery.query)) {
-                System.err.println("Skipping query that cannot be handled by Calcite " + testQuery.query);
-                continue;
-            }
-            try {
-                // For each query we generate a complete circuit, with all tables, containing the same data.
-                executor.createTables(this.prepareTables);
-                if (skipFromFile > 0) {
-                    skipFromFile--;
-                } else {
-                    executor.addQuery(testQuery.query, this.prepareInput, testQuery.outputDescription);
-                    queryCount++;
-                }
-            } catch (Throwable ex) {
-                System.err.println("Error while compiling " + testQuery.query);
-                throw ex;
-            }
-            if (queryCount > 0 &&
-                    queryCount % batchSize == 0) {
-                executor.generateCode(0);
-                this.run(executor, testsSoFar + queryCount);
-            }
-        }
-        if ((queryCount % batchSize) != 0) {
-            // left overs
-            executor.generateCode(0);
-            this.run(executor, testsSoFar + queryCount);
-        }
+        return this.testCount;
     }
 }

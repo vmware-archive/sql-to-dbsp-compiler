@@ -19,50 +19,44 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.sqllogictest;
+package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqllogictest.SqlTestFile;
+import org.dbsp.util.ICastable;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.text.DecimalFormat;
 
 /**
  * Interface implemented by a class that knows how to execute a test.
  */
-public interface ISqlTestExecutor {
-    /**
-     * Prepare for a new test.
-     */
-    void reset();
-    /**
-     * Prepare the input tables.
-     */
-    void createTables(SqlTestPrepareTables prepare) throws SqlParseException;
+public interface ISqlTestExecutor extends ICastable {
+    class TestStatistics {
+        public int failed;
+        public int passed;
+        public int ignored;
+
+        public void add(TestStatistics stats) {
+            this.failed += stats.failed;
+            this.passed += stats.passed;
+            this.ignored += stats.ignored;
+        }
+
+        @Override
+        public String toString() {
+            DecimalFormat df = new DecimalFormat("#,###");
+            return "Passed: " + df.format(this.passed) +
+                    "\nFailed: " + df.format(this.failed) +
+                    "\nIgnored: " + df.format(this.ignored) +
+                    "\n";
+        }
+    }
 
     /**
-     * Add code for a query to be tested.
-     * @param query   SQL query that is tested.
-     * @param inputs  Input data that is inserted in the tables.
-     * @param description  Description of the expected output.
+     * Execute the specified test file.
      */
-    void addQuery(String query,
-                  SqlTestPrepareInput inputs,
-                  SqlTestOutputDescription description) throws SqlParseException;
-
-    /**
-     * Generate code for the test.
-     * @param index  Index of the file generated.  When running
-     *               in parallel multiple files may be generated for a single run.
-     */
-    void generateCode(int index) throws FileNotFoundException, UnsupportedEncodingException;
-
-    /**
-     * Run all the generated code.
-     */
-    void run() throws IOException, InterruptedException;
+    TestStatistics execute(SqlTestFile testFile) throws SqlParseException, IOException, InterruptedException;
 }

@@ -25,16 +25,14 @@
 
 package org.dbsp.sqlCompiler.dbsp.circuit.operator;
 
+import org.apache.calcite.rel.RelNode;
 import org.dbsp.sqlCompiler.dbsp.Visitor;
 import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
 import org.dbsp.sqlCompiler.frontend.TableDDL;
 
 public class DBSPSourceOperator extends DBSPOperator {
-    public final TableDDL ddlDef;
-
-    public DBSPSourceOperator(TableDDL ddlDef, DBSPType outputType, String name) {
-        super(ddlDef.getNode(), "", null, outputType, false, name);
-        this.ddlDef = ddlDef;
+    public DBSPSourceOperator(RelNode node, DBSPType outputType, String name) {
+        super(node, "", null, outputType, false, name);
     }
 
     @Override

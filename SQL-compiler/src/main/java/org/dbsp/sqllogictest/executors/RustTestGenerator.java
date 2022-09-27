@@ -21,8 +21,9 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqllogictest;
+package org.dbsp.sqllogictest.executors;
 
+import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
@@ -33,6 +34,7 @@ import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.dbsp.rust.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
+import org.dbsp.sqllogictest.SqlTestQueryOutputDescription;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -55,9 +57,10 @@ public class RustTestGenerator {
     public static DBSPFunction createTesterCode(
             String name,
             String inputFunction,
+            DBSPTransaction transaction,
             DBSPCircuit circuit,
             @Nullable DBSPZSetLiteral output,
-            SqlTestOutputDescription description) {
+            SqlTestQueryOutputDescription description) {
         List<DBSPStatement> list = new ArrayList<>();
         list.add(new DBSPLetStatement("circuit",
                 new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true));
@@ -71,8 +74,10 @@ public class RustTestGenerator {
         list.add(new DBSPLetStatement("_in",
                 new DBSPApplyExpression(inputFunction, DBSPTypeAny.instance)));
         for (int i = 0; i < arguments.length; i++) {
+            String inputI = circuit.getInputTables().get(i);
+            int index = transaction.getTableIndex(inputI);
             arguments[i] = new DBSPFieldExpression(null,
-                    new DBSPVariableReference("_in", DBSPTypeAny.instance), i);
+                    new DBSPVariableReference("_in", DBSPTypeAny.instance), index);
         }
         list.add(new DBSPLetStatement("output",
                 new DBSPApplyExpression("circuit", outputType, arguments)));

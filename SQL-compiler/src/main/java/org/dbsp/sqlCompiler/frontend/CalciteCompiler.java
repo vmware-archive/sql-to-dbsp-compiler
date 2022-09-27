@@ -59,7 +59,6 @@ import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.tools.RelBuilder;
 import org.dbsp.util.Linq;
-import org.dbsp.util.TranslationException;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
@@ -329,7 +328,6 @@ public class CalciteCompiler {
             SimulatorResult result = this.simulate(node);
             TableDDL table = result.as(TableDDL.class);
             if (table != null) {
-                this.program.addInput(table);
                 return table;
             }
             ViewDDL view = result.as(ViewDDL.class);
@@ -346,9 +344,6 @@ public class CalciteCompiler {
             SimulatorResult result = this.simulate(node);
             TableModifyStatement stat = result.as(TableModifyStatement.class);
             if (stat != null) {
-                TableDDL tbl = this.program.getInputTable(stat.table);
-                if (tbl == null)
-                    throw new TranslationException("Could not find translation", stat.table);
                 RelRoot values = this.converter.convertQuery(stat.data, true, true);
                 values = values.withRel(this.optimize(values.rel));
                 stat.setTranslation(values.rel);

@@ -19,52 +19,23 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.util;
+package org.dbsp.sqllogictest.executors;
 
-import javax.annotation.Nullable;
+import org.dbsp.sqllogictest.SqlTestFile;
 
 /**
- * Utility interface providing some useful casting methods.
+ * This executor does not execute the tests at all.
+ * It is still useful to validate that the test parsing works.
  */
-public interface ICastable {
-    @Nullable
-    default <T> T as(Class<T> clazz) {
-        return ICastable.as(this, clazz);
-    }
-
-    @Nullable
-    static <T> T as(Object obj, Class<T> clazz) {
-        try {
-            return clazz.cast(obj);
-        } catch (ClassCastException e) {
-            return null;
-        }
-    }
-
-    default void error(String message) {
-        System.err.println(message);
-    }
-
-    default <T> T as(Class<T> clazz, @Nullable String failureMessage) {
-        T result = this.as(clazz);
-        if (result == null) {
-            if (failureMessage == null)
-                failureMessage = this + "(" + this.getClass().getName() + ") is not an instance of " + clazz;
-            this.error(failureMessage);
-        }
-        assert result != null;
+public class NoExecutor implements ISqlTestExecutor {
+    @Override
+    public TestStatistics execute(SqlTestFile testFile) {
+        TestStatistics result = new TestStatistics();
+        result.failed = 0;
+        result.ignored = testFile.getTestCount();
+        result.passed = 0;
         return result;
-    }
-
-    default <T> T to(Class<T> clazz) {
-        return this.as(clazz, (String)null);
-    }
-
-    default <T> boolean is(Class<T> clazz) {
-        return this.as(clazz) != null;
     }
 }
