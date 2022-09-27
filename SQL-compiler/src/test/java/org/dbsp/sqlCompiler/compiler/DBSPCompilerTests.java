@@ -30,10 +30,7 @@ import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
 import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPZSetLiteral;
-import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
-import org.dbsp.sqlCompiler.frontend.CalciteProgram;
-import org.dbsp.sqlCompiler.frontend.SimulatorResult;
-import org.dbsp.sqlCompiler.frontend.TableModifyStatement;
+import org.dbsp.sqlCompiler.frontend.*;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -71,7 +68,7 @@ public class DBSPCompilerTests {
                 ", COL4 VARCHAR NOT NULL" +
                 ")";
         calcite.startCompilation();
-        calcite.compile(ddl);
+        SimulatorResult def = calcite.compile(ddl);
         CalciteProgram program = calcite.getProgram();
         CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler(calcite);
         DBSPCircuit dbsp = compiler.compile(program, "circuit");
@@ -82,6 +79,7 @@ public class DBSPCompilerTests {
         Assert.assertNotNull(i);
         Assert.assertTrue(i instanceof TableModifyStatement);
         DBSPTransaction transaction = new DBSPTransaction();
+        transaction.addTable(def.to(TableDDL.class));
         compiler.extendTransaction(transaction, (TableModifyStatement)i);
         DBSPZSetLiteral t = transaction.perInputChange.get("T");
         Assert.assertNotNull(t);

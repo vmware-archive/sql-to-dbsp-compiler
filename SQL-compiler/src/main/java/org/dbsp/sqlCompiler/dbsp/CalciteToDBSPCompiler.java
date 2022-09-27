@@ -1007,7 +1007,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         if (!(statement.node instanceof SqlInsert))
             throw new Unimplemented(statement);
         SqlInsert insert = (SqlInsert) statement.node;
-        TableDDL def = transaction.perInputDefinition.get(statement.table);
+        TableDDL def = Utilities.getExists(transaction.perInputDefinition, statement.table);
         this.dmTranslation.prepare(statement, def, insert.getTargetColumnList());
         if (statement.rel instanceof LogicalTableScan) {
             // Fake support for INSERT INTO table (SELECT * FROM otherTable)
