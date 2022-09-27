@@ -256,6 +256,7 @@ public class DBSPExecutor implements ISqlTestExecutor {
 
         boolean seenQueries = false;
         int remainingInBatch = this.batchSize;
+        int toSkip = this.skip;
         for (ISqlTestOperation operation: file.fileContents) {
             SqlStatement stat = operation.as(SqlStatement.class);
             if (stat != null) {
@@ -268,8 +269,8 @@ public class DBSPExecutor implements ISqlTestExecutor {
                     throw new RuntimeException("Statement failed " + stat.statement);
             } else {
                 SqlTestQuery query = operation.to(SqlTestQuery.class);
-                if (this.skip > 0) {
-                    this.skip--;
+                if (toSkip > 0) {
+                    toSkip--;
                     result.ignored++;
                     continue;
                 }
@@ -289,6 +290,9 @@ public class DBSPExecutor implements ISqlTestExecutor {
         }
         if (remainingInBatch != this.batchSize)
             this.runBatch(result);
+        // Make sure there are no left-overs if this executor
+        // is invoked to process a new file.
+        this.reset();
         return result;
     }
 
@@ -308,6 +312,12 @@ public class DBSPExecutor implements ISqlTestExecutor {
             this.inputPreparation.add(statement);
         }
         return true;
+    }
+
+    void reset() {
+        this.inputPreparation.clear();
+        this.tablePreparation.clear();
+        this.queriesToRun.clear();
     }
 
     public List<String> writeCodeToFiles(

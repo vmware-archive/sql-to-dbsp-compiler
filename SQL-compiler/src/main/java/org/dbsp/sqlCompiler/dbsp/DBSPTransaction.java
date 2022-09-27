@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.frontend.TableDDL;
+import org.dbsp.util.IdGen;
 import org.dbsp.util.Utilities;
 
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ import java.util.Map;
  * A DBSPTransaction holds a set of changes for the inputs of a DBSP program.
  * Transactions can be created from some forms of SQL INSERT or DELETE statements.
  */
-public class DBSPTransaction {
+public class DBSPTransaction extends IdGen {
     public final List<String> tables;
     /**
      * A Map from input (table) name to a ZSet value that will be used to update the table.
