@@ -141,12 +141,13 @@ public class Utilities {
         return Utilities.arraySlice(data, start, data.length);
     }
 
-    public static void compileAndTestRust(String directory) throws IOException, InterruptedException {
+    public static void compileAndTestRust(String directory, boolean quiet)
+            throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("cargo", "test",
-                //"-q"
-                "--", "--show-output"
-        );
+        if (quiet)
+            processBuilder.command("cargo", "test", "-q");
+        else
+            processBuilder.command("cargo", "test", "--", "--show-output");
         processBuilder.directory(new File(directory));
         processBuilder.inheritIO();
         Process process = processBuilder.start();

@@ -141,7 +141,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         Utilities.writeRustMain(rustDirectory + "/main.rs", filesGenerated);
         this.startTest();
         if (this.execute) {
-            Utilities.compileAndTestRust(rustDirectory);
+            Utilities.compileAndTestRust(rustDirectory, true);
         }
         this.queriesToRun.clear();
         this.reportTime(queryNo);
