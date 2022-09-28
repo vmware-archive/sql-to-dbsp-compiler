@@ -123,7 +123,7 @@ public class EndToEndTests {
             writer.println(ToRustVisitor.toRustString(circuit));
             this.createTester(writer, circuit, expectedOutput);
             writer.close();
-            Utilities.compileAndTestRust(rustDirectory);
+            Utilities.compileAndTestRust(rustDirectory, false);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

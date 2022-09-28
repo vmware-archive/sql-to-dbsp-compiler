@@ -44,11 +44,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static java.lang.System.exit;
+
 /**
  * Sql test executor that uses DBSP as a SQL runtime.
  * Does not support arbitrary tests: only tests that can be recast as a standing query will work.
  */
-public class DBSPExecutor implements ISqlTestExecutor {
+public class DBSPExecutor extends SqlTestExecutor {
     /**
      * A pair of a Rust circuit representation and a tester function that can
      * exercise it.
@@ -108,9 +110,6 @@ public class DBSPExecutor implements ISqlTestExecutor {
         return transaction.inputGeneratingFunction(inputFunctionName);
     }
 
-    static long startTime = -1;
-    static int totalTests = 0;
-
     void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException {
         CalciteCompiler calcite = new CalciteCompiler();
         calcite.startCompilation();
@@ -140,17 +139,13 @@ public class DBSPExecutor implements ISqlTestExecutor {
         // Write the code to Rust files on the filesystem.
         List<String> filesGenerated = this.writeCodeToFiles(inputFunction, codeGenerated);
         Utilities.writeRustMain(rustDirectory + "/main.rs", filesGenerated);
-        long start = System.nanoTime();
-        if (startTime == -1)
-            startTime = start;
+        this.startTest();
         if (this.execute) {
-            Utilities.compileAndTestRust(rustDirectory);
+            Utilities.compileAndTestRust(rustDirectory, true);
         }
         this.queriesToRun.clear();
-        long end = System.nanoTime();
-        totalTests += queryNo;
-        System.out.println(queryNo + " tests took " + seconds(end, start) + "s, "
-                + totalTests + " took " + seconds(end, startTime) + "s");
+        this.reportTime(queryNo);
+        exit(1);
         this.clenupFilesystem();
         result.passed += queryNo;  // This is not entirely correct, but I am not parsing the rust output
     }
@@ -294,10 +289,6 @@ public class DBSPExecutor implements ISqlTestExecutor {
         // is invoked to process a new file.
         this.reset();
         return result;
-    }
-
-    long seconds(long end, long start) {
-        return (end - start) / 1000000000;
     }
 
     public boolean statement(SqlStatement statement) {

@@ -29,13 +29,15 @@ import org.dbsp.sqllogictest.SqlTestFile;
  * This executor does not execute the tests at all.
  * It is still useful to validate that the test parsing works.
  */
-public class NoExecutor implements ISqlTestExecutor {
+public class NoExecutor extends SqlTestExecutor {
     @Override
     public TestStatistics execute(SqlTestFile testFile) {
         TestStatistics result = new TestStatistics();
+        this.startTest();
         result.failed = 0;
         result.ignored = testFile.getTestCount();
         result.passed = 0;
+        this.reportTime(testFile.getTestCount());
         return result;
     }
 }

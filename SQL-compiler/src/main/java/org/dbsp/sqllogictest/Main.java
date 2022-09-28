@@ -28,12 +28,15 @@ package org.dbsp.sqllogictest;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqllogictest.executors.DBSPExecutor;
-import org.dbsp.sqllogictest.executors.ISqlTestExecutor;
+import org.dbsp.sqllogictest.executors.SqlTestExecutor;
+import org.dbsp.sqllogictest.executors.JDBCExecutor;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 
@@ -52,18 +55,28 @@ public class Main {
         }
     }
 
+    static class MySql implements QueryAcceptancePolicy {
+        @Override
+        public boolean accept(List<String> skip, List<String> only) {
+            return !only.contains("postgresql") && !skip.contains("mysql");
+        }
+    }
+
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
-        final ISqlTestExecutor executor;
-        ISqlTestExecutor.TestStatistics statistics;
+        private final SqlTestExecutor executor;
+        SqlTestExecutor.TestStatistics statistics;
+        private final QueryAcceptancePolicy policy;
 
         /**
          * Creates a new class that reads tests from a directory tree and executes them.
-         * @param executor        Program that knows how to generate and run the tests.
+         * @param executor Program that knows how to generate and run the tests.
+         * @param policy   Policy that dictates which tests can be executed.
          */
-        TestLoader(ISqlTestExecutor executor) {
+        TestLoader(SqlTestExecutor executor, QueryAcceptancePolicy policy) {
             this.executor = executor;
-            this.statistics = new ISqlTestExecutor.TestStatistics();
+            this.statistics = new SqlTestExecutor.TestStatistics();
+            this.policy = policy;
         }
 
         @Override
@@ -79,7 +92,7 @@ public class Main {
                 SqlTestFile test = null;
                 try {
                     test = new SqlTestFile(file.toString());
-                    test.parse(new NoMySql());
+                    test.parse(this.policy);
                 } catch (Exception ex) {
                     // We can't yet parse all kinds of tests
                     //noinspection UnnecessaryToStringCall
@@ -89,14 +102,14 @@ public class Main {
                 if (test != null) {
                     try {
                         System.out.println(file);
-                        ISqlTestExecutor.TestStatistics stats = this.executor.execute(test);
+                        SqlTestExecutor.TestStatistics stats = this.executor.execute(test);
                         this.statistics.add(stats);
-                    } catch (SqlParseException | IOException | InterruptedException ex) {
+                    } catch (SqlParseException | IOException | InterruptedException |
+                            SQLException | NoSuchAlgorithmException ex) {
                         throw new RuntimeException(ex);
                     }
                 }
             }
-            //return FileVisitResult.TERMINATE;
             return FileVisitResult.CONTINUE;
         }
     }
@@ -112,13 +125,14 @@ public class Main {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         DBSPExecutor dExec = new DBSPExecutor(true);
         dExec.avoid(calciteBugs);
-        ISqlTestExecutor executor = dExec;
+        SqlTestExecutor executor = dExec;
+        executor = new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
         //executor = new NoExecutor();
         String benchDir = "../../sqllogictest/test";
         // These are all the files we support from sqllogictest.
         String[] files = new String[]{
                 //"s.test",
-                //"random/select",  //done
+                "random/select",  //done
                 "random/expr",
                 "random/groupby",
                 "random/aggregates",
@@ -130,7 +144,9 @@ public class Main {
         };
         if (argv.length > 1)
             files = Utilities.arraySlice(argv, 1);
-        TestLoader loader = new TestLoader(executor);
+        QueryAcceptancePolicy policy =
+                executor.is(JDBCExecutor.class) ? new MySql() : new NoMySql();
+        TestLoader loader = new TestLoader(executor, policy);
         for (String file : files) {
             if (file.startsWith("select"))
                 batchSize = Math.min(batchSize, 20);
