@@ -138,12 +138,21 @@ which creates a circuit, feeds it one input, reads the output, and
 validates it, executing exactly one transaction.  No incremental or
 streaming aspects are tested currently.
 
-#### The `JDBC` executor (under construction).
+#### The `JDBC` executor
 
 This executor parallels the standard ODBC executor written in C by
 sending the statements and queries to a database to be executed.  Any
 database that supports JDBC and can handle the correct syntax of the
 queries can be used.
+
+To use this executor you have to install a suitable database and its
+JDBC connector.  For example, you can install MySQL from
+https://dev.mysql.com/downloads/mysql.  The maven pom.xml file already
+includes the mysql driver, you should add the jar for your favorite
+DB.  You have to create a suitable database and appropriate user
+accounts, and substitute this information in the Main SqlLogicTest
+program.  (You also have to create a suitable `QueryAcceptancePolicy`
+class which filters out the tests not supported by your database).
 
 #### The hybrid `DBSP_DB_Executor` (under construction)
 

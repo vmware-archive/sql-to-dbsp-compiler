@@ -28,13 +28,17 @@ import org.dbsp.sqllogictest.SqlTestFile;
 import org.dbsp.util.ICastable;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 
 /**
  * Interface implemented by a class that knows how to execute a test.
  */
-public interface ISqlTestExecutor extends ICastable {
-    class TestStatistics {
+public abstract class SqlTestExecutor implements ICastable {
+    static final DecimalFormat df = new DecimalFormat("#,###");
+
+    public static class TestStatistics {
         public int failed;
         public int passed;
         public int ignored;
@@ -47,7 +51,6 @@ public interface ISqlTestExecutor extends ICastable {
 
         @Override
         public String toString() {
-            DecimalFormat df = new DecimalFormat("#,###");
             return "Passed: " + df.format(this.passed) +
                     "\nFailed: " + df.format(this.failed) +
                     "\nIgnored: " + df.format(this.ignored) +
@@ -55,8 +58,31 @@ public interface ISqlTestExecutor extends ICastable {
         }
     }
 
+    private static long startTime = -1;
+    private static int totalTests = 0;
+    private long lastTestStartTime;
+
+    static long seconds(long end, long start) {
+        return (end - start) / 1000000000;
+    }
+
+    void reportTime(int tests) {
+        long end = System.nanoTime();
+        totalTests += tests;
+        System.out.println(df.format(tests) + " tests took " +
+                df.format(seconds(end, this.lastTestStartTime)) + "s, "
+                + df.format(totalTests) + " took " +
+                df.format(seconds(end, startTime)) + "s");
+    }
+
+    void startTest() {
+        this.lastTestStartTime = System.nanoTime();
+        if (startTime == -1)
+            startTime = lastTestStartTime;
+    }
+
     /**
      * Execute the specified test file.
      */
-    TestStatistics execute(SqlTestFile testFile) throws SqlParseException, IOException, InterruptedException;
+    public abstract TestStatistics execute(SqlTestFile testFile) throws SqlParseException, IOException, InterruptedException, SQLException, NoSuchAlgorithmException;
 }

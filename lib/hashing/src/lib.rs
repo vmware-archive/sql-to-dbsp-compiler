@@ -169,7 +169,7 @@ where
             builder = builder + &col + "\n"
         }
     }
-    //println!("{}", builder);
+    // println!("{}", builder);
     let digest = md5::compute(builder);
     return format!("{:x}", digest)
 }
@@ -202,7 +202,7 @@ where
         }
         cursor.step_key();
     }
-    //println!("{}", builder);
+    // println!("{}", builder);
     let digest = md5::compute(builder);
     return format!("{:x}", digest)
 }
