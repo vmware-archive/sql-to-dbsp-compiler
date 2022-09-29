@@ -154,8 +154,9 @@ accounts, and substitute this information in the Main SqlLogicTest
 program.  (You also have to create a suitable `QueryAcceptancePolicy`
 class which filters out the tests not supported by your database).
 
-#### The hybrid `DBSP_DB_Executor` (under construction)
+#### The hybrid `DBSP_JDBC_Executor`
 
 This executor is a combination of the DBSP executor and the JDBC
 executor, using a real database to store data in tables, but using
-DBSP as a query engine.
+DBSP as a query engine.  It should be able to execute all SqlLogicTest
+queries that are supported by the underlying database.

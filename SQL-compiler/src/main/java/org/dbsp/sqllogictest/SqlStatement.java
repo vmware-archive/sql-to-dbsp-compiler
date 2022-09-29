@@ -31,4 +31,9 @@ public class SqlStatement implements ISqlTestOperation {
         this.statement = statement;
         this.shouldPass = shouldPass;
     }
+
+    @Override
+    public String toString() {
+        return this.statement;
+    }
 }

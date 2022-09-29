@@ -27,9 +27,7 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqllogictest.executors.DBSPExecutor;
-import org.dbsp.sqllogictest.executors.SqlTestExecutor;
-import org.dbsp.sqllogictest.executors.JDBCExecutor;
+import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -45,7 +43,6 @@ import java.util.List;
  */
 public class Main {
     // Following are queries that calcite fails to parse.
-    static final HashSet<String> calciteBugs = new HashSet<>();
     static final String[] skipFiles = {};
 
     static class NoMySql implements QueryAcceptancePolicy {
@@ -117,17 +114,31 @@ public class Main {
     @SuppressWarnings("SpellCheckingInspection")
     public static void main(String[] argv) throws IOException {
         // Calcite cannot parse this query
-        calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");       
+        final HashSet<String> calciteBugs = new HashSet<>();
+        calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");
         // Calcite types /0 as not nullable!
         calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
+        HashSet<String> sltBugs = new HashSet<>();
+        // The following query is a bug in sqllogictest: the query claims to return
+        // an integer for a string column.
+        sltBugs.add("SELECT ALL col5 col0 FROM tab0 WHERE + col3 IS NOT NULL");
+        sltBugs.add("SELECT ALL col5 col0 FROM tab1 WHERE + col3 IS NOT NULL");
+        sltBugs.add("SELECT ALL col5 col0 FROM tab2 WHERE + col3 IS NOT NULL");
+        sltBugs.add("SELECT ALL col5 col0 FROM tab3 WHERE + col3 IS NOT NULL");
+        sltBugs.add("SELECT ALL col5 col0 FROM tab4 WHERE + col3 IS NOT NULL");
         int batchSize = 500;
         int skipPerFile = 0;
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         DBSPExecutor dExec = new DBSPExecutor(true);
         dExec.avoid(calciteBugs);
-        SqlTestExecutor executor = dExec;
-        executor = new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
-        //executor = new NoExecutor();
+        SqlTestExecutor executor;
+        executor = new NoExecutor();
+        executor = dExec;
+        JDBCExecutor jdbc = new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
+        jdbc.avoid(sltBugs);
+        executor = jdbc;
+        DBSP_JDBC_Executor hybrid = new DBSP_JDBC_Executor(jdbc, true);
+        executor = hybrid;
         String benchDir = "../../sqllogictest/test";
         // These are all the files we support from sqllogictest.
         String[] files = new String[]{

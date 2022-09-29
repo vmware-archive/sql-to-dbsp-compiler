@@ -31,12 +31,15 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Interface implemented by a class that knows how to execute a test.
  */
 public abstract class SqlTestExecutor implements ICastable {
     static final DecimalFormat df = new DecimalFormat("#,###");
+    protected final Set<String> buggyQueries;
 
     public static class TestStatistics {
         public int failed;
@@ -61,9 +64,19 @@ public abstract class SqlTestExecutor implements ICastable {
     private static long startTime = -1;
     private static int totalTests = 0;
     private long lastTestStartTime;
+    long statementsExecuted = 0;
+    long queriesExecuted = 0;
+
+    protected SqlTestExecutor() {
+        this.buggyQueries = new HashSet<>();
+    }
 
     static long seconds(long end, long start) {
         return (end - start) / 1000000000;
+    }
+
+    public void avoid(HashSet<String> calciteBugs) {
+        this.buggyQueries.addAll(calciteBugs);
     }
 
     void reportTime(int tests) {

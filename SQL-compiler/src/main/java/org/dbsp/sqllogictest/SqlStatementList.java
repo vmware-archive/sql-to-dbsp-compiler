@@ -43,4 +43,5 @@ public class SqlStatementList {
         this.statements.add(statement);
     }
     public void clear() { this.statements.clear(); }
+    public boolean contains(SqlStatement statement) { return this.statements.contains(statement); }
 }

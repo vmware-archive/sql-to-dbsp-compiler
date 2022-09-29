@@ -39,12 +39,9 @@ import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;
 
 import java.io.*;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-
-import static java.lang.System.exit;
 
 /**
  * Sql test executor that uses DBSP as a SQL runtime.
@@ -69,22 +66,17 @@ public class DBSPExecutor extends SqlTestExecutor {
     private final boolean debug = false;
     static final String rustDirectory = "../temp/src/";
     static final String testFileName = "test";
-    private static final String inputFunctionName = "input";
+    protected static final String inputFunctionName = "input";
     private final boolean execute;
     private int batchSize;  // Number of queries to execute together
     private int skip;       // Number of queries to skip in each test file.
     SqlTestPrepareInput inputPreparation;
     SqlTestPrepareTables tablePreparation;
-    private final Set<String> calciteBugs;
     private final List<SqlTestQuery> queriesToRun;
 
     public void setBatchSize(int batchSize, int skip) {
         this.batchSize = batchSize;
         this.skip = skip;
-    }
-
-    public void avoid(HashSet<String> calciteBugs) {
-        this.calciteBugs.addAll(calciteBugs);
     }
 
     /**
@@ -96,12 +88,11 @@ public class DBSPExecutor extends SqlTestExecutor {
         this.execute = execute;
         this.inputPreparation = new SqlTestPrepareInput();
         this.tablePreparation = new SqlTestPrepareTables();
-        this.calciteBugs = new HashSet<>();
         this.batchSize = 10;
         this.queriesToRun = new ArrayList<>();
     }
 
-    DBSPFunction createInputFunction(CalciteToDBSPCompiler compiler, DBSPTransaction transaction) throws SqlParseException {
+    DBSPFunction createInputFunction(CalciteToDBSPCompiler compiler, DBSPTransaction transaction) throws SqlParseException, SQLException {
         for (SqlStatement statement : this.inputPreparation.statements) {
             SimulatorResult sim = compiler.calciteCompiler.compile(statement.statement);
             TableModifyStatement stat = (TableModifyStatement) sim;
@@ -110,7 +101,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         return transaction.inputGeneratingFunction(inputFunctionName);
     }
 
-    void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException {
+    void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException, SQLException {
         CalciteCompiler calcite = new CalciteCompiler();
         calcite.startCompilation();
         CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler(calcite);
@@ -129,6 +120,7 @@ public class DBSPExecutor extends SqlTestExecutor {
             try {
                 ProgramAndTester pc = this.generateTestCase(compiler, testQuery, transaction, queryNo);
                 codeGenerated.add(pc);
+                this.queriesExecuted++;
             } catch (Throwable ex) {
                 System.err.println("Error while compiling " + testQuery.query);
                 throw ex;
@@ -145,7 +137,6 @@ public class DBSPExecutor extends SqlTestExecutor {
         }
         this.queriesToRun.clear();
         this.reportTime(queryNo);
-        exit(1);
         this.clenupFilesystem();
         result.passed += queryNo;  // This is not entirely correct, but I am not parsing the rust output
     }
@@ -239,16 +230,21 @@ public class DBSPExecutor extends SqlTestExecutor {
 
     void createTables(CalciteCompiler compiler, DBSPTransaction transaction) throws SqlParseException {
         for (SqlStatement statement : this.tablePreparation.statements) {
-            SimulatorResult result = compiler.compile(statement.statement);
+            String stat = statement.statement;
+            // TODO: this is wrong, but I can't get the Calcite parser
+            // to accept Postgres-like PRIMARY KEY statements.
+            stat = stat.replace("PRIMARY KEY", "");
+            // TODO: Calcite does not accept "TEXT"
+            stat = stat.replace(" TEXT", " VARCHAR");
+            SimulatorResult result = compiler.compile(stat);
             transaction.addTable(result.to(TableDDL.class));
         }
     }
 
     @Override
     public TestStatistics execute(SqlTestFile file)
-            throws SqlParseException, IOException, InterruptedException {
+            throws SqlParseException, IOException, InterruptedException, SQLException {
         TestStatistics result = new TestStatistics();
-
         boolean seenQueries = false;
         int remainingInBatch = this.batchSize;
         int toSkip = this.skip;
@@ -260,6 +256,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                     remainingInBatch = this.batchSize;
                 }
                 boolean status = this.statement(stat);
+                this.statementsExecuted++;
                 if (status != stat.shouldPass)
                     throw new RuntimeException("Statement failed " + stat.statement);
             } else {
@@ -269,9 +266,9 @@ public class DBSPExecutor extends SqlTestExecutor {
                     result.ignored++;
                     continue;
                 }
-                if (this.calciteBugs.contains(query.query)) {
+                if (this.buggyQueries.contains(query.query)) {
                     System.err.println("Skipping " + query.query);
-                    result.passed++;
+                    result.ignored++;
                     continue;
                 }
                 seenQueries = true;
@@ -291,13 +288,13 @@ public class DBSPExecutor extends SqlTestExecutor {
         return result;
     }
 
-    public boolean statement(SqlStatement statement) {
+    public boolean statement(SqlStatement statement) throws SQLException {
         String command = statement.statement.toLowerCase();
         if (command.startsWith("create index"))
             return true;
         if (command.startsWith("create distinct index"))
             return false;
-        if (command.toLowerCase().contains("create table")) {
+        if (command.contains("create table")) {
             this.tablePreparation.add(statement);
         } else {
             this.inputPreparation.add(statement);

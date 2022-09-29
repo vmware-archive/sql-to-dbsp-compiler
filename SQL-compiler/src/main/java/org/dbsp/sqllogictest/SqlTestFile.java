@@ -240,15 +240,9 @@ public class SqlTestFile {
                  line = this.nextLine(false);
                  StringBuilder statement = new StringBuilder();
                  while (!line.isEmpty()) {
-                     // TODO: this is wrong, but I can't get the Calcite parser
-                     // to accept Postgres-like PRIMARY KEY statements.
-                     line = line.replace("PRIMARY KEY", "");
-                     // TODO: Calcite does not accept "TEXT"
-                     line = line.replace(" TEXT", " VARCHAR");
                      statement.append(line);
                      line = this.nextLine(false);
                  }
-
                  String command = statement.toString();
                  SqlStatement stat = new SqlStatement(command, ok);
                  this.add(stat);
