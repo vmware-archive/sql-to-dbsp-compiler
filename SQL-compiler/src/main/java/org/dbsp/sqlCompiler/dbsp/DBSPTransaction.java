@@ -28,7 +28,9 @@ package org.dbsp.sqlCompiler.dbsp;
 import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPZSetLiteral;
-import org.dbsp.sqlCompiler.frontend.TableDDL;
+import org.dbsp.sqlCompiler.frontend.CreateTableStatement;
+import org.dbsp.sqlCompiler.frontend.DropTableStatement;
+import org.dbsp.sqlCompiler.frontend.SimulatorResult;
 import org.dbsp.util.IdGen;
 import org.dbsp.util.Utilities;
 
@@ -50,7 +52,7 @@ public class DBSPTransaction extends IdGen {
     /**
      * For each table the statement that defined it.
      */
-    public final Map<String, TableDDL> perInputDefinition;
+    public final Map<String, CreateTableStatement> perInputDefinition;
 
     public DBSPTransaction() {
         this.perInputChange = new HashMap<>();
@@ -86,7 +88,7 @@ public class DBSPTransaction extends IdGen {
         return Utilities.getExists(this.perInputChange, tableName);
     }
 
-    public void addTable(TableDDL def) {
+    public void addTable(CreateTableStatement def) {
         this.tables.add(def.name);
         Utilities.putNew(this.perInputDefinition, def.name, def);
     }
@@ -96,5 +98,17 @@ public class DBSPTransaction extends IdGen {
             if (this.tables.get(i).equals(tableName))
                 return i;
         throw new RuntimeException("No table named " + tableName);
+    }
+
+    public void execute(SimulatorResult result) {
+        DropTableStatement stat = result.as(DropTableStatement.class);
+        if (stat != null) {
+            this.perInputChange.remove(stat.name);
+            this.perInputDefinition.remove(stat.name);
+            this.tables.remove(stat.name);
+        } else {
+            CreateTableStatement crt = result.to(CreateTableStatement.class);
+            this.addTable(crt);
+        }
     }
 }

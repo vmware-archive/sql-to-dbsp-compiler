@@ -19,28 +19,26 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.sqlCompiler.dbsp.circuit.operator;
+package org.dbsp.sqlCompiler.frontend;
 
-import org.apache.calcite.rel.RelNode;
-import org.dbsp.sqlCompiler.dbsp.Visitor;
-import org.dbsp.sqlCompiler.dbsp.rust.type.DBSPType;
+import org.apache.calcite.sql.SqlNode;
 
-public class DBSPSourceOperator extends DBSPOperator {
-    public DBSPSourceOperator(RelNode node, DBSPType outputType, String name) {
-        super(node, "", null, outputType, false, name);
+import javax.annotation.Nullable;
+
+public class DropTableStatement implements SimulatorResult {
+    public final SqlNode node;
+    public final String name;
+
+    public DropTableStatement(@Nullable SqlNode node, String name) {
+        this.node = node;
+        this.name = name;
     }
 
+    @Nullable
     @Override
-    public void accept(Visitor visitor) {
-        if (!visitor.preorder(this)) return;
-        if (this.function != null)
-            this.function.accept(visitor);
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
-        visitor.postorder(this);
+    public SqlNode getNode() {
+        return this.node;
     }
 }

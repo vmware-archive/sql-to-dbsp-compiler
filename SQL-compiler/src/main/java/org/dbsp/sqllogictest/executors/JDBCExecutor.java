@@ -23,6 +23,11 @@
 
 package org.dbsp.sqllogictest.executors;
 
+import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPTupleExpression;
+import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.*;
+import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqllogictest.*;
 import org.dbsp.util.Linq;
 
@@ -111,19 +116,26 @@ public class JDBCExecutor extends SqlTestExecutor {
         Statement stmt = this.connection.createStatement();
         stmt.execute(statement.statement);
         stmt.close();
+        this.statementsExecuted++;
         if (debug)
-            System.out.println(statement.statement);
+            System.out.println(this.statementsExecuted + ": " + statement.statement);
     }
 
-    void query(SqlTestQuery query, int queryNo) throws SQLException, NoSuchAlgorithmException {
+    boolean query(SqlTestQuery query, int queryNo) throws SQLException, NoSuchAlgorithmException {
         assert this.connection != null;
+        if (this.buggyQueries.contains(query.query)) {
+            System.err.println("Skipping " + query.query);
+            return false;
+        }
         Statement stmt = this.connection.createStatement();
         ResultSet resultSet = stmt.executeQuery(query.query);
         this.validate(query.query, queryNo, resultSet, query.outputDescription);
         stmt.close();
         resultSet.close();
+        this.queriesExecuted++;
         if (debug)
-            System.out.println(query.query);
+            System.out.println(this.queriesExecuted + ": " + query.query);
+        return true;
     }
 
     Row getValue(ResultSet rs, String columnTypes) throws SQLException {
@@ -140,11 +152,19 @@ public class JDBCExecutor extends SqlTestExecutor {
                         row.add(String.format("%.3f", d));
                     break;
                 case 'I':
-                    long integer = rs.getLong(i);
-                    if (rs.wasNull())
-                        row.add("NULL");
-                    else
-                        row.add(String.format("%d", integer));
+                    try {
+                        long integer = rs.getLong(i);
+                        if (rs.wasNull())
+                            row.add("NULL");
+                        else
+                            row.add(String.format("%d", integer));
+                    } catch (SQLDataException | NumberFormatException ignore) {
+                        // This probably indicates a bug in the query, since
+                        // the query expects an integer, but the result cannot
+                        // be interpreted as such.
+                        // unparsable string: replace with 0
+                        row.add("0");
+                    }
                     break;
                 case 'T':
                     String s = rs.getString(i);
@@ -213,12 +233,94 @@ public class JDBCExecutor extends SqlTestExecutor {
         }
     }
 
-    void dropAllTables() throws SQLException {
+    public DBSPZSetLiteral getTableContents(String table) throws SQLException {
+        List<DBSPExpression> rows = new ArrayList<>();
+        assert this.connection != null;
+        Statement stmt = this.connection.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
+
+        ResultSetMetaData meta = rs.getMetaData();
+        DBSPType[] colTypes = new DBSPType[meta.getColumnCount()];
+        for (int i = 0; i < meta.getColumnCount(); i++) {
+            JDBCType columnType = JDBCType.valueOf(meta.getColumnType(i + 1));
+            int n = meta.isNullable(i + 1);
+            boolean nullable;
+            if (n == ResultSetMetaData.columnNullable)
+                nullable = true;
+            else if (n == ResultSetMetaData.columnNullableUnknown)
+                throw new RuntimeException("Unknown column nullability");
+            else
+                nullable = false;
+            switch (columnType) {
+                case INTEGER:
+                    colTypes[i] = DBSPTypeInteger.signed32.setMayBeNull(nullable);
+                    break;
+                case REAL:
+                case DOUBLE:
+                    colTypes[i] = DBSPTypeDouble.instance.setMayBeNull(nullable);
+                    break;
+                case VARCHAR:
+                    colTypes[i] = DBSPTypeString.instance.setMayBeNull(nullable);
+                    break;
+                default:
+                    throw new RuntimeException("Unexpected column type " + columnType);
+            }
+        }
+
+        while (rs.next()) {
+            DBSPExpression[] cols = new DBSPExpression[colTypes.length];
+            for (int i = 0; i < colTypes.length; i++) {
+                DBSPExpression exp;
+                DBSPType type = colTypes[i];
+                if (type.is(DBSPTypeInteger.class)) {
+                    int value = rs.getInt(i + 1);
+                    if (rs.wasNull())
+                        exp = DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true));
+                    else
+                        exp = new DBSPIntegerLiteral(value, type.mayBeNull);
+                } else if (type.is(DBSPTypeDouble.class)) {
+                    double value = rs.getDouble(i + 1);
+                    if (rs.wasNull())
+                        exp = DBSPLiteral.none(DBSPTypeDouble.instance.setMayBeNull(true));
+                    else
+                        exp = new DBSPDoubleLiteral(value, type.mayBeNull);
+                } else {
+                    String s = rs.getString(i + 1);
+                    if (s == null)
+                        exp = DBSPLiteral.none(DBSPTypeString.instance.setMayBeNull(true));
+                    else
+                        exp = new DBSPStringLiteral(s, type.mayBeNull);
+                }
+                cols[i] = exp;
+            }
+            DBSPTupleExpression row = new DBSPTupleExpression(cols);
+            rows.add(row);
+        }
+        rs.close();
+        if (rows.size() == 0)
+            return new DBSPZSetLiteral(
+                    new DBSPTypeZSet(new DBSPTypeTuple(colTypes), CalciteToDBSPCompiler.weightType));
+        return new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, rows.toArray(new DBSPExpression[0]));
+    }
+
+    List<String> getTableList() throws SQLException {
+        List<String> result = new ArrayList<>();
         assert this.connection != null;
         Statement stmt = this.connection.createStatement();
         ResultSet rs = stmt.executeQuery("SHOW TABLES");
         while (rs.next()) {
             String tableName = rs.getString(1);
+            result.add(tableName);
+        }
+        rs.close();
+        return result;
+    }
+
+    void dropAllTables() throws SQLException {
+        assert this.connection != null;
+        List<String> tables = this.getTableList();
+        for (String tableName: tables) {
             String del = "DROP TABLE " + tableName;
             Statement drop = this.connection.createStatement();
             drop.execute(del);
@@ -226,28 +328,44 @@ public class JDBCExecutor extends SqlTestExecutor {
             if (debug)
                 System.out.println(del);
         }
-        rs.close();
-        stmt.close();
+    }
+
+    public void establishConnection() throws SQLException {
+        this.connection = DriverManager.getConnection(this.db_url, this.user, this.password);
+        assert this.connection != null;
+    }
+
+    public void closeConnection() throws SQLException {
+        assert this.connection != null;
+        this.connection.close();
     }
 
     @Override
     public TestStatistics execute(SqlTestFile file) throws SQLException, NoSuchAlgorithmException {
         this.startTest();
-        this.connection = DriverManager.getConnection(this.db_url, this.user, this.password);
-        assert this.connection != null;
+        this.establishConnection();
         this.dropAllTables();
         TestStatistics result = new TestStatistics();
         for (ISqlTestOperation operation: file.fileContents) {
-            SqlStatement stat = operation.as(SqlStatement.class);
-            if (stat != null) {
-                this.statement(stat);
-            } else {
-                SqlTestQuery query = operation.to(SqlTestQuery.class);
-                this.query(query, result.passed);
-                result.passed++;
+            try {
+                SqlStatement stat = operation.as(SqlStatement.class);
+                if (stat != null) {
+                    this.statement(stat);
+                } else {
+                    SqlTestQuery query = operation.to(SqlTestQuery.class);
+                    boolean executed = this.query(query, result.passed);
+                    if (executed) {
+                        result.passed++;
+                    } else {
+                        result.ignored++;
+                    }
+                }
+            } catch (SQLException ex) {
+                System.err.println("Error while processing #" + result.passed + " " + operation);
+                throw ex;
             }
         }
-        this.connection.close();
+        this.closeConnection();
         this.reportTime(result.passed);
         return result;
     }

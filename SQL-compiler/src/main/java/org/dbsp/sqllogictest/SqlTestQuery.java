@@ -48,4 +48,9 @@ public class SqlTestQuery implements ISqlTestOperation {
     void setQuery(String query) {
         this.query = query;
     }
+
+    @Override
+    public String toString() {
+        return this.query;
+    }
 }

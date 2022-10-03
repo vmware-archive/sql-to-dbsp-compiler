@@ -31,6 +31,7 @@ import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.ddl.SqlColumnDeclaration;
 import org.apache.calcite.sql.ddl.SqlCreateTable;
 import org.apache.calcite.sql.ddl.SqlCreateView;
+import org.apache.calcite.sql.ddl.SqlDropTable;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.dbsp.util.Unimplemented;
 
@@ -81,7 +82,7 @@ public class SqlSimulator {
         if (kind == SqlKind.CREATE_TABLE) {
             SqlCreateTable ct = (SqlCreateTable)node;
             String tableName = Catalog.identifierToString(ct.name);
-            TableDDL table = new TableDDL(node, tableName);
+            CreateTableStatement table = new CreateTableStatement(node, tableName);
             List<ColumnInfo> cols = this.getColumnTypes(Objects.requireNonNull(ct.columnList));
             cols.forEach(table::addColumn);
             this.schema.addTable(tableName, table);
@@ -96,6 +97,11 @@ public class SqlSimulator {
                 throw new Unimplemented(table);
             SqlIdentifier id = (SqlIdentifier)table;
             return new TableModifyStatement(node, id.toString(), insert.getSource());
+        } else if (kind == SqlKind.DROP_TABLE) {
+            SqlDropTable dt = (SqlDropTable) node;
+            String tableName = Catalog.identifierToString(dt.name);
+            this.schema.dropTable(tableName);
+            return new DropTableStatement(node, tableName);
         }
         throw new Unimplemented(node);
     }

@@ -30,7 +30,6 @@ import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.jdbc.CalciteSchema;
-import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.*;
 import org.apache.calcite.plan.hep.HepMatchOrder;
 import org.apache.calcite.plan.hep.HepPlanner;
@@ -44,12 +43,14 @@ import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.rules.*;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
+import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
 import org.apache.calcite.sql.util.SqlOperatorTables;
 import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
@@ -87,6 +88,71 @@ public class CalciteCompiler {
     private final SqlToRelConverter.Config converterConfig;
     private static final boolean debug = false;
     private final RelOptPlanner optimizer;
+
+    // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
+    public CalciteCompiler() {
+        this.program = null;
+        Properties connConfigProp = new Properties();
+        connConfigProp.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
+        connConfigProp.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
+        connConfigProp.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
+        CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
+        // Add support for DDL language
+        this.parserConfig = SqlParser.config()
+                .withParserFactory(SqlDdlParserImpl.FACTORY)
+                .withConformance(SqlConformanceEnum.BABEL);
+        this.typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
+        this.simple = new Catalog("schema");
+        CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
+        rootSchema.add(simple.schemaName, this.simple);
+        Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
+                rootSchema, Collections.singletonList(simple.schemaName), this.typeFactory, connectionConfig);
+
+        SqlOperatorTable operatorTable = SqlOperatorTables.chain(
+                SqlStdOperatorTable.instance()
+        );
+
+        SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
+                .withLenientOperatorLookup(connectionConfig.lenientOperatorLookup())
+                .withTypeCoercionEnabled(true)
+                .withConformance(connectionConfig.conformance())
+                .withDefaultNullCollation(connectionConfig.defaultNullCollation())
+                .withIdentifierExpansion(true);
+
+        this.validator = SqlValidatorUtil.newValidator(
+                operatorTable,
+                catalogReader,
+                this.typeFactory,
+                validatorConfig
+        );
+
+        // The optimizer does not seem to be invoked anywhere.
+        this.optimizer = new HepPlanner(new HepProgramBuilder().build());
+        /*
+        RelOptPlanner planner = new VolcanoPlanner(
+                    RelOptCostImpl.FACTORY,
+                    Contexts.of(connectionConfig));
+        planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
+         */
+        this.cluster = RelOptCluster.create(
+                this.optimizer,
+                new RexBuilder(this.typeFactory)
+        );
+
+        this.converterConfig = SqlToRelConverter.config()
+                .withTrimUnusedFields(true)
+                .withDecorrelationEnabled(true)
+                .withExpand(true);
+        this.converter = new SqlToRelConverter(
+                (type, query, schema, path) -> null,
+                this.validator,
+                catalogReader,
+                this.cluster,
+                StandardConvertletTable.INSTANCE,
+                this.converterConfig
+        );
+        this.simulator = new SqlSimulator(this.simple, this.typeFactory, this.validator);
+    }
 
     /**
      * Policy which decides whether to run the busy join optimization.
@@ -189,71 +255,6 @@ public class CalciteCompiler {
          */
     }
 
-    // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
-    public CalciteCompiler() {
-        this.program = null;
-        Properties connConfigProp = new Properties();
-        connConfigProp.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
-        connConfigProp.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        connConfigProp.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
-        // Add support for DDL language
-        this.parserConfig = SqlParser.config()
-                .withParserFactory(SqlDdlParserImpl.FACTORY)
-                .withConformance(SqlConformanceEnum.BABEL);
-        this.typeFactory = new JavaTypeFactoryImpl();
-        this.simple = new Catalog("schema");
-        CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
-        rootSchema.add(simple.schemaName, this.simple);
-        Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
-                rootSchema, Collections.singletonList(simple.schemaName), this.typeFactory, connectionConfig);
-
-        SqlOperatorTable operatorTable = SqlOperatorTables.chain(
-                SqlStdOperatorTable.instance()
-        );
-
-        SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
-                .withLenientOperatorLookup(connectionConfig.lenientOperatorLookup())
-                .withTypeCoercionEnabled(true)
-                .withConformance(connectionConfig.conformance())
-                .withDefaultNullCollation(connectionConfig.defaultNullCollation())
-                .withIdentifierExpansion(true);
-
-        this.validator = SqlValidatorUtil.newValidator(
-                operatorTable,
-                catalogReader,
-                this.typeFactory,
-                validatorConfig
-        );
-
-        // The optimizer does not seem to be invoked anywhere.
-        this.optimizer = new HepPlanner(new HepProgramBuilder().build());
-        /*
-        RelOptPlanner planner = new VolcanoPlanner(
-                    RelOptCostImpl.FACTORY,
-                    Contexts.of(connectionConfig));
-        planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
-         */
-        this.cluster = RelOptCluster.create(
-                this.optimizer,
-                new RexBuilder(this.typeFactory)
-        );
-
-        this.converterConfig = SqlToRelConverter.config()
-                .withTrimUnusedFields(true)
-                .withDecorrelationEnabled(true)
-                .withExpand(true);
-        this.converter = new SqlToRelConverter(
-                (type, query, schema, path) -> null,
-                this.validator,
-                catalogReader,
-                this.cluster,
-                StandardConvertletTable.INSTANCE,
-                this.converterConfig
-        );
-        this.simulator = new SqlSimulator(this.simple, this.typeFactory, this.validator);
-    }
-
     public static String getPlan(RelNode rel) {
         return RelOptUtil.dumpPlan("[Logical plan]", rel,
                 SqlExplainFormat.TEXT,
@@ -326,7 +327,9 @@ public class CalciteCompiler {
         SqlNode node = this.parse(sqlStatement);
         if (SqlKind.DDL.contains(node.getKind())) {
             SimulatorResult result = this.simulate(node);
-            TableDDL table = result.as(TableDDL.class);
+            if (result.is(DropTableStatement.class))
+                return result;
+            CreateTableStatement table = result.as(CreateTableStatement.class);
             if (table != null) {
                 return table;
             }
