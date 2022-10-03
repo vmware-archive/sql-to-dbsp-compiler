@@ -155,4 +155,15 @@ public class Utilities {
         if (exitCode != 0)
             throw new RuntimeException("Rust process failed with exit code " + exitCode);
     }
+
+    private static final char[] hexCode = "0123456789abcdef".toCharArray();
+
+    public static String toHex(byte[] data) {
+        StringBuilder r = new StringBuilder(data.length * 2);
+        for (byte b : data) {
+            r.append(hexCode[(b >> 4) & 0xF]);
+            r.append(hexCode[(b & 0xF)]);
+        }
+        return r.toString();
+    }
 }

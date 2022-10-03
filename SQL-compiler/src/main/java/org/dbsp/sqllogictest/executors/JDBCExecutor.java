@@ -30,9 +30,9 @@ import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.*;
 import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqllogictest.*;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
-import javax.xml.bind.DatatypeConverter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
@@ -226,7 +226,7 @@ public class JDBCExecutor extends SqlTestExecutor {
             String repr = rows + "\n";
             md.update(repr.getBytes());
             byte[] digest = md.digest();
-            String hash = DatatypeConverter.printHexBinary(digest).toLowerCase();
+            String hash = Utilities.toHex(digest);
             if (!description.hash.equals(hash))
                 throw new RuntimeException(query + " #" + queryNo +
                         ": Hash of data does not match");
