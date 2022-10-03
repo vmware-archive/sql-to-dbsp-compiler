@@ -224,6 +224,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
 
     @Override
     public DBSPExpression visitCall(RexCall call) {
+        //System.out.println(call + " " + call.getType());
         if (call.op.kind == SqlKind.SEARCH) {
             // TODO: ideally the optimizer should do this before handing the expression to us.
             // Then we can get rid of the rexBuilder field too.

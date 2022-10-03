@@ -118,14 +118,11 @@ public class Main {
         calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");
         // Calcite types /0 as not nullable!
         calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
-        HashSet<String> sltBugs = new HashSet<>();
-        // The following query is a bug in sqllogictest: the query claims to return
-        // an integer for a string column.
-        sltBugs.add("SELECT ALL col5 col0 FROM tab0 WHERE + col3 IS NOT NULL");
-        sltBugs.add("SELECT ALL col5 col0 FROM tab1 WHERE + col3 IS NOT NULL");
-        sltBugs.add("SELECT ALL col5 col0 FROM tab2 WHERE + col3 IS NOT NULL");
-        sltBugs.add("SELECT ALL col5 col0 FROM tab3 WHERE + col3 IS NOT NULL");
-        sltBugs.add("SELECT ALL col5 col0 FROM tab4 WHERE + col3 IS NOT NULL");
+        // The following two queries trigger a multiplication overflow.
+        // Seems like the semantics of overflow is implementation-defined in SQL.
+        calciteBugs.add("SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0");
+        calciteBugs.add("SELECT DISTINCT - + COUNT ( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0");
+
         int batchSize = 500;
         int skipPerFile = 0;
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
@@ -135,23 +132,22 @@ public class Main {
         executor = new NoExecutor();
         executor = dExec;
         JDBCExecutor jdbc = new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
-        jdbc.avoid(sltBugs);
-        executor = jdbc;
+        //executor = jdbc;
         DBSP_JDBC_Executor hybrid = new DBSP_JDBC_Executor(jdbc, true);
-        executor = hybrid;
+        //executor = hybrid;
         String benchDir = "../../sqllogictest/test";
-        // These are all the files we support from sqllogictest.
-        String[] files = new String[]{
-                //"s.test",
-                "random/select",  //done
-                "random/expr",
-                "random/groupby",
+        String[] files = new String[] {
+                "s.test",
+                //"random/select",  //done
+                //"random/expr", // done
+                //"random/groupby", // done
                 "random/aggregates",
                 "select1.test",
                 "select2.test",
                 "select3.test",
                 "select4.test",
                 "select5.test",
+                "index/",
         };
         if (argv.length > 1)
             files = Utilities.arraySlice(argv, 1);

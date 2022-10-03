@@ -678,7 +678,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             this.columnPermutation = null;
         }
 
-        void prepare(TableModifyStatement statement, TableDDL def, @Nullable SqlNodeList columnList) {
+        void prepare(TableModifyStatement statement, CreateTableStatement def, @Nullable SqlNodeList columnList) {
             this.logicalValueTranslation = null;
             this.columnPermutation = null;
             this.statement = statement;
@@ -1007,7 +1007,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         if (!(statement.node instanceof SqlInsert))
             throw new Unimplemented(statement);
         SqlInsert insert = (SqlInsert) statement.node;
-        TableDDL def = Utilities.getExists(transaction.perInputDefinition, statement.table);
+        CreateTableStatement def = Utilities.getExists(transaction.perInputDefinition, statement.table);
         this.dmTranslation.prepare(statement, def, insert.getTargetColumnList());
         if (statement.rel instanceof LogicalTableScan) {
             // Fake support for INSERT INTO table (SELECT * FROM otherTable)

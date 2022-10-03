@@ -54,7 +54,7 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
 
     DBSPFunction createInputFunction(CalciteToDBSPCompiler compiler, DBSPTransaction transaction)
             throws SQLException {
-        List<String> tables = this.statementExecutor.getAllTables();
+        List<String> tables = this.statementExecutor.getTableList();
         DBSPZSetLiteral[] tuple = new DBSPZSetLiteral[tables.size()];
         for (int i = 0; i < tables.size(); i++) {
             String table = tables.get(i);
@@ -70,7 +70,8 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
 
     public boolean statement(SqlStatement statement) throws SQLException {
         this.statementExecutor.statement(statement);
-        if (statement.statement.toLowerCase().contains("create table"))
+        String command = statement.statement.toLowerCase();
+        if (command.contains("create table") || command.contains("drop table"))
             super.statement(statement);
         return true;
     }

@@ -79,7 +79,7 @@ public class DBSPCompilerTests {
         Assert.assertNotNull(i);
         Assert.assertTrue(i instanceof TableModifyStatement);
         DBSPTransaction transaction = new DBSPTransaction();
-        transaction.addTable(def.to(TableDDL.class));
+        transaction.addTable(def.to(CreateTableStatement.class));
         compiler.extendTransaction(transaction, (TableModifyStatement)i);
         DBSPZSetLiteral t = transaction.perInputChange.get("T");
         Assert.assertNotNull(t);

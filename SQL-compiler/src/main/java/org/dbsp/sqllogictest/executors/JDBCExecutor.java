@@ -152,11 +152,19 @@ public class JDBCExecutor extends SqlTestExecutor {
                         row.add(String.format("%.3f", d));
                     break;
                 case 'I':
-                    long integer = rs.getLong(i);
-                    if (rs.wasNull())
-                        row.add("NULL");
-                    else
-                        row.add(String.format("%d", integer));
+                    try {
+                        long integer = rs.getLong(i);
+                        if (rs.wasNull())
+                            row.add("NULL");
+                        else
+                            row.add(String.format("%d", integer));
+                    } catch (SQLDataException | NumberFormatException ignore) {
+                        // This probably indicates a bug in the query, since
+                        // the query expects an integer, but the result cannot
+                        // be interpreted as such.
+                        // unparsable string: replace with 0
+                        row.add("0");
+                    }
                     break;
                 case 'T':
                     String s = rs.getString(i);
@@ -296,7 +304,7 @@ public class JDBCExecutor extends SqlTestExecutor {
                 CalciteToDBSPCompiler.weightType, rows.toArray(new DBSPExpression[0]));
     }
 
-    List<String> getAllTables() throws SQLException {
+    List<String> getTableList() throws SQLException {
         List<String> result = new ArrayList<>();
         assert this.connection != null;
         Statement stmt = this.connection.createStatement();
@@ -311,7 +319,7 @@ public class JDBCExecutor extends SqlTestExecutor {
 
     void dropAllTables() throws SQLException {
         assert this.connection != null;
-        List<String> tables = this.getAllTables();
+        List<String> tables = this.getTableList();
         for (String tableName: tables) {
             String del = "DROP TABLE " + tableName;
             Statement drop = this.connection.createStatement();

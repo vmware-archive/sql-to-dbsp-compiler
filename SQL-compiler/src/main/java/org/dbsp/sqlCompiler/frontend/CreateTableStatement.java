@@ -44,15 +44,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Describes the schema of a table as produced by a CREATE TABLE DDL statement.
+ * Describes a table as produced by a CREATE TABLE DDL statement.
  */
-public class TableDDL extends AbstractTable implements ScannableTable, SimulatorResult {
+public class CreateTableStatement extends AbstractTable implements ScannableTable, SimulatorResult {
     @Nullable
     private final SqlNode node;
     public final String name;
     public final List<ColumnInfo> columns;
 
-    public TableDDL(@Nullable SqlNode node, String name) {
+    public CreateTableStatement(@Nullable SqlNode node, String name) {
         this.node = node;
         this.name = name;
         this.columns = new ArrayList<>();

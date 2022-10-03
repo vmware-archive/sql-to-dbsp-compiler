@@ -12,7 +12,7 @@ import org.dbsp.sqlCompiler.dbsp.rust.type.*;
 import org.dbsp.sqlCompiler.dbsp.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.frontend.CalciteProgram;
-import org.dbsp.sqlCompiler.frontend.TableDDL;
+import org.dbsp.sqlCompiler.frontend.CreateTableStatement;
 import org.dbsp.sqllogictest.executors.RustTestGenerator;
 import org.dbsp.sqllogictest.SqlTestQueryOutputDescription;
 import org.dbsp.util.Linq;
@@ -99,7 +99,7 @@ public class EndToEndTests {
     private void createTester(PrintWriter writer, DBSPCircuit circuit, DBSPZSetLiteral expectedOutput) {
         DBSPZSetLiteral input = this.createInput();
         DBSPTransaction transaction = new DBSPTransaction();
-        transaction.addTable(new TableDDL(null, "T"));
+        transaction.addTable(new CreateTableStatement(null, "T"));
         transaction.addSet("T", input);
         DBSPFunction inputGen = transaction.inputGeneratingFunction("input");
         writer.println(ToRustVisitor.toRustString(inputGen));

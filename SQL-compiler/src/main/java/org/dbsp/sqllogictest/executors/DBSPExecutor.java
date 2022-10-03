@@ -237,7 +237,7 @@ public class DBSPExecutor extends SqlTestExecutor {
             // TODO: Calcite does not accept "TEXT"
             stat = stat.replace(" TEXT", " VARCHAR");
             SimulatorResult result = compiler.compile(stat);
-            transaction.addTable(result.to(TableDDL.class));
+            transaction.execute(result);
         }
     }
 
@@ -294,7 +294,8 @@ public class DBSPExecutor extends SqlTestExecutor {
             return true;
         if (command.startsWith("create distinct index"))
             return false;
-        if (command.contains("create table")) {
+        if (command.contains("create table") ||
+                command.contains("drop table")) {
             this.tablePreparation.add(statement);
         } else {
             this.inputPreparation.add(statement);

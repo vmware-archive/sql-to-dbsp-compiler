@@ -67,4 +67,8 @@ public class Catalog extends AbstractSchema {
         node.unparse(writer, 0, 0);
         return writer.toString();
     }
+
+    public void dropTable(String tableName) {
+        this.tableMap.remove(tableName);
+    }
 }
