@@ -26,8 +26,8 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
-import org.dbsp.sqlCompiler.frontend.SimulatorResult;
+import org.dbsp.sqlCompiler.compiler.frontend.CalciteCompiler;
+import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -46,7 +46,7 @@ public class CalciteCompilerTests {
                 ")";
 
         calcite.startCompilation();
-        SimulatorResult i = calcite.compile(ddl);
+        FrontEndStatement i = calcite.compile(ddl);
         Assert.assertNotNull(i);
     }
 
@@ -63,7 +63,7 @@ public class CalciteCompilerTests {
         calcite.startCompilation();
         calcite.compile(ddl);
         String insert = "INSERT INTO T VALUES(0, 0.0, true, 'Hi')";
-        SimulatorResult i = calcite.compile(insert);
+        FrontEndStatement i = calcite.compile(insert);
         Assert.assertNotNull(i);
     }
 }

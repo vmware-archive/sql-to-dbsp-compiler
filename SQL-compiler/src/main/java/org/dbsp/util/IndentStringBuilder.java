@@ -25,7 +25,7 @@
 
 package org.dbsp.util;
 
-import org.dbsp.sqlCompiler.dbsp.rust.ToIndentableString;
+import org.dbsp.sqlCompiler.ir.ToIndentableString;
 
 import java.util.List;
 

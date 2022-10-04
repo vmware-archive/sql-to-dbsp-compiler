@@ -24,17 +24,15 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.dbsp.visitors.ToRustVisitor;
-import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
-import org.dbsp.sqlCompiler.frontend.CalciteProgram;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class VisitorTests {
-    private CalciteCompiler compileDef() throws SqlParseException {
-        CalciteCompiler calcite = new CalciteCompiler();
+    private DBSPCompiler compileDef() throws SqlParseException {
+        DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +
@@ -44,18 +42,14 @@ public class VisitorTests {
                 ", COL6 DOUBLE" +
                 ")";
 
-        calcite.startCompilation();
-        calcite.compile(ddl);
-        return calcite;
+        compiler.compileStatement(ddl);
+        return compiler;
     }
 
     private DBSPCircuit compileQuery(String query) throws SqlParseException {
-        CalciteCompiler calcite = this.compileDef();
-        calcite.compile(query);
-        CalciteProgram program = calcite.getProgram();
-
-        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler(calcite);
-        return compiler.compile(program, "circuit");
+        DBSPCompiler compiler = this.compileDef();
+        compiler.compileStatement(query);
+        return compiler.getResult();
     }
 
     private void testQuery(String query) {

@@ -23,11 +23,11 @@
 
 package org.dbsp.sqllogictest.executors;
 
-import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.*;
-import org.dbsp.sqlCompiler.dbsp.rust.type.*;
+import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
+import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqllogictest.*;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;

@@ -24,20 +24,25 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
-import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
-import org.dbsp.sqlCompiler.dbsp.ExpressionCompiler;
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.*;
-import org.dbsp.sqlCompiler.dbsp.rust.type.*;
-import org.dbsp.sqlCompiler.dbsp.visitors.ToRustVisitor;
-import org.dbsp.sqlCompiler.frontend.*;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.frontend.statements.TableModifyStatement;
+import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.midend.ExpressionCompiler;
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.compiler.midend.TableContents;
+import org.dbsp.sqlCompiler.ir.DBSPFunction;
+import org.dbsp.sqlCompiler.ir.expression.*;
+import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
+import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
+import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
+import org.dbsp.sqlCompiler.ir.type.*;
+import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
 import org.dbsp.sqllogictest.*;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -92,33 +97,26 @@ public class DBSPExecutor extends SqlTestExecutor {
         this.queriesToRun = new ArrayList<>();
     }
 
-    DBSPFunction createInputFunction(CalciteToDBSPCompiler compiler, DBSPTransaction transaction) throws SqlParseException, SQLException {
-        for (SqlStatement statement : this.inputPreparation.statements) {
-            SimulatorResult sim = compiler.calciteCompiler.compile(statement.statement);
-            TableModifyStatement stat = (TableModifyStatement) sim;
-            compiler.extendTransaction(transaction, stat);
-        }
-        return transaction.inputGeneratingFunction(inputFunctionName);
+    DBSPFunction createInputFunction(DBSPCompiler compiler) throws SqlParseException {
+        for (SqlStatement statement : this.inputPreparation.statements)
+            compiler.compileStatement(statement.statement);
+        return compiler.getTableContents().functionWithTableContents(inputFunctionName);
     }
 
-    void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException, SQLException {
-        CalciteCompiler calcite = new CalciteCompiler();
-        calcite.startCompilation();
-        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler(calcite);
-
+    void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException {
+        DBSPCompiler compiler = new DBSPCompiler();
         final List<ProgramAndTester> codeGenerated = new ArrayList<>();
-        DBSPTransaction transaction = new DBSPTransaction();
         // Create input tables
-        this.createTables(calcite, transaction);
+        this.createTables(compiler);
         // Create function which generates inputs for all tests in this batch.
         // We know that all these tests consume the same input tables.
-        DBSPFunction inputFunction = this.createInputFunction(compiler, transaction);
+        DBSPFunction inputFunction = this.createInputFunction(compiler);
 
         // Generate a function and a tester for each query.
         int queryNo = 0;
         for (SqlTestQuery testQuery : this.queriesToRun) {
             try {
-                ProgramAndTester pc = this.generateTestCase(compiler, testQuery, transaction, queryNo);
+                ProgramAndTester pc = this.generateTestCase(compiler, testQuery, queryNo);
                 codeGenerated.add(pc);
                 this.queriesExecuted++;
             } catch (Throwable ex) {
@@ -142,17 +140,15 @@ public class DBSPExecutor extends SqlTestExecutor {
     }
 
     ProgramAndTester generateTestCase(
-            CalciteToDBSPCompiler compiler, SqlTestQuery testQuery,
-            DBSPTransaction transaction, int suffix)
+            DBSPCompiler compiler, SqlTestQuery testQuery, int suffix)
             throws SqlParseException {
         String origQuery = testQuery.query;
         String dbspQuery = "CREATE VIEW V AS (" + origQuery + ")";
         if (this.debug)
             System.out.println("Query " + suffix + ":\n" + dbspQuery);
-        compiler.calciteCompiler.startCompilation();
-        compiler.calciteCompiler.compile(dbspQuery);
-        CalciteProgram program = compiler.calciteCompiler.getProgram();
-        DBSPCircuit dbsp = compiler.compile(program, "c" + suffix);
+        compiler.newCircuit("gen" + suffix);
+        compiler.compileStatement(dbspQuery);
+        DBSPCircuit dbsp = compiler.getResult();
         DBSPZSetLiteral expectedOutput = null;
         if (testQuery.outputDescription.queryResults != null) {
             IDBSPContainer container;
@@ -209,9 +205,10 @@ public class DBSPExecutor extends SqlTestExecutor {
         }
 
         String rust = ToRustVisitor.toRustString(dbsp);
-        DBSPFunction func = RustTestGenerator.createTesterCode(
-                "tester" + suffix, inputFunctionName, transaction,
-                dbsp, expectedOutput, testQuery.outputDescription);
+        DBSPFunction func = createTesterCode(
+                "tester" + suffix, dbsp,
+                compiler.getTableContents(),
+                expectedOutput, testQuery.outputDescription);
         return new ProgramAndTester(rust, func);
     }
 
@@ -228,7 +225,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         }
     }
 
-    void createTables(CalciteCompiler compiler, DBSPTransaction transaction) throws SqlParseException {
+    void createTables(DBSPCompiler compiler) throws SqlParseException {
         for (SqlStatement statement : this.tablePreparation.statements) {
             String stat = statement.statement;
             // TODO: this is wrong, but I can't get the Calcite parser
@@ -236,8 +233,7 @@ public class DBSPExecutor extends SqlTestExecutor {
             stat = stat.replace("PRIMARY KEY", "");
             // TODO: Calcite does not accept "TEXT"
             stat = stat.replace(" TEXT", " VARCHAR");
-            SimulatorResult result = compiler.compile(stat);
-            transaction.execute(result);
+            compiler.compileStatement(stat);
         }
     }
 
@@ -288,6 +284,115 @@ public class DBSPExecutor extends SqlTestExecutor {
         return result;
     }
 
+    /**
+     * Generates a Rust function which tests a DBSP circuit.
+     * @param name          Name of the generated function.
+     * @param circuit       DBSP circuit that will be tested.
+     * @param output        Expected data from the circuit.
+     * @param description   Description of the expected outputs.
+     * @return              The code for a function that runs the circuit with the specified
+     *                      input and tests the produced output.
+     */
+    static DBSPFunction createTesterCode(
+            String name,
+            DBSPCircuit circuit,
+            TableContents contents,
+            @Nullable DBSPZSetLiteral output,
+            SqlTestQueryOutputDescription description) {
+        List<DBSPStatement> list = new ArrayList<>();
+        list.add(new DBSPLetStatement("circuit",
+                new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true));
+        DBSPType circuitOutputType = circuit.getOutputType(0);
+        // the following may not be the same, since SqlLogicTest sometimes lies about the output type
+        DBSPType outputType = output != null ? new DBSPTypeRawTuple(output.getNonVoidType()) : circuitOutputType;
+        DBSPExpression[] arguments = new DBSPExpression[circuit.getInputTables().size()];
+        // True if the output is a zset of vectors (generated for orderby queries)
+        boolean isVector = circuitOutputType.to(DBSPTypeZSet.class).elementType.is(DBSPTypeVec.class);
+
+        list.add(new DBSPLetStatement("_in",
+                new DBSPApplyExpression(DBSPExecutor.inputFunctionName, DBSPTypeAny.instance)));
+        for (int i = 0; i < arguments.length; i++) {
+            String inputI = circuit.getInputTables().get(i);
+            int index = contents.getTableIndex(inputI);
+            arguments[i] = new DBSPFieldExpression(null,
+                    new DBSPVariableReference("_in", DBSPTypeAny.instance), index);
+        }
+        list.add(new DBSPLetStatement("output",
+                new DBSPApplyExpression("circuit", outputType, arguments)));
+
+        DBSPExpression sort = new DBSPEnumValue("SortOrder", description.order.toString());
+        DBSPExpression output0 = new DBSPFieldExpression(null,
+                new DBSPVariableReference("output", DBSPTypeAny.instance), 0);
+
+        if (description.getExpectedOutputSize() >= 0) {
+            DBSPExpression count;
+            if (isVector) {
+                count = new DBSPApplyExpression("weighted_vector_count",
+                        DBSPTypeUSize.instance,
+                        new DBSPBorrowExpression(output0));
+            } else {
+                count = new DBSPApplyMethodExpression("weighted_count",
+                        DBSPTypeUSize.instance,
+                        output0);
+            }
+            list.add(new DBSPExpressionStatement(
+                    new DBSPApplyExpression("assert_eq!", null,
+                            count, new DBSPISizeLiteral(description.getExpectedOutputSize()))));
+        }if (output != null) {
+            if (description.columnTypes != null) {
+                DBSPExpression columnTypes = new DBSPStringLiteral(description.columnTypes);
+                DBSPTypeZSet oType = output.getNonVoidType().to(DBSPTypeZSet.class);
+                String functionProducingStrings;
+                DBSPType elementType;
+                if (isVector) {
+                    functionProducingStrings = "zset_of_vectors_to_strings";
+                    elementType = oType.elementType.to(DBSPTypeVec.class).getElementType();
+                } else {
+                    functionProducingStrings = "zset_to_strings";
+                    elementType = oType.elementType;
+                }
+                DBSPExpression zset_to_strings = new DBSPQualifyTypeExpression(
+                        new DBSPVariableReference(functionProducingStrings, DBSPTypeAny.instance),
+                        elementType,
+                        oType.weightType
+                );
+                list.add(new DBSPExpressionStatement(
+                        new DBSPApplyExpression("assert_eq!", null,
+                                new DBSPApplyExpression(functionProducingStrings, DBSPTypeAny.instance,
+                                        new DBSPBorrowExpression(output0),
+                                        columnTypes,
+                                        sort),
+                                new DBSPApplyExpression(zset_to_strings,
+                                        new DBSPBorrowExpression(output),
+                                        columnTypes,
+                                        sort))));
+            } else {
+                list.add(new DBSPExpressionStatement(new DBSPApplyExpression(
+                        "assert_eq!", null, output0, output)));
+            }
+        } else {
+            if (description.columnTypes == null)
+                throw new RuntimeException("Expected column types to be supplied");
+            DBSPExpression columnTypes = new DBSPStringLiteral(description.columnTypes);
+            if (description.hash == null)
+                throw new RuntimeException("Expected hash to be supplied");
+            String hash = isVector ? "hash_vectors" : "hash";
+            list.add(new DBSPLetStatement("_hash",
+                    new DBSPApplyExpression(hash, DBSPTypeString.instance,
+                            new DBSPBorrowExpression(output0),
+                            columnTypes,
+                            sort)));
+            list.add(
+                    new DBSPExpressionStatement(
+                            new DBSPApplyExpression("assert_eq!", null,
+                                    new DBSPVariableReference("_hash", DBSPTypeString.instance),
+                                    new DBSPStringLiteral(description.hash))));
+        }
+        DBSPExpression body = new DBSPBlockExpression(list, null);
+        return new DBSPFunction(name, new ArrayList<>(), null, body)
+                .addAnnotation("#[test]");
+    }
+
     public boolean statement(SqlStatement statement) throws SQLException {
         String command = statement.statement.toLowerCase();
         if (command.startsWith("create index"))
@@ -321,7 +426,6 @@ public class DBSPExecutor extends SqlTestExecutor {
         writer.println(ToRustVisitor.toRustString(inputFunction));
         for (ProgramAndTester pt: functions) {
             writer.println(pt.program);
-            writer.println("#[test]");
             writer.println(ToRustVisitor.toRustString(pt.tester));
         }
         writer.close();
