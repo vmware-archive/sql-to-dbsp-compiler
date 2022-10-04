@@ -24,11 +24,11 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
-import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
-import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.DBSPRawTupleExpression;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.midend.TableContents;
+import org.dbsp.sqlCompiler.ir.DBSPFunction;
+import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqllogictest.SqlStatement;
 import org.dbsp.sqllogictest.SqlTestFile;
 
@@ -52,7 +52,7 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
         this.statementExecutor = executor;
     }
 
-    DBSPFunction createInputFunction(CalciteToDBSPCompiler compiler, DBSPTransaction transaction)
+    DBSPFunction createInputFunction(CalciteToDBSPCompiler compiler, TableContents transaction)
             throws SQLException {
         List<String> tables = this.statementExecutor.getTableList();
         DBSPZSetLiteral[] tuple = new DBSPZSetLiteral[tables.size()];

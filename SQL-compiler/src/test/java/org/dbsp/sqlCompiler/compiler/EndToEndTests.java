@@ -1,26 +1,12 @@
 package org.dbsp.sqlCompiler.compiler;
 
-import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.dbsp.CalciteToDBSPCompiler;
-import org.dbsp.sqlCompiler.dbsp.DBSPTransaction;
-import org.dbsp.sqlCompiler.dbsp.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.dbsp.rust.DBSPFunction;
-import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.*;
-import org.dbsp.sqlCompiler.dbsp.rust.expression.literal.*;
-import org.dbsp.sqlCompiler.dbsp.rust.type.*;
-import org.dbsp.sqlCompiler.dbsp.visitors.ToRustVisitor;
-import org.dbsp.sqlCompiler.frontend.CalciteCompiler;
-import org.dbsp.sqlCompiler.frontend.CalciteProgram;
-import org.dbsp.sqlCompiler.frontend.CreateTableStatement;
-import org.dbsp.sqllogictest.executors.RustTestGenerator;
-import org.dbsp.sqllogictest.SqlTestQueryOutputDescription;
-import org.dbsp.util.Linq;
-import org.dbsp.util.Utilities;
-import org.junit.BeforeClass;
+import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
+import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeDouble;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeInteger;
 import org.junit.Test;
-
-import java.io.*;
 
 /**
  * Test end-to-end by compiling some DDL statements and view
@@ -28,107 +14,7 @@ import java.io.*;
  * by inserting data in the input tables and reading data
  * from the declared views.
  */
-public class EndToEndTests {
-    static final String rustDirectory = "../temp/src";
-    static final String testFilePath = rustDirectory + "/test0.rs";
-
-    @SuppressWarnings("SpellCheckingInspection")
-    @BeforeClass
-    public static void generateLib() throws IOException {
-        SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
-        Utilities.writeRustMain(rustDirectory + "/main.rs",
-                Linq.list("test0"));
-    }
-
-    private CalciteCompiler compileDef() throws SqlParseException {
-        CalciteCompiler calcite = new CalciteCompiler();
-        String ddl = "CREATE TABLE T (\n" +
-                "COL1 INT NOT NULL" +
-                ", COL2 DOUBLE NOT NULL" +
-                ", COL3 BOOLEAN NOT NULL" +
-                ", COL4 VARCHAR NOT NULL" +
-                ", COL5 INT" +
-                ", COL6 DOUBLE" +
-                ")";
-
-        calcite.startCompilation();
-        calcite.compile(ddl);
-        return calcite;
-    }
-
-    private DBSPCircuit compileQuery(String query) throws SqlParseException {
-        CalciteCompiler calcite = this.compileDef();
-        calcite.compile(query);
-        CalciteProgram program = calcite.getProgram();
-
-        CalciteToDBSPCompiler compiler = new CalciteToDBSPCompiler(calcite);
-        return compiler.compile(program, "circuit");
-    }
-
-    private final DBSPTupleExpression e0 = new DBSPTupleExpression(
-            new DBSPIntegerLiteral(10),
-            new DBSPDoubleLiteral(12.0),
-            DBSPBoolLiteral.True,
-            new DBSPStringLiteral("Hi"),
-            DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)),
-            DBSPLiteral.none(DBSPTypeDouble.instance.setMayBeNull(true))
-    );
-    private final DBSPTupleExpression e1 = new DBSPTupleExpression(
-            new DBSPIntegerLiteral(10),
-            new DBSPDoubleLiteral(1.0),
-            DBSPBoolLiteral.False,
-            new DBSPStringLiteral("Hi"),
-            new DBSPIntegerLiteral(1, true),
-            new DBSPDoubleLiteral(0.0, true)
-    );
-    private final DBSPZSetLiteral z0 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0);
-    private final DBSPZSetLiteral z1 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e1);
-    private final DBSPZSetLiteral empty = new DBSPZSetLiteral(this.z0.getNonVoidType());
-
-    /**
-     * Returns the table containing:
-     * -------------------------------------------
-     * | 10 | 12.0 | true  | Hi | NULL    | NULL |
-     * | 10 |  1.0 | false | Hi | Some[1] |  0.0 |
-     * -------------------------------------------
-     */
-    private DBSPZSetLiteral createInput() {
-        return new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0, e1);
-    }
-
-    private void createTester(PrintWriter writer, DBSPCircuit circuit, DBSPZSetLiteral expectedOutput) {
-        DBSPZSetLiteral input = this.createInput();
-        DBSPTransaction transaction = new DBSPTransaction();
-        transaction.addTable(new CreateTableStatement(null, "T"));
-        transaction.addSet("T", input);
-        DBSPFunction inputGen = transaction.inputGeneratingFunction("input");
-        writer.println(ToRustVisitor.toRustString(inputGen));
-        SqlTestQueryOutputDescription description = new SqlTestQueryOutputDescription();
-        description.columnTypes = null;
-        description.setValueCount(expectedOutput.size());
-        description.order = SqlTestQueryOutputDescription.SortOrder.Row;
-        DBSPFunction tester = RustTestGenerator.createTesterCode(
-                "tester", "input", transaction,
-                circuit, expectedOutput, description);
-        writer.println("#[test]");
-        writer.println(ToRustVisitor.toRustString(tester));
-    }
-
-    private void testQuery(String query, DBSPZSetLiteral expectedOutput) {
-        try {
-            query = "CREATE VIEW V AS " + query;
-            DBSPCircuit circuit = this.compileQuery(query);
-            PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-            writer.println(ToRustVisitor.generatePreamble());
-            writer.println(ToRustVisitor.toRustString(circuit));
-            this.createTester(writer, circuit, expectedOutput);
-            writer.close();
-            Utilities.compileAndTestRust(rustDirectory, false);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
+public class EndToEndTests extends BaseSQLTests {
     @Test
     public void projectTest() {
         String query = "SELECT T.COL3 FROM T";

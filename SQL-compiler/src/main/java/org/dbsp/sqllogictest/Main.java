@@ -26,7 +26,7 @@
 package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.dbsp.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Utilities;
 
@@ -62,7 +62,7 @@ public class Main {
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
         private final SqlTestExecutor executor;
-        SqlTestExecutor.TestStatistics statistics;
+        final SqlTestExecutor.TestStatistics statistics;
         private final QueryAcceptancePolicy policy;
 
         /**
@@ -111,8 +111,7 @@ public class Main {
         }
     }
 
-    @SuppressWarnings("SpellCheckingInspection")
-    public static void main(String[] argv) throws IOException {
+    public static SqlTestExecutor getExecutor(String[] argv) {
         // Calcite cannot parse this query
         final HashSet<String> calciteBugs = new HashSet<>();
         calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");
@@ -123,9 +122,6 @@ public class Main {
         calciteBugs.add("SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0");
         calciteBugs.add("SELECT DISTINCT - + COUNT ( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0");
 
-        int batchSize = 500;
-        int skipPerFile = 0;
-        SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         DBSPExecutor dExec = new DBSPExecutor(true);
         dExec.avoid(calciteBugs);
         SqlTestExecutor executor;
@@ -135,9 +131,17 @@ public class Main {
         //executor = jdbc;
         DBSP_JDBC_Executor hybrid = new DBSP_JDBC_Executor(jdbc, true);
         //executor = hybrid;
+        return executor;
+    }
+
+    @SuppressWarnings("SpellCheckingInspection")
+    public static void main(String[] argv) throws IOException {
+        SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
+        SqlTestExecutor executor = getExecutor(argv);
         String benchDir = "../../sqllogictest/test";
+        int batchSize = 500;
+        int skipPerFile = 0;
         String[] files = new String[] {
-                "s.test",
                 //"random/select",  //done
                 //"random/expr", // done
                 //"random/groupby", // done
