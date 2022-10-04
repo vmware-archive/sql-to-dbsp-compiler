@@ -28,12 +28,10 @@ import org.apache.calcite.sql.SqlNode;
 import javax.annotation.Nullable;
 
 public class DropTableStatement extends FrontEndStatement {
-    public final SqlNode node;
     public final String tableName;
 
     public DropTableStatement(@Nullable SqlNode node, String statement, String tableName) {
         super(node, statement);
-        this.node = node;
         this.tableName = tableName;
     }
 

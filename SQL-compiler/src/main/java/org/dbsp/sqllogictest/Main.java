@@ -62,7 +62,7 @@ public class Main {
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
         private final SqlTestExecutor executor;
-        SqlTestExecutor.TestStatistics statistics;
+        final SqlTestExecutor.TestStatistics statistics;
         private final QueryAcceptancePolicy policy;
 
         /**

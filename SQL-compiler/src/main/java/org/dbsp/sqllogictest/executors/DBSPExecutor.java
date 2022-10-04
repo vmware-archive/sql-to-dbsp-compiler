@@ -25,7 +25,6 @@ package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.frontend.statements.TableModifyStatement;
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.midend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
@@ -75,7 +74,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     private final boolean execute;
     private int batchSize;  // Number of queries to execute together
     private int skip;       // Number of queries to skip in each test file.
-    SqlTestPrepareInput inputPreparation;
+    final SqlTestPrepareInput inputPreparation;
     SqlTestPrepareTables tablePreparation;
     private final List<SqlTestQuery> queriesToRun;
 

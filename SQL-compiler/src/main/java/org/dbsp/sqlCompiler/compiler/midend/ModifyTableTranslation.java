@@ -63,7 +63,7 @@ class ModifyTableTranslation {
     @Nullable
     DBSPTypeTuple resultType;
     @Nullable
-    TableModifyStatement statement;
+    final TableModifyStatement statement;
 
     public ModifyTableTranslation(TableModifyStatement statement,
                                   CreateTableStatement tableDefinition,

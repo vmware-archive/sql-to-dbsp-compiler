@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * All the statements compiled y the front-end, in order.
+ * All the statements compiled by the front-end, in order.
  */
 public class FrontEndResult {
     public final List<FrontEndStatement> statements;

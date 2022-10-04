@@ -937,6 +937,8 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     }
 
     public DBSPCircuit compile(FrontEndResult fromFrontEnd) {
+        if (this.circuit == null)
+            throw new RuntimeException("Circuit not initialized?");
         for (FrontEndStatement statement: fromFrontEnd.statements)
             this.compile(statement);
         return this.circuit;

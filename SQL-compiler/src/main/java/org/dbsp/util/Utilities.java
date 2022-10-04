@@ -104,8 +104,8 @@ public class Utilities {
      * @param value  Value to insert in map.
      * @return       The inserted value.
      */
-    public static <K, V, VE extends V> VE putNew(@Nullable Map<K, V> map, K key, VE value) {
-        V previous = Objects.requireNonNull(map).put(Objects.requireNonNull(key), Objects.requireNonNull(value));
+    public static <K, V, VE extends V> VE putNew(Map<K, V> map, K key, VE value) {
+        V previous = map.put(Objects.requireNonNull(key), Objects.requireNonNull(value));
         if (previous != null)
             throw new RuntimeException("Key " + key + " already mapped to " + previous + " when adding " + value);
         return value;

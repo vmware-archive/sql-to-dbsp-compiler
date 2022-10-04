@@ -35,7 +35,7 @@ public class Unimplemented extends RuntimeException {
         super("Not yet implemented");
     }
 
-    public Unimplemented(@Nullable Object obj) {
+    public Unimplemented(Object obj) {
         super("Not yet implemented: " + obj.getClass().toString() + ":" + obj);
     }
 
