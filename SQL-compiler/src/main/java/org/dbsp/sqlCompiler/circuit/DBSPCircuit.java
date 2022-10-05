@@ -35,6 +35,7 @@ import org.dbsp.sqlCompiler.ir.type.IHasType;
 import org.dbsp.util.Linq;
 import org.dbsp.util.NameGen;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,11 +80,24 @@ public class DBSPCircuit extends DBSPNode {
             this.operators.add(operator);
     }
 
+    public void declare(IDBSPDeclaration declaration) {
+        this.declarations.add(declaration);
+    }
+
     public DBSPLetStatement declareLocal(String prefix, DBSPExpression init) {
         String name = new NameGen(prefix).toString();
         DBSPLetStatement let = new DBSPLetStatement(name, init);
-        this.declarations.add(let);
+        this.declare(let);
         return let;
+    }
+
+    @Nullable
+    public DBSPOperator getInputOperator(String tableName) {
+        for (DBSPSourceOperator source: this.inputOperators) {
+            if (source.outputName.equals(tableName))
+                return source;
+        }
+        return null;
     }
 
     @Override

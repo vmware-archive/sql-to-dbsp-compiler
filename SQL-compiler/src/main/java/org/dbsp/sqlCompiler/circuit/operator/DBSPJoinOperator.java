@@ -31,14 +31,17 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import javax.annotation.Nullable;
 
 public class DBSPJoinOperator extends DBSPOperator {
-    public DBSPJoinOperator(@Nullable Object node, DBSPType resultType,
+    public final DBSPType elementResultType;
+
+    public DBSPJoinOperator(@Nullable Object node, DBSPType elementResultType,
                             // Closure from key, valueLeft, valueRight to result type
                             DBSPExpression function, boolean isMultiset,
                             DBSPOperator left, DBSPOperator right) {
-        super(node, "stream_join", function, TypeCompiler.makeZSet(resultType), isMultiset);
+        super(node, "stream_join", function, TypeCompiler.makeZSet(elementResultType), isMultiset);
         this.addInput(left);
         this.addInput(right);
-        this.checkResultType(function, resultType);
+        this.elementResultType = elementResultType;
+        this.checkResultType(function, elementResultType);
     }
 
     @Override
@@ -46,8 +49,6 @@ public class DBSPJoinOperator extends DBSPOperator {
         if (!visitor.preorder(this)) return;
         if (this.function != null)
             this.function.accept(visitor);
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
         visitor.postorder(this);
     }
 }

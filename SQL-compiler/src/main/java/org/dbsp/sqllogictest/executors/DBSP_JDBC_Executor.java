@@ -64,7 +64,7 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
             tuple[i] = lit;
         }
         DBSPRawTupleExpression result = new DBSPRawTupleExpression(tuple);
-        return new DBSPFunction(inputFunctionName, new ArrayList<>(),
+        return new DBSPFunction("input", new ArrayList<>(),
                 result.getType(), result);
     }
 

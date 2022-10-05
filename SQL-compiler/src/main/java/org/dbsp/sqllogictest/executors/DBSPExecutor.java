@@ -70,7 +70,6 @@ public class DBSPExecutor extends SqlTestExecutor {
     private final boolean debug = false;
     static final String rustDirectory = "../temp/src/";
     static final String testFileName = "test";
-    protected static final String inputFunctionName = "input";
     private final boolean execute;
     private int batchSize;  // Number of queries to execute together
     private int skip;       // Number of queries to skip in each test file.
@@ -99,7 +98,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     DBSPFunction createInputFunction(DBSPCompiler compiler) throws SqlParseException {
         for (SqlStatement statement : this.inputPreparation.statements)
             compiler.compileStatement(statement.statement);
-        return compiler.getTableContents().functionWithTableContents(inputFunctionName);
+        return compiler.getTableContents().functionWithTableContents("input");
     }
 
     void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException {
@@ -115,7 +114,8 @@ public class DBSPExecutor extends SqlTestExecutor {
         int queryNo = 0;
         for (SqlTestQuery testQuery : this.queriesToRun) {
             try {
-                ProgramAndTester pc = this.generateTestCase(compiler, testQuery, queryNo);
+                ProgramAndTester pc = this.generateTestCase(
+                        compiler, inputFunction, testQuery, queryNo);
                 codeGenerated.add(pc);
                 this.queriesExecuted++;
             } catch (Throwable ex) {
@@ -139,7 +139,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     }
 
     ProgramAndTester generateTestCase(
-            DBSPCompiler compiler, SqlTestQuery testQuery, int suffix)
+            DBSPCompiler compiler, DBSPFunction inputGeneratingFunction, SqlTestQuery testQuery, int suffix)
             throws SqlParseException {
         String origQuery = testQuery.query;
         String dbspQuery = "CREATE VIEW V AS (" + origQuery + ")";
@@ -206,6 +206,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         String rust = ToRustVisitor.toRustString(dbsp);
         DBSPFunction func = createTesterCode(
                 "tester" + suffix, dbsp,
+                inputGeneratingFunction,
                 compiler.getTableContents(),
                 expectedOutput, testQuery.outputDescription);
         return new ProgramAndTester(rust, func);
@@ -295,12 +296,14 @@ public class DBSPExecutor extends SqlTestExecutor {
     static DBSPFunction createTesterCode(
             String name,
             DBSPCircuit circuit,
+            DBSPFunction inputGeneratingFunction,
             TableContents contents,
             @Nullable DBSPZSetLiteral output,
             SqlTestQueryOutputDescription description) {
         List<DBSPStatement> list = new ArrayList<>();
-        list.add(new DBSPLetStatement("circuit",
-                new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true));
+        DBSPLetStatement circ = new DBSPLetStatement("circ",
+                new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true);
+        list.add(circ);
         DBSPType circuitOutputType = circuit.getOutputType(0);
         // the following may not be the same, since SqlLogicTest sometimes lies about the output type
         DBSPType outputType = output != null ? new DBSPTypeRawTuple(output.getNonVoidType()) : circuitOutputType;
@@ -309,7 +312,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         boolean isVector = circuitOutputType.to(DBSPTypeZSet.class).elementType.is(DBSPTypeVec.class);
 
         list.add(new DBSPLetStatement("_in",
-                new DBSPApplyExpression(DBSPExecutor.inputFunctionName, DBSPTypeAny.instance)));
+                new DBSPApplyExpression(inputGeneratingFunction.getReference())));
         for (int i = 0; i < arguments.length; i++) {
             String inputI = circuit.getInputTables().get(i);
             int index = contents.getTableIndex(inputI);
@@ -317,7 +320,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                     new DBSPVariableReference("_in", DBSPTypeAny.instance), index);
         }
         list.add(new DBSPLetStatement("output",
-                new DBSPApplyExpression("circuit", outputType, arguments)));
+                new DBSPApplyExpression("circ", outputType, arguments)));
 
         DBSPExpression sort = new DBSPEnumValue("SortOrder", description.order.toString());
         DBSPExpression output0 = new DBSPFieldExpression(null,

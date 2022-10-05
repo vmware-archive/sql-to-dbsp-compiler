@@ -25,21 +25,20 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.backend.IncrementalizeVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.compiler.midend.TableContents;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeInteger;
-import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;
 import org.junit.BeforeClass;
@@ -57,12 +56,20 @@ public class BaseSQLTests {
     static final String testFilePath = rustDirectory + "/test0.rs";
 
     static class InputOutputPair {
-        public final TableContents transaction;
-        public final DBSPZSetLiteral result;
+        public final DBSPZSetLiteral[] inputs;
+        public final DBSPZSetLiteral[] outputs;
 
-        InputOutputPair(TableContents transaction, DBSPZSetLiteral result) {
-            this.transaction = transaction;
-            this.result = result;
+        @SuppressWarnings("unused")
+        InputOutputPair(DBSPZSetLiteral[] inputs, DBSPZSetLiteral[] outputs) {
+            this.inputs = inputs;
+            this.outputs = outputs;
+        }
+
+        InputOutputPair(DBSPZSetLiteral input, DBSPZSetLiteral output) {
+            this.inputs = new DBSPZSetLiteral[1];
+            this.inputs[0] = input;
+            this.outputs = new DBSPZSetLiteral[1];
+            this.outputs[0] = output;
         }
     }
 
@@ -74,8 +81,36 @@ public class BaseSQLTests {
                 Linq.list("test0"));
     }
 
+    void createTester(PrintWriter writer, DBSPCircuit circuit,
+                      InputOutputPair... streams) {
+        DBSPFunction tester = createTesterCode(circuit, streams);
+        writer.println(ToRustVisitor.toRustString(tester));
+    }
+
+    void testQueryBase(String query, boolean incremental, InputOutputPair... streams) {
+        try {
+            query = "CREATE VIEW V AS " + query;
+            DBSPCompiler compiler = this.compileQuery(query);
+            PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
+            writer.println(ToRustVisitor.generatePreamble());
+            DBSPCircuit circuit = compiler.getResult();
+            if (incremental) {
+                IncrementalizeVisitor inc = new IncrementalizeVisitor("circuit");
+                circuit.accept(inc);
+                circuit = inc.getResult();
+            }
+            writer.println(ToRustVisitor.toRustString(circuit));
+            this.createTester(writer, circuit, streams);
+            writer.close();
+            Utilities.compileAndTestRust(rustDirectory, false);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     DBSPCompiler compileQuery(String query) throws SqlParseException {
         DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
+        compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +
@@ -129,63 +164,20 @@ public class BaseSQLTests {
      */
     static DBSPFunction createTesterCode(
             DBSPCircuit circuit,
-            List<InputOutputPair> data) {
+            InputOutputPair... data) {
         List<DBSPStatement> list = new ArrayList<>();
-        list.add(new DBSPLetStatement("circuit",
-                new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true));
-        DBSPType circuitOutputType = circuit.getOutputType(0);
-        // the following may not be the same, since SqlLogicTest sometimes lies about the output type
-        DBSPExpression[] arguments = new DBSPExpression[circuit.getInputTables().size()];
-        list.add(new DBSPLetStatement("_in",
-                new DBSPApplyExpression("input", DBSPTypeAny.instance)));
-
+        DBSPLetStatement circ = new DBSPLetStatement("circuit",
+                new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true);
+        list.add(circ);
         for (InputOutputPair pairs: data) {
-            TableContents transaction = pairs.transaction;
-            DBSPZSetLiteral output = pairs.result;
-
-            for (int i = 0; i < arguments.length; i++) {
-                String inputI = circuit.getInputTables().get(i);
-                int index = transaction.getTableIndex(inputI);
-                arguments[i] = new DBSPFieldExpression(null,
-                        new DBSPVariableReference("_in", DBSPTypeAny.instance), index);
-            }
-            list.add(new DBSPLetStatement("output",
-                    new DBSPApplyExpression("circuit", circuitOutputType, arguments)));
-            DBSPExpression output0 = new DBSPFieldExpression(null,
-                    new DBSPVariableReference("output", DBSPTypeAny.instance), 0);
+            DBSPLetStatement out = new DBSPLetStatement("output",
+                    new DBSPApplyExpression(circ.getVarReference(), pairs.inputs));
+            list.add(out);
             list.add(new DBSPExpressionStatement(new DBSPApplyExpression(
-                    "assert_eq!", null, output0, output)));
+                    "assert_eq!", null, out.getVarReference(), new DBSPRawTupleExpression(pairs.outputs))));
         }
         DBSPExpression body = new DBSPBlockExpression(list, null);
         return new DBSPFunction("test", new ArrayList<>(), null, body)
                 .addAnnotation("#[test]");
-    }
-
-    void createTester(PrintWriter writer, DBSPCircuit circuit,
-                      TableContents contents, DBSPZSetLiteral expectedOutput) {
-        DBSPZSetLiteral input = this.createInput();
-        contents.addToTable("T", input);
-        DBSPFunction inputGen = contents.functionWithTableContents("input");
-        writer.println(ToRustVisitor.toRustString(inputGen));
-        List<InputOutputPair> pairs = new ArrayList<>();
-        pairs.add(new InputOutputPair(contents, expectedOutput));
-        DBSPFunction tester = createTesterCode(circuit, pairs);
-        writer.println(ToRustVisitor.toRustString(tester));
-    }
-
-    void testQuery(String query, DBSPZSetLiteral expectedOutput) {
-        try {
-            query = "CREATE VIEW V AS " + query;
-            DBSPCompiler compiler = this.compileQuery(query);
-            PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-            writer.println(ToRustVisitor.generatePreamble());
-            DBSPCircuit circuit = compiler.getResult();
-            writer.println(ToRustVisitor.toRustString(circuit));
-            this.createTester(writer, circuit, compiler.getTableContents(), expectedOutput);
-            writer.close();
-            Utilities.compileAndTestRust(rustDirectory, false);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
     }
 }

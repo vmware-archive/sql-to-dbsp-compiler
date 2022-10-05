@@ -15,6 +15,11 @@ import org.junit.Test;
  * from the declared views.
  */
 public class EndToEndTests extends BaseSQLTests {
+    void testQuery(String query, DBSPZSetLiteral expectedOutput) {
+        DBSPZSetLiteral input = this.createInput();
+        super.testQueryBase(query, false, new InputOutputPair(input, expectedOutput));
+    }
+
     @Test
     public void projectTest() {
         String query = "SELECT T.COL3 FROM T";

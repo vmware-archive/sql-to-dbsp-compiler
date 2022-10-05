@@ -21,7 +21,22 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler;
+package org.dbsp.sqlCompiler.circuit.operator;
 
-public class StreamingTests extends BaseSQLTests {
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+
+import javax.annotation.Nullable;
+
+public abstract class DBSPUnaryOperator extends DBSPOperator {
+    protected DBSPUnaryOperator(@Nullable Object node, String operation,
+                                @Nullable DBSPExpression function, DBSPType outputType,
+                                boolean isMultiset, DBSPOperator source) {
+        super(node, operation, function, outputType, isMultiset);
+        this.addInput(source);
+    }
+
+    public DBSPOperator input() {
+        return this.inputs.get(0);
+    }
 }

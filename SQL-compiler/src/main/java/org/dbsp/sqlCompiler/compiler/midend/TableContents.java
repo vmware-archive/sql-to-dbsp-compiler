@@ -41,6 +41,8 @@ import java.util.Map;
 /**
  * This class keeps track of the contents of the tables as
  * it exists because of the execution of simple INSERT or DELETE statements.
+ * It gives an instantaneous view of the table contents, after the execution
+ * of a sequence of statements.
  */
 public class TableContents {
     final List<String> tablesCreated = new ArrayList<>();
@@ -115,9 +117,5 @@ public class TableContents {
             if (this.tablesCreated.get(i).equals(tableName))
                 return i;
         throw new RuntimeException("No table named " + tableName);
-    }
-
-    public void setTable(String tableName, DBSPZSetLiteral value) {
-        Utilities.putNew(this.tableContents, tableName, value);
     }
 }

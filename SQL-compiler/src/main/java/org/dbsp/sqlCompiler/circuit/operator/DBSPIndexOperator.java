@@ -31,14 +31,18 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
 
 import javax.annotation.Nullable;
 
-public class DBSPIndexOperator extends DBSPOperator {
+public class DBSPIndexOperator extends DBSPUnaryOperator {
+    public final DBSPType keyType;
+    public final DBSPType elementType;
+
     public DBSPIndexOperator(@Nullable Object node, DBSPExpression indexFunction,
-                             DBSPType keyType, DBSPType resultType, boolean isMultiset,
+                             DBSPType keyType, DBSPType elementType, boolean isMultiset,
                              DBSPOperator input) {
         super(node, "index_with", indexFunction,
-                new DBSPTypeIndexedZSet(node, keyType, resultType, CalciteToDBSPCompiler.weightType),
-                isMultiset);
-        this.addInput(input);
+                new DBSPTypeIndexedZSet(node, keyType, elementType, CalciteToDBSPCompiler.weightType),
+                isMultiset, input);
+        this.keyType = keyType;
+        this.elementType = elementType;
     }
 
     @Override
@@ -46,8 +50,6 @@ public class DBSPIndexOperator extends DBSPOperator {
         if (!visitor.preorder(this)) return;
         if (this.function != null)
             this.function.accept(visitor);
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
         visitor.postorder(this);
     }
 }

@@ -24,20 +24,17 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.Visitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-public class DBSPDifferentialOperator extends DBSPOperator {
-    protected DBSPDifferentialOperator(@Nullable Object node, DBSPType outputType, boolean isMultiset, String outputName) {
-        super(node, "differentiate", null, outputType, isMultiset, outputName);
+public class DBSPDifferentialOperator extends DBSPUnaryOperator {
+    public DBSPDifferentialOperator(@Nullable Object node, DBSPOperator source) {
+        super(node, "differentiate", null, source.outputType, source.isMultiset, source);
     }
 
     @Override
     public void accept(Visitor visitor) {
         if (!visitor.preorder(this)) return;
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
         visitor.postorder(this);
     }
 }
