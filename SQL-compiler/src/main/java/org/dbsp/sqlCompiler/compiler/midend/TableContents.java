@@ -50,11 +50,11 @@ public class TableContents {
      * Remember the last statement that created each table.
      */
     final Map<String, CreateTableStatement> tableCreation = new HashMap<>();
-        /**
-         * Keep track of the contents of each table.
-         */
+    /**
+     * Keep track of the contents of each table.
+     */
     @Nullable
-        final Map<String, DBSPZSetLiteral> tableContents;
+    final Map<String, DBSPZSetLiteral> tableContents;
 
     public TableContents(boolean trackTableContents) {
         if (trackTableContents)
@@ -117,9 +117,5 @@ public class TableContents {
             if (this.tablesCreated.get(i).equals(tableName))
                 return i;
         throw new RuntimeException("No table named " + tableName);
-    }
-
-    public void setTable(String tableName, DBSPZSetLiteral value) {
-        Utilities.putNew(this.tableContents, tableName, value);
     }
 }

@@ -103,15 +103,17 @@ public class NaiveIncrementalTests extends EndToEndTests {
     @Test @Override
     public void constAggregateDoubleExpression() {
         String query = "SELECT 34 / SUM (1), 20 / SUM(2) FROM T GROUP BY COL1";
-        this.testConstantOutput(query, new DBSPZSetLiteral(
-                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
-                new DBSPIntegerLiteral(17), new DBSPIntegerLiteral(5))));
+        this.testQuery(query,
+                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                        new DBSPTupleExpression(
+                                new DBSPIntegerLiteral(17),
+                                new DBSPIntegerLiteral(5))));
     }
 
     @Test @Override
     public void constAggregateExpression2() {
         String query = "SELECT 34 / AVG (1) FROM T GROUP BY COL1";
-        this.testConstantOutput(query,
+        this.testQuery(query,
                 new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
                         new DBSPTupleExpression(new DBSPIntegerLiteral(34))));
     }
