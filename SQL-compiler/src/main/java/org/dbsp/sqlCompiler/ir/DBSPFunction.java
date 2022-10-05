@@ -26,7 +26,9 @@ package org.dbsp.sqlCompiler.ir;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPVariableReference;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeFunction;
 import org.dbsp.sqlCompiler.ir.type.IHasType;
 
 import javax.annotation.Nullable;
@@ -36,7 +38,7 @@ import java.util.List;
 /**
  * A (Rust) function.
  */
-public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
+public class DBSPFunction extends DBSPNode implements IDBSPDeclaration, IHasType {
     public static class Argument extends DBSPNode implements IHasType {
         public final String name;
         public final DBSPType type;
@@ -66,6 +68,7 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
     public final DBSPType returnType;
     public final DBSPExpression body;
     public final List<String> annotations;
+    public final DBSPTypeFunction type;
 
     public DBSPFunction(String name, List<Argument> arguments, @Nullable DBSPType returnType, DBSPExpression body) {
         super(null);
@@ -74,6 +77,10 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
         this.returnType = returnType;
         this.body = body;
         this.annotations = new ArrayList<>();
+        DBSPType[] argTypes = new DBSPType[arguments.size()];
+        for (int i = 0; i < argTypes.length; i++)
+            argTypes[i] = arguments.get(i).getNonVoidType();
+        this.type = new DBSPTypeFunction(returnType, argTypes);
     }
 
     public DBSPFunction addAnnotation(String annotation) {
@@ -86,6 +93,12 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
         return this.name;
     }
 
+    @Nullable
+    @Override
+    public DBSPType getType() {
+        return this.type;
+    }
+
     @Override
     public void accept(Visitor visitor) {
         if (!visitor.preorder(this)) return;
@@ -95,5 +108,9 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration {
             argument.accept(visitor);
         this.body.accept(visitor);
         visitor.postorder(this);
+    }
+
+    public DBSPExpression getReference() {
+        return new DBSPVariableReference(this.name, this.type);
     }
 }

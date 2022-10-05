@@ -41,6 +41,8 @@ import java.util.Map;
 /**
  * This class keeps track of the contents of the tables as
  * it exists because of the execution of simple INSERT or DELETE statements.
+ * It gives an instantaneous view of the table contents, after the execution
+ * of a sequence of statements.
  */
 public class TableContents {
     final List<String> tablesCreated = new ArrayList<>();
@@ -48,11 +50,11 @@ public class TableContents {
      * Remember the last statement that created each table.
      */
     final Map<String, CreateTableStatement> tableCreation = new HashMap<>();
-    /**
-     * Keep track of the contents of each table.
-     */
+        /**
+         * Keep track of the contents of each table.
+         */
     @Nullable
-    final Map<String, DBSPZSetLiteral> tableContents;
+        final Map<String, DBSPZSetLiteral> tableContents;
 
     public TableContents(boolean trackTableContents) {
         if (trackTableContents)

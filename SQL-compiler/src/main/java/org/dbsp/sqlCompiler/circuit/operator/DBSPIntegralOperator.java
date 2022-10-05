@@ -24,20 +24,17 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.Visitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-public class DBSPIntegralOperator extends DBSPOperator {
-    protected DBSPIntegralOperator(@Nullable Object node, DBSPType outputType, boolean isMultiset, String outputName) {
-        super(node, "integrate", null, outputType, isMultiset, outputName);
+public class DBSPIntegralOperator extends DBSPUnaryOperator {
+    public DBSPIntegralOperator(@Nullable Object node, DBSPOperator source) {
+        super(node, "integrate", null, source.outputType, source.isMultiset, source);
     }
 
     @Override
     public void accept(Visitor visitor) {
         if (!visitor.preorder(this)) return;
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
         visitor.postorder(this);
     }
 }

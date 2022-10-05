@@ -64,6 +64,21 @@ import java.util.function.Consumer;
  * and an output for each view.
  */
 public class CalciteToDBSPCompiler extends RelVisitor {
+    /**
+     * If true, the inputs to the circuit are generated from the CREATE TABLE
+     * statements.  Otherwise they are generated from the LogicalTableScan
+     * operations in a view plan.
+     */
+    boolean generateInputsFromTables = false;
+
+    /**
+     * If true the inputs to the circuit are generated from the CREATE TABLE
+     * statements.
+     */
+    public void setGenerateInputsFromTables(boolean generateInputsFromTables) {
+        this.generateInputsFromTables = generateInputsFromTables;
+    }
+
     final boolean debug = false;
     /**
      * Type of weight used in generated z-sets.
@@ -349,9 +364,19 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public void visitScan(LogicalTableScan scan) {
         List<String> name = scan.getTable().getQualifiedName();
         String tableName = name.get(name.size() - 1);
-        DBSPType type = this.convertType(scan.getRowType());
-        DBSPSourceOperator result = new DBSPSourceOperator(scan, this.makeZSet(type), tableName);
-        this.assignOperator(scan, result);
+        @Nullable
+        DBSPOperator source = this.getCircuit().getInputOperator(tableName);
+        if (source != null) {
+            // Multiple queries can share an input.
+            // Or the input may have been created by a CREATE TABLE statement.
+            Utilities.putNew(this.nodeOperator, scan, source);
+        } else {
+            if (this.generateInputsFromTables)
+                throw new RuntimeException("Could not find input for table " + tableName);
+            DBSPType rowType = this.convertType(scan.getRowType());
+            DBSPSourceOperator result = new DBSPSourceOperator(scan, this.makeZSet(rowType), tableName);
+            this.assignOperator(scan, result);
+        }
     }
 
     void assignOperator(RelNode rel, DBSPOperator op) {
@@ -439,7 +464,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         condition = new DBSPClosureExpression(filter.getCondition(), condition, t.asRefParameter());
         DBSPOperator input = this.getOperator(filter.getInput());
         DBSPFilterOperator fop = new DBSPFilterOperator(
-                filter, this.getCircuit().declareLocal("cond", condition).getVarReference(), type, input);
+                filter, this.getCircuit().declareLocal("cond", condition).getVarReference(), input);
         this.assignOperator(filter, fop);
     }
 
@@ -467,7 +492,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 DBSPWildcardPattern.instance, DBSPLiteral.none(some.getNonVoidType())));
         DBSPMatchExpression match = new DBSPMatchExpression(var, cases, some.getNonVoidType());
         DBSPClosureExpression filterFunc = new DBSPClosureExpression(match, var.asRefParameter());
-        DBSPOperator filter = new DBSPFlatMapOperator(join, filterFunc, rowType, input);
+        DBSPOperator filter = new DBSPFlatMapOperator(join, filterFunc, TypeCompiler.makeZSet(rowType), input);
         this.getCircuit().addOperator(filter);
         return filter;
     }
@@ -564,7 +589,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 // Technically if blit.value == null or !blit.value then
                 // the filter is false, and the result is empty.  But hopefully
                 // the calcite optimizer won't allow that.
-                DBSPFilterOperator fop = new DBSPFilterOperator(join, condition, resultType, joinResult);
+                DBSPFilterOperator fop = new DBSPFilterOperator(join, condition, joinResult);
                 this.getCircuit().addOperator(joinResult);
                 inner = fop;
             }
@@ -897,14 +922,24 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             // TODO: connect the result of the query compilation with
             // the fields of rel; for now we assume that these are 1/1
             DBSPOperator op = this.getOperator(rel);
-            DBSPSinkOperator o = new DBSPSinkOperator(
-                    view, op.getNonVoidType(), view.viewName,
-                    view.statement, op.isMultiset, op);
+            DBSPSinkOperator o = new DBSPSinkOperator(view, view.viewName, view.statement, op);
             this.getCircuit().addOperator(o);
             return o;
         } else if (statement.is(CreateTableStatement.class) ||
                 statement.is(DropTableStatement.class)) {
             this.tableContents.execute(statement);
+            CreateTableStatement create = statement.as(CreateTableStatement.class);
+            if (create != null && this.generateInputsFromTables) {
+                // We create an input for the circuit.  The inputs
+                // could be created by visiting LogicalTableScan, but if a table
+                // is *not* used in a view, it won't have a corresponding input
+                // in the circuit.
+                String tableName = create.tableName;
+                CreateTableStatement def = this.tableContents.getTableDefinition(tableName);
+                DBSPType rowType = def.getRowType();
+                DBSPSourceOperator result = new DBSPSourceOperator(create, this.makeZSet(rowType), tableName);
+                this.getCircuit().addOperator(result);
+            }
             return null;
         } else if (statement.is(TableModifyStatement.class)) {
             TableModifyStatement modify = statement.to(TableModifyStatement.class);
@@ -933,6 +968,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 return result;
             }
         }
+        assert statement.node != null;
         throw new Unimplemented(statement.node);
     }
 

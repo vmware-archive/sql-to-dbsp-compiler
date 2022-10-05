@@ -32,6 +32,7 @@ import org.dbsp.util.NameGen;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A DBSP operator that applies a function to the inputs and produces an output.
@@ -140,5 +141,9 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
     @Override
     public DBSPType getType() {
         return this.outputType;
+    }
+
+    public DBSPExpression getFunction() {
+        return Objects.requireNonNull(this.function);
     }
 }

@@ -27,8 +27,6 @@ import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.ir.DBSPFile;
-import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.path.DBSPPathSegment;
 import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
@@ -56,19 +54,6 @@ public abstract class Visitor {
     public Visitor(boolean visitSuper) {
         this.visitSuper = visitSuper;
         this.context = new ArrayList<>();
-    }
-
-    protected void push(IDBSPNode node) {
-        this.context.add(node);
-    }
-
-    protected void pop(IDBSPNode node) {
-        int len = this.context.size();
-        if (len == 0)
-            throw new RuntimeException("Cannot pop from empty context");
-        if (this.context.get(len - 1) != node)
-            throw new RuntimeException("Expected " + node + " at end of context");
-        this.context.remove(len - 1);
     }
 
     /************************* PREORDER *****************************/
@@ -275,9 +260,14 @@ public abstract class Visitor {
         else return true;
     }
 
+    public boolean preorder(DBSPUnaryOperator node) {
+        if (this.visitSuper) return this.preorder((DBSPOperator) node);
+        else return true;
+    }
+
     /// Operators
     public boolean preorder(DBSPIndexOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
         else return true;
     }
     
@@ -297,7 +287,7 @@ public abstract class Visitor {
     }
 
     public boolean preorder(DBSPAggregateOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
         else return true;
     }
 
@@ -307,27 +297,37 @@ public abstract class Visitor {
     }
 
     public boolean preorder(DBSPMapOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPDifferentialOperator node) {
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPIntegralOperator node) {
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
         else return true;
     }
 
     public boolean preorder(DBSPNegateOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
         else return true;
     }
 
     public boolean preorder(DBSPFlatMapOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
         else return true;
     }
 
     public boolean preorder(DBSPFilterOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
         else return true;
     }
 
     public boolean preorder(DBSPDistinctOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
         else return true;
     }
 
@@ -371,7 +371,7 @@ public abstract class Visitor {
         if (this.visitSuper) return this.preorder((DBSPPattern) node);
         else return true;
     }
-    
+
     // Expressions
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -697,7 +697,7 @@ public abstract class Visitor {
 
     /// Operators
     public void postorder(DBSPIndexOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
     }
 
     public void postorder(DBSPSubtractOperator node) {
@@ -713,7 +713,7 @@ public abstract class Visitor {
     }
 
     public void postorder(DBSPAggregateOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
     }
 
     public void postorder(DBSPConstantOperator node) {
@@ -721,23 +721,31 @@ public abstract class Visitor {
     }
 
     public void postorder(DBSPMapOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
+    }
+
+    public void postorder(DBSPDifferentialOperator node) {
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
+    }
+
+    public void postorder(DBSPIntegralOperator node) {
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
     }
 
     public void postorder(DBSPNegateOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
     }
 
     public void postorder(DBSPFlatMapOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
     }
 
     public void postorder(DBSPFilterOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
     }
 
     public void postorder(DBSPDistinctOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
     }
 
     public void postorder(DBSPSinkOperator node) {

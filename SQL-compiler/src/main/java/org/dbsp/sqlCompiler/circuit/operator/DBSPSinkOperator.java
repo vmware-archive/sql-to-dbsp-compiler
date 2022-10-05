@@ -31,10 +31,10 @@ import javax.annotation.Nullable;
 public class DBSPSinkOperator extends DBSPOperator {
     public final String query;
 
-    public DBSPSinkOperator(@Nullable Object node, DBSPType outputType,
+    public DBSPSinkOperator(@Nullable Object node,
                             String outputName, String query,
-                            boolean isMultiset, DBSPOperator input) {
-        super(node, "inspect", null, outputType, isMultiset, outputName);
+                            DBSPOperator input) {
+        super(node, "inspect", null, input.outputType, input.isMultiset, outputName);
         this.addInput(input);
         this.query = query;
     }
@@ -48,8 +48,6 @@ public class DBSPSinkOperator extends DBSPOperator {
         if (!visitor.preorder(this)) return;
         if (this.function != null)
             this.function.accept(visitor);
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
         visitor.postorder(this);
     }
 }

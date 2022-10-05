@@ -27,10 +27,9 @@ import org.dbsp.sqlCompiler.ir.Visitor;
 
 import javax.annotation.Nullable;
 
-public class DBSPNegateOperator extends DBSPOperator {
+public class DBSPNegateOperator extends DBSPUnaryOperator {
     public DBSPNegateOperator(@Nullable Object node, DBSPOperator input) {
-        super(node, "neg", null, input.outputType, input.isMultiset);
-        this.addInput(input);
+        super(node, "neg", null, input.outputType, input.isMultiset, input);
     }
 
     @Override
@@ -38,8 +37,6 @@ public class DBSPNegateOperator extends DBSPOperator {
         if (!visitor.preorder(this)) return;
         if (this.function != null)
             this.function.accept(visitor);
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
         visitor.postorder(this);
     }
 }

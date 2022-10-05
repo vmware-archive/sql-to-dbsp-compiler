@@ -30,13 +30,15 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-public class DBSPMapOperator extends DBSPOperator {
+public class DBSPMapOperator extends DBSPUnaryOperator {
+    public final DBSPType outputElementType;
+
     public DBSPMapOperator(@Nullable Object node, DBSPExpression expression,
-                           DBSPType resultType, DBSPOperator input) {
-        super(node, "map", expression, TypeCompiler.makeZSet(resultType), true);
-        this.addInput(input);
-        this.checkResultType(expression, resultType);
+                           DBSPType elementType, DBSPOperator input) {
+        super(node, "map", expression, TypeCompiler.makeZSet(elementType), true, input);
+        this.checkResultType(expression, elementType);
         this.checkArgumentFunctionType(expression, 0, input);
+        this.outputElementType = elementType;
     }
 
     @Override
@@ -44,8 +46,6 @@ public class DBSPMapOperator extends DBSPOperator {
         if (!visitor.preorder(this)) return;
         if (this.function != null)
             this.function.accept(visitor);
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
         visitor.postorder(this);
     }
 }

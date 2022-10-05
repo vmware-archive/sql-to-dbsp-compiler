@@ -142,9 +142,9 @@ public class Main {
         int batchSize = 500;
         int skipPerFile = 0;
         String[] files = new String[] {
-                //"random/select",  //done
-                //"random/expr", // done
-                //"random/groupby", // done
+                "random/select",  //done
+                "random/expr", // done
+                "random/groupby", // done
                 "random/aggregates",
                 "select1.test",
                 "select2.test",

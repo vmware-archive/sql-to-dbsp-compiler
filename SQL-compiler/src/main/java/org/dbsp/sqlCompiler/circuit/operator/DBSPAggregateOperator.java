@@ -31,12 +31,17 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
 
 import javax.annotation.Nullable;
 
-public class DBSPAggregateOperator extends DBSPOperator {
-    public DBSPAggregateOperator(@Nullable Object node, DBSPExpression function, DBSPType keyType, DBSPType outputElementType, DBSPOperator input) {
+public class DBSPAggregateOperator extends DBSPUnaryOperator {
+    public final DBSPType keyType;
+    public final DBSPType outputElementType;
+
+    public DBSPAggregateOperator(@Nullable Object node, DBSPExpression function,
+                                 DBSPType keyType, DBSPType outputElementType, DBSPOperator input) {
         super(node, "stream_aggregate", function,
-                new DBSPTypeIndexedZSet(node, keyType, outputElementType, CalciteToDBSPCompiler.weightType), false);
-        this.addInput(input);
+                new DBSPTypeIndexedZSet(node, keyType, outputElementType, CalciteToDBSPCompiler.weightType), false, input);
         this.checkResultType(function, outputElementType);
+        this.keyType = keyType;
+        this.outputElementType = outputElementType;
     }
 
     @Override
@@ -44,8 +49,6 @@ public class DBSPAggregateOperator extends DBSPOperator {
         if (!visitor.preorder(this)) return;
         if (this.function != null)
             this.function.accept(visitor);
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
         visitor.postorder(this);
     }
 }

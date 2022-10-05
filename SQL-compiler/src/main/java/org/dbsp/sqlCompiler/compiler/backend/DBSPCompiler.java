@@ -51,6 +51,15 @@ public class DBSPCompiler {
         this.midend = new CalciteToDBSPCompiler(this.frontend, true);
     }
 
+    /**
+     * If argument is true, the inputs to the circuit are generated from the CREATE TABLE
+     * statements.  Otherwise they are generated from the LogicalTableScan
+     * operations in a view plan.  Default value is 'false'.
+     */
+    public void setGenerateInputsFromTables(boolean generateInputsFromTables) {
+        this.midend.setGenerateInputsFromTables(generateInputsFromTables);
+    }
+
     public DBSPCompiler newCircuit(String circuitName) {
         this.midend.newCircuit(circuitName);
         return this;

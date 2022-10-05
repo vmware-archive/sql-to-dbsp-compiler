@@ -30,11 +30,10 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-public class DBSPFlatMapOperator extends DBSPOperator {
+public class DBSPFlatMapOperator extends DBSPUnaryOperator {
     public DBSPFlatMapOperator(@Nullable Object node, DBSPExpression expression,
                                DBSPType resultType, DBSPOperator input) {
-        super(node, "flat_map", expression, TypeCompiler.makeZSet(resultType), true);
-        this.addInput(input);
+        super(node, "flat_map", expression, resultType, true, input);
         this.checkArgumentFunctionType(expression, 0, input);
     }
 
@@ -43,8 +42,6 @@ public class DBSPFlatMapOperator extends DBSPOperator {
         if (!visitor.preorder(this)) return;
         if (this.function != null)
             this.function.accept(visitor);
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
         visitor.postorder(this);
     }
 }

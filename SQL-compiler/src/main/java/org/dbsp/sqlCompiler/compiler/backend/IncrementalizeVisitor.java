@@ -21,22 +21,29 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.circuit.operator;
+package org.dbsp.sqlCompiler.compiler.backend;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.circuit.operator.*;
 
-import javax.annotation.Nullable;
-
-public class DBSPDistinctOperator extends DBSPUnaryOperator {
-    public DBSPDistinctOperator(@Nullable Object node, DBSPOperator input) {
-        super(node, "distinct", null, input.outputType, false, input);
+public class IncrementalizeVisitor extends CircuitCloneVisitor {
+    public IncrementalizeVisitor(String outputName) {
+        super(outputName);
     }
 
     @Override
-    public void accept(Visitor visitor) {
-        if (!visitor.preorder(this)) return;
-        if (this.function != null)
-            this.function.accept(visitor);
-        visitor.postorder(this);
+    public void postorder(DBSPSourceOperator operator) {
+        this.result.addOperator(operator);
+        DBSPIntegralOperator integral = new DBSPIntegralOperator(null, operator);
+        this.map(operator, integral);
+    }
+
+    @Override
+    public void postorder(DBSPSinkOperator operator) {
+        DBSPOperator source = this.mapped(operator.input());
+        DBSPDifferentialOperator diff = new DBSPDifferentialOperator(null, source);
+        DBSPSinkOperator sink = new DBSPSinkOperator(operator.getNode(), operator.outputName,
+                operator.query, diff);
+        this.result.addOperator(diff);
+        this.map(operator, sink);
     }
 }

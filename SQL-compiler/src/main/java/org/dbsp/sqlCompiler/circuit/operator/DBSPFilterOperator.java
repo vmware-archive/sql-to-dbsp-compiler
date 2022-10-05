@@ -29,15 +29,12 @@ import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeBool;
 
-public class DBSPFilterOperator extends DBSPOperator {
-    public DBSPFilterOperator(Object filter, DBSPExpression condition, DBSPType type, DBSPOperator input) {
-        super(filter, "filter", condition, TypeCompiler.makeZSet(type), input.isMultiset);
-        this.addInput(input);
+import javax.annotation.Nullable;
+
+public class DBSPFilterOperator extends DBSPUnaryOperator {
+    public DBSPFilterOperator(@Nullable Object filter, DBSPExpression condition, DBSPOperator input) {
+        super(filter, "filter", condition, input.outputType, input.isMultiset, input);
         this.checkResultType(condition, DBSPTypeBool.instance);
-        if (!input.outputType.same(this.outputType)) {
-            throw new RuntimeException("Filter operator input type " + input.outputType +
-                    " does not match output type " + this.outputType);
-        }
     }
 
     @Override
@@ -45,8 +42,6 @@ public class DBSPFilterOperator extends DBSPOperator {
         if (!visitor.preorder(this)) return;
         if (this.function != null)
             this.function.accept(visitor);
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
         visitor.postorder(this);
     }
 }

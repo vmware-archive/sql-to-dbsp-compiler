@@ -62,10 +62,22 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         }
     }
 
+    protected DBSPZSetLiteral(Map<DBSPExpression, Integer> data,
+                              DBSPTypeZSet zsetType) {
+        super(null, zsetType, 0);
+        this.data = data;
+        this.zsetType = zsetType;
+    }
+
     public DBSPZSetLiteral(DBSPType type) {
         super(null, type, 0); // Value is unused, but needs to be non-null
         this.zsetType = this.getNonVoidType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
+    }
+
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    public DBSPZSetLiteral clone() {
+        return new DBSPZSetLiteral(new HashMap<>(this.data), this.zsetType);
     }
 
     public DBSPType getElementType() {
@@ -100,6 +112,14 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         other.data.forEach(this::add);
     }
 
+    public DBSPZSetLiteral negate() {
+        DBSPZSetLiteral result = new DBSPZSetLiteral(this.zsetType);
+        for (Map.Entry<DBSPExpression, Integer> entry: data.entrySet()) {
+            result.add(entry.getKey(), -entry.getValue());
+        }
+        return result;
+    }
+
     public int size() {
         return this.data.size();
     }
@@ -126,5 +146,11 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         for (DBSPExpression expr: this.data.keySet())
             expr.accept(visitor);
         visitor.postorder(this);
+    }
+
+    public DBSPZSetLiteral minus(DBSPZSetLiteral sub) {
+        DBSPZSetLiteral result = this.clone();
+        result.add(sub.negate());
+        return result;
     }
 }

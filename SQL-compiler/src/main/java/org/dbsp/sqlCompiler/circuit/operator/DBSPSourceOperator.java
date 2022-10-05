@@ -23,12 +23,13 @@
 
 package org.dbsp.sqlCompiler.circuit.operator;
 
-import org.apache.calcite.rel.RelNode;
 import org.dbsp.sqlCompiler.ir.Visitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
+import javax.annotation.Nullable;
+
 public class DBSPSourceOperator extends DBSPOperator {
-    public DBSPSourceOperator(RelNode node, DBSPType outputType, String name) {
+    public DBSPSourceOperator(@Nullable Object node, DBSPType outputType, String name) {
         super(node, "", null, outputType, false, name);
     }
 
@@ -37,8 +38,6 @@ public class DBSPSourceOperator extends DBSPOperator {
         if (!visitor.preorder(this)) return;
         if (this.function != null)
             this.function.accept(visitor);
-        for (DBSPOperator input: this.inputs)
-            input.accept(visitor);
         visitor.postorder(this);
     }
 }
