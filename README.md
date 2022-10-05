@@ -160,3 +160,43 @@ This executor is a combination of the DBSP executor and the JDBC
 executor, using a real database to store data in tables, but using
 DBSP as a query engine.  It should be able to execute all SqlLogicTest
 queries that are supported by the underlying database.
+
+#### SqlLogicTest Test results
+
+The DBSP executor has skipped the MySql tests.
+
+The JDBC_DBSP executor has been run against MySQL.
+
+The matrix represents the current test results; the numbers indicate
+the passing/failing tests in each category.  The failing test cases
+are detailed below.
+
+Test group            | DBSP        | JDBC_DBSP
+----------------------|------------:|--------------------
+random/select         | 1,120,329/0 |
+random/groupby        |  118,757/0  |
+random/expr           | 1,317,682/1 |
+random/aggregates     | 1,172,825/2 |
+select1               |             |
+select2               |             |
+select3               |             |
+select4               |             |
+select5               |             |
+index/delete          |             |
+index/in              |             |
+index/commute         |             |
+index/between         |             |
+index/orderby_nosort  |             |
+index/view            |             |
+index/random          |             |
+index/orderby         |             |
+evidence              |             |
+
+Failing tests with DBSP executor:
+
+- `SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )`, file `random/aggregates/slt_good_12.test`
+   The Calcite parser cannot parse this query.
+- `SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2`, file `random/expr/slt_good_12.test`
+   The Calcite compiler assigns a type of "integer" to the expression 27/0
+- `SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0`, file `random/aggregates/slt_good_96.test`
+   This test produces an overflow in the multiplication; the result of overflow is implementation-dependent.

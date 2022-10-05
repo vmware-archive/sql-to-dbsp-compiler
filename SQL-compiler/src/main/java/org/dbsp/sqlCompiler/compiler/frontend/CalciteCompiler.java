@@ -289,19 +289,22 @@ public class CalciteCompiler {
         if (debug)
             System.out.println("Before optimizer " + getPlan(rel));
 
-        for (HepProgram program: getOptimizationStages(rel)) {
-            HepPlanner planner = new HepPlanner(program);
-            planner.setRoot(rel);
-            rel = planner.findBestExp();
-            if (debug)
-                System.out.println("After optimizer stage " + getPlan(rel));
-        }
         RelBuilder relBuilder = this.converterConfig.getRelBuilderFactory().create(
                 cluster, null);
         // This converts correlated sub-queries into standard joins.
         rel = RelDecorrelator.decorrelateQuery(rel, relBuilder);
         if (debug)
             System.out.println("After decorrelator " + getPlan(rel));
+
+        int stage = 0;
+        for (HepProgram program: getOptimizationStages(rel)) {
+            HepPlanner planner = new HepPlanner(program);
+            planner.setRoot(rel);
+            rel = planner.findBestExp();
+            if (debug)
+                System.out.println("After optimizer stage " + stage + ":" + getPlan(rel));
+            stage++;
+        }
         return rel;
     }
 
