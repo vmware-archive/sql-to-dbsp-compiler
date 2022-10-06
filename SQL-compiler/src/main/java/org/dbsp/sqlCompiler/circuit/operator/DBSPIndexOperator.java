@@ -30,6 +30,7 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class DBSPIndexOperator extends DBSPUnaryOperator {
     public final DBSPType keyType;
@@ -51,5 +52,23 @@ public class DBSPIndexOperator extends DBSPUnaryOperator {
         if (this.function != null)
             this.function.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPIndexOperator(
+                    this.getNode(), this.getFunction(), this.keyType,
+                    this.elementType, this.isMultiset, newInputs.get(0));
+        return this;
+    }
+
+    @Override
+    public boolean shallowSameOperator(DBSPOperator other) {
+        if (!super.shallowSameOperator(other))
+            return false;
+        DBSPIndexOperator oi = other.to(DBSPIndexOperator.class);
+        return this.keyType == oi.keyType &&
+                this.elementType == oi.elementType;
     }
 }

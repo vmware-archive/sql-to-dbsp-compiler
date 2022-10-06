@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.util.IHasName;
+import org.dbsp.util.Linq;
 import org.dbsp.util.NameGen;
 
 import javax.annotation.Nullable;
@@ -89,7 +90,7 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
         if (function.getNonVoidType().is(DBSPTypeAny.class))
             return;
         DBSPType type = function.getNonVoidType().to(DBSPTypeFunction.class).resultType;
-        if (!expected.same(type))
+        if (!expected.sameType(type))
             throw new RuntimeException(this + ": Expected function to return " + expected +
                     " but it returns " + type);
     }
@@ -121,7 +122,7 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
         DBSPType argType = funcType.argumentTypes[arg];
         if (argType.is(DBSPTypeAny.class))
             return;
-        if (!sourceElementType.same(argType))
+        if (!sourceElementType.sameType(argType))
             throw new RuntimeException(this + ": Expected function to accept " + sourceElementType +
                     " as argument " + arg + " but it expects " + funcType.argumentTypes[arg]);
     }
@@ -145,5 +146,41 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
 
     public DBSPExpression getFunction() {
         return Objects.requireNonNull(this.function);
+    }
+
+    /**
+     * Return a version of this operator with the inputs replaced.
+     * @param newInputs  Inputs to use instead of the old ones.
+     * @param force      If true always return a new operator.
+     *                   If false and the inputs are the same this may return this.
+     */
+    public abstract DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force);
+
+    /**
+     * Return true if any of the inputs in `newInputs` is different from one of the inputs
+     * of this operator.
+     * @param newInputs  List of alternative inputs.
+     */
+    public boolean inputsDiffer(List<DBSPOperator> newInputs) {
+        if (this.inputs.size() != newInputs.size())
+            throw new RuntimeException("Trying to replace " + this.inputs.size() +
+                    " with " + newInputs.size() + " inputs");
+        for (boolean b: Linq.zip(this.inputs, newInputs, (l, r) -> l != r)) {
+            if (b)
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Shallow comparison that returns true if this and other are equal as
+     * pointers or are the same constructor and have fields equal as pointers.
+     */
+    public boolean shallowSameOperator(DBSPOperator other) {
+        return this.outputType == other.outputType &&
+                this.function == other.function &&
+                Linq.same(this.inputs, other.inputs) &&
+                this.operation.equals(other.operation) &&
+                this.outputType == other.outputType;
     }
 }

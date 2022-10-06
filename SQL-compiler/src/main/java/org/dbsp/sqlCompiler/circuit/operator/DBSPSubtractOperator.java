@@ -26,13 +26,14 @@ package org.dbsp.sqlCompiler.circuit.operator;
 import org.dbsp.sqlCompiler.ir.Visitor;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class DBSPSubtractOperator extends DBSPOperator {
     public DBSPSubtractOperator(@Nullable Object node, DBSPOperator left, DBSPOperator right) {
         super(node, "minus", null, left.outputType, false);
         this.addInput(left);
         this.addInput(right);
-        if (!left.outputType.same(right.outputType))
+        if (!left.outputType.sameType(right.outputType))
             throw new RuntimeException("Inputs do not have the same type " + left.outputType +
                     " and " + right.outputType);
     }
@@ -43,5 +44,13 @@ public class DBSPSubtractOperator extends DBSPOperator {
         if (this.function != null)
             this.function.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPSubtractOperator(
+                    this.getNode(), newInputs.get(0), newInputs.get(1));
+        return this;
     }
 }

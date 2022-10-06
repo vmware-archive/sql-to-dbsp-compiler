@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class DBSPJoinOperator extends DBSPOperator {
     public final DBSPType elementResultType;
@@ -50,5 +51,14 @@ public class DBSPJoinOperator extends DBSPOperator {
         if (this.function != null)
             this.function.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPJoinOperator(
+                    this.getNode(), this.elementResultType, this.getFunction(),
+                    this.isMultiset, newInputs.get(0), newInputs.get(1));
+        return this;
     }
 }

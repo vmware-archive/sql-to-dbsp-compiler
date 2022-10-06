@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.circuit.operator;
 import org.dbsp.sqlCompiler.ir.Visitor;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class DBSPNegateOperator extends DBSPUnaryOperator {
     public DBSPNegateOperator(@Nullable Object node, DBSPOperator input) {
@@ -38,5 +39,13 @@ public class DBSPNegateOperator extends DBSPUnaryOperator {
         if (this.function != null)
             this.function.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPNegateOperator(
+                    this.getNode(), newInputs.get(0));
+        return this;
     }
 }

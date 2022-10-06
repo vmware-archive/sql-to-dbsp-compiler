@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class DBSPFlatMapOperator extends DBSPUnaryOperator {
     public DBSPFlatMapOperator(@Nullable Object node, DBSPExpression expression,
@@ -43,5 +44,13 @@ public class DBSPFlatMapOperator extends DBSPUnaryOperator {
         if (this.function != null)
             this.function.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPFlatMapOperator(
+                    this.getNode(), this.getFunction(), this.outputType, newInputs.get(0));
+        return this;
     }
 }

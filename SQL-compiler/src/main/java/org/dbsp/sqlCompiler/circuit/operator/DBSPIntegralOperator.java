@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.circuit.operator;
 import org.dbsp.sqlCompiler.ir.Visitor;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class DBSPIntegralOperator extends DBSPUnaryOperator {
     public DBSPIntegralOperator(@Nullable Object node, DBSPOperator source) {
@@ -36,5 +37,13 @@ public class DBSPIntegralOperator extends DBSPUnaryOperator {
     public void accept(Visitor visitor) {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPIntegralOperator(
+                    this.getNode(), newInputs.get(0));
+        return this;
     }
 }

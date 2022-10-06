@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.ir.Visitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class DBSPConstantOperator extends DBSPOperator {
     public DBSPConstantOperator(@Nullable Object node, DBSPExpression value, boolean isMultiset) {
@@ -39,5 +40,12 @@ public class DBSPConstantOperator extends DBSPOperator {
         if (this.function != null)
             this.function.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPConstantOperator(this.getNode(), this.getFunction(), this.isMultiset);
+        return this;
     }
 }

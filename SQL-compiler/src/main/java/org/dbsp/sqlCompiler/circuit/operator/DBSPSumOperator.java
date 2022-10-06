@@ -34,7 +34,7 @@ public class DBSPSumOperator extends DBSPOperator {
         super(node, "sum", null, inputs.get(0).outputType, true);
         for (DBSPOperator op: inputs) {
             this.addInput(op);
-            if (!op.outputType.same(this.outputType)) {
+            if (!op.outputType.sameType(this.outputType)) {
                 throw new RuntimeException("Sum operator input type " + op.outputType +
                         " does not match output type " + this.outputType);
             }
@@ -51,5 +51,12 @@ public class DBSPSumOperator extends DBSPOperator {
         if (this.function != null)
             this.function.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPSumOperator(this.getNode(), newInputs);
+        return this;
     }
 }
