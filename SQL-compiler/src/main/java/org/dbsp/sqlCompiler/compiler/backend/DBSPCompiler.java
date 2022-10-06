@@ -30,6 +30,8 @@ import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.midend.TableContents;
 
+import javax.annotation.Nullable;
+
 /**
  * This class compiles SQL statements into DBSP circuits.
  * The protocol is:
@@ -65,8 +67,8 @@ public class DBSPCompiler {
         return this;
     }
 
-    public void compileStatement(String statement) throws SqlParseException {
-        FrontEndStatement fe = this.frontend.compile(statement);
+    public void compileStatement(String statement, @Nullable String comment) throws SqlParseException {
+        FrontEndStatement fe = this.frontend.compile(statement, comment);
         this.midend.compile(fe);
     }
 

@@ -418,6 +418,7 @@ public class ToRustVisitor extends Visitor {
                 .append("// ")
                 .append(operator.query)
                 .append("\n")
+                .append(operator.comment != null ? "// " + operator.comment + "\n" : "")
                 .append(operator.input().getName())
                 .append(".")
                 .append(operator.operation) // inspect
