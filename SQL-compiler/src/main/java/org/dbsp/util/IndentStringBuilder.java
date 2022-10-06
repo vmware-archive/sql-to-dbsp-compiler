@@ -62,7 +62,7 @@ public class IndentStringBuilder {
     }
 
     public <T extends ToIndentableString> void append(T value) {
-        value.toRustString(this);
+        value.toString(this);
     }
 
     public IndentStringBuilder append(int value) {
