@@ -113,4 +113,13 @@ public class DBSPCircuit extends DBSPNode {
             sink.accept(visitor);
         visitor.postorder(this);
     }
+
+    public boolean sameCircuit(DBSPCircuit other) {
+        if (this == other)
+            return true;
+        return Linq.all(Linq.zipSameLength(this.inputOperators, other.inputOperators, DBSPOperator::shallowSameOperator)) &&
+                Linq.all(Linq.zipSameLength(this.operators, other.operators, DBSPOperator::shallowSameOperator)) &&
+                Linq.all(Linq.zipSameLength(this.outputOperators, other.outputOperators, DBSPOperator::shallowSameOperator)) &&
+                Linq.same(this.declarations, other.declarations);
+    }
 }

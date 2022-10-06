@@ -431,13 +431,12 @@ public abstract class Visitor {
     }
 
     public boolean preorder(DBSPTupleExpression node) {
-        if (this.visitSuper) return this.preorder((DBSPExpression) node);
+        if (this.visitSuper) return this.preorder((DBSPBaseTupleExpression) node);
         else return true;
     }
 
     public boolean preorder(DBSPRawTupleExpression node) {
-        // We treat expression as the superclass
-        if (this.visitSuper) return this.preorder((DBSPExpression) node);
+        if (this.visitSuper) return this.preorder((DBSPBaseTupleExpression) node);
         else return true;
     }
 
@@ -828,12 +827,11 @@ public abstract class Visitor {
     }
 
     public void postorder(DBSPTupleExpression node) {
-        if (this.visitSuper) this.postorder((DBSPExpression) node);
+        if (this.visitSuper) this.postorder((DBSPBaseTupleExpression) node);
     }
 
     public void postorder(DBSPRawTupleExpression node) {
-        // We treat expression as the superclass
-        if (this.visitSuper) this.postorder((DBSPExpression) node);
+        if (this.visitSuper) this.postorder((DBSPBaseTupleExpression) node);
     }
 
     public void postorder(DBSPFieldExpression node) {

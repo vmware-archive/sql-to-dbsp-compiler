@@ -21,30 +21,14 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.path;
+package org.dbsp.sqlCompiler.circuit;
 
-import org.dbsp.sqlCompiler.circuit.DBSPInnerNode;
-import org.dbsp.sqlCompiler.ir.Visitor;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
-import org.dbsp.util.Linq;
 
-public class DBSPPath extends DBSPInnerNode {
-    public final DBSPPathSegment[] components;
+import javax.annotation.Nullable;
 
-    public DBSPPath(DBSPPathSegment... components) {
-        super(null);
-        this.components = components;
-    }
-
-    public DBSPPath(String... components) {
-        this(Linq.map(components, DBSPSimplePathSegment::new, DBSPSimplePathSegment.class));
-    }
-
-    @Override
-    public void accept(Visitor visitor) {
-        if (!visitor.preorder(this)) return;
-        for (DBSPPathSegment path: this.components)
-            path.accept(visitor);
-        visitor.postorder(this);
+public abstract class DBSPInnerNode extends DBSPNode {
+    protected DBSPInnerNode(@Nullable Object node) {
+        super(node);
     }
 }
