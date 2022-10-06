@@ -147,10 +147,10 @@ public class Main {
                 "random/expr", // done
                 "random/groupby", // done
                 "random/aggregates", // done
-                 */
                 "select1.test", // done
-                "select2.test",
-                "select3.test",
+                "select2.test", // done
+                "select3.test", // done
+                 */
                 "select4.test",
                 "select5.test",
                 "index/",

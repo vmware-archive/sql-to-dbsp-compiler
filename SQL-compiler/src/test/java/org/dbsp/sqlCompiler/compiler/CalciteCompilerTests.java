@@ -46,7 +46,7 @@ public class CalciteCompilerTests {
                 ")";
 
         calcite.startCompilation();
-        FrontEndStatement i = calcite.compile(ddl);
+        FrontEndStatement i = calcite.compile(ddl, null);
         Assert.assertNotNull(i);
     }
 
@@ -61,9 +61,9 @@ public class CalciteCompilerTests {
                 ")";
 
         calcite.startCompilation();
-        calcite.compile(ddl);
+        calcite.compile(ddl, null);
         String insert = "INSERT INTO T VALUES(0, 0.0, true, 'Hi')";
-        FrontEndStatement i = calcite.compile(insert);
+        FrontEndStatement i = calcite.compile(insert, null);
         Assert.assertNotNull(i);
     }
 }

@@ -51,8 +51,9 @@ public class CreateTableStatement extends FrontEndStatement {
     public final String tableName;
     public final List<ColumnInfo> columns;
 
-    public CreateTableStatement(@Nullable SqlNode node, String statement, String tableName) {
-        super(node, statement);
+    public CreateTableStatement(@Nullable SqlNode node, String statement,
+                                String tableName, @Nullable String comment) {
+        super(node, statement, comment);
         this.tableName = tableName;
         this.columns = new ArrayList<>();
     }

@@ -48,8 +48,9 @@ public class CreateViewStatement extends FrontEndStatement {
     @Nullable
     private RelRoot compiled;
 
-    public CreateViewStatement(SqlNode node, String viewName, String statement, SqlNode query) {
-        super(node, statement);
+    public CreateViewStatement(SqlNode node, String viewName, String statement,
+                               SqlNode query, @Nullable String comment) {
+        super(node, statement, comment);
         this.query = query;
         this.viewName = viewName;
         this.compiled = null;

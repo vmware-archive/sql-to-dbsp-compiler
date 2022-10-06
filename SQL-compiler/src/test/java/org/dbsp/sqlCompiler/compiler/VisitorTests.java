@@ -42,13 +42,13 @@ public class VisitorTests {
                 ", COL6 DOUBLE" +
                 ")";
 
-        compiler.compileStatement(ddl);
+        compiler.compileStatement(ddl, null);
         return compiler;
     }
 
     private DBSPCircuit compileQuery(String query) throws SqlParseException {
         DBSPCompiler compiler = this.compileDef();
-        compiler.compileStatement(query);
+        compiler.compileStatement(query, null);
         return compiler.getResult();
     }
 

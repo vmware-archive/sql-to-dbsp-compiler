@@ -34,6 +34,7 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
 import org.dbsp.util.Unimplemented;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -75,31 +76,32 @@ public class FrontEndState {
         return result;
     }
 
-    FrontEndStatement emulate(SqlNode node, String statement) {
+    FrontEndStatement emulate(SqlNode node, String statement, @Nullable String comment) {
         SqlKind kind = node.getKind();
         if (kind == SqlKind.CREATE_TABLE) {
             SqlCreateTable ct = (SqlCreateTable)node;
             String tableName = Catalog.identifierToString(ct.name);
-            CreateTableStatement table = new CreateTableStatement(node, statement, tableName);
+            CreateTableStatement table = new CreateTableStatement(node, statement, tableName, comment);
             List<ColumnInfo> cols = this.getColumnTypes(Objects.requireNonNull(ct.columnList));
             cols.forEach(table::addColumn);
             this.schema.addTable(tableName, table.getEmulatedTable());
             return table;
         } else if (kind == SqlKind.CREATE_VIEW) {
             SqlCreateView cv = (SqlCreateView) node;
-            return new CreateViewStatement(node, Catalog.identifierToString(cv.name), statement, cv.query);
+            return new CreateViewStatement(node, Catalog.identifierToString(cv.name),
+                    statement, cv.query, comment);
         } else if (kind == SqlKind.INSERT) {
             SqlInsert insert = (SqlInsert)node;
             SqlNode table = insert.getTargetTable();
             if (!(table instanceof SqlIdentifier))
                 throw new Unimplemented(table);
             SqlIdentifier id = (SqlIdentifier)table;
-            return new TableModifyStatement(node, statement, id.toString(), insert.getSource());
+            return new TableModifyStatement(node, statement, id.toString(), insert.getSource(), comment);
         } else if (kind == SqlKind.DROP_TABLE) {
             SqlDropTable dt = (SqlDropTable) node;
             String tableName = Catalog.identifierToString(dt.name);
             this.schema.dropTable(tableName);
-            return new DropTableStatement(node, statement, tableName);
+            return new DropTableStatement(node, statement, tableName, comment);
         }
         throw new Unimplemented(node);
     }

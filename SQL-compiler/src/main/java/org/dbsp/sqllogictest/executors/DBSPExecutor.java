@@ -97,7 +97,7 @@ public class DBSPExecutor extends SqlTestExecutor {
 
     DBSPFunction createInputFunction(DBSPCompiler compiler) throws SqlParseException {
         for (SqlStatement statement : this.inputPreparation.statements)
-            compiler.compileStatement(statement.statement);
+            compiler.compileStatement(statement.statement, null);
         return compiler.getTableContents().functionWithTableContents("input");
     }
 
@@ -146,7 +146,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         if (this.debug)
             System.out.println("Query " + suffix + ":\n" + dbspQuery);
         compiler.newCircuit("gen" + suffix);
-        compiler.compileStatement(dbspQuery);
+        compiler.compileStatement(dbspQuery, testQuery.name);
         DBSPCircuit dbsp = compiler.getResult();
         DBSPZSetLiteral expectedOutput = null;
         if (testQuery.outputDescription.queryResults != null) {
@@ -184,7 +184,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                     field = new DBSPStringLiteral(s);
                 else
                     throw new RuntimeException("Unexpected type " + colType);
-                if (!colType.same(field.getNonVoidType()))
+                if (!colType.sameType(field.getNonVoidType()))
                     field = ExpressionCompiler.makeCast(field, colType);
                 fields.add(field);
                 col++;
@@ -233,7 +233,7 @@ public class DBSPExecutor extends SqlTestExecutor {
             stat = stat.replace("PRIMARY KEY", "");
             // TODO: Calcite does not accept "TEXT"
             stat = stat.replace(" TEXT", " VARCHAR");
-            compiler.compileStatement(stat);
+            compiler.compileStatement(stat, stat);
         }
     }
 
