@@ -23,13 +23,14 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
+import org.dbsp.sqlCompiler.circuit.DBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.ir.type.IHasType;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-public abstract class DBSPExpression extends DBSPNode implements IHasType {
+public abstract class DBSPExpression extends DBSPInnerNode implements IHasType {
     // Null for an expression that evaluates to void.
     @Nullable
     protected final DBSPType type;
@@ -51,4 +52,11 @@ public abstract class DBSPExpression extends DBSPNode implements IHasType {
     public DBSPType getType() {
         return this.type;
     }
+
+    /**
+     * Shallow and conservative test for equivalence.
+     * Two expressions are the same if they are equal as pointers, or they are
+     * are the same class with all fields equal as pointers.
+     */
+    public abstract boolean shallowSameExpression(DBSPExpression other);
 }

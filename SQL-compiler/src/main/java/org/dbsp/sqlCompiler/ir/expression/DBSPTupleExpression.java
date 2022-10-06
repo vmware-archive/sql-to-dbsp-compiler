@@ -34,7 +34,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DBSPTupleExpression extends DBSPExpression {
+public class DBSPTupleExpression extends DBSPBaseTupleExpression {
     public final DBSPExpression[] fields;
 
     public int size() { return this.fields.length; }
@@ -102,5 +102,15 @@ public class DBSPTupleExpression extends DBSPExpression {
         for (DBSPExpression expression: this.fields)
             expression.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPTupleExpression fe = other.as(DBSPTupleExpression.class);
+        if (fe == null)
+            return false;
+        return Linq.same(this.fields, fe.fields);
     }
 }

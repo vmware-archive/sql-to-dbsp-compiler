@@ -43,4 +43,14 @@ public class DBSPPathExpression extends DBSPExpression {
         this.path.accept(visitor);
         visitor.postorder(this);
     }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPPathExpression fe = other.as(DBSPPathExpression.class);
+        if (fe == null)
+            return false;
+        return this.path == fe.path;
+    }
 }

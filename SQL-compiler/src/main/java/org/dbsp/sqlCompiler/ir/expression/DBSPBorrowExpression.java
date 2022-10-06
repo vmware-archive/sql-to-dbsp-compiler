@@ -51,4 +51,15 @@ public class DBSPBorrowExpression extends DBSPExpression {
         this.expression.accept(visitor);
         visitor.postorder(this);
     }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPBorrowExpression ae = other.as(DBSPBorrowExpression.class);
+        if (ae == null)
+            return false;
+        return this.mut == ae.mut &&
+                this.expression == ae.expression;
+    }
 }

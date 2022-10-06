@@ -55,7 +55,7 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         this.zsetType = this.getNonVoidType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
         for (DBSPExpression e: data) {
-            if (!e.getNonVoidType().same(data[0].getNonVoidType()))
+            if (!e.getNonVoidType().sameType(data[0].getNonVoidType()))
                 throw new RuntimeException("Not all values of set have the same type:" +
                     e.getType() + " vs " + data[0].getType());
             this.add(e);
@@ -90,7 +90,7 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
 
     public void add(DBSPExpression expression, int weight) {
         // We expect the expression to be a constant value (a literal)
-        if (!expression.getNonVoidType().same(this.getElementType()))
+        if (!expression.getNonVoidType().sameType(this.getElementType()))
             throw new RuntimeException("Added element does not match zset type " +
                     expression.getType() + " vs " + this.getElementType());
         if (this.data.containsKey(expression)) {
@@ -106,7 +106,7 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
     }
 
     public void add(DBSPZSetLiteral other) {
-        if (!this.getNonVoidType().same(other.getNonVoidType()))
+        if (!this.getNonVoidType().sameType(other.getNonVoidType()))
             throw new RuntimeException("Added zsets do not have the same type " +
                     this.getElementType() + " vs " + other.getElementType());
         other.data.forEach(this::add);
@@ -152,5 +152,15 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         DBSPZSetLiteral result = this.clone();
         result.add(sub.negate());
         return result;
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPZSetLiteral fe = other.as(DBSPZSetLiteral.class);
+        if (fe == null)
+            return false;
+        return this.data == fe.data;
     }
 }

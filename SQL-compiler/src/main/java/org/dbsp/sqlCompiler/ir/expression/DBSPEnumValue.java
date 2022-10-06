@@ -46,4 +46,15 @@ public class DBSPEnumValue extends DBSPExpression {
             this.type.accept(visitor);
         visitor.postorder(this);
     }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPEnumValue ev = other.as(DBSPEnumValue.class);
+        if (ev == null)
+            return false;
+        return this.enumName.equals(ev.enumName) &&
+                this.constructor.equals(ev.constructor);
+    }
 }

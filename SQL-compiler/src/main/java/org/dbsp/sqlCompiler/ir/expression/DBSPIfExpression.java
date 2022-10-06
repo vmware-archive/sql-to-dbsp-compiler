@@ -42,7 +42,7 @@ public class DBSPIfExpression extends DBSPExpression {
             throw new RuntimeException("Expected a boolean condition type " + condition);
         if (this.condition.getNonVoidType().mayBeNull)
             throw new RuntimeException("Nullable condition in if expression " + condition);
-        if (!this.positive.getNonVoidType().same(this.negative.getNonVoidType()))
+        if (!this.positive.getNonVoidType().sameType(this.negative.getNonVoidType()))
             throw new RuntimeException("Mismatched types in conditional expression " + this.positive +
                     "/" + this.positive.getType() + " vs" + this.negative + "/" + this.negative.getType());
     }
@@ -56,5 +56,17 @@ public class DBSPIfExpression extends DBSPExpression {
         this.positive.accept(visitor);
         this.negative.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPIfExpression fe = other.as(DBSPIfExpression.class);
+        if (fe == null)
+            return false;
+        return this.condition == fe.condition &&
+                this.positive == fe.positive &&
+                this.negative == fe.negative;
     }
 }

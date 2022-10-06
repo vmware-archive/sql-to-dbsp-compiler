@@ -78,4 +78,15 @@ public class DBSPFieldExpression extends DBSPExpression {
         this.expression.accept(visitor);
         visitor.postorder(this);
     }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPFieldExpression fe = other.as(DBSPFieldExpression.class);
+        if (fe == null)
+            return false;
+        return this.expression == fe.expression &&
+                this.fieldNo == fe.fieldNo;
+    }
 }

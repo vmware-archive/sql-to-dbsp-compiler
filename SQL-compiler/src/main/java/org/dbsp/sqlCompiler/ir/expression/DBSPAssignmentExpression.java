@@ -44,4 +44,14 @@ public class DBSPAssignmentExpression extends DBSPExpression {
         this.right.accept(visitor);
         visitor.postorder(this);
     }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPAssignmentExpression ae = other.as(DBSPAssignmentExpression.class);
+        if (ae == null)
+            return false;
+        return this.left == ae.left && this.right == ae.right;
+    }
 }

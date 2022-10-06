@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.ir.expression;
 
 import org.dbsp.sqlCompiler.ir.Visitor;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
+import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -50,5 +51,16 @@ public class DBSPBlockExpression extends DBSPExpression {
         if (this.lastExpression != null)
             this.lastExpression.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPBlockExpression ae = other.as(DBSPBlockExpression.class);
+        if (ae == null)
+            return false;
+        return this.lastExpression == ae.lastExpression &&
+                Linq.same(this.contents, ae.contents);
     }
 }

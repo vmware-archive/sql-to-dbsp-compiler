@@ -45,4 +45,14 @@ public class DBSPDerefExpression extends DBSPExpression {
         this.expression.accept(visitor);
         visitor.postorder(this);
     }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPDerefExpression de = other.as(DBSPDerefExpression.class);
+        if (de == null)
+            return false;
+        return this.expression == de.expression;
+    }
 }

@@ -73,4 +73,15 @@ public class DBSPVariableReference extends DBSPExpression {
             this.type.accept(visitor);
         visitor.postorder(this);
     }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPVariableReference fe = other.as(DBSPVariableReference.class);
+        if (fe == null)
+            return false;
+        return this.variable.equals(fe.variable) &&
+                this.getNonVoidType().sameType(fe.type);
+    }
 }

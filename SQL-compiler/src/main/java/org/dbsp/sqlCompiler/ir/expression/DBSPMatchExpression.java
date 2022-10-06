@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.ir.Visitor;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.util.Linq;
 
 import java.util.List;
 
@@ -63,7 +64,7 @@ public class DBSPMatchExpression extends DBSPExpression {
         if (cases.isEmpty())
             throw new RuntimeException("Empty list of cases for match");
         for (Case c: cases) {
-            if (!c.result.getNonVoidType().same(type))
+            if (!c.result.getNonVoidType().sameType(type))
                 throw new RuntimeException("Type mismatch in case " + c +
                         " expected " + type + " got " + c.result.getNonVoidType());
         }
@@ -76,5 +77,16 @@ public class DBSPMatchExpression extends DBSPExpression {
         for (Case c: this.cases)
             c.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPMatchExpression fe = other.as(DBSPMatchExpression.class);
+        if (fe == null)
+            return false;
+        return this.matched == fe.matched &&
+                Linq.same(this.cases, fe.cases);
     }
 }

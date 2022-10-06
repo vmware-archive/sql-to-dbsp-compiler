@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.ir.expression;
 
 import org.dbsp.sqlCompiler.ir.Visitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.util.Linq;
 
 /**
  * An expression qualified with a type.
@@ -48,5 +49,16 @@ public class DBSPQualifyTypeExpression extends DBSPExpression {
         for (DBSPType type: this.types)
             type.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPQualifyTypeExpression fe = other.as(DBSPQualifyTypeExpression.class);
+        if (fe == null)
+            return false;
+        return this.expression == fe.expression &&
+                Linq.all(Linq.zipSameLength(this.types, fe.types, (l, r) -> l.sameType(r), Boolean.class));
     }
 }

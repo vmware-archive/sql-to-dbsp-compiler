@@ -44,9 +44,9 @@ public class DBSPRangeExpression extends DBSPExpression {
         this.left = left;
         this.right = right;
         this.endInclusive = endInclusive;
-        if (this.left != null && !this.left.getNonVoidType().same(type))
+        if (this.left != null && !this.left.getNonVoidType().sameType(type))
             throw new RuntimeException("Range expression type mismatch " + this.left + " vs " + type);
-        if (this.right != null && !this.right.getNonVoidType().same(type))
+        if (this.right != null && !this.right.getNonVoidType().sameType(type))
             throw new RuntimeException("Range expression type mismatch " + this.right + " vs " + type);
     }
 
@@ -60,5 +60,15 @@ public class DBSPRangeExpression extends DBSPExpression {
         if (this.right != null)
             this.right.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPRangeExpression fe = other.as(DBSPRangeExpression.class);
+        if (fe == null)
+            return false;
+        return this.left == fe.left && this.right == fe.right && this.endInclusive == fe.endInclusive;
     }
 }

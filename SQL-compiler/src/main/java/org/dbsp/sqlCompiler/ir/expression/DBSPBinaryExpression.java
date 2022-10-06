@@ -61,4 +61,16 @@ public class DBSPBinaryExpression extends DBSPExpression {
         this.right.accept(visitor);
         visitor.postorder(this);
     }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPBinaryExpression ae = other.as(DBSPBinaryExpression.class);
+        if (ae == null)
+            return false;
+        return this.operation == ae.operation &&
+                this.left == ae.left &&
+                this.right == ae.right;
+    }
 }

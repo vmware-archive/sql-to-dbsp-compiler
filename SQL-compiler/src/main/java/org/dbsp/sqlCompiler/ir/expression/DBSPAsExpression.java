@@ -42,4 +42,15 @@ public class DBSPAsExpression extends DBSPExpression {
             this.type.accept(visitor);
         visitor.postorder(this);
     }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPAsExpression oe = other.as(DBSPAsExpression.class);
+        if (oe == null)
+            return false;
+        return this.source == oe.source &&
+                this.type == oe.type;
+    }
 }
