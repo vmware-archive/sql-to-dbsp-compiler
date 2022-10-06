@@ -47,8 +47,8 @@ public class DBSPTypeBool extends DBSPType implements IDBSPBaseType {
         return "b";
     }
 
-    public boolean same(@Nullable DBSPType type) {
-        if (!super.same(type))
+    public boolean sameType(@Nullable DBSPType type) {
+        if (!super.sameType(type))
             return false;
         assert type != null;
         return type.is(DBSPTypeBool.class);

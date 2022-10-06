@@ -51,14 +51,14 @@ public class DBSPTypeRef extends DBSPType {
         return this;
     }
 
-    public boolean same(@Nullable DBSPType other) {
-        if (!super.same(other))
+    public boolean sameType(@Nullable DBSPType other) {
+        if (!super.sameType(other))
             return false;
         assert other != null;
         DBSPTypeRef oRef = other.as(DBSPTypeRef.class);
         if (oRef == null)
             return false;
-        return this.type.same(oRef.type);
+        return this.type.sameType(oRef.type);
     }
 
     @Override

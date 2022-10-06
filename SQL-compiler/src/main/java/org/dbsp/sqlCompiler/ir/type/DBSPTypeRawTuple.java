@@ -74,8 +74,8 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
     }
 
     @Override
-    public boolean same(@Nullable DBSPType type) {
-        if (!super.same(type))
+    public boolean sameType(@Nullable DBSPType type) {
+        if (!super.sameType(type))
             return false;
         assert type != null;
         if (!type.is(DBSPTypeRawTuple.class))
@@ -84,7 +84,7 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
         if (this.tupFields.length != other.tupFields.length)
             return false;
         for (int i = 0; i < this.tupFields.length; i++)
-            if (!this.tupFields[i].same(other.tupFields[i]))
+            if (!this.tupFields[i].sameType(other.tupFields[i]))
                 return false;
         return true;
     }

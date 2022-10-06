@@ -107,8 +107,8 @@ public class DBSPTypeInteger extends DBSPType
     }
 
     @Override
-    public boolean same(@Nullable DBSPType type) {
-        if (!super.same(type))
+    public boolean sameType(@Nullable DBSPType type) {
+        if (!super.sameType(type))
             return false;
         assert type != null;
         if (!type.is(DBSPTypeInteger.class))
