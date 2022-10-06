@@ -25,8 +25,6 @@
 
 package org.dbsp.util;
 
-import org.dbsp.sqlCompiler.ir.ToIndentableString;
-
 import java.util.List;
 
 public class IndentStringBuilder {
