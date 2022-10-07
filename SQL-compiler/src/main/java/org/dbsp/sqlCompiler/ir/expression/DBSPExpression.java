@@ -23,14 +23,16 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import org.dbsp.sqlCompiler.circuit.DBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.type.IHasType;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-public abstract class DBSPExpression extends DBSPInnerNode implements IHasType {
+public abstract class DBSPExpression
+        extends DBSPNode
+        implements IHasType, IDBSPInnerNode {
     // Null for an expression that evaluates to void.
     @Nullable
     protected final DBSPType type;

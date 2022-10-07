@@ -21,14 +21,12 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.circuit;
+package org.dbsp.sqlCompiler.compiler.backend;
 
-import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
-import javax.annotation.Nullable;
-
-public abstract class DBSPInnerNode extends DBSPNode {
-    protected DBSPInnerNode(@Nullable Object node) {
-        super(node);
+public class EmptyInnerVisitor extends InnerVisitor {
+    public EmptyInnerVisitor() {
+        super(false);
     }
 }

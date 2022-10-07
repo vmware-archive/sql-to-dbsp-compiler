@@ -48,8 +48,11 @@ public abstract class DBSPNode
     @Nullable
     public Object getNode() { return this.node; }
 
+
     @Override
     public String toString() {
-        return ToRustVisitor.toRustString(this);
+        if (this.is(IDBSPInnerNode.class))
+            return ToRustVisitor.toRustString(this.to(IDBSPInnerNode.class));
+        return ToRustVisitor.toRustString(this.to(IDBSPOuterNode.class));
     }
 }

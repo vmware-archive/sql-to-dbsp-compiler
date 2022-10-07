@@ -156,6 +156,7 @@ public class Utilities {
             throw new RuntimeException("Rust process failed with exit code " + exitCode);
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     private static final char[] hexCode = "0123456789abcdef".toCharArray();
 
     public static String toHex(byte[] data) {

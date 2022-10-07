@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.statement;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 
 public class DBSPExpressionStatement extends DBSPStatement {
@@ -35,7 +35,7 @@ public class DBSPExpressionStatement extends DBSPStatement {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         this.expression.accept(visitor);
         visitor.postorder(this);

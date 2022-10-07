@@ -23,8 +23,9 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
@@ -32,7 +33,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class DBSPTypeStruct extends DBSPType {
-    public static class Field extends DBSPNode implements IHasType {
+    public static class Field extends DBSPNode implements IHasType, IDBSPInnerNode {
         public final String name;
         public final DBSPType type;
 
@@ -65,7 +66,7 @@ public class DBSPTypeStruct extends DBSPType {
         }
 
         @Override
-        public void accept(Visitor visitor) {
+        public void accept(InnerVisitor visitor) {
             if (!visitor.preorder(this)) return;
             this.type.accept(visitor);
             visitor.postorder(this);
@@ -132,7 +133,7 @@ public class DBSPTypeStruct extends DBSPType {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         for (Field f: this.getFields())
             f.accept(visitor);

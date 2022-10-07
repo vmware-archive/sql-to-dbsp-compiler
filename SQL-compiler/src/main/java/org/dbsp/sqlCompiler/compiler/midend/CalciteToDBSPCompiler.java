@@ -916,7 +916,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         if (statement.is(CreateViewStatement.class)) {
             CreateViewStatement view = statement.to(CreateViewStatement.class);
             RelNode rel = view.getRelNode();
-            //if (this.debug)
+            if (this.debug)
                 System.out.println(CalciteCompiler.getPlan(rel));
             this.go(rel);
             // TODO: connect the result of the query compilation with

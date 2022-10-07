@@ -24,9 +24,9 @@
 package org.dbsp.sqlCompiler.compiler.backend;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
 import org.dbsp.sqlCompiler.circuit.operator.*;
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;
 
@@ -42,13 +42,13 @@ import java.util.function.Function;
  * - the 'force' flag is 'true'.
  * The declarations are left unchanged.
  */
-public class CircuitCloneVisitor extends Visitor implements Function<DBSPCircuit, DBSPCircuit> {
+public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSPCircuit, DBSPCircuit> {
     final DBSPCircuit result;
     final Map<DBSPOperator, DBSPOperator> remap;
     final boolean force;
 
     public CircuitCloneVisitor(String outputName, boolean force) {
-        super(true);
+        super(true, new EmptyInnerVisitor());
         this.result = new DBSPCircuit(outputName);
         this.remap = new HashMap<>();
         this.force = force;
@@ -71,7 +71,7 @@ public class CircuitCloneVisitor extends Visitor implements Function<DBSPCircuit
 
     @Override
     public void postorder(DBSPCircuit circuit) {
-        for (IDBSPDeclaration decl: circuit.declarations)
+        for (IDBSPInnerDeclaration decl: circuit.declarations)
             this.result.declare(decl);
     }
 

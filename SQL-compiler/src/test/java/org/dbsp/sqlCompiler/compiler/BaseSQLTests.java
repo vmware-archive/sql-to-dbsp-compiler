@@ -50,7 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base class for SQL-based tets.
+ * Base class for SQL-based tests.
  */
 public class BaseSQLTests {
     static final String rustDirectory = "../temp/src";

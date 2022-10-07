@@ -74,7 +74,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     private int batchSize;  // Number of queries to execute together
     private int skip;       // Number of queries to skip in each test file.
     final SqlTestPrepareInput inputPreparation;
-    SqlTestPrepareTables tablePreparation;
+    final SqlTestPrepareTables tablePreparation;
     private final List<SqlTestQuery> queriesToRun;
 
     public void setBatchSize(int batchSize, int skip) {
@@ -134,7 +134,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         }
         this.queriesToRun.clear();
         this.reportTime(queryNo);
-        this.clenupFilesystem();
+        this.cleanupFilesystem();
         result.passed += queryNo;  // This is not entirely correct, but I am not parsing the rust output
     }
 
@@ -212,7 +212,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         return new ProgramAndTester(rust, func);
     }
 
-    void clenupFilesystem() {
+    void cleanupFilesystem() {
         File directory = new File(rustDirectory);
         FilenameFilter filter = (dir, name) -> name.startsWith(testFileName);
         File[] files = directory.listFiles(filter);
@@ -250,6 +250,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                 if (seenQueries) {
                     this.runBatch(result);
                     remainingInBatch = this.batchSize;
+                    seenQueries = false;
                 }
                 boolean status = this.statement(stat);
                 this.statementsExecuted++;

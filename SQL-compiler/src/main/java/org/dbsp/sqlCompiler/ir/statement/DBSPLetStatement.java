@@ -23,12 +23,12 @@
 
 package org.dbsp.sqlCompiler.ir.statement;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
-import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPVariableReference;
 
-public class DBSPLetStatement extends DBSPStatement implements IDBSPDeclaration {
+public class DBSPLetStatement extends DBSPStatement implements IDBSPInnerDeclaration {
     public final String variable;
     public final DBSPExpression initializer;
     public final boolean mutable;
@@ -54,7 +54,7 @@ public class DBSPLetStatement extends DBSPStatement implements IDBSPDeclaration 
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         this.initializer.accept(visitor);
         visitor.postorder(this);

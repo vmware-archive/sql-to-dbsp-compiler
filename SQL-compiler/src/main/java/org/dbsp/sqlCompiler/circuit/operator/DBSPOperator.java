@@ -24,6 +24,8 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.util.IHasName;
@@ -38,7 +40,7 @@ import java.util.Objects;
 /**
  * A DBSP operator that applies a function to the inputs and produces an output.
  */
-public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasType {
+public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasType, IDBSPOuterNode {
     public final List<DBSPOperator> inputs;
     /**
      * Operation that is invoked on inputs; corresponds to a DBSP operator name, e.g., join.
@@ -180,7 +182,14 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
         return this.outputType == other.outputType &&
                 this.function == other.function &&
                 Linq.same(this.inputs, other.inputs) &&
-                this.operation.equals(other.operation) &&
-                this.outputType == other.outputType;
+                this.operation.equals(other.operation);
+    }
+
+    @Override
+    public void accept(CircuitVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        if (this.function != null)
+            this.function.accept(visitor.innerVisitor);
+        visitor.postorder(this);
     }
 }

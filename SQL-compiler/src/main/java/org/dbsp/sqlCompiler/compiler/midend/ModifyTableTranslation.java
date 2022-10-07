@@ -62,7 +62,6 @@ class ModifyTableTranslation {
     private HashMap<Integer, Integer> columnPermutation;
     @Nullable
     DBSPTypeTuple resultType;
-    @Nullable
     final TableModifyStatement statement;
 
     public ModifyTableTranslation(TableModifyStatement statement,

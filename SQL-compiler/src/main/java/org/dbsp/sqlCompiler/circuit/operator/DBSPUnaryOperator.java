@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.circuit.operator;
 
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
@@ -34,6 +35,13 @@ public abstract class DBSPUnaryOperator extends DBSPOperator {
                                 boolean isMultiset, DBSPOperator source) {
         super(node, operation, function, outputType, isMultiset);
         this.addInput(source);
+    }
+
+    @Override
+    public void accept(CircuitVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        super.accept(visitor);
+        visitor.postorder(this);
     }
 
     public DBSPOperator input() {

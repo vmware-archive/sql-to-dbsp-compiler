@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.circuit.operator;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
@@ -35,10 +35,9 @@ public class DBSPSourceOperator extends DBSPOperator {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        if (this.function != null)
-            this.function.accept(visitor);
+        super.accept(visitor);
         visitor.postorder(this);
     }
 

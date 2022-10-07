@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.util.TranslationException;
 
@@ -53,7 +53,7 @@ public class DBSPBinaryExpression extends DBSPExpression {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.type != null)
             this.type.accept(visitor);
@@ -69,7 +69,7 @@ public class DBSPBinaryExpression extends DBSPExpression {
         DBSPBinaryExpression ae = other.as(DBSPBinaryExpression.class);
         if (ae == null)
             return false;
-        return this.operation == ae.operation &&
+        return this.operation.equals(ae.operation) &&
                 this.left == ae.left &&
                 this.right == ae.right;
     }

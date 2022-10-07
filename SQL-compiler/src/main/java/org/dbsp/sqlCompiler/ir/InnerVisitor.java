@@ -23,10 +23,9 @@
 
 package org.dbsp.sqlCompiler.ir;
 
-import org.dbsp.sqlCompiler.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.circuit.IDBSPNode;
-import org.dbsp.sqlCompiler.circuit.operator.*;
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.ir.expression.*;
+import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.path.DBSPPathSegment;
 import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
@@ -34,26 +33,18 @@ import org.dbsp.sqlCompiler.ir.pattern.*;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
-import org.dbsp.sqlCompiler.ir.expression.*;
-import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Depth-first traversal of an DBSPNode hierarchy.
+ * Depth-first traversal of an DBSPInnerNode hierarchy.
  */
 @SuppressWarnings("SameReturnValue")
-public abstract class Visitor {
-    public final List<IDBSPNode> context;
-
+public abstract class InnerVisitor {
     /// If true each visit call will visit by default the superclass.
     final boolean visitSuper;
 
-    public Visitor(boolean visitSuper) {
+    public InnerVisitor(boolean visitSuper) {
         this.visitSuper = visitSuper;
-        this.context = new ArrayList<>();
     }
 
     /************************* PREORDER *****************************/
@@ -61,71 +52,57 @@ public abstract class Visitor {
     // preorder methods return 'true' when normal traversal is desired,
     // and 'false' when the traversal should stop right away at the current node.
     // base classes
-    public boolean preorder(IDBSPNode ignored) {
-        return true;
-    }
-
-    public boolean preorder(DBSPNode ignored) {
+    public boolean preorder(IDBSPInnerNode ignored) {
         return true;
     }
 
     public boolean preorder(DBSPExpression node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
 
     public boolean preorder(DBSPStatement node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPCircuit node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
 
     public boolean preorder(DBSPTypeStruct.Field node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
 
     public boolean preorder(DBSPType node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
 
     public boolean preorder(DBSPFile node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
 
     public boolean preorder(DBSPFunction node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
 
     public boolean preorder(DBSPPath node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
 
     public boolean preorder(DBSPPattern node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
 
     public boolean preorder(DBSPFunction.Argument node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
     
     public boolean preorder(DBSPClosureExpression.Parameter node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
     
@@ -144,12 +121,12 @@ public abstract class Visitor {
     // Various
     
     public boolean preorder(DBSPMatchExpression.Case node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
 
     public boolean preorder(DBSPPathSegment node) {
-        if (this.visitSuper) return this.preorder((DBSPNode) node);
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
 
@@ -260,87 +237,6 @@ public abstract class Visitor {
         else return true;
     }
 
-    public boolean preorder(DBSPUnaryOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
-        else return true;
-    }
-
-    /// Operators
-    public boolean preorder(DBSPIndexOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
-        else return true;
-    }
-    
-    public boolean preorder(DBSPSubtractOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPSumOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPJoinOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPAggregateOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPConstantOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPMapOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPDifferentialOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPIntegralOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPNegateOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPFlatMapOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPFilterOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPDistinctOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPSinkOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPSourceOperator node) {
-        if (this.visitSuper) return this.preorder((DBSPOperator) node);
-        else return true;
-    }
-    
     // Patterns
     public boolean preorder(DBSPTupleStructPattern node) {
         if (this.visitSuper) return this.preorder((DBSPPattern) node);
@@ -539,53 +435,42 @@ public abstract class Visitor {
     /*************************** POSTORDER *****************************/
 
     @SuppressWarnings("EmptyMethod")
-    public void postorder(IDBSPNode ignored) {}
-
-    @SuppressWarnings("EmptyMethod")
-    public void postorder(DBSPNode ignored) {}
+    public void postorder(IDBSPInnerNode ignored) {}
 
     public void postorder(DBSPExpression node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     public void postorder(DBSPStatement node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
-    }
-
-    public void postorder(DBSPCircuit node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     public void postorder(DBSPType node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     public void postorder(DBSPFile node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
-    }
-
-    public void postorder(DBSPOperator node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     public void postorder(DBSPFunction node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     public void postorder(DBSPPath node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     public void postorder(DBSPPattern node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     public void postorder(DBSPFunction.Argument node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     public void postorder(DBSPClosureExpression.Parameter node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     // Statements
@@ -601,11 +486,11 @@ public abstract class Visitor {
     // Various
 
     public void postorder(DBSPMatchExpression.Case node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     public void postorder(DBSPPathSegment node) {
-        if (this.visitSuper) this.postorder((DBSPNode) node);
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     public void postorder(DBSPSimplePathSegment node) {
@@ -692,67 +577,6 @@ public abstract class Visitor {
 
     public void postorder(DBSPTypeRef node) {
         if (this.visitSuper) this.postorder((DBSPType) node);
-    }
-
-    /// Operators
-    public void postorder(DBSPIndexOperator node) {
-        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
-    }
-
-    public void postorder(DBSPSubtractOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
-    }
-
-    public void postorder(DBSPSumOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
-    }
-
-    public void postorder(DBSPJoinOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
-    }
-
-    public void postorder(DBSPAggregateOperator node) {
-        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
-    }
-
-    public void postorder(DBSPConstantOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
-    }
-
-    public void postorder(DBSPMapOperator node) {
-        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
-    }
-
-    public void postorder(DBSPDifferentialOperator node) {
-        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
-    }
-
-    public void postorder(DBSPIntegralOperator node) {
-        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
-    }
-
-    public void postorder(DBSPNegateOperator node) {
-        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
-    }
-
-    public void postorder(DBSPFlatMapOperator node) {
-        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
-    }
-
-    public void postorder(DBSPFilterOperator node) {
-        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
-    }
-
-    public void postorder(DBSPDistinctOperator node) {
-        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
-    }
-
-    public void postorder(DBSPSinkOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
-    }
-
-    public void postorder(DBSPSourceOperator node) {
-        if (this.visitSuper) this.postorder((DBSPOperator) node);
     }
 
     // Patterns
