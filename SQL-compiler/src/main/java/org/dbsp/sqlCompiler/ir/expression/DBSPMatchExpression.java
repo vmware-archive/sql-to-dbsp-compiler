@@ -23,10 +23,12 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.util.Linq;
 
 import java.util.List;
 
@@ -34,7 +36,7 @@ import java.util.List;
  * A (Rust) match expression.
  */
 public class DBSPMatchExpression extends DBSPExpression {
-    public static class Case extends DBSPNode {
+    public static class Case extends DBSPNode implements IDBSPInnerNode {
         public final DBSPPattern against;
         public final DBSPExpression result;
 
@@ -45,7 +47,7 @@ public class DBSPMatchExpression extends DBSPExpression {
         }
 
         @Override
-        public void accept(Visitor visitor) {
+        public void accept(InnerVisitor visitor) {
             if (!visitor.preorder(this)) return;
             this.against.accept(visitor);
             this.result.accept(visitor);
@@ -63,18 +65,29 @@ public class DBSPMatchExpression extends DBSPExpression {
         if (cases.isEmpty())
             throw new RuntimeException("Empty list of cases for match");
         for (Case c: cases) {
-            if (!c.result.getNonVoidType().same(type))
+            if (!c.result.getNonVoidType().sameType(type))
                 throw new RuntimeException("Type mismatch in case " + c +
                         " expected " + type + " got " + c.result.getNonVoidType());
         }
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         this.matched.accept(visitor);
         for (Case c: this.cases)
             c.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPMatchExpression fe = other.as(DBSPMatchExpression.class);
+        if (fe == null)
+            return false;
+        return this.matched == fe.matched &&
+                Linq.same(this.cases, fe.cases);
     }
 }

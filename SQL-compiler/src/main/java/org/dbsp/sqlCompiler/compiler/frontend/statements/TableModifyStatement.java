@@ -38,8 +38,9 @@ public class TableModifyStatement extends FrontEndStatement {
     @Nullable
     public RelNode rel;
 
-    public TableModifyStatement(SqlNode node, String statement, String tableName, SqlNode data) {
-        super(node, statement);
+    public TableModifyStatement(SqlNode node, String statement, String tableName,
+                                SqlNode data, @Nullable String comment) {
+        super(node, statement, comment);
         this.tableName = tableName;
         this.data = data;
         this.rel = null;

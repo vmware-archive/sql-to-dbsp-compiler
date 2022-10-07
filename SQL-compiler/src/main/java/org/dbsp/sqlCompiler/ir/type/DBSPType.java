@@ -24,12 +24,13 @@
 package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.util.IndentStringBuilder;
 
 import javax.annotation.Nullable;
 
-public abstract class DBSPType extends DBSPNode {
+public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
     /**
      * True if this type may include null values.
      */
@@ -54,7 +55,15 @@ public abstract class DBSPType extends DBSPNode {
         builder.append(type);
     }
 
-    public boolean same(@Nullable DBSPType other) {
+    public static boolean sameType(@Nullable DBSPType left, @Nullable DBSPType right) {
+        if (left == null)
+            return right == null;
+        if (right == null)
+            return false;
+        return left.sameType(right);
+    }
+
+    public boolean sameType(@Nullable DBSPType other) {
         if (other == null)
             return false;
         return this.mayBeNull == other.mayBeNull;

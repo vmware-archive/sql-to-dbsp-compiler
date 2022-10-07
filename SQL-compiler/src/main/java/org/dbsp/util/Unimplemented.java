@@ -25,8 +25,6 @@
 
 package org.dbsp.util;
 
-import javax.annotation.Nullable;
-
 /**
  * Exception thrown for code that is not yet implemented.
  */

@@ -21,8 +21,23 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.circuit;
+package org.dbsp.sqlCompiler.ir.expression;
 
-public interface IDBSPDeclaration extends IDBSPNode {
-    String getName();
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+
+import javax.annotation.Nullable;
+
+public abstract class DBSPBaseTupleExpression extends DBSPExpression {
+    public final DBSPExpression[] fields;
+
+    public int size() { return this.fields.length; }
+
+    public DBSPBaseTupleExpression(@Nullable Object object, DBSPType type, DBSPExpression... expressions) {
+        super(object, type);
+        this.fields = expressions;
+    }
+
+    public DBSPExpression get(int index) {
+        return this.fields[index];
+    }
 }

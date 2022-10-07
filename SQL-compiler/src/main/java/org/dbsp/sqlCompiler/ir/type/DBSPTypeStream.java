@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 /**
  * A type of the form 'Stream<_, elementType>'
@@ -42,7 +42,7 @@ public class DBSPTypeStream extends DBSPType {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         this.elementType.accept(visitor);
         visitor.postorder(this);

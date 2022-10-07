@@ -47,7 +47,7 @@ public class DBSPCompilerTests {
                 ", COL4 VARCHAR NOT NULL" +
                 ")";
 
-        compiler.compileStatement(ddl);
+        compiler.compileStatement(ddl, null);
         DBSPCircuit dbsp = compiler.getResult();
         Assert.assertNotNull(dbsp);
     }
@@ -62,8 +62,8 @@ public class DBSPCompilerTests {
                 ", COL4 VARCHAR NOT NULL" +
                 ")";
         String insert = "INSERT INTO T VALUES(0, 0.0, true, 'Hi')";
-        compiler.compileStatement(ddl);
-        compiler.compileStatement(insert);
+        compiler.compileStatement(ddl, null);
+        compiler.compileStatement(insert, null);
         TableContents tableContents = compiler.getTableContents();
         DBSPZSetLiteral t = tableContents.getTableContents("T");
         Assert.assertNotNull(t);

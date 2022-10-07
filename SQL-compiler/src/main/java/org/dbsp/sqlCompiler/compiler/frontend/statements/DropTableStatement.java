@@ -30,8 +30,9 @@ import javax.annotation.Nullable;
 public class DropTableStatement extends FrontEndStatement {
     public final String tableName;
 
-    public DropTableStatement(@Nullable SqlNode node, String statement, String tableName) {
-        super(node, statement);
+    public DropTableStatement(@Nullable SqlNode node, String statement,
+                              String tableName, @Nullable String comment) {
+        super(node, statement, comment);
         this.tableName = tableName;
     }
 

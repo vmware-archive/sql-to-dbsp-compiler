@@ -202,7 +202,7 @@ public class SqlRuntimeLibrary {
     }
 
     void generateProgram() {
-        List<IDBSPDeclaration> declarations = new ArrayList<>();
+        List<IDBSPInnerDeclaration> declarations = new ArrayList<>();
         DBSPFunction.Argument arg = new DBSPFunction.Argument(
                 "b", DBSPTypeBool.instance.setMayBeNull(true));
         declarations.add(

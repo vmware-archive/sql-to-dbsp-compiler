@@ -181,7 +181,7 @@ public class CalciteCompiler {
         OuterJoinFinder finder = new OuterJoinFinder();
         finder.run(rootRel);
         // Bushy join optimization fails when the query contains outer joins.
-        return (finder.outerJoinCount > 0) || (finder.joinCount < 4);
+        return (finder.outerJoinCount > 0) || (finder.joinCount < 3);
     }
 
     /**
@@ -311,12 +311,13 @@ public class CalciteCompiler {
     /**
      * Compile a SQL statement.  Return a description
      */
-    public FrontEndStatement compile(String sqlStatement) throws SqlParseException {
+    public FrontEndStatement compile(String sqlStatement,
+                                     @Nullable String comment) throws SqlParseException {
         if (this.program == null)
             throw new RuntimeException("Did you call startCompilation? Program is null");
         SqlNode node = this.parse(sqlStatement);
         if (SqlKind.DDL.contains(node.getKind())) {
-            FrontEndStatement result = this.state.emulate(node, sqlStatement);
+            FrontEndStatement result = this.state.emulate(node, sqlStatement, comment);
             if (result.is(DropTableStatement.class) ||
                     result.is(CreateTableStatement.class)) {
                 this.program.addStatement(result);
@@ -334,7 +335,7 @@ public class CalciteCompiler {
         }
 
         if (SqlKind.DML.contains(node.getKind())) {
-            FrontEndStatement result = this.state.emulate(node, sqlStatement);
+            FrontEndStatement result = this.state.emulate(node, sqlStatement, comment);
             TableModifyStatement stat = result.as(TableModifyStatement.class);
             if (stat != null) {
                 this.program.addStatement(stat);

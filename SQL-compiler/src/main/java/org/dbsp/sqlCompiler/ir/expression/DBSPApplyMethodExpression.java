@@ -23,10 +23,11 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
+import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
 
@@ -58,7 +59,7 @@ public class DBSPApplyMethodExpression extends DBSPExpression {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.type != null)
             this.type.accept(visitor);
@@ -67,5 +68,17 @@ public class DBSPApplyMethodExpression extends DBSPExpression {
         for (DBSPExpression arg: this.arguments)
             arg.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPApplyMethodExpression oe = other.as(DBSPApplyMethodExpression.class);
+        if (oe == null)
+            return false;
+        return this.function == oe.function &&
+                this.self == oe.self &&
+                Linq.same(this.arguments, oe.arguments);
     }
 }

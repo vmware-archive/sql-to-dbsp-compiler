@@ -24,7 +24,8 @@
 package org.dbsp.sqlCompiler.ir;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPVariableReference;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
@@ -38,8 +39,8 @@ import java.util.List;
 /**
  * A (Rust) function.
  */
-public class DBSPFunction extends DBSPNode implements IDBSPDeclaration, IHasType {
-    public static class Argument extends DBSPNode implements IHasType {
+public class DBSPFunction extends DBSPNode implements IHasType, IDBSPInnerDeclaration {
+    public static class Argument extends DBSPNode implements IHasType, IDBSPInnerNode {
         public final String name;
         public final DBSPType type;
 
@@ -55,7 +56,7 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration, IHasType
         }
 
         @Override
-        public void accept(Visitor visitor) {
+        public void accept(InnerVisitor visitor) {
             if (!visitor.preorder(this)) return;
             visitor.postorder(this);
         }
@@ -100,7 +101,7 @@ public class DBSPFunction extends DBSPNode implements IDBSPDeclaration, IHasType
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.returnType != null)
             this.returnType.accept(visitor);

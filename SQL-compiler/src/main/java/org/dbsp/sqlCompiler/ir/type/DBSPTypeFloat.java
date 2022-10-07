@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPFloatLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
@@ -48,8 +48,8 @@ public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType, IDBSPBas
     public static final DBSPTypeFloat instance = new DBSPTypeFloat(null,false);
 
     @Override
-    public boolean same(@Nullable DBSPType type) {
-        if (!super.same(type))
+    public boolean sameType(@Nullable DBSPType type) {
+        if (!super.sameType(type))
             return false;
         assert type != null;
         return type.is(DBSPTypeFloat.class);
@@ -76,7 +76,7 @@ public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType, IDBSPBas
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);
     }

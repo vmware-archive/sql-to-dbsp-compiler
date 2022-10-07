@@ -114,9 +114,36 @@ public class Linq {
         return result;
     }
 
+    public static <T, S, R> R[] zipSameLength(T[] left, S[] right, BiFunction<T, S, R> function, Class<R> rc) {
+        if (left.length != right.length)
+            throw new RuntimeException("Zipped arrays have different lengths " + left.length + " and " + right.length);
+        @SuppressWarnings("unchecked")
+        R[] result = (R[])Array.newInstance(rc, left.length);
+        for (int i=0; i < result.length; i++)
+            result[i] = function.apply(left[i], right[i]);
+        return result;
+    }
+
+    public static <T> boolean same(T[] left, T[] right) {
+        return Linq.all(Linq.zipSameLength(left, right, (l, r) -> l == r, Boolean.class));
+    }
+
+    public static <T> boolean same(List<T> left, List<T> right) {
+        return Linq.all(Linq.zipSameLength(left, right, (l, r) -> l == r));
+    }
+
     public static <T, S, R> List<R> zip(List<T> left, List<S> right, BiFunction<T, S, R> function) {
         List<R> result = new ArrayList<>();
         for (int i=0; i < Math.min(left.size(), right.size()); i++)
+            result.add(function.apply(left.get(i), right.get(i)));
+        return result;
+    }
+
+    public static <T, S, R> List<R> zipSameLength(List<T> left, List<S> right, BiFunction<T, S, R> function) {
+        if (left.size() != right.size())
+            throw new RuntimeException("Zipped lists have different lengths " + left.size() + " and " + right.size());
+        List<R> result = new ArrayList<>();
+        for (int i=0; i < left.size(); i++)
             result.add(function.apply(left.get(i), right.get(i)));
         return result;
     }
@@ -143,6 +170,22 @@ public class Linq {
         return (T[]) result.toArray();
     }
 
+    public static boolean all(Iterable<Boolean> data) {
+        for (Boolean b: data) {
+            if (b == null || !b)
+                return false;
+        }
+        return true;
+    }
+
+    public static boolean all(Boolean[] data) {
+        for (Boolean b: data) {
+            if (b == null || !b)
+                return false;
+        }
+        return true;
+    }
+
     public static <T> boolean any(Iterable<T> data, Predicate<T> test) {
         for (T d: data)
             if (test.test(d)) {
@@ -151,11 +194,31 @@ public class Linq {
         return false;
     }
 
+    public static boolean any(Iterable<Boolean> data) {
+        for (Boolean d: data)
+            if (d != null && d)
+                return true;
+        return false;
+    }
+
     public static <T> boolean any(T[] data, Predicate<T> test) {
         for (T d: data)
-            if (test.test(d)) {
+            if (test.test(d))
                 return true;
-            }
         return false;
+    }
+
+    public static <T> boolean all(Iterable<T> data, Predicate<T> test) {
+        for (T d: data)
+            if (!test.test(d))
+                return false;
+        return true;
+    }
+
+    public static <T> boolean all(T[] data, Predicate<T> test) {
+        for (T d: data)
+            if (!test.test(d))
+                return false;
+        return true;
     }
 }

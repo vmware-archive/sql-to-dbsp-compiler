@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 import javax.annotation.Nullable;
 
@@ -51,18 +51,18 @@ public class DBSPTypeRef extends DBSPType {
         return this;
     }
 
-    public boolean same(@Nullable DBSPType other) {
-        if (!super.same(other))
+    public boolean sameType(@Nullable DBSPType other) {
+        if (!super.sameType(other))
             return false;
         assert other != null;
         DBSPTypeRef oRef = other.as(DBSPTypeRef.class);
         if (oRef == null)
             return false;
-        return this.type.same(oRef.type);
+        return this.type.sameType(oRef.type);
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         this.type.accept(visitor);
         visitor.postorder(this);

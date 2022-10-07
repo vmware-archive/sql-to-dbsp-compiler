@@ -174,12 +174,12 @@ are detailed below.
 Test group            | DBSP        | JDBC_DBSP
 ----------------------|------------:|--------------------
 random/select         | 1,120,329/0 |
-random/groupby        |  118,757/0  |
+random/groupby        |   118,757/0 |
 random/expr           | 1,317,682/1 |
 random/aggregates     | 1,172,825/2 |
-select1               |             |
-select2               |             |
-select3               |             |
+select1               |     1,000/0 |
+select2               |     1,000/0 |
+select3               |     3,320/0 |
 select4               |             |
 select5               |             |
 index/delete          |             |

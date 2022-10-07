@@ -23,10 +23,11 @@
 
 package org.dbsp.sqlCompiler.circuit.operator;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class DBSPSourceOperator extends DBSPOperator {
     public DBSPSourceOperator(@Nullable Object node, DBSPType outputType, String name) {
@@ -34,10 +35,25 @@ public class DBSPSourceOperator extends DBSPOperator {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        if (this.function != null)
-            this.function.accept(visitor);
+        super.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPSourceOperator(
+                    this.getNode(), this.outputType, this.outputName);
+        return this;
+    }
+
+    @Override
+    public boolean shallowSameOperator(DBSPOperator other) {
+        if (!super.shallowSameOperator(other))
+            return false;
+        DBSPSourceOperator src = other.to(DBSPSourceOperator.class);
+        return this.outputName.equals(src.outputName);
     }
 }

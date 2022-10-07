@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
@@ -67,10 +67,21 @@ public class DBSPVariableReference extends DBSPExpression {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.type != null)
             this.type.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPVariableReference fe = other.as(DBSPVariableReference.class);
+        if (fe == null)
+            return false;
+        return this.variable.equals(fe.variable) &&
+                this.getNonVoidType().sameType(fe.type);
     }
 }

@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.circuit;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
 import org.dbsp.util.ICastable;
 import org.dbsp.util.TranslationException;
 
@@ -56,6 +55,4 @@ public interface IDBSPNode extends ICastable {
      */
     @Nullable
     Object getNode();
-
-    void accept(Visitor visitor);
 }

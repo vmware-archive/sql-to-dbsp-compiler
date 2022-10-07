@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 public class DBSPAssignmentExpression extends DBSPExpression {
     public final DBSPExpression left;
@@ -36,12 +36,22 @@ public class DBSPAssignmentExpression extends DBSPExpression {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.type != null)
             this.type.accept(visitor);
         this.left.accept(visitor);
         this.right.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPAssignmentExpression ae = other.as(DBSPAssignmentExpression.class);
+        if (ae == null)
+            return false;
+        return this.left == ae.left && this.right == ae.right;
     }
 }

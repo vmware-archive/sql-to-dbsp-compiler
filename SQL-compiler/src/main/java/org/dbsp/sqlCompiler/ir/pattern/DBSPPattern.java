@@ -24,10 +24,11 @@
 package org.dbsp.sqlCompiler.ir.pattern;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 
 import javax.annotation.Nullable;
 
-public abstract class DBSPPattern extends DBSPNode {
+public abstract class DBSPPattern extends DBSPNode implements IDBSPInnerNode {
     protected DBSPPattern(@Nullable Object node) {
         super(node);
     }

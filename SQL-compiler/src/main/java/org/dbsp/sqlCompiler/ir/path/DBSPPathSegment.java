@@ -24,10 +24,11 @@
 package org.dbsp.sqlCompiler.ir.path;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 
 import javax.annotation.Nullable;
 
-public abstract class DBSPPathSegment extends DBSPNode {
+public abstract class DBSPPathSegment extends DBSPNode implements IDBSPInnerNode {
     protected DBSPPathSegment(@Nullable Object node) {
         super(node);
     }

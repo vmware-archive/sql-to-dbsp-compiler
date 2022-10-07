@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression.literal;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
@@ -31,10 +31,13 @@ import javax.annotation.Nullable;
 
 public class DBSPLiteral extends DBSPExpression {
     public final boolean isNull;
+    @Nullable
+    public final Object value;
 
     protected DBSPLiteral(@Nullable Object node, DBSPType type, @Nullable Object value) {
         super(node, type);
         this.isNull = value == null;
+        this.value = value;
         if (this.isNull && !type.mayBeNull)
             throw new RuntimeException("Type " + type + " cannot represent null");
     }
@@ -57,8 +60,20 @@ public class DBSPLiteral extends DBSPExpression {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPLiteral ol = other.as(DBSPLiteral.class);
+        if (ol == null)
+            return false;
+        return this.isNull == ol.isNull &&
+                this.getNonVoidType().sameType(ol.type) &&
+                this.value == ol.value;
     }
 }

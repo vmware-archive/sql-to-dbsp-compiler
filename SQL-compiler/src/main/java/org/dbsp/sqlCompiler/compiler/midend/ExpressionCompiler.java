@@ -96,7 +96,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     public static DBSPType reduceType(DBSPType left, DBSPType right) {
         left = left.setMayBeNull(false);
         right = right.setMayBeNull(false);
-        if (left.same(right))
+        if (left.sameType(right))
             return left;
 
         DBSPTypeInteger li = left.as(DBSPTypeInteger.class);
@@ -164,9 +164,9 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
             // Result is always NULL.  Perhaps we should give a warning?
             return DBSPLiteral.none(type);
         }
-        if (!leftType.setMayBeNull(false).same(commonBase))
+        if (!leftType.setMayBeNull(false).sameType(commonBase))
             left = makeCast(left, commonBase.setMayBeNull(leftType.mayBeNull));
-        if (!rightType.setMayBeNull(false).same(commonBase))
+        if (!rightType.setMayBeNull(false).sameType(commonBase))
             right = makeCast(right, commonBase.setMayBeNull(rightType.mayBeNull));
         SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
                 op, commonBase.setMayBeNull(leftType.mayBeNull), commonBase.setMayBeNull(rightType.mayBeNull), false);
@@ -175,7 +175,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
 
     public static DBSPExpression makeCast(DBSPExpression from, DBSPType to) {
         DBSPType fromType = from.getNonVoidType();
-        if (fromType.same(to)) {
+        if (fromType.sameType(to)) {
             return from;
         }
         if (fromType.mayBeNull) {
@@ -312,7 +312,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                 return makeCast(ops.get(0), type);
             case IS_NULL:
             case IS_NOT_NULL: {
-                if (!type.same(DBSPTypeBool.instance))
+                if (!type.sameType(DBSPTypeBool.instance))
                     throw new TranslationException("Expected expression to produce a boolean result", call);
                 DBSPExpression arg = ops.get(0);
                 DBSPType argType = arg.getNonVoidType();
@@ -347,11 +347,11 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                         if (ops.get(i + 1).getNonVoidType().mayBeNull)
                             finalType = finalType.setMayBeNull(true);
                     }
-                    if (!result.getNonVoidType().same(finalType))
+                    if (!result.getNonVoidType().sameType(finalType))
                         result = makeCast(result, finalType);
                     for (int i = 1; i < ops.size() - 1; i += 2) {
                         DBSPExpression alt = ops.get(i + 1);
-                        if (!alt.getNonVoidType().same(finalType))
+                        if (!alt.getNonVoidType().sameType(finalType))
                             alt = makeCast(alt, finalType);
                         DBSPExpression comp = makeBinaryExpression(
                                 call, DBSPTypeBool.instance, "==", Linq.list(value, ops.get(i)));
@@ -368,12 +368,12 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                             finalType = finalType.setMayBeNull(true);
                     }
 
-                    if (!result.getNonVoidType().same(finalType))
+                    if (!result.getNonVoidType().sameType(finalType))
                         result = makeCast(result, finalType);
                     for (int i = 0; i < ops.size() - 1; i += 2) {
                         int index = ops.size() - i - 2;
                         DBSPExpression alt = ops.get(index);
-                        if (!alt.getNonVoidType().same(finalType))
+                        if (!alt.getNonVoidType().sameType(finalType))
                             alt = makeCast(alt, finalType);
                         DBSPExpression condition = wrapBoolIfNeeded(ops.get(index - 1));
                         result = new DBSPIfExpression(call, condition, alt, result);

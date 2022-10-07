@@ -23,13 +23,14 @@
 
 package org.dbsp.sqlCompiler.circuit.operator;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class DBSPAggregateOperator extends DBSPUnaryOperator {
     public final DBSPType keyType;
@@ -45,10 +46,29 @@ public class DBSPAggregateOperator extends DBSPUnaryOperator {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        if (this.function != null)
-            this.function.accept(visitor);
+        super.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPAggregateOperator(
+                    this.getNode(), this.getFunction(), this.keyType, this.outputElementType, newInputs.get(0));
+        return this;
+    }
+
+    @Override
+    public boolean shallowSameOperator(DBSPOperator other) {
+        if (this == other)
+            return true;
+        DBSPAggregateOperator agg = other.as(DBSPAggregateOperator.class);
+        if (agg == null)
+            return false;
+        return this.function == agg.function &&
+                this.keyType == agg.keyType &&
+                this.outputElementType == agg.outputElementType;
     }
 }

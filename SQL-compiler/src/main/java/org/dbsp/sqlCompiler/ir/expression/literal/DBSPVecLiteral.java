@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression.literal;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.IDBSPContainer;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
@@ -50,7 +50,7 @@ public class DBSPVecLiteral extends DBSPLiteral implements IDBSPContainer {
         this.vecType = this.getNonVoidType().to(DBSPTypeVec.class);
         this.data = new ArrayList<>();
         for (DBSPExpression e: data) {
-            if (!e.getNonVoidType().same(data[0].getNonVoidType()))
+            if (!e.getNonVoidType().sameType(data[0].getNonVoidType()))
                 throw new RuntimeException("Not all values of set have the same type:" +
                     e.getType() + " vs " + data[0].getType());
             this.add(e);
@@ -63,14 +63,14 @@ public class DBSPVecLiteral extends DBSPLiteral implements IDBSPContainer {
 
     public void add(DBSPExpression expression) {
         // We expect the expression to be a constant value (a literal)
-        if (!expression.getNonVoidType().same(this.getElementType()))
+        if (!expression.getNonVoidType().sameType(this.getElementType()))
             throw new RuntimeException("Added element does not match vector type " +
                     expression.getType() + " vs " + this.getElementType());
         this.data.add(expression);
     }
 
     public void add(DBSPVecLiteral other) {
-        if (!this.getNonVoidType().same(other.getNonVoidType()))
+        if (!this.getNonVoidType().sameType(other.getNonVoidType()))
             throw new RuntimeException("Added vectors do not have the same type " +
                     this.getElementType() + " vs " + other.getElementType());
         other.data.forEach(this::add);
@@ -81,10 +81,21 @@ public class DBSPVecLiteral extends DBSPLiteral implements IDBSPContainer {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         for (DBSPExpression expr: this.data)
             expr.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPVecLiteral fe = other.as(DBSPVecLiteral.class);
+        if (fe == null)
+            return false;
+        return this.vecType.sameType(fe.vecType) &&
+                this.data == fe.data;
     }
 }

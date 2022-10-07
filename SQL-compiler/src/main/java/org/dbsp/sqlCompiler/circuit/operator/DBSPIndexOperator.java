@@ -24,12 +24,13 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class DBSPIndexOperator extends DBSPUnaryOperator {
     public final DBSPType keyType;
@@ -46,10 +47,27 @@ public class DBSPIndexOperator extends DBSPUnaryOperator {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        if (this.function != null)
-            this.function.accept(visitor);
+        super.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPIndexOperator(
+                    this.getNode(), this.getFunction(), this.keyType,
+                    this.elementType, this.isMultiset, newInputs.get(0));
+        return this;
+    }
+
+    @Override
+    public boolean shallowSameOperator(DBSPOperator other) {
+        if (!super.shallowSameOperator(other))
+            return false;
+        DBSPIndexOperator oi = other.to(DBSPIndexOperator.class);
+        return this.keyType == oi.keyType &&
+                this.elementType == oi.elementType;
     }
 }

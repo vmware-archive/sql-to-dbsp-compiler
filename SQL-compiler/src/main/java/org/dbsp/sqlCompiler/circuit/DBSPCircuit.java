@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.circuit;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSourceOperator;
@@ -39,11 +39,11 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DBSPCircuit extends DBSPNode {
+public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
     public final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
     public final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
     public final List<DBSPOperator> operators = new ArrayList<>();
-    public final List<IDBSPDeclaration> declarations = new ArrayList<>();
+    public final List<IDBSPInnerDeclaration> declarations = new ArrayList<>();
     public final String name;
 
     public DBSPCircuit(String name) {
@@ -80,7 +80,7 @@ public class DBSPCircuit extends DBSPNode {
             this.operators.add(operator);
     }
 
-    public void declare(IDBSPDeclaration declaration) {
+    public void declare(IDBSPInnerDeclaration declaration) {
         this.declarations.add(declaration);
     }
 
@@ -101,10 +101,10 @@ public class DBSPCircuit extends DBSPNode {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        for (IDBSPDeclaration decl: this.declarations)
-            decl.accept(visitor);
+        for (IDBSPInnerDeclaration decl: this.declarations)
+            decl.accept(visitor.innerVisitor);
         for (DBSPSourceOperator source: this.inputOperators)
             source.accept(visitor);
         for (DBSPOperator op: this.operators)
@@ -112,5 +112,17 @@ public class DBSPCircuit extends DBSPNode {
         for (DBSPSinkOperator sink: this.outputOperators)
             sink.accept(visitor);
         visitor.postorder(this);
+    }
+
+    public boolean sameCircuit(DBSPCircuit other) {
+        if (this == other)
+            return true;
+        return this.inputOperators.size() == other.inputOperators.size() &&
+                Linq.all(Linq.zipSameLength(this.inputOperators, other.inputOperators, DBSPOperator::shallowSameOperator)) &&
+                this.operators.size() == other.operators.size() &&
+                Linq.all(Linq.zipSameLength(this.operators, other.operators, DBSPOperator::shallowSameOperator)) &&
+                this.outputOperators.size() == other.outputOperators.size() &&
+                Linq.all(Linq.zipSameLength(this.outputOperators, other.outputOperators, DBSPOperator::shallowSameOperator)) &&
+                Linq.same(this.declarations, other.declarations);
     }
 }

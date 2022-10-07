@@ -95,11 +95,11 @@ public class AggregateCompiler {
 
         void validate() {
             if (this.postprocess != null) {
-                if (!this.emptySetResult.getNonVoidType().same(this.postprocess.getResultType()))
+                if (!this.emptySetResult.getNonVoidType().sameType(this.postprocess.getResultType()))
                     throw new RuntimeException("Postprocess result type " + this.postprocess.getResultType() +
                             " different from empty set type " + this.emptySetResult.getNonVoidType());
             } else {
-                if (!this.emptySetResult.getNonVoidType().same(this.increment.getResultType())) {
+                if (!this.emptySetResult.getNonVoidType().sameType(this.increment.getResultType())) {
                     throw new RuntimeException("Increment result type " + this.increment.getResultType() +
                             " different from empty set type " + this.emptySetResult.getNonVoidType());
                 }

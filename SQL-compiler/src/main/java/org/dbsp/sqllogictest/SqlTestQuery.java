@@ -32,8 +32,8 @@ public class SqlTestQuery implements ISqlTestOperation {
      * Query that is executed.
      */
     public String query;
-    @SuppressWarnings("FieldCanBeLocal")
-    @Nullable private String name;
+    @Nullable
+    public String name;
     public final SqlTestQueryOutputDescription outputDescription;
 
     public void setName(String name) {

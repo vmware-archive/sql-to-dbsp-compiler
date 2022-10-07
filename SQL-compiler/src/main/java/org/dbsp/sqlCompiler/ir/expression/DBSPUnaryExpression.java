@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.util.TranslationException;
 
@@ -45,11 +45,21 @@ public class DBSPUnaryExpression extends DBSPExpression {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.type != null)
             this.type.accept(visitor);
         this.left.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPUnaryExpression fe = other.as(DBSPUnaryExpression.class);
+        if (fe == null)
+            return false;
+        return this.operation.equals(fe.operation) && this.left == fe.left;
     }
 }

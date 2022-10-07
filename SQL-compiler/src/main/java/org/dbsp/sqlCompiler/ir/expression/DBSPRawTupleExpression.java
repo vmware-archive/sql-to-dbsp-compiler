@@ -23,27 +23,19 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeRawTuple;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
+import org.dbsp.util.Linq;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**
  * A Raw tuple expression generates a raw Rust tuple.
  */
-public class DBSPRawTupleExpression extends DBSPTupleExpression {
-    public DBSPRawTupleExpression(DBSPExpression... fields) {
-        super(fields);
-    }
-
-    @Nullable
-    @Override
-    public DBSPType getType() {
-        assert this.type != null;
-        return new DBSPTypeRawTuple(this.type.to(DBSPTypeTuple.class).tupFields);
+public class DBSPRawTupleExpression extends DBSPBaseTupleExpression {
+    public DBSPRawTupleExpression(DBSPExpression... expressions) {
+        super(null, new DBSPTypeRawTuple(Linq.map(expressions, DBSPExpression::getType, DBSPType.class)), expressions);
     }
 
     public <T extends DBSPExpression> DBSPRawTupleExpression(List<T> fields) {
@@ -51,12 +43,22 @@ public class DBSPRawTupleExpression extends DBSPTupleExpression {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.type != null)
             this.type.accept(visitor);
         for (DBSPExpression expression: this.fields)
             expression.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPRawTupleExpression fe = other.as(DBSPRawTupleExpression.class);
+        if (fe == null)
+            return false;
+        return Linq.same(this.fields, fe.fields);
     }
 }

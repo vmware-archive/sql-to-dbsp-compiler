@@ -21,14 +21,12 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir;
-
-import org.dbsp.util.IndentStringBuilder;
+package org.dbsp.util;
 
 /**
  * Interface implemented by objects that can be as nicely indented strings.
  */
 public interface ToIndentableString {
     @SuppressWarnings("UnusedReturnValue")
-    IndentStringBuilder toRustString(IndentStringBuilder builder);
+    IndentStringBuilder toString(IndentStringBuilder builder);
 }

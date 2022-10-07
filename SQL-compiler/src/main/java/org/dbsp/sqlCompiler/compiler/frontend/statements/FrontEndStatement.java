@@ -37,10 +37,13 @@ public abstract class FrontEndStatement implements ICastable {
      * Original statement compiled.
      */
     public final String statement;
+    @Nullable
+    public final String comment;
 
-    protected FrontEndStatement(@Nullable SqlNode node, String statement) {
+    protected FrontEndStatement(@Nullable SqlNode node, String statement, @Nullable String comment) {
         this.node = node;
         this.statement = statement;
+        this.comment = comment;
     }
 
     @Nullable

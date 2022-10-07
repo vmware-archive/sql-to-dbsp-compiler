@@ -23,11 +23,12 @@
 
 package org.dbsp.sqlCompiler.ir.path;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.util.Linq;
 
-public class DBSPPath extends DBSPNode {
+public class DBSPPath extends DBSPNode implements IDBSPInnerNode {
     public final DBSPPathSegment[] components;
 
     public DBSPPath(DBSPPathSegment... components) {
@@ -40,7 +41,7 @@ public class DBSPPath extends DBSPNode {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         for (DBSPPathSegment path: this.components)
             path.accept(visitor);

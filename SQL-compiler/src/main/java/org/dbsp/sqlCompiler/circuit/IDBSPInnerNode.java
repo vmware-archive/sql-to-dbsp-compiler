@@ -21,35 +21,13 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.circuit;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
-import javax.annotation.Nullable;
-
-public class DBSPTypeFunction extends DBSPType {
-    @Nullable
-    public final DBSPType resultType;
-    public final DBSPType[] argumentTypes;
-
-    public DBSPTypeFunction(@Nullable DBSPType resultType, DBSPType... argumentTypes) {
-        super(false);
-        this.resultType = resultType;
-        this.argumentTypes = argumentTypes;
-    }
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        if (this.resultType != null)
-            this.resultType.accept(visitor);
-        for (DBSPType arg: this.argumentTypes)
-            arg.accept(visitor);
-        visitor.postorder(this);
-    }
+/**
+ * IR modes from the inner language: expressions, types, etc.
+ */
+public interface IDBSPInnerNode extends IDBSPNode {
+    void accept(InnerVisitor visitor);
 }

@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 public class DBSPTypeVec extends DBSPTypeUser {
     public DBSPTypeVec(DBSPType typeArg) {
@@ -35,7 +35,7 @@ public class DBSPTypeVec extends DBSPTypeUser {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         for (DBSPType type: this.typeArgs)
             type.accept(visitor);

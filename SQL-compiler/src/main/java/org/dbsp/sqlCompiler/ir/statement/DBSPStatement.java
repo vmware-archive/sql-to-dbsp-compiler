@@ -24,10 +24,13 @@
 package org.dbsp.sqlCompiler.ir.statement;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 
 import javax.annotation.Nullable;
 
-public abstract class DBSPStatement extends DBSPNode {
+public abstract class DBSPStatement
+        extends DBSPNode
+        implements IDBSPInnerNode {
     @SuppressWarnings("SameParameterValue")
     protected DBSPStatement(@Nullable Object node) {
         super(node);

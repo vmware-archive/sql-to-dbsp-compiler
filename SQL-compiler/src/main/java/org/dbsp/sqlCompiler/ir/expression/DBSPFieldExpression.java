@@ -24,7 +24,7 @@
 package org.dbsp.sqlCompiler.ir.expression;
 
 import org.apache.calcite.rex.RexNode;
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
@@ -71,11 +71,22 @@ public class DBSPFieldExpression extends DBSPExpression {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.type != null)
             this.type.accept(visitor);
         this.expression.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPFieldExpression fe = other.as(DBSPFieldExpression.class);
+        if (fe == null)
+            return false;
+        return this.expression == fe.expression &&
+                this.fieldNo == fe.fieldNo;
     }
 }

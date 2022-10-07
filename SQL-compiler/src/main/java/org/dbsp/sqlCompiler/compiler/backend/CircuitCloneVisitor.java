@@ -24,28 +24,38 @@
 package org.dbsp.sqlCompiler.compiler.backend;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
 import org.dbsp.sqlCompiler.circuit.operator.*;
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
- * This visitor clones a circuit into a new one.
- * Each operator is cloned, but the declarations are left unchanged.
+ * This visitor clones a circuit into an equivalent one.
+ * Each operator is cloned in one of two cases:
+ * - any of its inputs has changed
+ * - the 'force' flag is 'true'.
+ * The declarations are left unchanged.
  */
-public class CircuitCloneVisitor extends Visitor {
+public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSPCircuit, DBSPCircuit> {
     final DBSPCircuit result;
     final Map<DBSPOperator, DBSPOperator> remap;
+    final boolean force;
 
-    public CircuitCloneVisitor(String outputName) {
-        super(true);
+    public CircuitCloneVisitor(String outputName, boolean force) {
+        super(true, new EmptyInnerVisitor());
         this.result = new DBSPCircuit(outputName);
         this.remap = new HashMap<>();
+        this.force = force;
+    }
+
+    public CircuitCloneVisitor(String outputName) {
+        this(outputName, false);
     }
 
     public DBSPOperator mapped(DBSPOperator original) {
@@ -61,124 +71,102 @@ public class CircuitCloneVisitor extends Visitor {
 
     @Override
     public void postorder(DBSPCircuit circuit) {
-        for (IDBSPDeclaration decl: circuit.declarations)
+        for (IDBSPInnerDeclaration decl: circuit.declarations)
             this.result.declare(decl);
+    }
+
+    public void replace(DBSPOperator operator) {
+        List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
+        DBSPOperator result = operator.replaceInputs(sources, this.force);
+        this.map(operator, result);
     }
 
     @Override
     public void postorder(DBSPAggregateOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPAggregateOperator result = new DBSPAggregateOperator
-                (operator.getNode(), operator.getFunction(),
-                        operator.keyType, operator.outputElementType, source);
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPConstantOperator operator) {
-        DBSPConstantOperator result = new DBSPConstantOperator(
-                operator.getNode(), operator.getFunction(), operator.isMultiset);
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPDifferentialOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPDifferentialOperator result = new DBSPDifferentialOperator(operator.getNode(), source);
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPDistinctOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPDistinctOperator result = new DBSPDistinctOperator(operator.getNode(), source);
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPFilterOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPFilterOperator result = new DBSPFilterOperator(
-                operator.getNode(), operator.getFunction(), source);
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPFlatMapOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPFlatMapOperator result = new DBSPFlatMapOperator(
-                operator.getNode(), operator.getFunction(), operator.outputType, source);
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPIndexOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPIndexOperator result = new DBSPIndexOperator(
-                operator.getNode(), operator.getFunction(),
-                operator.keyType, operator.elementType, operator.isMultiset, source);
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPIntegralOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPIntegralOperator result = new DBSPIntegralOperator(operator.getNode(), source);
-        this.map(operator, result);
-    }
-
-    @Override
-    public void postorder(DBSPJoinOperator operator) {
-        List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
-        DBSPJoinOperator result = new DBSPJoinOperator(operator.getNode(), operator.elementResultType,
-                operator.getFunction(), operator.isMultiset, sources.get(0), sources.get(1));
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPMapOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPMapOperator result = new DBSPMapOperator(operator.getNode(),
-                operator.getFunction(), operator.outputElementType, source);
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPNegateOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPNegateOperator result = new DBSPNegateOperator(operator.getNode(), source);
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPSinkOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPSinkOperator result = new DBSPSinkOperator(operator.getNode(), operator.outputName, operator.query, source);
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPSourceOperator operator) {
-        DBSPOperator result = new DBSPSourceOperator(operator.getNode(), operator.outputType, operator.outputName);
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPSubtractOperator operator) {
-        List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
-        DBSPSubtractOperator result = new DBSPSubtractOperator(
-                operator.getNode(), sources.get(0), sources.get(1));
-        this.map(operator, result);
+        this.replace(operator);
     }
 
     @Override
     public void postorder(DBSPSumOperator operator) {
-        List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
-        DBSPSumOperator result = new DBSPSumOperator(operator.getNode(), sources);
-        this.map(operator, result);
+        this.replace(operator);
+    }
+
+    @Override
+    public void postorder(DBSPJoinOperator operator) {
+        this.replace(operator);
     }
 
     public DBSPCircuit getResult() {
         return this.result;
+    }
+
+    @Override
+    public DBSPCircuit apply(DBSPCircuit circuit) {
+        circuit.accept(this);
+        DBSPCircuit result = this.getResult();
+        if (circuit.sameCircuit(result))
+            return circuit;
+        System.out.println(this.getClass() + " changed circuit");
+        return result;
     }
 }

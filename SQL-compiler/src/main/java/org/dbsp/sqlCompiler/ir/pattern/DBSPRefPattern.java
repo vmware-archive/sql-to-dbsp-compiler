@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.pattern;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 public class DBSPRefPattern extends DBSPPattern {
     public final DBSPPattern pattern;
@@ -40,7 +40,7 @@ public class DBSPRefPattern extends DBSPPattern {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         this.pattern.accept(visitor);
         visitor.postorder(this);

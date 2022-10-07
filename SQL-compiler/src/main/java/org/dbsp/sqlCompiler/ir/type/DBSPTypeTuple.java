@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
 import org.dbsp.util.Utilities;
@@ -105,8 +105,8 @@ public class DBSPTypeTuple extends DBSPType {
     }
 
     @Override
-    public boolean same(@Nullable DBSPType type) {
-        if (!super.same(type))
+    public boolean sameType(@Nullable DBSPType type) {
+        if (!super.sameType(type))
             return false;
         assert type != null;
         if (!type.is(DBSPTypeTuple.class))
@@ -115,7 +115,7 @@ public class DBSPTypeTuple extends DBSPType {
         if (this.tupFields.length != other.tupFields.length)
             return false;
         for (int i = 0; i < this.tupFields.length; i++)
-            if (!this.tupFields[i].same(other.tupFields[i]))
+            if (!this.tupFields[i].sameType(other.tupFields[i]))
                 return false;
         return true;
     }
@@ -127,7 +127,7 @@ public class DBSPTypeTuple extends DBSPType {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         for (DBSPType type: this.tupFields)
             type.accept(visitor);

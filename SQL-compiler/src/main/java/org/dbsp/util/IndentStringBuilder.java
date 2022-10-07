@@ -25,8 +25,6 @@
 
 package org.dbsp.util;
 
-import org.dbsp.sqlCompiler.ir.ToIndentableString;
-
 import java.util.List;
 
 public class IndentStringBuilder {
@@ -62,7 +60,7 @@ public class IndentStringBuilder {
     }
 
     public <T extends ToIndentableString> void append(T value) {
-        value.toRustString(this);
+        value.toString(this);
     }
 
     public IndentStringBuilder append(int value) {

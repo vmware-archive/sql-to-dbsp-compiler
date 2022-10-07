@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.compiler;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.backend.IncrementalizeVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.OptimizeDistinctVisitor;
 import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
@@ -49,7 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base class for SQL-based tets.
+ * Base class for SQL-based tests.
  */
 public class BaseSQLTests {
     static final String rustDirectory = "../temp/src";
@@ -94,10 +95,9 @@ public class BaseSQLTests {
             PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
             writer.println(ToRustVisitor.generatePreamble());
             DBSPCircuit circuit = compiler.getResult();
+            circuit = new OptimizeDistinctVisitor(circuit.name).apply(circuit);
             if (incremental) {
-                IncrementalizeVisitor inc = new IncrementalizeVisitor("circuit");
-                circuit.accept(inc);
-                circuit = inc.getResult();
+                circuit = new IncrementalizeVisitor(circuit.name).apply(circuit);
             }
             writer.println(ToRustVisitor.toRustString(circuit));
             this.createTester(writer, circuit, streams);
@@ -119,8 +119,8 @@ public class BaseSQLTests {
                 ", COL5 INT" +
                 ", COL6 DOUBLE" +
                 ")";
-        compiler.compileStatement(ddl);
-        compiler.compileStatement(query);
+        compiler.compileStatement(ddl, null);
+        compiler.compileStatement(query, null);
         return compiler;
     }
 

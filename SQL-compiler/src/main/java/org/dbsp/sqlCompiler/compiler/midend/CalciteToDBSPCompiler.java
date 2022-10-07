@@ -403,7 +403,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         for (RexNode column : project.getProjects()) {
             DBSPExpression exp = expressionCompiler.compile(column);
             DBSPType expectedType = tuple.getFieldType(index);
-            if (!exp.getNonVoidType().same(expectedType)) {
+            if (!exp.getNonVoidType().sameType(expectedType)) {
                 // Calcite's optimizations do not preserve types!
                 exp = ExpressionCompiler.makeCast(exp, expectedType);
             }
@@ -617,7 +617,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
 
             // subtract from left relation
             DBSPOperator leftCast = left;
-            if (!leftResultType.same(leftElementType)) {
+            if (!leftResultType.sameType(leftElementType)) {
                 DBSPClosureExpression castLeft = new DBSPClosureExpression(
                     DBSPTupleExpression.flatten(l).pointwiseCast(leftResultType),
                     l.asParameter()
@@ -661,7 +661,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
 
             // subtract from right relation
             DBSPOperator rightCast = right;
-            if (!rightResultType.same(rightElementType)) {
+            if (!rightResultType.sameType(rightElementType)) {
                 DBSPClosureExpression castRight = new DBSPClosureExpression(
                         DBSPTupleExpression.flatten(r).pointwiseCast(rightResultType),
                         r.asParameter()
@@ -727,7 +727,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                     if (lit.isNull)
                         expr = DBSPLiteral.none(resultFieldType);
                 }
-                if (!expr.getNonVoidType().same(resultFieldType)) {
+                if (!expr.getNonVoidType().sameType(resultFieldType)) {
                     DBSPExpression cast = ExpressionCompiler.makeCast(expr, resultFieldType);
                     exprs.add(cast);
                 } else {
@@ -922,7 +922,8 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             // TODO: connect the result of the query compilation with
             // the fields of rel; for now we assume that these are 1/1
             DBSPOperator op = this.getOperator(rel);
-            DBSPSinkOperator o = new DBSPSinkOperator(view, view.viewName, view.statement, op);
+            DBSPSinkOperator o = new DBSPSinkOperator(
+                    view, view.viewName, view.statement, statement.comment, op);
             this.getCircuit().addOperator(o);
             return o;
         } else if (statement.is(CreateTableStatement.class) ||

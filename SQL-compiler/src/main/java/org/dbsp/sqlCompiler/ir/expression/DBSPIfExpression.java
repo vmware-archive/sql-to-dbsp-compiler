@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeBool;
 
 import javax.annotation.Nullable;
@@ -42,13 +42,13 @@ public class DBSPIfExpression extends DBSPExpression {
             throw new RuntimeException("Expected a boolean condition type " + condition);
         if (this.condition.getNonVoidType().mayBeNull)
             throw new RuntimeException("Nullable condition in if expression " + condition);
-        if (!this.positive.getNonVoidType().same(this.negative.getNonVoidType()))
+        if (!this.positive.getNonVoidType().sameType(this.negative.getNonVoidType()))
             throw new RuntimeException("Mismatched types in conditional expression " + this.positive +
                     "/" + this.positive.getType() + " vs" + this.negative + "/" + this.negative.getType());
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.type != null)
             this.type.accept(visitor);
@@ -56,5 +56,17 @@ public class DBSPIfExpression extends DBSPExpression {
         this.positive.accept(visitor);
         this.negative.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPIfExpression fe = other.as(DBSPIfExpression.class);
+        if (fe == null)
+            return false;
+        return this.condition == fe.condition &&
+                this.positive == fe.positive &&
+                this.negative == fe.negative;
     }
 }

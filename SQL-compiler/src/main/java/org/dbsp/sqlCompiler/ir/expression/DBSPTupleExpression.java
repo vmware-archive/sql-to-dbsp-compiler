@@ -24,7 +24,7 @@
 package org.dbsp.sqlCompiler.ir.expression;
 
 import org.dbsp.sqlCompiler.compiler.midend.ExpressionCompiler;
-import org.dbsp.sqlCompiler.ir.Visitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.util.Linq;
@@ -34,7 +34,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DBSPTupleExpression extends DBSPExpression {
+public class DBSPTupleExpression extends DBSPBaseTupleExpression {
     public final DBSPExpression[] fields;
 
     public int size() { return this.fields.length; }
@@ -95,12 +95,22 @@ public class DBSPTupleExpression extends DBSPExpression {
     }
 
     @Override
-    public void accept(Visitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.type != null)
             this.type.accept(visitor);
         for (DBSPExpression expression: this.fields)
             expression.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        if (this == other)
+            return true;
+        DBSPTupleExpression fe = other.as(DBSPTupleExpression.class);
+        if (fe == null)
+            return false;
+        return Linq.same(this.fields, fe.fields);
     }
 }
