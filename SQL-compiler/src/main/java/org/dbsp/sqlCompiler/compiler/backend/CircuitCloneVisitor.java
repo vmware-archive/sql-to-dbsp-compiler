@@ -166,7 +166,7 @@ public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSP
         DBSPCircuit result = this.getResult();
         if (circuit.sameCircuit(result))
             return circuit;
-        System.out.println(this.getClass() + " changed circuit");
+        //System.out.println(this.getClass() + " changed circuit");
         return result;
     }
 }

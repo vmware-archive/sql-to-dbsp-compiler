@@ -142,7 +142,9 @@ public class DBSPExecutor extends SqlTestExecutor {
             DBSPCompiler compiler, DBSPFunction inputGeneratingFunction, SqlTestQuery testQuery, int suffix)
             throws SqlParseException {
         String origQuery = testQuery.query;
-        String dbspQuery = "CREATE VIEW V AS (" + origQuery + ")";
+        String dbspQuery = origQuery;
+        if (!dbspQuery.toLowerCase().contains("view"))
+            dbspQuery = "CREATE VIEW V AS (" + origQuery + ")";
         if (this.debug)
             System.out.println("Query " + suffix + ":\n" + dbspQuery);
         compiler.newCircuit("gen" + suffix);
@@ -269,6 +271,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                 if (remainingInBatch == 0) {
                     this.runBatch(result);
                     remainingInBatch = this.batchSize;
+                    seenQueries = false;
                 }
             }
         }

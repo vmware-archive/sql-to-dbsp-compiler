@@ -139,7 +139,7 @@ public class Main {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         SqlTestExecutor executor = getExecutor(argv);
         String benchDir = "../../sqllogictest/test";
-        int batchSize = 1;
+        int batchSize = 100;
         int skipPerFile = 0;
         String[] files = new String[] {
                 /*
@@ -154,6 +154,7 @@ public class Main {
                 "select5.test",
                  */
                 "index/",
+                "evidence"
         };
         if (argv.length > 1)
             files = Utilities.arraySlice(argv, 1);

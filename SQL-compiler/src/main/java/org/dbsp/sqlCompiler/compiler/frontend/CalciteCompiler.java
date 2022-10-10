@@ -276,8 +276,13 @@ public class CalciteCompiler {
      */
     private SqlNode parse(String sql) throws SqlParseException {
         // This is a weird API - the parser depends on the query string!
-        SqlParser sqlParser = SqlParser.create(sql, this.parserConfig);
-        return sqlParser.parseStmt();
+        try {
+            SqlParser sqlParser = SqlParser.create(sql, this.parserConfig);
+            return sqlParser.parseStmt();
+        } catch (SqlParseException parse) {
+            System.err.println("Exception while parsing " + sql);
+            throw parse;
+        }
     }
 
     public void startCompilation() {

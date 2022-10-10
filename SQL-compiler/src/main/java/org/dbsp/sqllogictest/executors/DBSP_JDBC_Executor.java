@@ -31,10 +31,13 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqllogictest.SqlStatement;
 import org.dbsp.sqllogictest.SqlTestFile;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This is a hybrid test executor which keeps all the state in a
@@ -68,20 +71,29 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
                 result.getType(), result);
     }
 
-    boolean processCreateTable(String command) {
-        String regex = ""; // ""create\s+table\s+(\w+)";
-        // TODO
-        return true;
+    @Nullable
+    String rewriteCreateTable(String command) throws SQLException {
+        String regex = "create\\s+table\\s+(\\w+)";
+        Pattern pat = Pattern.compile(regex);
+        Matcher m = pat.matcher(command);
+        if (!m.find())
+            return null;
+        String tableName = m.group(1);
+        return this.statementExecutor.generateCreateStatement(tableName);
     }
 
     public boolean statement(SqlStatement statement) throws SQLException {
         this.statementExecutor.statement(statement);
         String command = statement.statement.toLowerCase();
-        if (command.contains("create table")) {
-            return this.processCreateTable(command);
-        }
-        if (command.contains("drop table"))
+        @Nullable
+        String create = this.rewriteCreateTable(command);
+        if (create != null) {
+            SqlStatement rewritten = new SqlStatement(create, statement.shouldPass);
+            super.statement(rewritten);
+        } else if (command.contains("drop table")) {
+            // This should perhaps use a regex too.
             super.statement(statement);
+        }
         return true;
     }
 

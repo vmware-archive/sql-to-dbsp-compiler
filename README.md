@@ -191,17 +191,20 @@ are detailed below.
 | select1              |     1,000/0 ||
 | select2              |     1,000/0 ||
 | select3              |     3,320/0 ||
-| select4              |             ||
-| select5              |             ||
-| index/delete         |             ||
-| index/in             |             ||
-| index/commute        |             ||
-| index/between        |             ||
-| index/orderby_nosort |             ||
-| index/view           |             ||
-| index/random         |             ||
-| index/orderby        |             ||
+| select4              |     2,832/0 ||
+| select5              |       732/0 ||
+| index/delete         |         N/A ||
+| index/in             |         N/A ||
+| index/commute        |         N/A ||
+| index/between        |         N/A ||
+| index/orderby_nosort |         N/A ||
+| index/view           |         N/A ||
+| index/random         |         N/A ||
+| index/orderby        |         N/A ||
 | evidence             |             ||
+
+The "index" tests cannot be executed with DBSP since it does
+not support the "index" SQL statement.
 
 Failing tests with DBSP executor:
 
