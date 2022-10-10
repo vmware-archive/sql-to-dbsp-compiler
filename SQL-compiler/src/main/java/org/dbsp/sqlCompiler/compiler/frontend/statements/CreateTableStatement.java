@@ -38,7 +38,7 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeZSet;
 import org.dbsp.util.TranslationException;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -52,17 +52,18 @@ public class CreateTableStatement extends FrontEndStatement {
     public final List<ColumnInfo> columns;
 
     public CreateTableStatement(@Nullable SqlNode node, String statement,
-                                String tableName, @Nullable String comment) {
+                                String tableName, @Nullable String comment,
+                                List<ColumnInfo> columns) {
         super(node, statement, comment);
         this.tableName = tableName;
-        this.columns = new ArrayList<>();
+        this.columns = columns;
     }
 
     class EmulatedTable extends AbstractTable implements ScannableTable {
         @Override
         public Enumerable<Object[]> scan(DataContext root) {
             // We don't plan to use this method, but the optimizer requires this API
-            throw new NotImplementedException();
+            throw new Unimplemented();
         }
 
         @Override
@@ -78,10 +79,6 @@ public class CreateTableStatement extends FrontEndStatement {
 
     public AbstractTable getEmulatedTable() {
         return new EmulatedTable();
-    }
-
-    public void addColumn(ColumnInfo info) {
-        this.columns.add(info);
     }
 
     /**

@@ -95,13 +95,13 @@ public class DBSPExecutor extends SqlTestExecutor {
         this.queriesToRun = new ArrayList<>();
     }
 
-    DBSPFunction createInputFunction(DBSPCompiler compiler) throws SqlParseException {
+    DBSPFunction createInputFunction(DBSPCompiler compiler) throws SqlParseException, SQLException {
         for (SqlStatement statement : this.inputPreparation.statements)
             compiler.compileStatement(statement.statement, null);
         return compiler.getTableContents().functionWithTableContents("input");
     }
 
-    void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException {
+    void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException, SQLException {
         DBSPCompiler compiler = new DBSPCompiler();
         final List<ProgramAndTester> codeGenerated = new ArrayList<>();
         // Create input tables
@@ -228,11 +228,6 @@ public class DBSPExecutor extends SqlTestExecutor {
     void createTables(DBSPCompiler compiler) throws SqlParseException {
         for (SqlStatement statement : this.tablePreparation.statements) {
             String stat = statement.statement;
-            // TODO: this is wrong, but I can't get the Calcite parser
-            // to accept Postgres-like PRIMARY KEY statements.
-            stat = stat.replace("PRIMARY KEY", "");
-            // TODO: Calcite does not accept "TEXT"
-            stat = stat.replace(" TEXT", " VARCHAR");
             compiler.compileStatement(stat, stat);
         }
     }

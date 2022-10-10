@@ -24,8 +24,7 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.midend.TableContents;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
@@ -52,7 +51,8 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
         this.statementExecutor = executor;
     }
 
-    DBSPFunction createInputFunction(CalciteToDBSPCompiler compiler, TableContents transaction)
+    @Override
+    DBSPFunction createInputFunction(DBSPCompiler compiler)
             throws SQLException {
         List<String> tables = this.statementExecutor.getTableList();
         DBSPZSetLiteral[] tuple = new DBSPZSetLiteral[tables.size()];
@@ -68,10 +68,19 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
                 result.getType(), result);
     }
 
+    boolean processCreateTable(String command) {
+        String regex = ""; // ""create\s+table\s+(\w+)";
+        // TODO
+        return true;
+    }
+
     public boolean statement(SqlStatement statement) throws SQLException {
         this.statementExecutor.statement(statement);
         String command = statement.statement.toLowerCase();
-        if (command.contains("create table") || command.contains("drop table"))
+        if (command.contains("create table")) {
+            return this.processCreateTable(command);
+        }
+        if (command.contains("drop table"))
             super.statement(statement);
         return true;
     }

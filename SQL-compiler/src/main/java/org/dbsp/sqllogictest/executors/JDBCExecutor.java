@@ -233,11 +233,10 @@ public class JDBCExecutor extends SqlTestExecutor {
         }
     }
 
-    public DBSPZSetLiteral getTableContents(String table) throws SQLException {
-        List<DBSPExpression> rows = new ArrayList<>();
+    public  DBSPType[] getColumnTypes(String table) throws SQLException {
         assert this.connection != null;
         Statement stmt = this.connection.createStatement();
-        ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
+        ResultSet rs = stmt.executeQuery("SELECT * FROM " + table + "WHERE 1 = 0");
 
         ResultSetMetaData meta = rs.getMetaData();
         DBSPType[] colTypes = new DBSPType[meta.getColumnCount()];
@@ -260,13 +259,23 @@ public class JDBCExecutor extends SqlTestExecutor {
                     colTypes[i] = DBSPTypeDouble.instance.setMayBeNull(nullable);
                     break;
                 case VARCHAR:
+                case LONGVARCHAR:
                     colTypes[i] = DBSPTypeString.instance.setMayBeNull(nullable);
                     break;
                 default:
                     throw new RuntimeException("Unexpected column type " + columnType);
             }
         }
+        rs.close();
+        return colTypes;
+    }
 
+    public DBSPZSetLiteral getTableContents(String table) throws SQLException {
+        List<DBSPExpression> rows = new ArrayList<>();
+        assert this.connection != null;
+        DBSPType[] colTypes = this.getColumnTypes(table);
+        Statement stmt = this.connection.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
         while (rs.next()) {
             DBSPExpression[] cols = new DBSPExpression[colTypes.length];
             for (int i = 0; i < colTypes.length; i++) {

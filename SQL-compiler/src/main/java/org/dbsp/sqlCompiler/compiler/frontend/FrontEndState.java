@@ -81,9 +81,8 @@ public class FrontEndState {
         if (kind == SqlKind.CREATE_TABLE) {
             SqlCreateTable ct = (SqlCreateTable)node;
             String tableName = Catalog.identifierToString(ct.name);
-            CreateTableStatement table = new CreateTableStatement(node, statement, tableName, comment);
             List<ColumnInfo> cols = this.getColumnTypes(Objects.requireNonNull(ct.columnList));
-            cols.forEach(table::addColumn);
+            CreateTableStatement table = new CreateTableStatement(node, statement, tableName, comment, cols);
             this.schema.addTable(tableName, table.getEmulatedTable());
             return table;
         } else if (kind == SqlKind.CREATE_VIEW) {
