@@ -139,7 +139,7 @@ public class Main {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         SqlTestExecutor executor = getExecutor(argv);
         String benchDir = "../../sqllogictest/test";
-        int batchSize = 100;
+        int batchSize = 500;
         int skipPerFile = 0;
         String[] files = new String[] {
                 /*
