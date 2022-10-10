@@ -128,9 +128,9 @@ public class Main {
         executor = new NoExecutor();
         executor = dExec;
         JDBCExecutor jdbc = new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
-        //executor = jdbc;
+        executor = jdbc;
         DBSP_JDBC_Executor hybrid = new DBSP_JDBC_Executor(jdbc, true);
-        //executor = hybrid;
+        executor = hybrid;
         return executor;
     }
 
@@ -150,10 +150,11 @@ public class Main {
                 "select1.test", // done
                 "select2.test", // done
                 "select3.test", // done
-                 */
                 "select4.test",
                 "select5.test",
+                 */
                 "index/",
+                "evidence"
         };
         if (argv.length > 1)
             files = Utilities.arraySlice(argv, 1);

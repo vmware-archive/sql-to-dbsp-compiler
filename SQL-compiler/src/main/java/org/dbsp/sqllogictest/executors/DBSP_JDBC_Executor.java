@@ -24,18 +24,20 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.midend.TableContents;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqllogictest.SqlStatement;
 import org.dbsp.sqllogictest.SqlTestFile;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This is a hybrid test executor which keeps all the state in a
@@ -52,7 +54,8 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
         this.statementExecutor = executor;
     }
 
-    DBSPFunction createInputFunction(CalciteToDBSPCompiler compiler, TableContents transaction)
+    @Override
+    DBSPFunction createInputFunction(DBSPCompiler compiler)
             throws SQLException {
         List<String> tables = this.statementExecutor.getTableList();
         DBSPZSetLiteral[] tuple = new DBSPZSetLiteral[tables.size()];
@@ -68,11 +71,29 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
                 result.getType(), result);
     }
 
+    @Nullable
+    String rewriteCreateTable(String command) throws SQLException {
+        String regex = "create\\s+table\\s+(\\w+)";
+        Pattern pat = Pattern.compile(regex);
+        Matcher m = pat.matcher(command);
+        if (!m.find())
+            return null;
+        String tableName = m.group(1);
+        return this.statementExecutor.generateCreateStatement(tableName);
+    }
+
     public boolean statement(SqlStatement statement) throws SQLException {
         this.statementExecutor.statement(statement);
         String command = statement.statement.toLowerCase();
-        if (command.contains("create table") || command.contains("drop table"))
+        @Nullable
+        String create = this.rewriteCreateTable(command);
+        if (create != null) {
+            SqlStatement rewritten = new SqlStatement(create, statement.shouldPass);
+            super.statement(rewritten);
+        } else if (command.contains("drop table")) {
+            // This should perhaps use a regex too.
             super.statement(statement);
+        }
         return true;
     }
 

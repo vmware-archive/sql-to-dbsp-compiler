@@ -78,7 +78,6 @@ import java.util.Properties;
  *   - view definition statements
  * For each statement the compiler returns a representation suitable for passing
  * to the mid-end.
- *
  * The front-end is itself composed of several stages:
  * - compile SQL to SqlNode
  * - compile SqlNode to RelNode
@@ -106,8 +105,8 @@ public class CalciteCompiler {
         connConfigProp.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
         connConfigProp.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
-        // Add support for DDL language
         this.parserConfig = SqlParser.config()
+                // Add support for DDL language
                 .withParserFactory(SqlDdlParserImpl.FACTORY)
                 .withConformance(SqlConformanceEnum.BABEL);
         this.typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
@@ -168,7 +167,7 @@ public class CalciteCompiler {
                     Join join = (Join)node;
                     ++joinCount;
                     if (join.getJoinType().isOuterJoin())
-                    ++outerJoinCount;
+                        ++outerJoinCount;
                 }
                 super.visit(node, ordinal, parent);
             }
@@ -277,8 +276,13 @@ public class CalciteCompiler {
      */
     private SqlNode parse(String sql) throws SqlParseException {
         // This is a weird API - the parser depends on the query string!
-        SqlParser sqlParser = SqlParser.create(sql, this.parserConfig);
-        return sqlParser.parseStmt();
+        try {
+            SqlParser sqlParser = SqlParser.create(sql, this.parserConfig);
+            return sqlParser.parseStmt();
+        } catch (SqlParseException parse) {
+            System.err.println("Exception while parsing " + sql);
+            throw parse;
+        }
     }
 
     public void startCompilation() {

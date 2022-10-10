@@ -233,17 +233,35 @@ public class JDBCExecutor extends SqlTestExecutor {
         }
     }
 
-    public DBSPZSetLiteral getTableContents(String table) throws SQLException {
-        List<DBSPExpression> rows = new ArrayList<>();
+    /*
+     Calcite cannot parse DDL statements in all dialects.
+     For example, it has no support for MySQL CREATE TABLE statements
+     which indicate the primary key for each column.
+     So to handle these we let JDBC execute the statement, then
+     we retrieve the table schema and make up a new statement
+     in a Calcite-friendly syntax.  This implementation does not
+     preserve primary keys, but this does not seem important right now.
+     */
+    public String generateCreateStatement(String table) throws SQLException {
         assert this.connection != null;
-        Statement stmt = this.connection.createStatement();
-        ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
+        StringBuilder builder = new StringBuilder();
+        builder.append("CREATE TABLE ");
+        builder.append(table);
+        builder.append("(");
 
+        Statement stmt = this.connection.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM " + table + " WHERE 1 = 0");
         ResultSetMetaData meta = rs.getMetaData();
-        DBSPType[] colTypes = new DBSPType[meta.getColumnCount()];
         for (int i = 0; i < meta.getColumnCount(); i++) {
             JDBCType columnType = JDBCType.valueOf(meta.getColumnType(i + 1));
             int n = meta.isNullable(i + 1);
+            String colName = meta.getColumnName(i + 1);
+
+            if (i > 0)
+                builder.append(", ");
+            builder.append(colName);
+            builder.append(" ");
+
             boolean nullable;
             if (n == ResultSetMetaData.columnNullable)
                 nullable = true;
@@ -253,20 +271,60 @@ public class JDBCExecutor extends SqlTestExecutor {
                 nullable = false;
             switch (columnType) {
                 case INTEGER:
-                    colTypes[i] = DBSPTypeInteger.signed32.setMayBeNull(nullable);
+                    builder.append("INTEGER");
                     break;
                 case REAL:
                 case DOUBLE:
-                    colTypes[i] = DBSPTypeDouble.instance.setMayBeNull(nullable);
+                    builder.append("DOUBLE");
                     break;
                 case VARCHAR:
-                    colTypes[i] = DBSPTypeString.instance.setMayBeNull(nullable);
+                case LONGVARCHAR:
+                    builder.append("VARCHAR");
+                    break;
+                default:
+                    throw new RuntimeException("Unexpected column type " + columnType);
+            }
+            if (!nullable)
+                builder.append(" NOT NULL");
+        }
+        rs.close();
+        builder.append(")");
+        return builder.toString();
+    }
+
+    public DBSPZSetLiteral getTableContents(String table) throws SQLException {
+        List<DBSPExpression> rows = new ArrayList<>();
+        assert this.connection != null;
+        Statement stmt1 = this.connection.createStatement();
+        ResultSet rs = stmt1.executeQuery("SELECT * FROM " + table);
+        ResultSetMetaData meta = rs.getMetaData();
+        DBSPType[] colTypes = new DBSPType[meta.getColumnCount()];
+        for (int i1 = 0; i1 < meta.getColumnCount(); i1++) {
+            JDBCType columnType = JDBCType.valueOf(meta.getColumnType(i1 + 1));
+            int n = meta.isNullable(i1 + 1);
+            boolean nullable;
+            if (n == ResultSetMetaData.columnNullable)
+                nullable = true;
+            else if (n == ResultSetMetaData.columnNullableUnknown)
+                throw new RuntimeException("Unknown column nullability");
+            else
+                nullable = false;
+            switch (columnType) {
+                case INTEGER:
+                    colTypes[i1] = DBSPTypeInteger.signed32.setMayBeNull(nullable);
+                    break;
+                case REAL:
+                case DOUBLE:
+                    colTypes[i1] = DBSPTypeDouble.instance.setMayBeNull(nullable);
+                    break;
+                case VARCHAR:
+                case LONGVARCHAR:
+                    colTypes[i1] = DBSPTypeString.instance.setMayBeNull(nullable);
                     break;
                 default:
                     throw new RuntimeException("Unexpected column type " + columnType);
             }
         }
-
         while (rs.next()) {
             DBSPExpression[] cols = new DBSPExpression[colTypes.length];
             for (int i = 0; i < colTypes.length; i++) {
