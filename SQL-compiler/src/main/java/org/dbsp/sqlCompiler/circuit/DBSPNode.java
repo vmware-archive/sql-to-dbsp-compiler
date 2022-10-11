@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.circuit;
 
-import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
+import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.util.IdGen;
 
 import javax.annotation.Nullable;

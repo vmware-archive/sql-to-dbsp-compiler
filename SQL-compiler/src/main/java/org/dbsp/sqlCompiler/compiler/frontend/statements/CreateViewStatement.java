@@ -25,43 +25,29 @@ package org.dbsp.sqlCompiler.compiler.frontend.statements;
 
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Objects;
 
 /**
  * The representation of a CREATE VIEW AS ... DDL statement.
  */
-public class CreateViewStatement extends FrontEndStatement {
-    /**
-     * Query defining the view.
-     */
-    public final SqlNode query;
-    /**
-     * Name of the view.
-     */
-    public final String viewName;
+public class CreateViewStatement extends CreateRelationStatement {
     /**
      * Compiled and optimized query.
      */
-    @Nullable
-    private RelRoot compiled;
+    private final RelRoot compiled;
+    public final SqlNode query;
 
-    public CreateViewStatement(SqlNode node, String viewName, String statement,
-                               SqlNode query, @Nullable String comment) {
-        super(node, statement, comment);
+    public CreateViewStatement(@Nullable SqlNode node, String statement,
+                               String tableName, @Nullable String comment,
+                               List<RelDataTypeField> columns, SqlNode query,
+                               RelRoot compiled) {
+        super(node, statement, tableName, comment, columns);
         this.query = query;
-        this.viewName = viewName;
-        this.compiled = null;
-    }
-
-    @Override
-    public SqlNode getNode() {
-        return this.node;
-    }
-
-    public void setCompiledQuery(RelRoot compiled) {
         this.compiled = compiled;
     }
 

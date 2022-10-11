@@ -32,6 +32,7 @@ import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Maintains the catalog: a mapping from table names to table objects.
@@ -39,10 +40,12 @@ import java.util.Map;
 public class Catalog extends AbstractSchema {
     public final String schemaName;
     private final Map<String, Table> tableMap;
+    private final Map<String, Supplier<Table>> toBeGenerated;
 
     public Catalog(String schemaName) {
         this.schemaName = schemaName;
         this.tableMap = new HashMap<>();
+        this.toBeGenerated = new HashMap<>();
     }
 
     public static String identifierToString(SqlIdentifier identifier) {
@@ -55,8 +58,18 @@ public class Catalog extends AbstractSchema {
         this.tableMap.put(name, table);
     }
 
+    /**
+     * Sometimes we don't know everything about the table when it's inserted,
+     * in that case we reach for the table only when needed.
+     */
+    public void addGeneratedTable(String name, Supplier<Table> tableGen) {
+        this.toBeGenerated.put(name, tableGen);
+    }
+
     @Override
     public Map<String, Table> getTableMap() {
+        this.toBeGenerated.forEach((n, t) -> this.tableMap.put(n, t.get()));
+        this.toBeGenerated.clear();
         return this.tableMap;
     }
 
@@ -68,5 +81,6 @@ public class Catalog extends AbstractSchema {
 
     public void dropTable(String tableName) {
         this.tableMap.remove(tableName);
+        this.toBeGenerated.remove(tableName);
     }
 }

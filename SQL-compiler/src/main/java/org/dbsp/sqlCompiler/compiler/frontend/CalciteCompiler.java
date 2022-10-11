@@ -40,10 +40,13 @@ import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.rules.*;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.*;
+import org.apache.calcite.sql.ddl.SqlCreateView;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
@@ -57,15 +60,13 @@ import org.apache.calcite.sql2rel.RelDecorrelator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.tools.RelBuilder;
+import org.apache.calcite.util.Pair;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * The calcite compiler compiles SQL into Calcite RelNode representations.
@@ -108,7 +109,8 @@ public class CalciteCompiler {
         this.parserConfig = SqlParser.config()
                 // Add support for DDL language
                 .withParserFactory(SqlDdlParserImpl.FACTORY)
-                .withConformance(SqlConformanceEnum.BABEL);
+                .withConformance(SqlConformanceEnum.BIG_QUERY);
+                //.withConformance(SqlConformanceEnum.BABEL);
         this.typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
         this.catalog = new Catalog("schema");
         CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
@@ -321,18 +323,35 @@ public class CalciteCompiler {
             throw new RuntimeException("Did you call startCompilation? Program is null");
         SqlNode node = this.parse(sqlStatement);
         if (SqlKind.DDL.contains(node.getKind())) {
-            FrontEndStatement result = this.state.emulate(node, sqlStatement, comment);
-            if (result.is(DropTableStatement.class) ||
-                    result.is(CreateTableStatement.class)) {
-                this.program.addStatement(result);
-                return result;
+            if (node.getKind().equals(SqlKind.DROP_TABLE) ||
+                node.getKind().equals(SqlKind.CREATE_TABLE)) {
+                FrontEndStatement result = this.state.emulate(node, sqlStatement, comment);
+                if (result.is(DropTableStatement.class) ||
+                        result.is(CreateTableStatement.class)) {
+                    this.program.addStatement(result);
+                    return result;
+                }
             }
-            CreateViewStatement view = result.as(CreateViewStatement.class);
-            if (view != null) {
-                RelRoot relRoot = this.converter.convertQuery(view.query, true, true);
+
+            if (node.getKind().equals(SqlKind.CREATE_VIEW)) {
+                SqlCreateView cv = (SqlCreateView) node;
+                RelRoot relRoot = this.converter.convertQuery(cv.query, true, true);
                 RelNode optimized = this.optimize(relRoot.rel);
                 relRoot = relRoot.withRel(optimized);
-                view.setCompiledQuery(relRoot);
+                // Compute columns of the resulting view
+                String viewName = Catalog.identifierToString(cv.name);
+                List<RelDataTypeField> columns = new ArrayList<>();
+                RelDataType rowType = optimized.getRowType();
+                for (Pair<Integer, String> field : relRoot.fields) {
+                    String name = field.right;
+                    RelDataTypeField f = rowType.getField(name, false, false);
+                    columns.add(f);
+                }
+                CreateViewStatement view = new CreateViewStatement(node, sqlStatement,
+                        Catalog.identifierToString(cv.name), comment,
+                        columns, cv.query, relRoot);
+                // From Calcite's point of view we treat this view just as another table.
+                this.state.schema.addTable(viewName, view.getEmulatedTable());
                 this.program.addStatement(view);
                 return view;
             }

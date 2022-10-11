@@ -34,16 +34,20 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeRawTuple;
 import org.dbsp.sqlCompiler.ir.type.IHasType;
 import org.dbsp.util.Linq;
 import org.dbsp.util.NameGen;
+import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
     public final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
     public final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
     public final List<DBSPOperator> operators = new ArrayList<>();
     public final List<IDBSPInnerDeclaration> declarations = new ArrayList<>();
+    public final Map<String, DBSPOperator> operatorDeclarations = new HashMap<>();
     public final String name;
 
     public DBSPCircuit(String name) {
@@ -72,6 +76,8 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
     }
 
     public void addOperator(DBSPOperator operator) {
+        // System.out.println("Adding " + operator);
+        Utilities.putNew(this.operatorDeclarations, operator.outputName, operator);
         if (operator.is(DBSPSourceOperator.class))
             this.inputOperators.add(operator.to(DBSPSourceOperator.class));
         else if (operator.is(DBSPSinkOperator.class))
@@ -92,12 +98,8 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
     }
 
     @Nullable
-    public DBSPOperator getInputOperator(String tableName) {
-        for (DBSPSourceOperator source: this.inputOperators) {
-            if (source.outputName.equals(tableName))
-                return source;
-        }
-        return null;
+    public DBSPOperator getOperator(String tableName) {
+        return this.operatorDeclarations.get(tableName);
     }
 
     @Override

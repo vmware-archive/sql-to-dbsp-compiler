@@ -25,10 +25,11 @@ package org.dbsp.sqlCompiler.compiler.frontend;
 
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.ddl.SqlColumnDeclaration;
 import org.apache.calcite.sql.ddl.SqlCreateTable;
-import org.apache.calcite.sql.ddl.SqlCreateView;
 import org.apache.calcite.sql.ddl.SqlDropTable;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
@@ -61,14 +62,16 @@ public class FrontEndState {
         return result;
     }
 
-    List<ColumnInfo> getColumnTypes(SqlNodeList list) {
-        List<ColumnInfo> result = new ArrayList<>();
+    List<RelDataTypeField> getColumnTypes(SqlNodeList list) {
+        List<RelDataTypeField> result = new ArrayList<>();
+        int index = 0;
         for (SqlNode col: Objects.requireNonNull(list)) {
             if (col.getKind().equals(SqlKind.COLUMN_DECL)) {
                 SqlColumnDeclaration cd = (SqlColumnDeclaration)col;
                 RelDataType type = this.convertType(cd.dataType);
-                ColumnInfo ci = new ColumnInfo(Catalog.identifierToString(cd.name), type);
-                result.add(ci);
+                String name = Catalog.identifierToString(cd.name);
+                RelDataTypeField field = new RelDataTypeFieldImpl(name, index++, type);
+                result.add(field);
                 continue;
             }
             throw new Unimplemented(col);
@@ -81,14 +84,10 @@ public class FrontEndState {
         if (kind == SqlKind.CREATE_TABLE) {
             SqlCreateTable ct = (SqlCreateTable)node;
             String tableName = Catalog.identifierToString(ct.name);
-            List<ColumnInfo> cols = this.getColumnTypes(Objects.requireNonNull(ct.columnList));
+            List<RelDataTypeField> cols = this.getColumnTypes(Objects.requireNonNull(ct.columnList));
             CreateTableStatement table = new CreateTableStatement(node, statement, tableName, comment, cols);
             this.schema.addTable(tableName, table.getEmulatedTable());
             return table;
-        } else if (kind == SqlKind.CREATE_VIEW) {
-            SqlCreateView cv = (SqlCreateView) node;
-            return new CreateViewStatement(node, Catalog.identifierToString(cv.name),
-                    statement, cv.query, comment);
         } else if (kind == SqlKind.INSERT) {
             SqlInsert insert = (SqlInsert)node;
             SqlNode table = insert.getTargetTable();

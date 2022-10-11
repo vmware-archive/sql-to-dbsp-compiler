@@ -21,19 +21,26 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.frontend.statements;
+package org.dbsp.sqlCompiler.ir.type;
 
-import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.sql.SqlNode;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
-/**
- * Describes a table as produced by a CREATE TABLE DDL statement.
- */
-public class CreateTableStatement extends CreateRelationStatement {
-    public CreateTableStatement(@Nullable SqlNode node, String statement, String tableName, @Nullable String comment, List<RelDataTypeField> columns) {
-        super(node, statement, tableName, comment, columns);
+public class DBSPTypeDate extends DBSPType {
+    public static DBSPTypeDate instance = new DBSPTypeDate(null, false);
+
+    protected DBSPTypeDate(@Nullable Object node, boolean mayBeNull) {
+        super(node, mayBeNull);
+    }
+
+    @Override
+    public void accept(InnerVisitor visitor) {}
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        if (this.mayBeNull == mayBeNull)
+            return this;
+        return new DBSPTypeDate(this.getNode(), mayBeNull);
     }
 }

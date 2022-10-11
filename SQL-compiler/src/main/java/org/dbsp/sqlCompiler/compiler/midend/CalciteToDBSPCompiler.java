@@ -157,6 +157,17 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         return false;
     }
 
+    private boolean generateOutputForNextView = true;
+
+    /**
+     * @param generate
+     * If 'false' the next "create view" statements will not generate
+     * an output for the circuit
+     */
+    public void generateOutputForNextView(boolean generate) {
+         this.generateOutputForNextView = generate;
+    }
+
     /**
      * Result returned by the createFoldingFunction below.
      */
@@ -365,18 +376,25 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         List<String> name = scan.getTable().getQualifiedName();
         String tableName = name.get(name.size() - 1);
         @Nullable
-        DBSPOperator source = this.getCircuit().getInputOperator(tableName);
+        DBSPOperator source = this.getCircuit().getOperator(tableName);
         if (source != null) {
-            // Multiple queries can share an input.
-            // Or the input may have been created by a CREATE TABLE statement.
-            Utilities.putNew(this.nodeOperator, scan, source);
-        } else {
-            if (this.generateInputsFromTables)
-                throw new RuntimeException("Could not find input for table " + tableName);
-            DBSPType rowType = this.convertType(scan.getRowType());
-            DBSPSourceOperator result = new DBSPSourceOperator(scan, this.makeZSet(rowType), tableName);
-            this.assignOperator(scan, result);
+            if (source.is(DBSPSinkOperator.class))
+                // We do this because sink operators do not have outputs.
+                // A table scan for a sink operator can appear because of
+                // a VIEW that is an input to a query.
+                Utilities.putNew(this.nodeOperator, scan, source.to(DBSPSinkOperator.class).input());
+            else
+                // Multiple queries can share an input.
+                // Or the input may have been created by a CREATE TABLE statement.
+                Utilities.putNew(this.nodeOperator, scan, source);
+            return;
         }
+
+        if (this.generateInputsFromTables)
+            throw new RuntimeException("Could not find input for table " + tableName);
+        DBSPType rowType = this.convertType(scan.getRowType());
+        DBSPSourceOperator result = new DBSPSourceOperator(scan, this.makeZSet(rowType), tableName);
+        this.assignOperator(scan, result);
     }
 
     void assignOperator(RelNode rel, DBSPOperator op) {
@@ -922,8 +940,17 @@ public class CalciteToDBSPCompiler extends RelVisitor {
             // TODO: connect the result of the query compilation with
             // the fields of rel; for now we assume that these are 1/1
             DBSPOperator op = this.getOperator(rel);
-            DBSPSinkOperator o = new DBSPSinkOperator(
-                    view, view.viewName, view.statement, statement.comment, op);
+            DBSPOperator o;
+            if (this.generateOutputForNextView) {
+                o = new DBSPSinkOperator(
+                        view, view.tableName, view.statement, statement.comment, op);
+            } else {
+                // We may already have a node for this output
+                DBSPOperator previous = this.getCircuit().getOperator(view.tableName);
+                if (previous != null)
+                    return previous;
+                o = new DBSPNoopOperator(view, op, view.tableName);
+            }
             this.getCircuit().addOperator(o);
             return o;
         } else if (statement.is(CreateTableStatement.class) ||

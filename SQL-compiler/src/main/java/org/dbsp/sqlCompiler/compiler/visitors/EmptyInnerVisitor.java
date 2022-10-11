@@ -21,19 +21,18 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.frontend;
+package org.dbsp.sqlCompiler.compiler.visitors;
 
-import org.apache.calcite.rel.type.RelDataType;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
-/**
- * Describes information about a column in a SQL table.
- */
-public class ColumnInfo {
-    public final String name;
-    public final RelDataType type;
+public class EmptyInnerVisitor extends InnerVisitor {
+    public EmptyInnerVisitor() {
+        super(true);
+    }
 
-    public ColumnInfo(String name, RelDataType type) {
-        this.name = name;
-        this.type = type;
+    @Override
+    public boolean preorder(IDBSPInnerNode node) {
+        return false;
     }
 }

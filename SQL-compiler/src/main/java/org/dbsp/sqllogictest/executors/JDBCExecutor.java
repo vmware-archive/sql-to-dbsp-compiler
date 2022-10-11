@@ -117,7 +117,7 @@ public class JDBCExecutor extends SqlTestExecutor {
         stmt.execute(statement.statement);
         stmt.close();
         this.statementsExecuted++;
-        if (debug)
+        if (JDBCExecutor.debug)
             System.out.println(this.statementsExecuted + ": " + statement.statement);
     }
 
@@ -133,7 +133,7 @@ public class JDBCExecutor extends SqlTestExecutor {
         stmt.close();
         resultSet.close();
         this.queriesExecuted++;
-        if (debug)
+        if (JDBCExecutor.debug)
             System.out.println(this.queriesExecuted + ": " + query.query);
         return true;
     }
@@ -366,7 +366,8 @@ public class JDBCExecutor extends SqlTestExecutor {
         List<String> result = new ArrayList<>();
         assert this.connection != null;
         Statement stmt = this.connection.createStatement();
-        ResultSet rs = stmt.executeQuery("SHOW TABLES");
+        // TODO: This is probably not portable.
+        ResultSet rs = stmt.executeQuery("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
         while (rs.next()) {
             String tableName = rs.getString(1);
             result.add(tableName);

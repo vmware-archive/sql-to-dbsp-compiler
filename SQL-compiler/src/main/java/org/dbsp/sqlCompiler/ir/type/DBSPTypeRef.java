@@ -67,4 +67,14 @@ public class DBSPTypeRef extends DBSPType {
         this.type.accept(visitor);
         visitor.postorder(this);
     }
+
+    /**
+     * Given a type that is expected to be a reference type,
+     * compute the type that is the dereferenced type.
+     */
+    public static DBSPType deref(DBSPType otherType) {
+        if (otherType.is(DBSPTypeAny.class))
+            return otherType;
+        return otherType.to(DBSPTypeRef.class).type;
+    }
 }

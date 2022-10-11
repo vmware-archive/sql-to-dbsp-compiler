@@ -21,19 +21,35 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.frontend.statements;
+package org.dbsp.sqlCompiler.compiler.visitors;
 
-import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.sql.SqlNode;
-
-import javax.annotation.Nullable;
-import java.util.List;
+import org.dbsp.sqlCompiler.circuit.operator.*;
 
 /**
- * Describes a table as produced by a CREATE TABLE DDL statement.
+ * This visitor converts a DBSPCircuit into a new circuit which
+ * computes the incremental version of the same query.
+ * The generated circuit is not efficient, though, it should be
+ * further optimized.
  */
-public class CreateTableStatement extends CreateRelationStatement {
-    public CreateTableStatement(@Nullable SqlNode node, String statement, String tableName, @Nullable String comment, List<RelDataTypeField> columns) {
-        super(node, statement, tableName, comment, columns);
+public class IncrementalizeVisitor extends CircuitCloneVisitor {
+    public IncrementalizeVisitor(String outputName) {
+        super(outputName);
+    }
+
+    @Override
+    public void postorder(DBSPSourceOperator operator) {
+        this.result.addOperator(operator);
+        DBSPIntegralOperator integral = new DBSPIntegralOperator(null, operator);
+        this.map(operator, integral);
+    }
+
+    @Override
+    public void postorder(DBSPSinkOperator operator) {
+        DBSPOperator source = this.mapped(operator.input());
+        DBSPDifferentialOperator diff = new DBSPDifferentialOperator(null, source);
+        DBSPSinkOperator sink = new DBSPSinkOperator(operator.getNode(), operator.outputName,
+                operator.query, operator.comment, diff);
+        this.result.addOperator(diff);
+        this.map(operator, sink);
     }
 }

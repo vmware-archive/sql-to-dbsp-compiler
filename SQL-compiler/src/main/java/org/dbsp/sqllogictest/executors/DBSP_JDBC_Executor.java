@@ -24,7 +24,7 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
@@ -83,15 +83,21 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
     }
 
     public boolean statement(SqlStatement statement) throws SQLException {
-        this.statementExecutor.statement(statement);
+        try {
+            this.statementExecutor.statement(statement);
+        } catch (SQLException ex) {
+            System.err.println("Error while executing " + statement);
+            throw ex;
+        }
         String command = statement.statement.toLowerCase();
         @Nullable
         String create = this.rewriteCreateTable(command);
         if (create != null) {
             SqlStatement rewritten = new SqlStatement(create, statement.shouldPass);
             super.statement(rewritten);
-        } else if (command.contains("drop table")) {
-            // This should perhaps use a regex too.
+        } else if (command.contains("drop table") ||
+                command.contains("create view")) {
+            // These should perhaps use a regex too.
             super.statement(statement);
         }
         return true;

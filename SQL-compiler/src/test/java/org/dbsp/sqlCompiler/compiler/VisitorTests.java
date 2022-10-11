@@ -24,9 +24,9 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
+import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.junit.Assert;
 import org.junit.Test;
 
