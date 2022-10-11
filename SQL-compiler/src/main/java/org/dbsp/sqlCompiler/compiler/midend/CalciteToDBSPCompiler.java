@@ -62,6 +62,8 @@ import java.util.function.Consumer;
  * the previously defined tables and views.  Multiple views can be
  * compiled.  The result is a circuit which has an input for each table
  * and an output for each view.
+ * The function generateOutputForNextView can be used to prevent
+ * some views from generating outputs.
  */
 public class CalciteToDBSPCompiler extends RelVisitor {
     /**
@@ -162,7 +164,8 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     /**
      * @param generate
      * If 'false' the next "create view" statements will not generate
-     * an output for the circuit
+     * an output for the circuit.  This is sticky, it has to be
+     * explicitly reset.
      */
     public void generateOutputForNextView(boolean generate) {
          this.generateOutputForNextView = generate;

@@ -37,7 +37,6 @@ public class DBSPNoopOperator extends DBSPUnaryOperator {
         return new DBSPClosureExpression(new DBSPDerefExpression(var), var.asRefParameter());
     }
 
-
     public DBSPNoopOperator(@Nullable Object node, DBSPOperator source, String outputName) {
         super(node, "map", getClosure(),
                 source.getNonVoidType(), source.isMultiset, source, outputName);

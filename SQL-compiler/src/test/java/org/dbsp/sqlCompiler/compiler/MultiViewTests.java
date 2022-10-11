@@ -43,6 +43,15 @@ import java.io.PrintWriter;
  * Tests where multiple views are defined in the same circuit.
  */
 public class MultiViewTests extends BaseSQLTests {
+    static final String ddl = "CREATE TABLE T (\n" +
+            "COL1 INT NOT NULL" +
+            ", COL2 DOUBLE NOT NULL" +
+            ", COL3 BOOLEAN NOT NULL" +
+            ", COL4 VARCHAR NOT NULL" +
+            ", COL5 INT" +
+            ", COL6 DOUBLE" +
+            ")";
+
     /**
      * Two output views.
      */
@@ -53,14 +62,6 @@ public class MultiViewTests extends BaseSQLTests {
 
         DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);
-        String ddl = "CREATE TABLE T (\n" +
-                "COL1 INT NOT NULL" +
-                ", COL2 DOUBLE NOT NULL" +
-                ", COL3 BOOLEAN NOT NULL" +
-                ", COL4 VARCHAR NOT NULL" +
-                ", COL5 INT" +
-                ", COL6 DOUBLE" +
-                ")";
         compiler.compileStatement(ddl, null);
         compiler.compileStatement(query1, null);
         compiler.compileStatement(query2, null);
@@ -95,14 +96,6 @@ public class MultiViewTests extends BaseSQLTests {
 
         DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);
-        String ddl = "CREATE TABLE T (\n" +
-                "COL1 INT NOT NULL" +
-                ", COL2 DOUBLE NOT NULL" +
-                ", COL3 BOOLEAN NOT NULL" +
-                ", COL4 VARCHAR NOT NULL" +
-                ", COL5 INT" +
-                ", COL6 DOUBLE" +
-                ")";
         compiler.compileStatement(ddl, null);
         compiler.compileStatement(query1, null);
         compiler.compileStatement(query2, null);
@@ -137,14 +130,6 @@ public class MultiViewTests extends BaseSQLTests {
 
         DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);
-        String ddl = "CREATE TABLE T (\n" +
-                "COL1 INT NOT NULL" +
-                ", COL2 DOUBLE NOT NULL" +
-                ", COL3 BOOLEAN NOT NULL" +
-                ", COL4 VARCHAR NOT NULL" +
-                ", COL5 INT" +
-                ", COL6 DOUBLE" +
-                ")";
         compiler.compileStatement(ddl, null);
         compiler.compileStatement(query1, null);
         compiler.compileStatement(query2, null);

@@ -109,8 +109,7 @@ public class CalciteCompiler {
         this.parserConfig = SqlParser.config()
                 // Add support for DDL language
                 .withParserFactory(SqlDdlParserImpl.FACTORY)
-                .withConformance(SqlConformanceEnum.BIG_QUERY);
-                //.withConformance(SqlConformanceEnum.BABEL);
+                .withConformance(SqlConformanceEnum.BABEL);
         this.typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
         this.catalog = new Catalog("schema");
         CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);

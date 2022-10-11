@@ -161,7 +161,7 @@ public class Main {
                 "select4.test",
                 "select5.test",
                  */
-                "index/view/10/slt_good_2.test",
+                "index",
                 "evidence"
         };
         if (argv.length > 1)
