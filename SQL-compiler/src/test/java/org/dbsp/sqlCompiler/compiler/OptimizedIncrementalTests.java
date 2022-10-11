@@ -21,19 +21,13 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.frontend.statements;
+package org.dbsp.sqlCompiler.compiler;
 
-import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.sql.SqlNode;
-
-import javax.annotation.Nullable;
-import java.util.List;
-
-/**
- * Describes a table as produced by a CREATE TABLE DDL statement.
- */
-public class CreateTableStatement extends CreateRelationStatement {
-    public CreateTableStatement(@Nullable SqlNode node, String statement, String tableName, @Nullable String comment, List<RelDataTypeField> columns) {
-        super(node, statement, tableName, comment, columns);
+public class OptimizedIncrementalTests /* extends NaiveIncrementalTests  */ {
+    /*
+    TODO
+    public void invokeTestQueryBase(String query, BaseSQLTests.InputOutputPair... streams) {
+        super.testQueryBase(query, true, true, streams);
     }
+     */
 }

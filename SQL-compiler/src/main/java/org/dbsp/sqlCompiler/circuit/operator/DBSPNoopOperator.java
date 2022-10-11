@@ -21,19 +21,29 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.frontend.statements;
+package org.dbsp.sqlCompiler.circuit.operator;
 
-import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.sql.SqlNode;
+import org.dbsp.sqlCompiler.ir.expression.DBSPClosureExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPDerefExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPVariableReference;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-/**
- * Describes a table as produced by a CREATE TABLE DDL statement.
- */
-public class CreateTableStatement extends CreateRelationStatement {
-    public CreateTableStatement(@Nullable SqlNode node, String statement, String tableName, @Nullable String comment, List<RelDataTypeField> columns) {
-        super(node, statement, tableName, comment, columns);
+public class DBSPNoopOperator extends DBSPUnaryOperator {
+    static DBSPClosureExpression getClosure() {
+        DBSPVariableReference var = new DBSPVariableReference("i", DBSPTypeAny.instance);
+        return new DBSPClosureExpression(new DBSPDerefExpression(var), var.asRefParameter());
+    }
+
+    public DBSPNoopOperator(@Nullable Object node, DBSPOperator source, String outputName) {
+        super(node, "map", getClosure(),
+                source.getNonVoidType(), source.isMultiset, source, outputName);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        return new DBSPNoopOperator(this.getNode(), newInputs.get(0), this.outputName);
     }
 }

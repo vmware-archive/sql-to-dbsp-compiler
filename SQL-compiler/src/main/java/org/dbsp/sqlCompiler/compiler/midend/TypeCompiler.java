@@ -89,10 +89,8 @@ public class TypeCompiler {
                 case DYNAMIC_STAR:
                 case GEOMETRY:
                 case SARG:
-                case DATE:
                 case TIME:
                 case TIME_WITH_LOCAL_TIME_ZONE:
-                case TIMESTAMP:
                 case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
                 case INTERVAL_YEAR:
                 case INTERVAL_YEAR_MONTH:
@@ -108,6 +106,10 @@ public class TypeCompiler {
                 case INTERVAL_MINUTE_SECOND:
                 case INTERVAL_SECOND:
                     throw new Unimplemented(tn);
+                case TIMESTAMP:
+                    return DBSPTypeTimestamp.instance.setMayBeNull(nullable);
+                case DATE:
+                    return DBSPTypeDate.instance.setMayBeNull(nullable);
             }
         }
         throw new Unimplemented(dt);

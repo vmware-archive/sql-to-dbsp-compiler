@@ -24,10 +24,7 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.backend.IncrementalizeVisitor;
-import org.dbsp.sqlCompiler.compiler.backend.OptimizeDistinctVisitor;
-import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
+import org.dbsp.sqlCompiler.compiler.visitors.*;
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
@@ -88,7 +85,7 @@ public class BaseSQLTests {
         writer.println(ToRustVisitor.toRustString(tester));
     }
 
-    void testQueryBase(String query, boolean incremental, InputOutputPair... streams) {
+    void testQueryBase(String query, boolean incremental, boolean optimize, InputOutputPair... streams) {
         try {
             query = "CREATE VIEW V AS " + query;
             DBSPCompiler compiler = this.compileQuery(query);
@@ -96,9 +93,10 @@ public class BaseSQLTests {
             writer.println(ToRustVisitor.generatePreamble());
             DBSPCircuit circuit = compiler.getResult();
             circuit = new OptimizeDistinctVisitor(circuit.name).apply(circuit);
-            if (incremental) {
+            if (incremental)
                 circuit = new IncrementalizeVisitor(circuit.name).apply(circuit);
-            }
+            if (optimize)
+                circuit = new OptimizeIncrementalVisitor(circuit.name).apply(circuit);
             writer.println(ToRustVisitor.toRustString(circuit));
             this.createTester(writer, circuit, streams);
             writer.close();

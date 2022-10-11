@@ -24,7 +24,7 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.midend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
@@ -36,7 +36,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
-import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
+import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqllogictest.*;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;
@@ -75,6 +75,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     private int skip;       // Number of queries to skip in each test file.
     final SqlTestPrepareInput inputPreparation;
     final SqlTestPrepareTables tablePreparation;
+    final SqlTestPrepareTables viewPreparation;
     private final List<SqlTestQuery> queriesToRun;
 
     public void setBatchSize(int batchSize, int skip) {
@@ -91,6 +92,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         this.execute = execute;
         this.inputPreparation = new SqlTestPrepareInput();
         this.tablePreparation = new SqlTestPrepareTables();
+        this.viewPreparation = new SqlTestPrepareTables();
         this.batchSize = 10;
         this.queriesToRun = new ArrayList<>();
     }
@@ -115,7 +117,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         for (SqlTestQuery testQuery : this.queriesToRun) {
             try {
                 ProgramAndTester pc = this.generateTestCase(
-                        compiler, inputFunction, testQuery, queryNo);
+                        compiler, inputFunction, this.viewPreparation, testQuery, queryNo);
                 codeGenerated.add(pc);
                 this.queriesExecuted++;
             } catch (Throwable ex) {
@@ -139,15 +141,22 @@ public class DBSPExecutor extends SqlTestExecutor {
     }
 
     ProgramAndTester generateTestCase(
-            DBSPCompiler compiler, DBSPFunction inputGeneratingFunction, SqlTestQuery testQuery, int suffix)
+            DBSPCompiler compiler, DBSPFunction inputGeneratingFunction,
+            SqlTestPrepareTables viewPreparation,
+            SqlTestQuery testQuery, int suffix)
             throws SqlParseException {
         String origQuery = testQuery.query;
         String dbspQuery = origQuery;
-        if (!dbspQuery.toLowerCase().contains("view"))
+        if (!dbspQuery.toLowerCase().contains("create view"))
             dbspQuery = "CREATE VIEW V AS (" + origQuery + ")";
         if (this.debug)
             System.out.println("Query " + suffix + ":\n" + dbspQuery);
         compiler.newCircuit("gen" + suffix);
+        compiler.generateOutputForNextView(false);
+        for (SqlStatement view: viewPreparation.statements) {
+            compiler.compileStatement(view.statement, null);
+        }
+        compiler.generateOutputForNextView(true);
         compiler.compileStatement(dbspQuery, testQuery.name);
         DBSPCircuit dbsp = compiler.getResult();
         DBSPZSetLiteral expectedOutput = null;
@@ -401,11 +410,12 @@ public class DBSPExecutor extends SqlTestExecutor {
         if (command.startsWith("create distinct index"))
             return false;
         if (command.contains("create table") ||
-                command.contains("drop table")) {
+                command.contains("drop table"))
             this.tablePreparation.add(statement);
-        } else {
+        else if (command.contains("create view"))
+            this.viewPreparation.add(statement);
+        else
             this.inputPreparation.add(statement);
-        }
         return true;
     }
 

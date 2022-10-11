@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.visitors;
 
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
 import org.dbsp.sqlCompiler.ir.DBSPFile;

@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.visitors;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
@@ -40,7 +40,7 @@ import java.util.function.Function;
  * Each operator is cloned in one of two cases:
  * - any of its inputs has changed
  * - the 'force' flag is 'true'.
- * The declarations are left unchanged.
+ * The declarations in the circuit are left unchanged.
  */
 public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSPCircuit, DBSPCircuit> {
     final DBSPCircuit result;
@@ -66,8 +66,6 @@ public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSP
         Utilities.putNew(this.remap, old, newOp);
         this.result.addOperator(newOp);
     }
-
-    /// postorder methods
 
     @Override
     public void postorder(DBSPCircuit circuit) {

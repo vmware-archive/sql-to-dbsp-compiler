@@ -30,7 +30,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.pattern.*;
 import org.dbsp.sqlCompiler.ir.type.*;
-import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
+import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;

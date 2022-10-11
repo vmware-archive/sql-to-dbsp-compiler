@@ -138,27 +138,8 @@ public class SqlTestFile {
         @Nullable String line = this.nextLine(true);
         if (this.done)
             return null;
-        List<String> skip = new ArrayList<>();
-        List<String> only = new ArrayList<>();
         while (line.isEmpty())
             line = this.nextLine(false);
-
-        while (line.startsWith("onlyif") || line.startsWith("skipif")) {
-            boolean sk = line.startsWith("skipif");
-            String cond = line.substring("onlyif".length()).trim();
-            if (sk)
-                skip.add(cond);
-            else
-                only.add(cond);
-            line = this.nextLine(false);
-        }
-
-        if (line.startsWith("halt")) {
-            this.nextLine(false);
-            if (policy.accept(skip, only))
-                return null;
-            return this.parseTestQuery(policy);
-        }
 
         if (!line.startsWith("query")) {
             this.error("Unexpected line: " + Utilities.singleQuote(line));
@@ -219,8 +200,6 @@ public class SqlTestFile {
                 result.outputDescription.clearResults();
             }
         }
-        if (!policy.accept(skip, only))
-            return null;
         return result;
     }
 
@@ -235,6 +214,24 @@ public class SqlTestFile {
              if (line.startsWith("hash-threshold"))
                  continue;
 
+             List<String> skip = new ArrayList<>();
+             List<String> only = new ArrayList<>();
+             while (line.startsWith("onlyif") || line.startsWith("skipif")) {
+                 boolean sk = line.startsWith("skipif");
+                 String cond = line.substring("onlyif".length()).trim();
+                 if (sk)
+                     skip.add(cond);
+                 else
+                     only.add(cond);
+                 line = this.nextLine(false);
+             }
+
+             if (line.startsWith("halt")) {
+                 this.nextLine(false);
+                 if (policy.accept(skip, only))
+                     break;
+             }
+
              if (line.startsWith("statement")) {
                  boolean ok = line.startsWith("statement ok");
                  line = this.nextLine(false);
@@ -245,11 +242,12 @@ public class SqlTestFile {
                  }
                  String command = statement.toString();
                  SqlStatement stat = new SqlStatement(command, ok);
-                 this.add(stat);
+                 if (policy.accept(skip, only))
+                    this.add(stat);
              } else {
                  this.undoRead(line);
                  SqlTestQuery test = this.parseTestQuery(policy);
-                 if (test != null)
+                 if (test != null && policy.accept(skip, only))
                      this.add(test);
              }
         }

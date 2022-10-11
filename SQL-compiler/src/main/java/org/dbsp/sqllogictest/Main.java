@@ -45,17 +45,25 @@ public class Main {
     // Following are queries that calcite fails to parse.
     static final String[] skipFiles = {};
 
-    static class NoMySql implements QueryAcceptancePolicy {
+    static class General implements QueryAcceptancePolicy {
         @Override
         public boolean accept(List<String> skip, List<String> only) {
-            return !only.contains("mysql") && !skip.contains("postgresql");
+            if (only.contains("postgresql"))
+                return true;
+            if (!only.isEmpty())
+                return false;
+            return !skip.contains("postgresql");
         }
     }
 
     static class MySql implements QueryAcceptancePolicy {
         @Override
         public boolean accept(List<String> skip, List<String> only) {
-            return !only.contains("postgresql") && !skip.contains("mysql");
+            if (only.contains("mysql"))
+                return true;
+            if (!only.isEmpty())
+                return false;
+            return !skip.contains("mysql");
         }
     }
 
@@ -153,13 +161,13 @@ public class Main {
                 "select4.test",
                 "select5.test",
                  */
-                "index/",
+                "index",
                 "evidence"
         };
         if (argv.length > 1)
             files = Utilities.arraySlice(argv, 1);
         QueryAcceptancePolicy policy =
-                executor.is(JDBCExecutor.class) ? new MySql() : new NoMySql();
+                executor.is(DBSPExecutor.class) ? new General() : new MySql();
         TestLoader loader = new TestLoader(executor, policy);
         for (String file : files) {
             if (file.startsWith("select"))

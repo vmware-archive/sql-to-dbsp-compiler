@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.visitors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
@@ -65,6 +65,15 @@ public class DBSPCompiler {
     public DBSPCompiler newCircuit(String circuitName) {
         this.midend.newCircuit(circuitName);
         return this;
+    }
+
+    /**
+     * @param generate
+     * If 'false' the next "create view" statements will not generate
+     * an output for the circuit
+     */
+    public void generateOutputForNextView(boolean generate) {
+        this.midend.generateOutputForNextView(generate);
     }
 
     public void compileStatement(String statement, @Nullable String comment) throws SqlParseException {

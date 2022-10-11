@@ -21,16 +21,26 @@
  * SOFTWARE.
  */
 
-/**
- * Package that doesn't allow null values as method parameters.
- */
+package org.dbsp.sqlCompiler.ir.type;
 
-@ParametersAreNonnullByDefault
-@FieldsAreNonnullByDefault
-@MethodsAreNonnullByDefault
-package org.dbsp.sqlCompiler.compiler.backend;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
-import org.dbsp.util.FieldsAreNonnullByDefault;
-import org.dbsp.util.MethodsAreNonnullByDefault;
+import javax.annotation.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+public class DBSPTypeDate extends DBSPType {
+    public static DBSPTypeDate instance = new DBSPTypeDate(null, false);
+
+    protected DBSPTypeDate(@Nullable Object node, boolean mayBeNull) {
+        super(node, mayBeNull);
+    }
+
+    @Override
+    public void accept(InnerVisitor visitor) {}
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        if (this.mayBeNull == mayBeNull)
+            return this;
+        return new DBSPTypeDate(this.getNode(), mayBeNull);
+    }
+}

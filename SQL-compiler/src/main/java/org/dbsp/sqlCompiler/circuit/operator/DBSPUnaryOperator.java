@@ -37,6 +37,13 @@ public abstract class DBSPUnaryOperator extends DBSPOperator {
         this.addInput(source);
     }
 
+    protected DBSPUnaryOperator(@Nullable Object node, String operation,
+                                @Nullable DBSPExpression function, DBSPType outputType,
+                                boolean isMultiset, DBSPOperator source, String outputName) {
+        super(node, operation, function, outputType, isMultiset, outputName);
+        this.addInput(source);
+    }
+
     @Override
     public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;

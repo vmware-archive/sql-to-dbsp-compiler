@@ -21,12 +21,26 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
-public class EmptyInnerVisitor extends InnerVisitor {
-    public EmptyInnerVisitor() {
-        super(false);
+import javax.annotation.Nullable;
+
+public class DBSPTypeTimestamp extends DBSPType {
+    public static DBSPTypeTimestamp instance = new DBSPTypeTimestamp(null, false);
+
+    protected DBSPTypeTimestamp(@Nullable Object node, boolean mayBeNull) {
+        super(node, mayBeNull);
+    }
+
+    @Override
+    public void accept(InnerVisitor visitor) {}
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        if (this.mayBeNull == mayBeNull)
+            return this;
+        return new DBSPTypeTimestamp(this.getNode(), mayBeNull);
     }
 }

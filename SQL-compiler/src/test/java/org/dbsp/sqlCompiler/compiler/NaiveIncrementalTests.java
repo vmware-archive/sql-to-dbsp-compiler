@@ -36,13 +36,17 @@ import org.junit.Test;
 // Runs the EndToEnd tests but on an input stream with 3 elements each and
 // using an incremental non-optimized circuit.
 public class NaiveIncrementalTests extends EndToEndTests {
+    public void invokeTestQueryBase(String query, InputOutputPair... streams) {
+        super.testQueryBase(query, true, false, streams);
+    }
+
     @Override
     void testQuery(String query,
                    DBSPZSetLiteral firstOutput) {
         DBSPZSetLiteral input = this.createInput();
         DBSPZSetLiteral secondOutput = new DBSPZSetLiteral(firstOutput.getNonVoidType());
         DBSPZSetLiteral thirdOutput = secondOutput.minus(firstOutput);
-        super.testQueryBase(query, true,
+        this.invokeTestQueryBase(query,
                 // Add first input
                 new InputOutputPair(input, firstOutput),
                 // Add an empty input
@@ -56,7 +60,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
                             DBSPZSetLiteral output) {
         DBSPZSetLiteral input = this.createInput();
         DBSPZSetLiteral empty = new DBSPZSetLiteral(output.getNonVoidType());
-        super.testQueryBase(query, true,
+        this.invokeTestQueryBase(query,
                 // Add first input
                 new InputOutputPair(input, output),
                 // Add an empty input
@@ -72,7 +76,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
         DBSPZSetLiteral input = this.createInput();
         DBSPZSetLiteral secondOutput = new DBSPZSetLiteral(firstOutput.getNonVoidType());
         DBSPZSetLiteral thirdOutput = outputForEmptyInput.minus(firstOutput);
-        super.testQueryBase(query, true,
+        this.invokeTestQueryBase(query,
                 // Add first input
                 new InputOutputPair(input, firstOutput),
                 // Add an empty input

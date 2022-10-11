@@ -60,7 +60,12 @@ public abstract class CircuitVisitor {
         if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
         else return true;
     }
-    
+
+    public boolean preorder(DBSPNoopOperator node) {
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
+        else return true;
+    }
+
     public boolean preorder(DBSPSubtractOperator node) {
         if (this.visitSuper) return this.preorder((DBSPOperator) node);
         else return true;
@@ -170,6 +175,10 @@ public abstract class CircuitVisitor {
     }
 
     public void postorder(DBSPDifferentialOperator node) {
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
+    }
+
+    public void postorder(DBSPNoopOperator node) {
         if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
     }
 

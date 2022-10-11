@@ -17,7 +17,7 @@ import org.junit.Test;
 public class EndToEndTests extends BaseSQLTests {
     void testQuery(String query, DBSPZSetLiteral expectedOutput) {
         DBSPZSetLiteral input = this.createInput();
-        super.testQueryBase(query, false, new InputOutputPair(input, expectedOutput));
+        super.testQueryBase(query, false, false, new InputOutputPair(input, expectedOutput));
     }
 
     @Test

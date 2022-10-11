@@ -21,29 +21,16 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+/**
+ * Package that doesn't allow null values as method parameters.
+ */
 
-import org.dbsp.sqlCompiler.circuit.operator.*;
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqlCompiler.compiler.visitors;
 
-public class IncrementalizeVisitor extends CircuitCloneVisitor {
-    public IncrementalizeVisitor(String outputName) {
-        super(outputName);
-    }
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
 
-    @Override
-    public void postorder(DBSPSourceOperator operator) {
-        this.result.addOperator(operator);
-        DBSPIntegralOperator integral = new DBSPIntegralOperator(null, operator);
-        this.map(operator, integral);
-    }
-
-    @Override
-    public void postorder(DBSPSinkOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPDifferentialOperator diff = new DBSPDifferentialOperator(null, source);
-        DBSPSinkOperator sink = new DBSPSinkOperator(operator.getNode(), operator.outputName,
-                operator.query, operator.comment, diff);
-        this.result.addOperator(diff);
-        this.map(operator, sink);
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;
