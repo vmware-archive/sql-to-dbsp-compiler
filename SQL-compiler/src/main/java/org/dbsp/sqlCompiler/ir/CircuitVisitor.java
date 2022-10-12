@@ -23,21 +23,60 @@
 
 package org.dbsp.sqlCompiler.ir;
 
+import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.util.IdGen;
+
+import javax.annotation.Nullable;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Depth-first traversal of an DBSPNode hierarchy.
  */
 @SuppressWarnings("SameReturnValue")
-public abstract class CircuitVisitor {
+public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircuit, DBSPCircuit> {
     /// If true each visit call will visit by default the superclass.
     final boolean visitSuper;
     public final InnerVisitor innerVisitor;
+    protected boolean debug = false;
+    @Nullable
+    private DBSPCircuit circuit = null;
 
     public CircuitVisitor(boolean visitSuper, InnerVisitor visitor) {
         this.visitSuper = visitSuper;
         this.innerVisitor = visitor;
+    }
+
+    public DBSPCircuit getCircuit() {
+        return Objects.requireNonNull(this.circuit);
+    }
+
+    public CircuitVisitor setDebug(boolean debug) {
+        this.debug = debug;
+        return this;
+    }
+
+    /**
+     * Override to initialize before visisting any node.
+     */
+    public void startVisit() {}
+
+    /**
+     * Override to finish after visiting all nodes.
+     */
+    public void endVisit() {}
+
+    /**
+     * Returns by default the input circuit unmodified.
+     */
+    @Override
+    public DBSPCircuit apply(DBSPCircuit node) {
+        this.startVisit();
+        node.accept(this);
+        this.endVisit();
+        return node;
     }
 
     /************************* PREORDER *****************************/
@@ -48,6 +87,9 @@ public abstract class CircuitVisitor {
     public boolean preorder(DBSPOperator node) { return true; }
 
     public boolean preorder(DBSPCircuit circuit) {
+        if (this.circuit != null)
+            throw new RuntimeException("Circuit is already set");
+        this.circuit = circuit;
         return true;
     }
 
@@ -140,7 +182,9 @@ public abstract class CircuitVisitor {
 
     public void postorder(DBSPOperator ignored) {}
 
-    public void postorder(DBSPCircuit circuit) {}
+    public void postorder(DBSPCircuit circuit) {
+        this.circuit = null;
+    }
 
     public void postorder(DBSPUnaryOperator node) {
         if (this.visitSuper) this.postorder((DBSPOperator) node);
@@ -208,5 +252,10 @@ public abstract class CircuitVisitor {
 
     public void postorder(DBSPSourceOperator node) {
         if (this.visitSuper) this.postorder((DBSPOperator) node);
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + this.id;
     }
 }

@@ -23,35 +23,50 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
-import org.dbsp.sqlCompiler.circuit.operator.*;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPSourceOperator;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * This visitor converts a DBSPCircuit into a new circuit which
- * computes the incremental version of the same query.
- * The generated circuit is not efficient, though, it should be
- * further optimized.
+ * At the end of the visit the set 'keep' contains all
+ * operators that are 'used' by other operators (inputs, outputs,
+ * and sources).
  */
-public class IncrementalizeVisitor extends CircuitCloneVisitor {
-    public IncrementalizeVisitor() {
-        super(false);
+public class DeadCodeVisitor extends CircuitVisitor {
+    public final Set<DBSPOperator> keep = new HashSet<>();
+
+    public DeadCodeVisitor() {
+        super(true, new EmptyInnerVisitor());
     }
 
     @Override
-    public void postorder(DBSPSourceOperator operator) {
-        if (this.visited.contains(operator))
-            return;
-        this.getResult().addOperator(operator);
-        DBSPIntegralOperator integral = new DBSPIntegralOperator(null, operator);
-        this.map(operator, integral);
+    public void startVisit() {
+        this.keep.clear();
+    }
+
+    boolean keepSources(DBSPOperator operator) {
+        this.keep.addAll(operator.inputs);
+        return false;
     }
 
     @Override
-    public void postorder(DBSPSinkOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPDifferentialOperator diff = new DBSPDifferentialOperator(null, source);
-        DBSPSinkOperator sink = new DBSPSinkOperator(operator.getNode(), operator.outputName,
-                operator.query, operator.comment, diff);
-        this.getResult().addOperator(diff);
-        this.map(operator, sink);
+    public boolean preorder(DBSPSourceOperator operator) {
+        this.keep.add(operator);
+        return this.keepSources(operator);
+    }
+
+    @Override
+    public boolean preorder(DBSPSinkOperator operator) {
+        this.keep.add(operator);
+        return this.keepSources(operator);
+    }
+
+    @Override
+    public boolean preorder(DBSPOperator operator) {
+        return this.keepSources(operator);
     }
 }

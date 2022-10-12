@@ -174,22 +174,17 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
         return false;
     }
 
-    /**
-     * Shallow comparison that returns true if this and other are equal as
-     * pointers or are the same constructor and have fields equal as pointers.
-     */
-    public boolean shallowSameOperator(DBSPOperator other) {
-        return this.outputType == other.outputType &&
-                this.function == other.function &&
-                Linq.same(this.inputs, other.inputs) &&
-                this.operation.equals(other.operation);
-    }
-
     @Override
     public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;
         if (this.function != null)
             this.function.accept(visitor.innerVisitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + " " +
+                this.id + ":" + this.outputName;
     }
 }

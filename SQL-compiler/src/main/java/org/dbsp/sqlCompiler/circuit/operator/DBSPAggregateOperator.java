@@ -60,15 +60,4 @@ public class DBSPAggregateOperator extends DBSPUnaryOperator {
         return this;
     }
 
-    @Override
-    public boolean shallowSameOperator(DBSPOperator other) {
-        if (this == other)
-            return true;
-        DBSPAggregateOperator agg = other.as(DBSPAggregateOperator.class);
-        if (agg == null)
-            return false;
-        return this.function == agg.function &&
-                this.keyType == agg.keyType &&
-                this.outputElementType == agg.outputElementType;
-    }
 }

@@ -96,7 +96,8 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
             SqlStatement rewritten = new SqlStatement(create, statement.shouldPass);
             super.statement(rewritten);
         } else if (command.contains("drop table") ||
-                command.contains("create view")) {
+                command.contains("create view") ||
+                command.contains("drop view")) {
             // These should perhaps use a regex too.
             super.statement(statement);
         }

@@ -48,12 +48,4 @@ public class DBSPSourceOperator extends DBSPOperator {
                     this.getNode(), this.outputType, this.outputName);
         return this;
     }
-
-    @Override
-    public boolean shallowSameOperator(DBSPOperator other) {
-        if (!super.shallowSameOperator(other))
-            return false;
-        DBSPSourceOperator src = other.to(DBSPSourceOperator.class);
-        return this.outputName.equals(src.outputName);
-    }
 }

@@ -125,10 +125,14 @@ public class Linq {
     }
 
     public static <T> boolean same(T[] left, T[] right) {
+        if (left.length != right.length)
+            return false;
         return Linq.all(Linq.zipSameLength(left, right, (l, r) -> l == r, Boolean.class));
     }
 
     public static <T> boolean same(List<T> left, List<T> right) {
+        if (left.size() != right.size())
+            return false;
         return Linq.all(Linq.zipSameLength(left, right, (l, r) -> l == r));
     }
 

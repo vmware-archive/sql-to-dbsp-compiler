@@ -19,13 +19,34 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.sqllogictest;
+package org.dbsp.sqlCompiler.compiler.visitors;
 
-/**
- * A Set of Sql statements that insert or delete data from tables.
- */
-public class SqlTestPrepareTables extends SqlStatementList {}
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+
+import java.util.List;
+
+public class PassesVisitor extends CircuitVisitor {
+    public final List<CircuitVisitor> passes;
+
+    PassesVisitor(List<CircuitVisitor> passes) {
+        super(false, new EmptyInnerVisitor());
+        this.passes = passes;
+    }
+
+    @Override
+    public CircuitVisitor setDebug(boolean debug) {
+        for (CircuitVisitor visitor: this.passes)
+            visitor.setDebug(debug);
+        return super.setDebug(debug);
+    }
+
+    @Override
+    public DBSPCircuit apply(DBSPCircuit circuit) {
+        for (CircuitVisitor pass: this.passes)
+            circuit = pass.apply(circuit);
+        return circuit;
+    }
+}

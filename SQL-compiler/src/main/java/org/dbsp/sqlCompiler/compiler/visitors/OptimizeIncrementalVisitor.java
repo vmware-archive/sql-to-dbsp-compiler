@@ -30,8 +30,8 @@ import org.dbsp.sqlCompiler.circuit.operator.*;
  * forward.
  */
 public class OptimizeIncrementalVisitor extends CircuitCloneVisitor {
-    public OptimizeIncrementalVisitor(String outputName) {
-        super(outputName);
+    public OptimizeIncrementalVisitor() {
+        super(false);
     }
 
     @Override
@@ -39,7 +39,7 @@ public class OptimizeIncrementalVisitor extends CircuitCloneVisitor {
         DBSPOperator source = this.mapped(operator.input());
         if (source.is(DBSPIntegralOperator.class)) {
             DBSPIntegralOperator integral = source.to(DBSPIntegralOperator.class);
-            this.map(operator, integral.input());
+            this.map(operator, integral.input(), false);  // It should already be there
             return;
         }
         super.postorder(operator);
@@ -49,7 +49,7 @@ public class OptimizeIncrementalVisitor extends CircuitCloneVisitor {
         DBSPOperator source = this.mapped(operator.input());
         if (source.is(DBSPIntegralOperator.class)) {
             DBSPOperator replace = operator.replaceInputs(source.inputs, true);
-            this.result.addOperator(replace);
+            this.getResult().addOperator(replace);
             DBSPIntegralOperator integral = new DBSPIntegralOperator(operator.getNode(), replace);
             this.map(operator, integral);
             return;

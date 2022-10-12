@@ -129,6 +129,7 @@ public class ToRustVisitor extends CircuitVisitor {
     public boolean preorder(DBSPCircuit circuit) {
         // function prototype:
         // fn name() -> impl FnMut(T0, T1) -> (O0, O1) {
+        super.preorder(circuit);
         this.builder.append("fn ")
                 .append(circuit.name)
                 .append("() -> impl FnMut(");

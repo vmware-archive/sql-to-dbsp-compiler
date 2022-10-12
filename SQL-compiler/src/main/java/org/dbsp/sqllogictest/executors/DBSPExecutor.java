@@ -75,7 +75,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     private int skip;       // Number of queries to skip in each test file.
     final SqlTestPrepareInput inputPreparation;
     final SqlTestPrepareTables tablePreparation;
-    final SqlTestPrepareTables viewPreparation;
+    final SqlTestPrepareViews viewPreparation;
     private final List<SqlTestQuery> queriesToRun;
 
     public void setBatchSize(int batchSize, int skip) {
@@ -92,7 +92,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         this.execute = execute;
         this.inputPreparation = new SqlTestPrepareInput();
         this.tablePreparation = new SqlTestPrepareTables();
-        this.viewPreparation = new SqlTestPrepareTables();
+        this.viewPreparation = new SqlTestPrepareViews();
         this.batchSize = 10;
         this.queriesToRun = new ArrayList<>();
     }
@@ -142,7 +142,7 @@ public class DBSPExecutor extends SqlTestExecutor {
 
     ProgramAndTester generateTestCase(
             DBSPCompiler compiler, DBSPFunction inputGeneratingFunction,
-            SqlTestPrepareTables viewPreparation,
+            SqlTestPrepareViews viewPreparation,
             SqlTestQuery testQuery, int suffix)
             throws SqlParseException {
         String origQuery = testQuery.query;
@@ -153,7 +153,7 @@ public class DBSPExecutor extends SqlTestExecutor {
             System.out.println("Query " + suffix + ":\n" + dbspQuery);
         compiler.newCircuit("gen" + suffix);
         compiler.generateOutputForNextView(false);
-        for (SqlStatement view: viewPreparation.statements) {
+        for (SqlStatement view: viewPreparation.definitions()) {
             compiler.compileStatement(view.statement, null);
         }
         compiler.generateOutputForNextView(true);
@@ -409,12 +409,13 @@ public class DBSPExecutor extends SqlTestExecutor {
             return true;
         if (command.startsWith("create distinct index"))
             return false;
-        if (command.contains("create table") ||
-                command.contains("drop table"))
+        if (command.contains("create table") || command.contains("drop table")) {
             this.tablePreparation.add(statement);
-        else if (command.contains("create view"))
+        } else if (command.contains("create view")) {
             this.viewPreparation.add(statement);
-        else
+        } else if (command.contains("drop view")) {
+            this.viewPreparation.remove(statement);
+        } else
             this.inputPreparation.add(statement);
         return true;
     }
@@ -422,6 +423,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     void reset() {
         this.inputPreparation.clear();
         this.tablePreparation.clear();
+        this.viewPreparation.clear();
         this.queriesToRun.clear();
     }
 

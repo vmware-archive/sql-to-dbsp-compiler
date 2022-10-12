@@ -2,6 +2,8 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPSomeExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeDouble;
@@ -90,6 +92,30 @@ public class EndToEndTests extends BaseSQLTests {
     public void joinNullableTest() {
         String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 JOIN T AS T2 ON T1.COL1 = T2.COL5";
         this.testQuery(query, this.empty);
+    }
+
+    @Test
+    public void zero() {
+        String query = "SELECT 0";
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPIntegerLiteral(0))));
+    }
+
+    @Test
+    public void geoPointTest() {
+        String query = "SELECT ST_POINT(0, 0)";
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(
+                        new DBSPSomeExpression(new DBSPRawTupleExpression(
+                                new DBSPDoubleLiteral(0), new DBSPDoubleLiteral(0))))));
+    }
+
+    @Test
+    public void geoDistanceTest() {
+        String query = "SELECT ST_DISTANCE(ST_POINT(0, 0), ST_POINT(0,1))";
+        this.testQuery(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(
+                        new DBSPSomeExpression(new DBSPDoubleLiteral(1)))));
     }
 
     @Test

@@ -381,8 +381,13 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                 }
                 return result;
             }
+            case ST_POINT: {
+                DBSPExpression tuple = new DBSPRawTupleExpression(ops.get(0), ops.get(1));
+                return makeCast(tuple, type);
+            }
             case OTHER_FUNCTION: {
-                if (call.op.getName().equals("ABS")) {
+                String opName = call.op.getName();
+                if (opName.equals("ABS")) {
                     if (call.operands.size() != 1)
                         throw new Unimplemented(call);
                     DBSPExpression arg = ops.get(0);
@@ -390,6 +395,14 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
                     SqlRuntimeLibrary.FunctionDescription abs =
                             SqlRuntimeLibrary.instance.getFunction("abs", argType, null, false);
                     return abs.getCall(arg);
+                } else if (opName.equals("ST_DISTANCE")) {
+                    if (call.operands.size() != 2)
+                        throw new Unimplemented(call);
+                    DBSPExpression left = ops.get(0);
+                    DBSPExpression right = ops.get(1);
+                    SqlRuntimeLibrary.FunctionDescription dist =
+                            SqlRuntimeLibrary.instance.getFunction("st_distance", left.getNonVoidType(), right.getNonVoidType(), false);
+                    return dist.getCall(left, right);
                 }
             }
             // fall through

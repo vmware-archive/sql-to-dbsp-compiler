@@ -47,12 +47,12 @@ import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.ddl.SqlCreateView;
-import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.fun.SqlLibrary;
+import org.apache.calcite.sql.fun.SqlLibraryOperatorTableFactory;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
 import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
-import org.apache.calcite.sql.util.SqlOperatorTables;
 import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
@@ -117,9 +117,12 @@ public class CalciteCompiler {
         Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
                 rootSchema, Collections.singletonList(catalog.schemaName), this.typeFactory, connectionConfig);
 
-        SqlOperatorTable operatorTable = SqlOperatorTables.chain(
-                SqlStdOperatorTable.instance()
-        );
+        // Libraries of user-defined functions.
+        SqlOperatorTable operatorTable =
+                SqlLibraryOperatorTableFactory.INSTANCE.getOperatorTable(EnumSet.of(
+                        SqlLibrary.STANDARD,
+                        SqlLibrary.SPATIAL)
+                );
 
         SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
                 .withLenientOperatorLookup(connectionConfig.lenientOperatorLookup())
