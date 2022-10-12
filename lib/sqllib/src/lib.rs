@@ -562,3 +562,35 @@ where
         w = w.add_by_ref(&negone);
     }
 }
+
+pub fn st_distance__(left: (F64, F64), right: (F64, F64)) -> F64
+{
+    let d1 = left.0 - right.0;
+    let d2 = left.1 - right.1;
+    F64::new((d1 * d1 + d2 * d2).into_inner().sqrt())
+}
+
+pub fn st_distance_N_(left: Option<(F64, F64)>, right: (F64, F64)) -> Option<F64>
+{
+    match left {
+        None => None,
+        Some(x) => Some(st_distance__(x, right)),
+    }
+}
+
+pub fn st_distance__N(left: (F64, F64), right: Option<(F64, F64)>) -> Option<F64>
+{
+    match right {
+        None => None,
+        Some(x) => Some(st_distance__(left, x)),
+    }
+}
+
+pub fn st_distance_N_N(left: Option<(F64, F64)>, right: Option<(F64, F64)>) -> Option<F64>
+{
+    match (left, right) {
+        (None, _) => None,
+        (_, None) => None,
+        (Some(x), Some(y)) => Some(st_distance__(x, y)),
+    }
+}

@@ -19,13 +19,37 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.sqllogictest;
+package org.dbsp.sqlCompiler.compiler.visitors;
 
-/**
- * A Set of Sql statements that insert or delete data from tables.
- */
-public class SqlTestPrepareTables extends SqlStatementList {}
+import org.dbsp.sqlCompiler.circuit.operator.DBSPNoopOperator;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
+
+import java.util.Set;
+
+public class RemoveOperatorsVisitor extends CircuitCloneVisitor {
+    /**
+     * Keep all operators that appear in this list.
+     * Also removes Noop operators.
+     */
+    public final Set<DBSPOperator> keep;
+
+    public RemoveOperatorsVisitor(Set<DBSPOperator> keep) {
+        super(false);
+        this.keep = keep;
+    }
+
+    @Override
+    public boolean preorder(DBSPOperator node) {
+        if (this.keep.contains(node))
+            this.getResult().addOperator(node);
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPNoopOperator node) {
+        this.map(node, node.input());
+        return false;
+    }
+}

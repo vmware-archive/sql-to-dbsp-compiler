@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.circuit.operator;
 
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPClosureExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPDerefExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPVariableReference;
@@ -40,6 +41,13 @@ public class DBSPNoopOperator extends DBSPUnaryOperator {
     public DBSPNoopOperator(@Nullable Object node, DBSPOperator source, String outputName) {
         super(node, "map", getClosure(),
                 source.getNonVoidType(), source.isMultiset, source, outputName);
+    }
+
+    @Override
+    public void accept(CircuitVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        super.accept(visitor);
+        visitor.postorder(this);
     }
 
     @Override

@@ -24,6 +24,9 @@
 package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPFieldExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -43,10 +46,6 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
 
     public DBSPTypeRawTuple(@Nullable Object node, List<DBSPType> tupArgs) {
         this(node, false, tupArgs.toArray(new DBSPType[0]));
-    }
-
-    public DBSPTypeRawTuple(List<DBSPType> tupArgs) {
-        this(null, false, tupArgs.toArray(new DBSPType[0]));
     }
 
     public int size() {
@@ -95,5 +94,23 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
         for (DBSPType type: this.tupFields)
             type.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPExpression castFrom(DBSPExpression source) {
+        DBSPType sourceType = source.getNonVoidType();
+        if (!sourceType.is(DBSPTypeRawTuple.class))
+            throw new UnsupportedOperationException(
+                    "Cannot cast value " + source + " with type " + sourceType + " to " + this);
+        DBSPTypeRawTuple sourceTuple = sourceType.to(DBSPTypeRawTuple.class);
+        if (this.tupFields.length != sourceTuple.size())
+            throw new UnsupportedOperationException(
+                    "Cannot cast value " + source + " with type " + sourceType + " to " + this);
+        DBSPExpression[] casts = new DBSPExpression[this.tupFields.length];
+        for (int i = 0; i < this.tupFields.length; i++) {
+            DBSPExpression field = new DBSPFieldExpression(source, i).simplify();
+            casts[i] = this.tupFields[i].castFrom(field);
+        }
+        return new DBSPRawTupleExpression(casts);
     }
 }

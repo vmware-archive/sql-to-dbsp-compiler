@@ -24,6 +24,8 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPSomeExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDoubleLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
@@ -84,6 +86,31 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 // Subtract the first input
                 new InputOutputPair(input.negate(), thirdOutput)
         );
+    }
+
+    @Test @Override
+    public void zero() {
+        String query = "SELECT 0";
+        DBSPZSetLiteral result = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(new DBSPIntegerLiteral(0)));
+        this.testConstantOutput(query, result);
+    }
+
+    @Test @Override
+    public void geoPointTest() {
+        String query = "SELECT ST_POINT(0, 0)";
+        this.testConstantOutput(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(
+                        new DBSPSomeExpression(new DBSPRawTupleExpression(
+                                new DBSPDoubleLiteral(0), new DBSPDoubleLiteral(0))))));
+    }
+
+    @Override @Test
+    public void geoDistanceTest() {
+        String query = "SELECT ST_DISTANCE(ST_POINT(0, 0), ST_POINT(0,1))";
+        this.testConstantOutput(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPTupleExpression(
+                        new DBSPSomeExpression(new DBSPDoubleLiteral(1)))));
     }
 
     @Test @Override

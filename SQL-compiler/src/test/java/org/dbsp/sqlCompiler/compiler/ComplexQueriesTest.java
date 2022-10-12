@@ -65,10 +65,9 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 ")";
         String query = "SELECT\n" +
                 "    DAYOFWEEK(trans_date_trans_time) AS d,\n" +
-                "    DATEDIFF(YEAR, CAST(trans_date_trans_time AS DATE), dob) AS age,\n" +
-                "    ST_DISTANCE(ST_GEOGPOINT(long,lat), ST_GEOGPOINT(merch_long,\n" +
-                "merch_lat)) AS distance,\n" +
-                "    TIMESTAMP_DIFF(trans_date_trans_time, last_txn_date , MINUTE) AS trans_diff,\n" +
+                "    TIMESTAMPDIFF(YEAR, trans_date_trans_time, CAST(dob as TIMESTAMP)) AS age,\n" +
+                "    ST_DISTANCE(ST_POINT(long,lat), ST_POINT(merch_long,merch_lat)) AS distance,\n" +
+                "    TIMESTAMPDIFF(MINUTE, trans_date_trans_time, last_txn_date) AS trans_diff,\n" +
                 "    AVG(amt) OVER(\n" +
                 "                PARTITION BY   CAST(cc_num AS NUMERIC)\n" +
                 "                ORDER BY unix_time\n" +
@@ -96,11 +95,11 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "    merchant,\n" +
                 "    is_fraud\n" +
                 "  FROM (\n" +
-                "          SELECT t1.*,t2.* EXCEPT(cc_num),\n" +
-                "              LAG(trans_date_trans_time) OVER (PARTITION BY t1.cc_num\n" +
-                "ORDER BY trans_date_trans_time ASC) AS last_txn_date,\n" +
-                "          FROM  `frauddetection-352718.cc_data.train_raw`  t1\n" +
-                "          LEFT JOIN  `frauddetection-352718.cc_data.demographics`  t2\n" +
+                "          SELECT t1.*, t2.*,\n" +
+                "              LAG(trans_date_trans_time, 1) OVER (PARTITION BY t1.cc_num\n" +
+                "ORDER BY trans_date_trans_time ASC) AS last_txn_date\n" +
+                "          FROM  transactions AS t1\n" +
+                "          LEFT JOIN  demographics AS t2\n" +
                 "ON t1.cc_num =t2.cc_num)";
         DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);

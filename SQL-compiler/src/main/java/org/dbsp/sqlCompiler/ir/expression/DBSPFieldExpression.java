@@ -66,6 +66,8 @@ public class DBSPFieldExpression extends DBSPExpression {
     public DBSPExpression simplify() {
         if (this.expression.is(DBSPTupleExpression.class)) {
             return this.expression.to(DBSPTupleExpression.class).get(this.fieldNo);
+        } else if (this.expression.is(DBSPRawTupleExpression.class)) {
+            return this.expression.to(DBSPRawTupleExpression.class).get(this.fieldNo);
         }
         return this;
     }

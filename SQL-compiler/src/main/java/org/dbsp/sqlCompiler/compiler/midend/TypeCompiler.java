@@ -87,7 +87,6 @@ public class TypeCompiler {
                 case CURSOR:
                 case COLUMN_LIST:
                 case DYNAMIC_STAR:
-                case GEOMETRY:
                 case SARG:
                 case TIME:
                 case TIME_WITH_LOCAL_TIME_ZONE:
@@ -106,6 +105,8 @@ public class TypeCompiler {
                 case INTERVAL_MINUTE_SECOND:
                 case INTERVAL_SECOND:
                     throw new Unimplemented(tn);
+                case GEOMETRY:
+                    return new DBSPTypeRawTuple(DBSPTypeDouble.instance, DBSPTypeDouble.instance).setMayBeNull(nullable);
                 case TIMESTAMP:
                     return DBSPTypeTimestamp.instance.setMayBeNull(nullable);
                 case DATE:

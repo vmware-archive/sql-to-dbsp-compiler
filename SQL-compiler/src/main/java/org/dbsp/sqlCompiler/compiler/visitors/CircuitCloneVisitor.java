@@ -30,9 +30,8 @@ import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.Nullable;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -43,37 +42,49 @@ import java.util.function.Function;
  * The declarations in the circuit are left unchanged.
  */
 public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSPCircuit, DBSPCircuit> {
-    final DBSPCircuit result;
+    @Nullable
+    DBSPCircuit result;
+    /**
+     * For each operator in the original circuit an operator in the
+     * result circuit which computes the same result.
+     */
     final Map<DBSPOperator, DBSPOperator> remap;
     final boolean force;
+    final Set<DBSPOperator> visited = new HashSet<>();
 
-    public CircuitCloneVisitor(String outputName, boolean force) {
+    public CircuitCloneVisitor(boolean force) {
         super(true, new EmptyInnerVisitor());
-        this.result = new DBSPCircuit(outputName);
         this.remap = new HashMap<>();
         this.force = force;
-    }
-
-    public CircuitCloneVisitor(String outputName) {
-        this(outputName, false);
     }
 
     public DBSPOperator mapped(DBSPOperator original) {
         return Utilities.getExists(this.remap, original);
     }
 
-    void map(DBSPOperator old, DBSPOperator newOp) {
+    void map(DBSPOperator old, DBSPOperator newOp, boolean add) {
+        if (this.debug)
+            System.out.println(this + ":" + old + " -> " + newOp);
         Utilities.putNew(this.remap, old, newOp);
-        this.result.addOperator(newOp);
+        if (add)
+            this.getResult().addOperator(newOp);
+    }
+
+    void map(DBSPOperator old, DBSPOperator newOp) {
+        this.map(old, newOp, true);
     }
 
     @Override
     public void postorder(DBSPCircuit circuit) {
         for (IDBSPInnerDeclaration decl: circuit.declarations)
-            this.result.declare(decl);
+            this.getResult().declare(decl);
     }
 
     public void replace(DBSPOperator operator) {
+        if (this.visited.contains(operator))
+            // Graph can be a DAG
+            return;
+        this.visited.add(operator);
         List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
         DBSPOperator result = operator.replaceInputs(sources, this.force);
         this.map(operator, result);
@@ -155,12 +166,15 @@ public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSP
     }
 
     public DBSPCircuit getResult() {
-        return this.result;
+        return Objects.requireNonNull(this.result);
     }
 
     @Override
     public DBSPCircuit apply(DBSPCircuit circuit) {
+        this.startVisit();
+        this.result = new DBSPCircuit(circuit.name);
         circuit.accept(this);
+        this.endVisit();
         DBSPCircuit result = this.getResult();
         if (circuit.sameCircuit(result))
             return circuit;

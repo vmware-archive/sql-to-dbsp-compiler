@@ -19,13 +19,15 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
  */
 
-package org.dbsp.sqllogictest;
+package org.dbsp.sqlCompiler.compiler;
 
-/**
- * A Set of Sql statements that insert or delete data from tables.
- */
-public class SqlTestPrepareTables extends SqlStatementList {}
+public class OptimizedIncrementalTests //extends NaiveIncrementalTests
+{
+    /*
+    public void invokeTestQueryBase(String query, BaseSQLTests.InputOutputPair... streams) {
+        super.testQueryBase(query, true, true, streams);
+    }
+     */
+}

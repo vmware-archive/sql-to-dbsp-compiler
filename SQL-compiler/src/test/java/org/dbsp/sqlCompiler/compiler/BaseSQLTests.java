@@ -51,7 +51,7 @@ import java.util.List;
  */
 public class BaseSQLTests {
     static final String rustDirectory = "../temp/src";
-    static final String testFilePath = rustDirectory + "/test0.rs";
+    static final String testFilePath = rustDirectory + "/test.rs";
 
     static class InputOutputPair {
         public final DBSPZSetLiteral[] inputs;
@@ -76,7 +76,7 @@ public class BaseSQLTests {
     public static void generateLib() throws IOException {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         Utilities.writeRustMain(rustDirectory + "/main.rs",
-                Linq.list("test0"));
+                Linq.list("test"));
     }
 
     void createTester(PrintWriter writer, DBSPCircuit circuit,
@@ -92,11 +92,16 @@ public class BaseSQLTests {
             PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
             writer.println(ToRustVisitor.generatePreamble());
             DBSPCircuit circuit = compiler.getResult();
-            circuit = new OptimizeDistinctVisitor(circuit.name).apply(circuit);
+            boolean debug = false;
+            circuit = new OptimizeDistinctVisitor().setDebug(debug).apply(circuit);
             if (incremental)
-                circuit = new IncrementalizeVisitor(circuit.name).apply(circuit);
-            if (optimize)
-                circuit = new OptimizeIncrementalVisitor(circuit.name).apply(circuit);
+                circuit = new IncrementalizeVisitor().setDebug(debug).apply(circuit);
+            if (optimize) {
+                circuit = new OptimizeIncrementalVisitor().setDebug(debug).apply(circuit);
+                DeadCodeVisitor dead = new DeadCodeVisitor();
+                circuit = dead.setDebug(debug).apply(circuit);
+                circuit = new RemoveOperatorsVisitor(dead.keep).setDebug(debug).apply(circuit);
+            }
             writer.println(ToRustVisitor.toRustString(circuit));
             this.createTester(writer, circuit, streams);
             writer.close();

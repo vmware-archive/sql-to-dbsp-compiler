@@ -119,12 +119,9 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
     public boolean sameCircuit(DBSPCircuit other) {
         if (this == other)
             return true;
-        return this.inputOperators.size() == other.inputOperators.size() &&
-                Linq.all(Linq.zipSameLength(this.inputOperators, other.inputOperators, DBSPOperator::shallowSameOperator)) &&
-                this.operators.size() == other.operators.size() &&
-                Linq.all(Linq.zipSameLength(this.operators, other.operators, DBSPOperator::shallowSameOperator)) &&
-                this.outputOperators.size() == other.outputOperators.size() &&
-                Linq.all(Linq.zipSameLength(this.outputOperators, other.outputOperators, DBSPOperator::shallowSameOperator)) &&
+        return Linq.same(this.inputOperators, other.inputOperators) &&
+                Linq.same(this.operators, other.operators) &&
+                Linq.same(this.outputOperators, other.outputOperators) &&
                 Linq.same(this.declarations, other.declarations);
     }
 }

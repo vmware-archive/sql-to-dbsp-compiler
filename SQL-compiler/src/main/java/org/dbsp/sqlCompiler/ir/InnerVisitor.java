@@ -47,6 +47,22 @@ public abstract class InnerVisitor {
         this.visitSuper = visitSuper;
     }
 
+    /**
+     * Override to initialize before visisting any node.
+     */
+    public void startVisit() {}
+
+    /**
+     * Override to finish after visiting all nodes.
+     */
+    public void endVisit() {}
+
+    public void traverse(IDBSPInnerNode node) {
+        this.startVisit();
+        node.accept(this);
+        this.endVisit();
+    }
+
     /************************* PREORDER *****************************/
 
     // preorder methods return 'true' when normal traversal is desired,

@@ -88,6 +88,7 @@ public class SqlRuntimeLibrary {
         this.arithmeticFunctions.put("min", "min");
         this.arithmeticFunctions.put("max", "max");
         this.arithmeticFunctions.put("abs", "abs");
+        this.arithmeticFunctions.put("st_distance", "st_distance");
         this.arithmeticFunctions.put("is_distinct", "is_distinct");
 
         this.handWritten.add("is_false");
@@ -100,6 +101,7 @@ public class SqlRuntimeLibrary {
         this.handWritten.add("max");
         this.handWritten.add("/");
         this.handWritten.add("abs");
+        this.handWritten.add("st_distance");
         this.handWritten.add("is_distinct");
         this.handWritten.add("is_not_distinct");
 
@@ -163,7 +165,7 @@ public class SqlRuntimeLibrary {
     
     public FunctionDescription getFunction(
             String op, DBSPType ltype, @Nullable DBSPType rtype, boolean aggregate) {
-        HashMap<String, String> map;
+        HashMap<String, String> map = null;
         DBSPType returnType;
         boolean anyNull = ltype.mayBeNull || (rtype != null && rtype.mayBeNull);
 
@@ -172,7 +174,7 @@ public class SqlRuntimeLibrary {
             map = this.booleanFunctions;
         } else if (ltype.is(IsNumericType.class)) {
             map = this.arithmeticFunctions;
-        } else {
+        } else if (ltype.is(DBSPTypeString.class)){
             map = this.stringFunctions;
         }
         if (isComparison(op))
@@ -187,12 +189,19 @@ public class SqlRuntimeLibrary {
 
         String suffixl = ltype.mayBeNull ? "N" : "";
         String suffixr = rtype == null ? "" : (rtype.mayBeNull ? "N" : "");
-        String tsuffixl = ltype.to(IDBSPBaseType.class).shortName();
-        String tsuffixr = (rtype == null) ? "" : rtype.to(IDBSPBaseType.class).shortName();
+        String tsuffixl;
+        String tsuffixr;
         if (aggregate || op.equals("is_distinct")) {
             tsuffixl = "";
             tsuffixr = "";
+        } else if (op.equals("st_distance")) {
+            return new FunctionDescription("st_distance_" + suffixl + "_" + suffixr, DBSPTypeDouble.instance.setMayBeNull(anyNull));
+        } else {
+            tsuffixl = ltype.to(IDBSPBaseType.class).shortName();
+            tsuffixr = (rtype == null) ? "" : rtype.to(IDBSPBaseType.class).shortName();
         }
+        if (map == null)
+            throw new Unimplemented(op);
         for (String k: map.keySet()) {
             if (map.get(k).equals(op)) {
                 return new FunctionDescription(k + "_" + tsuffixl + suffixl + "_" + tsuffixr + suffixr, returnType);

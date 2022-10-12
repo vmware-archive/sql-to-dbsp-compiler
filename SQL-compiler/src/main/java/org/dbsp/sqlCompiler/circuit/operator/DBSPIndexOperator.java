@@ -62,12 +62,4 @@ public class DBSPIndexOperator extends DBSPUnaryOperator {
         return this;
     }
 
-    @Override
-    public boolean shallowSameOperator(DBSPOperator other) {
-        if (!super.shallowSameOperator(other))
-            return false;
-        DBSPIndexOperator oi = other.to(DBSPIndexOperator.class);
-        return this.keyType == oi.keyType &&
-                this.elementType == oi.elementType;
-    }
 }
