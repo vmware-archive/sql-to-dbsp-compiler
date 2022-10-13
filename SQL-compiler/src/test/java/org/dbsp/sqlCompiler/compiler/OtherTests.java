@@ -24,9 +24,12 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Logger;
 import org.junit.Assert;
@@ -78,7 +81,6 @@ public class OtherTests implements IModule {
         Logger.instance.setDebugLevel(this.getModule(), 1);
         Assert.assertEquals("OtherTests", this.getModule());
         Assert.assertEquals(1, this.getDebugLevel());
-        Assert.assertEquals(0, Logger.instance.getDebugLevel("No module"));
         if (this.getDebugLevel() > 0)
             Logger.instance.append("Logging one statement")
                     .newline();
@@ -88,5 +90,18 @@ public class OtherTests implements IModule {
                     .newline();
         Logger.instance.setDebugStream(save);
         Assert.assertEquals("Logging one statement\n", builder.toString());
+    }
+
+    @Test
+    public void toCsvTest() {
+        DBSPZSetLiteral s = new DBSPZSetLiteral(
+                CalciteToDBSPCompiler.weightType, BaseSQLTests.e0, BaseSQLTests.e1);
+        StringBuilder builder = new StringBuilder();
+        ToCsvVisitor visitor = new ToCsvVisitor(builder, () -> "");
+        visitor.traverse(s);
+        Assert.assertEquals(
+                "10,12.0,true,Hi,,\n" +
+                "10,1.0,false,Hi,1,0.0\n",
+                builder.toString());
     }
 }

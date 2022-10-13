@@ -127,7 +127,7 @@ public class BaseSQLTests {
         return compiler;
     }
 
-    final DBSPTupleExpression e0 = new DBSPTupleExpression(
+    public static final DBSPTupleExpression e0 = new DBSPTupleExpression(
             new DBSPIntegerLiteral(10),
             new DBSPDoubleLiteral(12.0),
             DBSPBoolLiteral.True,
@@ -135,7 +135,7 @@ public class BaseSQLTests {
             DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)),
             DBSPLiteral.none(DBSPTypeDouble.instance.setMayBeNull(true))
     );
-    final DBSPTupleExpression e1 = new DBSPTupleExpression(
+    public static final DBSPTupleExpression e1 = new DBSPTupleExpression(
             new DBSPIntegerLiteral(10),
             new DBSPDoubleLiteral(1.0),
             DBSPBoolLiteral.False,
@@ -143,9 +143,9 @@ public class BaseSQLTests {
             new DBSPIntegerLiteral(1, true),
             new DBSPDoubleLiteral(0.0, true)
     );
-    final DBSPZSetLiteral z0 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0);
-    final DBSPZSetLiteral z1 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e1);
-    final DBSPZSetLiteral empty = new DBSPZSetLiteral(this.z0.getNonVoidType());
+    static final DBSPZSetLiteral z0 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0);
+    static final DBSPZSetLiteral z1 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e1);
+    static final DBSPZSetLiteral empty = new DBSPZSetLiteral(z0.getNonVoidType());
 
     /**
      * Returns the table containing:
