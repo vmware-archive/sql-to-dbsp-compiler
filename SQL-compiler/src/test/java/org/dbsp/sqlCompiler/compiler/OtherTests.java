@@ -27,10 +27,12 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
+import org.dbsp.util.IModule;
+import org.dbsp.util.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class VisitorTests {
+public class OtherTests implements IModule {
     private DBSPCompiler compileDef() throws SqlParseException {
         DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
         String ddl = "CREATE TABLE T (\n" +
@@ -67,5 +69,24 @@ public class VisitorTests {
     public void toRustTest() {
         String query = "SELECT T.COL3 FROM T";
         this.testQuery(query);
+    }
+
+    @Test
+    public void loggerTest() {
+        StringBuilder builder = new StringBuilder();
+        Appendable save = Logger.instance.setDebugStream(builder);
+        Logger.instance.setDebugLevel(this.getModule(), 1);
+        Assert.assertEquals("OtherTests", this.getModule());
+        Assert.assertEquals(1, this.getDebugLevel());
+        Assert.assertEquals(0, Logger.instance.getDebugLevel("No module"));
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append("Logging one statement")
+                    .newline();
+        Logger.instance.setDebugLevel(this.getModule(), 0);
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append("This one is not logged")
+                    .newline();
+        Logger.instance.setDebugStream(save);
+        Assert.assertEquals("Logging one statement\n", builder.toString());
     }
 }

@@ -39,6 +39,7 @@ import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqllogictest.*;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
@@ -66,8 +67,6 @@ public class DBSPExecutor extends SqlTestExecutor {
         }
     }
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private final boolean debug = false;
     static final String rustDirectory = "../temp/src/";
     static final String testFileName = "test";
     private final boolean execute;
@@ -149,12 +148,16 @@ public class DBSPExecutor extends SqlTestExecutor {
         String dbspQuery = origQuery;
         if (!dbspQuery.toLowerCase().contains("create view"))
             dbspQuery = "CREATE VIEW V AS (" + origQuery + ")";
-        if (this.debug)
-            System.out.println("Query " + suffix + ":\n" + dbspQuery);
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append("Query ")
+                    .append(suffix)
+                    .append(":\n")
+                    .append(dbspQuery)
+                    .append("\n");
         compiler.newCircuit("gen" + suffix);
         compiler.generateOutputForNextView(false);
         for (SqlStatement view: viewPreparation.definitions()) {
-            compiler.compileStatement(view.statement, null);
+            compiler.compileStatement(view.statement, view.statement);
         }
         compiler.generateOutputForNextView(true);
         compiler.compileStatement(dbspQuery, testQuery.name);

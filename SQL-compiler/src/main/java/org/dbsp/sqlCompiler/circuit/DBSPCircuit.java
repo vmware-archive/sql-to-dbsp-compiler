@@ -37,16 +37,13 @@ import org.dbsp.util.NameGen;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
     public final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
     public final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
     public final List<DBSPOperator> operators = new ArrayList<>();
-    public final List<IDBSPInnerDeclaration> declarations = new ArrayList<>();
+    public final Map<String, IDBSPInnerDeclaration> declarations = new LinkedHashMap<>();
     public final Map<String, DBSPOperator> operatorDeclarations = new HashMap<>();
     public final String name;
 
@@ -87,7 +84,7 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
     }
 
     public void declare(IDBSPInnerDeclaration declaration) {
-        this.declarations.add(declaration);
+        Utilities.putNew(this.declarations, declaration.getName(), declaration);
     }
 
     public DBSPLetStatement declareLocal(String prefix, DBSPExpression init) {
@@ -105,8 +102,6 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
     @Override
     public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        for (IDBSPInnerDeclaration decl: this.declarations)
-            decl.accept(visitor.innerVisitor);
         for (DBSPSourceOperator source: this.inputOperators)
             source.accept(visitor);
         for (DBSPOperator op: this.operators)
@@ -122,6 +117,6 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
         return Linq.same(this.inputOperators, other.inputOperators) &&
                 Linq.same(this.operators, other.operators) &&
                 Linq.same(this.outputOperators, other.outputOperators) &&
-                Linq.same(this.declarations, other.declarations);
+                Linq.same(this.declarations.values(), other.declarations.values());
     }
 }

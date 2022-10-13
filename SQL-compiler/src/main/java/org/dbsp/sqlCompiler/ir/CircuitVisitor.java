@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.ir;
 
-import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.util.IdGen;
@@ -39,14 +38,11 @@ import java.util.function.Function;
 public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircuit, DBSPCircuit> {
     /// If true each visit call will visit by default the superclass.
     final boolean visitSuper;
-    public final InnerVisitor innerVisitor;
-    protected boolean debug = false;
     @Nullable
     private DBSPCircuit circuit = null;
 
-    public CircuitVisitor(boolean visitSuper, InnerVisitor visitor) {
+    public CircuitVisitor(boolean visitSuper) {
         this.visitSuper = visitSuper;
-        this.innerVisitor = visitor;
     }
 
     public DBSPCircuit getCircuit() {
@@ -54,7 +50,6 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
     }
 
     public CircuitVisitor setDebug(boolean debug) {
-        this.debug = debug;
         return this;
     }
 

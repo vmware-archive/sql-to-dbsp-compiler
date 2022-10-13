@@ -32,22 +32,19 @@ import org.dbsp.sqlCompiler.ir.pattern.DBSPWildcardPattern;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.*;
-import org.dbsp.util.Linq;
-import org.dbsp.util.TranslationException;
-import org.dbsp.util.Unimplemented;
+import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
+public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implements IModule {
     /**
      * Identity function.
      */
     private final TypeCompiler typeCompiler = new TypeCompiler();
     @Nullable
     private final DBSPVariableReference inputRow;
-    private static final boolean debug = false;
     private final RexBuilder rexBuilder;
 
     public ExpressionCompiler(@Nullable DBSPVariableReference inputRow, CalciteCompiler calciteCompiler) {
@@ -414,8 +411,10 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> {
     }
 
     DBSPExpression compile(RexNode expression) {
-        if (debug)
-            System.out.println("Compiling " + expression);
+        if (this.getDebugLevel() > 2)
+            Logger.instance.append("Compiling ")
+                    .append(expression.toString())
+                    .newline();
         return expression.accept(this);
     }
 }

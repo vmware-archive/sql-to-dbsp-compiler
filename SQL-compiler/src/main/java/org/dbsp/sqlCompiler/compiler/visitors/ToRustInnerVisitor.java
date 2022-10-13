@@ -37,7 +37,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
-import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.IndentStream;
 import org.dbsp.util.Utilities;
 
 import java.util.Map;
@@ -46,9 +46,9 @@ import java.util.Map;
  * This visitor generate a Rust implementation of the program.
  */
 public class ToRustInnerVisitor extends InnerVisitor {
-    private final IndentStringBuilder builder;
+    private final IndentStream builder;
 
-    public ToRustInnerVisitor(IndentStringBuilder builder) {
+    public ToRustInnerVisitor(IndentStream builder) {
         super(true);
         this.builder = builder;
     }

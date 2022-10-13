@@ -26,6 +26,8 @@ package org.dbsp.sqllogictest.executors;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqllogictest.SqlTestFile;
 import org.dbsp.util.ICastable;
+import org.dbsp.util.IModule;
+import org.dbsp.util.Logger;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -37,7 +39,7 @@ import java.util.Set;
 /**
  * Interface implemented by a class that knows how to execute a test.
  */
-public abstract class SqlTestExecutor implements ICastable {
+public abstract class SqlTestExecutor implements ICastable, IModule {
     static final DecimalFormat df = new DecimalFormat("#,###");
     protected final Set<String> buggyQueries;
 

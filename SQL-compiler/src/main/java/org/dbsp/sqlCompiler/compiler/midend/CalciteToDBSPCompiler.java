@@ -65,7 +65,7 @@ import java.util.function.Consumer;
  * The function generateOutputForNextView can be used to prevent
  * some views from generating outputs.
  */
-public class CalciteToDBSPCompiler extends RelVisitor {
+public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     /**
      * If true, the inputs to the circuit are generated from the CREATE TABLE
      * statements.  Otherwise they are generated from the LogicalTableScan
@@ -81,7 +81,6 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         this.generateInputsFromTables = generateInputsFromTables;
     }
 
-    final boolean debug = false;
     /**
      * Type of weight used in generated z-sets.
      */
@@ -151,8 +150,10 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     <T> boolean visitIfMatches(RelNode node, Class<T> clazz, Consumer<T> method) {
         T value = ICastable.as(node, clazz);
         if (value != null) {
-            if (debug)
-                System.out.println("Processing " + node);
+            if (this.getDebugLevel() > 3)
+                Logger.instance.append("Processing ")
+                        .append(node.toString())
+                        .newline();
             method.accept(value);
             return true;
         }
@@ -908,8 +909,10 @@ public class CalciteToDBSPCompiler extends RelVisitor {
     public void visit(
             RelNode node, int ordinal,
             @org.checkerframework.checker.nullness.qual.Nullable RelNode parent) {
-        if (debug)
-            System.out.println("Visiting " + node);
+        if (this.getDebugLevel() > 2)
+            Logger.instance.append("Visiting ")
+                    .append(node.toString())
+                    .newline();
         if (this.nodeOperator.containsKey(node))
             // We have already done this one.  This can happen because the
             // plan can be a DAG, not just a tree.
@@ -937,8 +940,9 @@ public class CalciteToDBSPCompiler extends RelVisitor {
         if (statement.is(CreateViewStatement.class)) {
             CreateViewStatement view = statement.to(CreateViewStatement.class);
             RelNode rel = view.getRelNode();
-            if (this.debug)
-                System.out.println(CalciteCompiler.getPlan(rel));
+            if (this.getDebugLevel() > 2)
+                Logger.instance.append(CalciteCompiler.getPlan(rel))
+                        .newline();
             this.go(rel);
             // TODO: connect the result of the query compilation with
             // the fields of rel; for now we assume that these are 1/1
@@ -952,7 +956,7 @@ public class CalciteToDBSPCompiler extends RelVisitor {
                 DBSPOperator previous = this.getCircuit().getOperator(view.tableName);
                 if (previous != null)
                     return previous;
-                o = new DBSPNoopOperator(view, op, view.tableName);
+                o = new DBSPNoopOperator(view, op, statement.comment, view.tableName);
             }
             this.getCircuit().addOperator(o);
             return o;

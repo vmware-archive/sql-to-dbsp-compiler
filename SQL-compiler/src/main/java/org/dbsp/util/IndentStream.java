@@ -25,33 +25,66 @@
 
 package org.dbsp.util;
 
+import java.io.IOException;
 import java.util.List;
 
-public class IndentStringBuilder {
-    private final StringBuilder builder;
+public class IndentStream implements IIndentStream {
+    private Appendable stream;
     int indent = 0;
     static final int amount = 4;
     boolean emitIndent = false;
 
-    public IndentStringBuilder() {
-        this.builder = new StringBuilder();
+    public IndentStream(Appendable appendable) {
+        this.stream = appendable;
     }
 
-    public void appendChar(char c) {
-        if (c == '\n') {
-            this.builder.append(c);
-            this.emitIndent = true;
-            return;
-        }
-        if (this.emitIndent && !Character.isSpaceChar(c)) {
-            this.emitIndent = false;
-            for (int in = 0; in < this.indent; in++)
-                this.builder.append(' ');
-        }
-        this.builder.append(c);
+    /**
+     * Set the output stream.
+     * @return The previous output stream.
+     */
+    public Appendable setOutputStream(Appendable appendable) {
+        Appendable result = this.stream;
+        this.stream = appendable;
+        return result;
     }
 
-    public IndentStringBuilder append(String string) {
+    @Override
+    public Appendable append(CharSequence csq) throws IOException {
+        throw new UnsupportedException("append char sequence not supported");
+    }
+
+    @Override
+    public Appendable append(CharSequence csq, int start, int end) throws IOException {
+        throw new UnsupportedException("append char sequence not supported");
+    }
+
+    @Override
+    public Appendable append(char c) throws IOException {
+        return this.appendChar(c);
+    }
+
+    @Override
+    public IIndentStream appendChar(char c) {
+        try {
+            if (c == '\n') {
+                this.stream.append(c);
+                this.emitIndent = true;
+                return this;
+            }
+            if (this.emitIndent && !Character.isSpaceChar(c)) {
+                this.emitIndent = false;
+                for (int in = 0; in < this.indent; in++)
+                    this.stream.append(' ');
+            }
+            this.stream.append(c);
+            return this;
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    @Override
+    public IIndentStream append(String string) {
         for (int i = 0; i < string.length(); i++) {
             char c = string.charAt(i);
             this.appendChar(c);
@@ -59,16 +92,26 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public <T extends ToIndentableString> void append(T value) {
+    @Override
+    public <T extends ToIndentableString> IIndentStream append(T value) {
         value.toString(this);
-    }
-
-    public IndentStringBuilder append(int value) {
-        this.builder.append(value);
         return this;
     }
 
-    public IndentStringBuilder joinS(String separator, List<String> data) {
+    @Override
+    public IIndentStream append(int value) {
+        this.append(Integer.toString(value));
+        return this;
+    }
+
+    @Override
+    public IIndentStream append(long value) {
+        this.append(Long.toString(value));
+        return this;
+    }
+
+    @Override
+    public IIndentStream joinS(String separator, List<String> data) {
         boolean first = true;
         for (String d: data) {
             if (!first)
@@ -79,7 +122,8 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public IndentStringBuilder join(String separator, String[] data) {
+    @Override
+    public IIndentStream join(String separator, String[] data) {
         boolean first = true;
         for (String d: data) {
             if (!first)
@@ -90,7 +134,8 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public <T extends ToIndentableString> IndentStringBuilder join(String separator, T[] data) {
+    @Override
+    public <T extends ToIndentableString> IIndentStream join(String separator, T[] data) {
         boolean first = true;
         for (ToIndentableString d: data) {
             if (!first)
@@ -101,7 +146,8 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public <T extends ToIndentableString> IndentStringBuilder join(String separator, List<T> data) {
+    @Override
+    public <T extends ToIndentableString> IIndentStream join(String separator, List<T> data) {
         boolean first = true;
         for (ToIndentableString d: data) {
             if (!first)
@@ -112,7 +158,8 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public <T extends ToIndentableString> IndentStringBuilder intercalate(String separator, List<T> data) {
+    @Override
+    public <T extends ToIndentableString> IIndentStream intercalate(String separator, List<T> data) {
         for (ToIndentableString d: data) {
             this.append(d);
             this.append(separator);
@@ -120,7 +167,8 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public <T extends ToIndentableString> IndentStringBuilder intercalate(String separator, T[] data) {
+    @Override
+    public <T extends ToIndentableString> IIndentStream intercalate(String separator, T[] data) {
         for (ToIndentableString d: data) {
             this.append(d);
             this.append(separator);
@@ -128,7 +176,8 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public IndentStringBuilder intercalateS(String separator, List<String> data) {
+    @Override
+    public IIndentStream intercalateS(String separator, List<String> data) {
         for (String d: data) {
             this.append(d);
             this.append(separator);
@@ -136,16 +185,19 @@ public class IndentStringBuilder {
         return this;
     }
 
-    public IndentStringBuilder newline() {
+    @Override
+    public IIndentStream newline() {
         return this.append("\n");
     }
 
-    public IndentStringBuilder increase() {
+    @Override
+    public IIndentStream increase() {
         this.indent += amount;
         return this.newline();
     }
 
-    public IndentStringBuilder decrease() {
+    @Override
+    public IIndentStream decrease() {
         this.indent -= amount;
         if (this.indent < 0)
             throw new RuntimeException("Negative indent");
@@ -154,6 +206,6 @@ public class IndentStringBuilder {
 
     @Override
     public String toString() {
-        return this.builder.toString();
+        return this.stream.toString();
     }
 }

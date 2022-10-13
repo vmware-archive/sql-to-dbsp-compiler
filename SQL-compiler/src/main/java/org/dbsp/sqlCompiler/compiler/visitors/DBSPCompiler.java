@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.compiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.midend.TableContents;
+import org.dbsp.util.IModule;
 
 import javax.annotation.Nullable;
 
@@ -43,7 +44,7 @@ import javax.annotation.Nullable;
  * The compiler can also compile INSERT statements by keeping track of table contents.
  * The contents after insertions can be obtained using getTableContents().
  */
-public class DBSPCompiler {
+public class DBSPCompiler implements IModule {
     final CalciteCompiler frontend;
     final CalciteToDBSPCompiler midend;
 

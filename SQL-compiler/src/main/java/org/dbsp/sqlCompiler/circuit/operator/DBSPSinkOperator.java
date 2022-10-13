@@ -30,16 +30,13 @@ import java.util.List;
 
 public class DBSPSinkOperator extends DBSPOperator {
     public final String query;
-    @Nullable
-    public final String comment;
 
     public DBSPSinkOperator(@Nullable Object node,
                             String outputName, String query,
                             @Nullable String comment, DBSPOperator input) {
-        super(node, "inspect", null, input.outputType, input.isMultiset, outputName);
+        super(node, "inspect", null, input.outputType, input.isMultiset, comment, outputName);
         this.addInput(input);
         this.query = query;
-        this.comment = comment;
     }
 
     public DBSPOperator input() {

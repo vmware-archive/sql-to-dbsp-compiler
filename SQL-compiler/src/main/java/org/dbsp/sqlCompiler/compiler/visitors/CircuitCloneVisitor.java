@@ -27,7 +27,9 @@ import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.util.IModule;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
@@ -41,7 +43,7 @@ import java.util.function.Function;
  * - the 'force' flag is 'true'.
  * The declarations in the circuit are left unchanged.
  */
-public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSPCircuit, DBSPCircuit> {
+public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSPCircuit, DBSPCircuit>, IModule {
     @Nullable
     DBSPCircuit result;
     /**
@@ -53,7 +55,7 @@ public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSP
     final Set<DBSPOperator> visited = new HashSet<>();
 
     public CircuitCloneVisitor(boolean force) {
-        super(true, new EmptyInnerVisitor());
+        super(true);
         this.remap = new HashMap<>();
         this.force = force;
     }
@@ -63,8 +65,13 @@ public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSP
     }
 
     void map(DBSPOperator old, DBSPOperator newOp, boolean add) {
-        if (this.debug)
-            System.out.println(this + ":" + old + " -> " + newOp);
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append(this.toString())
+                    .append(":")
+                    .append(old.toString())
+                    .append(" -> ")
+                    .append(newOp.toString())
+                    .newline();
         Utilities.putNew(this.remap, old, newOp);
         if (add)
             this.getResult().addOperator(newOp);
@@ -76,7 +83,7 @@ public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSP
 
     @Override
     public void postorder(DBSPCircuit circuit) {
-        for (IDBSPInnerDeclaration decl: circuit.declarations)
+        for (IDBSPInnerDeclaration decl: circuit.declarations.values())
             this.getResult().declare(decl);
     }
 

@@ -26,15 +26,17 @@ package org.dbsp.sqlCompiler.compiler.visitors;
 import org.dbsp.sqlCompiler.circuit.*;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.*;
-import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.IndentStream;
 import org.dbsp.util.Linq;
 
 /**
  * This visitor generate a Rust implementation of the program.
  */
 public class ToRustVisitor extends CircuitVisitor {
-    private final IndentStringBuilder builder;
+    private final IndentStream builder;
+    public final InnerVisitor innerVisitor;
 
     @SuppressWarnings("SpellCheckingInspection")
     static final String rustPreamble =
@@ -69,33 +71,34 @@ public class ToRustVisitor extends CircuitVisitor {
                     "type Weight = isize;\n";
 
 
-    public ToRustVisitor(IndentStringBuilder builder) {
-        super(true, new ToRustInnerVisitor(builder));
+    public ToRustVisitor(IndentStream builder) {
+        super(true);
         this.builder = builder;
+        this.innerVisitor = new ToRustInnerVisitor(builder);
     }
 
     public static String generatePreamble() {
-        IndentStringBuilder builder = new IndentStringBuilder();
-        builder.append(rustPreamble)
+        IndentStream stream = new IndentStream(new StringBuilder());
+        stream.append(rustPreamble)
                 .newline();
 
-        builder.append("declare_tuples! {").increase();
+        stream.append("declare_tuples! {").increase();
         for (int i: DBSPTypeTuple.tupleSizesUsed) {
             if (i == 0)
                 continue;
-            builder.append("Tuple")
+            stream.append("Tuple")
                     .append(i)
                     .append("<");
             for (int j = 0; j < i; j++) {
                 if (j > 0)
-                    builder.append(", ");
-                builder.append("T")
+                    stream.append(", ");
+                stream.append("T")
                         .append(j);
             }
-            builder.append(">,\n");
+            stream.append(">,\n");
         }
         DBSPTypeTuple.clearSizesUsed();
-        return builder.decrease()
+        return stream.decrease()
                 .append("}\n\n")
                 .toString();
     }
@@ -156,7 +159,7 @@ public class ToRustVisitor extends CircuitVisitor {
         // Circuit body
         this.builder.append("let root = Circuit::build(|circuit| {")
                 .increase();
-        for (IDBSPInnerDeclaration decl : circuit.declarations) {
+        for (IDBSPInnerDeclaration decl : circuit.declarations.values()) {
             decl.accept(this.innerVisitor);
             this.builder.newline();
         }
@@ -211,7 +214,9 @@ public class ToRustVisitor extends CircuitVisitor {
 
     @Override
     public boolean preorder(DBSPSourceOperator operator) {
-        this.builder.append("let ")
+        this.builder
+                .append(operator.comment != null ? "// " + operator.comment + "\n" : "")
+                .append("let ")
                 .append(operator.getName())
                 .append(" = ")
                 .append("circuit.add_source(")
@@ -240,7 +245,8 @@ public class ToRustVisitor extends CircuitVisitor {
     @Override
     public boolean preorder(DBSPOperator operator) {
         DBSPType streamType = new DBSPTypeStream(operator.outputType);
-        builder.append("let ")
+        builder.append(operator.comment != null ? "// " + operator.comment + "\n" : "")
+                .append("let ")
                 .append(operator.getName())
                 .append(": ");
         streamType.accept(this.innerVisitor);
@@ -267,7 +273,8 @@ public class ToRustVisitor extends CircuitVisitor {
 
     @Override
     public boolean preorder(DBSPSumOperator operator) {
-        this.builder.append("let ")
+        this.builder.append(operator.comment != null ? "// " + operator.comment + "\n" : "")
+                    .append("let ")
                     .append(operator.getName())
                     .append(": ");
         new DBSPTypeStream(operator.outputType).accept(this.innerVisitor);
@@ -299,15 +306,17 @@ public class ToRustVisitor extends CircuitVisitor {
     }
 
     public static String toRustString(IDBSPOuterNode node) {
-        IndentStringBuilder builder = new IndentStringBuilder();
-        ToRustVisitor visitor = new ToRustVisitor(builder);
+        StringBuilder builder = new StringBuilder();
+        IndentStream stream = new IndentStream(builder);
+        ToRustVisitor visitor = new ToRustVisitor(stream);
         node.accept(visitor);
         return builder.toString();
     }
 
     public static String toRustString(IDBSPInnerNode node) {
-        IndentStringBuilder builder = new IndentStringBuilder();
-        ToRustVisitor visitor = new ToRustVisitor(builder);
+        StringBuilder builder = new StringBuilder();
+        IndentStream stream = new IndentStream(builder);
+        ToRustVisitor visitor = new ToRustVisitor(stream);
         node.accept(visitor.innerVisitor);
         return builder.toString();
     }
