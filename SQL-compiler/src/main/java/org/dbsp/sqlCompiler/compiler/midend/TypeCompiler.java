@@ -60,8 +60,10 @@ public class TypeCompiler {
                 case INTEGER:
                     return new DBSPTypeInteger(tn, 32, nullable);
                 case BIGINT:
-                case DECIMAL:
                     return new DBSPTypeInteger(tn, 64, nullable);
+                case DECIMAL:
+                    // TODO: do we need a more precise approximation?
+                    return DBSPTypeDouble.instance.setMayBeNull(nullable);
                 case FLOAT:
                 case REAL:
                     return DBSPTypeFloat.instance.setMayBeNull(nullable);

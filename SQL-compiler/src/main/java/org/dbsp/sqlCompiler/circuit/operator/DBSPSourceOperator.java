@@ -31,7 +31,7 @@ import java.util.List;
 
 public class DBSPSourceOperator extends DBSPOperator {
     public DBSPSourceOperator(@Nullable Object node, DBSPType outputType, String name) {
-        super(node, "", null, outputType, false, name);
+        super(node, "", null, outputType, false, null, name);
     }
 
     @Override

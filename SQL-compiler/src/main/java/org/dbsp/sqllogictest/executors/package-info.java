@@ -19,14 +19,20 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ *
  */
-
-package org.dbsp.util;
 
 /**
- * Interface implemented by objects that can be as nicely indented strings.
+ * Package that doesn't allow null values as method parameters.
  */
-public interface ToIndentableString {
-    @SuppressWarnings("UnusedReturnValue")
-    IndentStream toString(IndentStream builder);
-}
+
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqllogictest.executors;
+
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
+
+import javax.annotation.ParametersAreNonnullByDefault;

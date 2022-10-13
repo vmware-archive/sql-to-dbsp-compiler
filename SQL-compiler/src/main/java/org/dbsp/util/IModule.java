@@ -24,9 +24,21 @@
 package org.dbsp.util;
 
 /**
- * Interface implemented by objects that can be as nicely indented strings.
+ * By inheriting this interface a Java class becomes a "module".
+ * That's useful for logging, where logging is controlled per module.
  */
-public interface ToIndentableString {
-    @SuppressWarnings("UnusedReturnValue")
-    IndentStream toString(IndentStream builder);
+public interface IModule {
+    /**
+     * Gets the name of the current module.
+     */
+    default String getModule() {
+        return this.getClass().getSimpleName();
+    }
+
+    /**
+     * Get the debugging level of the current module.
+     */
+    default int getDebugLevel() {
+        return Logger.instance.getDebugLevel(this.getModule());
+    }
 }

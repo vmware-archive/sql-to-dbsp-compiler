@@ -23,10 +23,22 @@
 
 package org.dbsp.util;
 
-/**
- * Interface implemented by objects that can be as nicely indented strings.
- */
-public interface ToIndentableString {
-    @SuppressWarnings("UnusedReturnValue")
-    IndentStream toString(IndentStream builder);
+import java.util.List;
+
+public interface IIndentStream extends Appendable {
+    IIndentStream appendChar(char c);
+    IIndentStream append(String string);
+    <T extends ToIndentableString> IIndentStream append(T value);
+    IIndentStream append(int value);
+    IIndentStream append(long value);
+    IIndentStream joinS(String separator, List<String> data);
+    IIndentStream join(String separator, String[] data);
+    <T extends ToIndentableString> IIndentStream join(String separator, T[] data);
+    <T extends ToIndentableString> IIndentStream join(String separator, List<T> data);
+    <T extends ToIndentableString> IIndentStream intercalate(String separator, List<T> data);
+    <T extends ToIndentableString> IIndentStream intercalate(String separator, T[] data);
+    IIndentStream intercalateS(String separator, List<String> data);
+    IIndentStream newline();
+    IIndentStream increase();
+    IIndentStream decrease();
 }

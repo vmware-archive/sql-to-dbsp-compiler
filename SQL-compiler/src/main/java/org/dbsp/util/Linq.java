@@ -26,10 +26,7 @@
 package org.dbsp.util;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -130,7 +127,7 @@ public class Linq {
         return Linq.all(Linq.zipSameLength(left, right, (l, r) -> l == r, Boolean.class));
     }
 
-    public static <T> boolean same(List<T> left, List<T> right) {
+    public static <T> boolean same(Collection<T> left, Collection<T> right) {
         if (left.size() != right.size())
             return false;
         return Linq.all(Linq.zipSameLength(left, right, (l, r) -> l == r));
@@ -143,12 +140,17 @@ public class Linq {
         return result;
     }
 
-    public static <T, S, R> List<R> zipSameLength(List<T> left, List<S> right, BiFunction<T, S, R> function) {
+    public static <T, S, R> List<R> zipSameLength(Collection<T> left, Collection<S> right, BiFunction<T, S, R> function) {
         if (left.size() != right.size())
             throw new RuntimeException("Zipped lists have different lengths " + left.size() + " and " + right.size());
         List<R> result = new ArrayList<>();
-        for (int i=0; i < left.size(); i++)
-            result.add(function.apply(left.get(i), right.get(i)));
+        Iterator<T> l = left.iterator();
+        Iterator<S> r = right.iterator();
+        for (int i=0; i < left.size(); i++) {
+            T t = l.next();
+            S s = r.next();
+            result.add(function.apply(t, s));
+        }
         return result;
     }
 

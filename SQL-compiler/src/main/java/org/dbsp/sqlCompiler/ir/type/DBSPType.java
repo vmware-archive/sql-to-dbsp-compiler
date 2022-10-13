@@ -26,7 +26,7 @@ package org.dbsp.sqlCompiler.ir.type;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.util.IndentStringBuilder;
+import org.dbsp.util.IndentStream;
 
 import javax.annotation.Nullable;
 
@@ -47,7 +47,7 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
         this.mayBeNull = mayBeNull;
     }
 
-    public void wrapOption(IndentStringBuilder builder, String type) {
+    public void wrapOption(IndentStream builder, String type) {
         if (this.mayBeNull) {
             builder.append("Option<" + type + ">");
             return;

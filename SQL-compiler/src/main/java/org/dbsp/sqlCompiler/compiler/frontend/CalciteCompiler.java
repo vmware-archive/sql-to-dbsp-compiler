@@ -62,7 +62,9 @@ import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.Pair;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
+import org.dbsp.util.IModule;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
@@ -85,7 +87,7 @@ import java.util.*;
  * - optimize RelNode
  */
 @SuppressWarnings("FieldCanBeLocal")
-public class CalciteCompiler {
+public class CalciteCompiler implements IModule {
     private final SqlParser.Config parserConfig;
     private final SqlValidator validator;
     private final Catalog catalog;
@@ -96,7 +98,6 @@ public class CalciteCompiler {
     @Nullable
     private FrontEndResult program;
     private final SqlToRelConverter.Config converterConfig;
-    private static final boolean debug = false;
 
     // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
     public CalciteCompiler() {
@@ -294,23 +295,37 @@ public class CalciteCompiler {
     }
 
     RelNode optimize(RelNode rel) {
-        if (debug)
-            System.out.println("Before optimizer " + getPlan(rel));
+        int debugLevel = this.getDebugLevel();
+        if (debugLevel > 1)
+            Logger.instance.append("Before optimizer")
+                    .increase()
+                    .append(getPlan(rel))
+                    .decrease()
+                    .newline();
 
         RelBuilder relBuilder = this.converterConfig.getRelBuilderFactory().create(
                 cluster, null);
         // This converts correlated sub-queries into standard joins.
         rel = RelDecorrelator.decorrelateQuery(rel, relBuilder);
-        if (debug)
-            System.out.println("After decorrelator " + getPlan(rel));
+        if (debugLevel > 1)
+            Logger.instance.append("After decorrelator")
+                    .increase()
+                    .append(getPlan(rel))
+                    .decrease()
+                    .newline();
 
         int stage = 0;
         for (HepProgram program: getOptimizationStages(rel)) {
             HepPlanner planner = new HepPlanner(program);
             planner.setRoot(rel);
             rel = planner.findBestExp();
-            if (debug)
-                System.out.println("After optimizer stage " + stage + ":" + getPlan(rel));
+            if (debugLevel > 2)
+                Logger.instance.append("After optimizer stage ")
+                        .append(stage)
+                        .increase()
+                        .append(getPlan(rel))
+                        .decrease()
+                        .newline();
             stage++;
         }
         return rel;

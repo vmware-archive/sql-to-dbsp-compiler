@@ -40,7 +40,7 @@ public class DeadCodeVisitor extends CircuitVisitor {
     public final Set<DBSPOperator> keep = new HashSet<>();
 
     public DeadCodeVisitor() {
-        super(true, new EmptyInnerVisitor());
+        super(true);
     }
 
     @Override

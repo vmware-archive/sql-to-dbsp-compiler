@@ -38,9 +38,10 @@ public class DBSPNoopOperator extends DBSPUnaryOperator {
         return new DBSPClosureExpression(new DBSPDerefExpression(var), var.asRefParameter());
     }
 
-    public DBSPNoopOperator(@Nullable Object node, DBSPOperator source, String outputName) {
+    public DBSPNoopOperator(@Nullable Object node, DBSPOperator source,
+                            @Nullable String comment, String outputName) {
         super(node, "map", getClosure(),
-                source.getNonVoidType(), source.isMultiset, source, outputName);
+                source.getNonVoidType(), source.isMultiset, source, comment, outputName);
     }
 
     @Override
@@ -52,6 +53,6 @@ public class DBSPNoopOperator extends DBSPUnaryOperator {
 
     @Override
     public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
-        return new DBSPNoopOperator(this.getNode(), newInputs.get(0), this.outputName);
+        return new DBSPNoopOperator(this.getNode(), newInputs.get(0), this.comment, this.outputName);
     }
 }

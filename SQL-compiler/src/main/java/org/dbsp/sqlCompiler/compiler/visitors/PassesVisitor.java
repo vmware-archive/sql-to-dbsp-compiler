@@ -32,7 +32,7 @@ public class PassesVisitor extends CircuitVisitor {
     public final List<CircuitVisitor> passes;
 
     PassesVisitor(List<CircuitVisitor> passes) {
-        super(false, new EmptyInnerVisitor());
+        super(false);
         this.passes = passes;
     }
 

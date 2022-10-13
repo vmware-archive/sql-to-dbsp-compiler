@@ -23,10 +23,20 @@
 
 package org.dbsp.util;
 
-/**
- * Interface implemented by objects that can be as nicely indented strings.
- */
-public interface ToIndentableString {
-    @SuppressWarnings("UnusedReturnValue")
-    IndentStream toString(IndentStream builder);
+public interface IDebuggable {
+    /**
+     * Higher levels -> more debugging information.
+     */
+    void setDebugLevel(String module, int level);
+
+    /**
+     * The current debug level.
+     */
+    int getDebugLevel(String module);
+
+    /**
+     * Stream that debugging information goes to.
+     * @return The previous output stream.
+     */
+    Appendable setDebugStream(Appendable writer);
 }

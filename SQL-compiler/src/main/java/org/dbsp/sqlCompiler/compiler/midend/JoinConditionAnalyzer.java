@@ -24,14 +24,15 @@
 package org.dbsp.sqlCompiler.compiler.midend;
 
 import org.apache.calcite.rex.*;
+import org.dbsp.util.IModule;
+import org.dbsp.util.Logger;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class JoinConditionAnalyzer extends RexVisitorImpl<Void> {
-    private static final boolean debug = false;
+public class JoinConditionAnalyzer extends RexVisitorImpl<Void> implements IModule {
     private final int leftTableColumnCount;
     private final ConditionDecomposition result;
 
@@ -162,8 +163,10 @@ public class JoinConditionAnalyzer extends RexVisitorImpl<Void> {
     }
 
     JoinConditionAnalyzer.ConditionDecomposition analyze(RexNode expression) {
-        if (debug)
-            System.out.println("Analyzing " + expression);
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append("Analyzing ")
+                    .append(expression.toString())
+                    .newline();
         expression.accept(this);
         return this.result;
     }

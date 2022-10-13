@@ -29,10 +29,13 @@ import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqllogictest.*;
+import org.dbsp.util.IModule;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
+import javax.imageio.metadata.IIOMetadataController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
@@ -41,8 +44,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-public class JDBCExecutor extends SqlTestExecutor {
-    private static final boolean debug = false;
+public class JDBCExecutor extends SqlTestExecutor implements IModule {
     public final String db_url;
     public final String user;
     public final String password;
@@ -117,8 +119,11 @@ public class JDBCExecutor extends SqlTestExecutor {
         stmt.execute(statement.statement);
         stmt.close();
         this.statementsExecuted++;
-        if (JDBCExecutor.debug)
-            System.out.println(this.statementsExecuted + ": " + statement.statement);
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append(this.statementsExecuted)
+                    .append(": ")
+                    .append(statement.statement)
+                    .newline();
     }
 
     boolean query(SqlTestQuery query, int queryNo) throws SQLException, NoSuchAlgorithmException {
@@ -133,8 +138,11 @@ public class JDBCExecutor extends SqlTestExecutor {
         stmt.close();
         resultSet.close();
         this.queriesExecuted++;
-        if (JDBCExecutor.debug)
-            System.out.println(this.queriesExecuted + ": " + query.query);
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append(this.queriesExecuted)
+                    .append(": ")
+                    .append(query.query)
+                    .newline();
         return true;
     }
 
@@ -384,8 +392,8 @@ public class JDBCExecutor extends SqlTestExecutor {
             Statement drop = this.connection.createStatement();
             drop.execute(del);
             drop.close();
-            if (debug)
-                System.out.println(del);
+            if (this.getDebugLevel() > 1)
+                Logger.instance.append(del).newline();
         }
     }
 
