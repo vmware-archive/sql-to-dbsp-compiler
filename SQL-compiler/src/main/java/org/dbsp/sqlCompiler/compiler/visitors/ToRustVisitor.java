@@ -48,11 +48,13 @@ public class ToRustVisitor extends CircuitVisitor {
                     "#![allow(unused_variables)]\n" +
                     "\n" +
                     "use dbsp::{\n" +
-                    "    algebra::{ZSet, MulByRef, F32, F64},\n" +
+                    "    algebra::{ZSet, MulByRef, F32, F64, UnimplementedSemigroup},\n" +
                     "    circuit::{Circuit, Stream},\n" +
                     "    operator::{Generator, FilterMap, Fold},\n" +
                     "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
                     "    zset,\n" +
+                    "    DBWeight,\n" +
+                    "    DBData,\n" +
                     "};\n" +
                     "use genlib::*;\n" +
                     "use size_of::*;\n" +
@@ -68,6 +70,7 @@ public class ToRustVisitor extends CircuitVisitor {
                     "use sqllib::*;\n" +
                     "use sqlvalue::*;\n" +
                     "use hashing::*;\n" +
+                    "use readers::*;\n" +
                     "type Weight = isize;\n";
 
 

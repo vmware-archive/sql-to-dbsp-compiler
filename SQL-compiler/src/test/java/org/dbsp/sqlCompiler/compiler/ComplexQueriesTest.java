@@ -26,7 +26,6 @@ package org.dbsp.sqlCompiler.compiler;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.junit.Assert;
-import org.junit.Test;
 
 public class ComplexQueriesTest extends BaseSQLTests {
     public String fixup(String query) {
@@ -36,7 +35,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
 
     //@Test
     public void fraudDetectionTest() throws SqlParseException {
-        // frauddetection-352718.cc_data.demo_
+        // fraudDetection-352718.cc_data.demo_
         String ddl0 = "CREATE TABLE demographics (\n" +
                 "  cc_num FLOAT64,\n" +
                 "  first STRING,\n" +

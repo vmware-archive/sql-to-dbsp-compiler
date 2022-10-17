@@ -28,7 +28,6 @@ package org.dbsp.sqllogictest;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqllogictest.executors.*;
-import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -137,7 +136,7 @@ public class Main {
         executor = new NoExecutor();
         executor = dExec;
         JDBCExecutor jdbc = new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
-        executor = jdbc;
+        //executor = jdbc;
         DBSP_JDBC_Executor hybrid = new DBSP_JDBC_Executor(jdbc, true);
         executor = hybrid;
         return executor;
@@ -162,7 +161,7 @@ public class Main {
                 "select4.test",
                 "select5.test",
                  */
-                "index/view/10000/slt_good_0.test",
+                "index",
                 "evidence"
         };
         if (argv.length > 1)
@@ -176,11 +175,11 @@ public class Main {
             if (file.startsWith("select5"))
                 batchSize = Math.min(batchSize, 5);
             Path path = Paths.get(benchDir + "/" + file);
-            Logger.instance.setDebugLevel("DBSPExecutor", 1);
-            Logger.instance.setDebugLevel("JDBCExecutor", 1);
-            Logger.instance.setDebugLevel("DBSP_JDBC_Executor", 1);
-            if (executor.is(DBSP_JDBC_Executor.class))
-                executor.to(DBSP_JDBC_Executor.class).setBatchSize(batchSize, skipPerFile);
+            //Logger.instance.setDebugLevel("DBSPExecutor", 1);
+            //Logger.instance.setDebugLevel("JDBCExecutor", 1);
+            //Logger.instance.setDebugLevel("DBSP_JDBC_Executor", 1);
+            if (executor.is(DBSPExecutor.class))
+                executor.to(DBSPExecutor.class).setBatchSize(batchSize, skipPerFile);
             Files.walkFileTree(path, loader);
         }
         System.out.println("Files that could not be not parsed: " + loader.errors);

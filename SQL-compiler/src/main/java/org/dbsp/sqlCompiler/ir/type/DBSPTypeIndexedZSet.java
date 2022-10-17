@@ -39,6 +39,10 @@ public class DBSPTypeIndexedZSet extends DBSPTypeUser {
         this.weightType = weightType;
     }
 
+    public DBSPTypeIndexedZSet(@Nullable Object node, DBSPType keyType, DBSPType elementType) {
+        this(node, keyType, elementType, DBSPTypeZSet.defaultWeightType);
+    }
+
     @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;

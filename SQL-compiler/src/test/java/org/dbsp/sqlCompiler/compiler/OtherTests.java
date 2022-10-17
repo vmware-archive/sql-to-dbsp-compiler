@@ -24,16 +24,32 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
+import org.dbsp.sqlCompiler.ir.DBSPFunction;
+import org.dbsp.sqlCompiler.ir.expression.DBSPApplyExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPBlockExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPStrLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
+import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
+import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Logger;
+import org.dbsp.util.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 
 public class OtherTests implements IModule {
     private DBSPCompiler compileDef() throws SqlParseException {
@@ -94,14 +110,43 @@ public class OtherTests implements IModule {
 
     @Test
     public void toCsvTest() {
-        DBSPZSetLiteral s = new DBSPZSetLiteral(
-                CalciteToDBSPCompiler.weightType, BaseSQLTests.e0, BaseSQLTests.e1);
+        DBSPZSetLiteral s = new DBSPZSetLiteral(BaseSQLTests.e0, BaseSQLTests.e1);
         StringBuilder builder = new StringBuilder();
         ToCsvVisitor visitor = new ToCsvVisitor(builder, () -> "");
         visitor.traverse(s);
+        String[] lines = builder.toString().split("\n");
+        Arrays.sort(lines);
         Assert.assertEquals(
-                "10,12.0,true,Hi,,\n" +
-                "10,1.0,false,Hi,1,0.0\n",
-                builder.toString());
+                "10,1.0,false,Hi,1,0.0\n" +
+                "10,12.0,true,Hi,,",
+                String.join("\n", lines));
+    }
+
+    @Test
+    public void rustCsvTest() throws IOException, InterruptedException {
+        DBSPZSetLiteral data = new DBSPZSetLiteral(BaseSQLTests.e0, BaseSQLTests.e1);
+        String fileName = BaseSQLTests.rustDirectory + "/" + "test.csv";
+        File file = Solutions.toCsv(fileName, data);
+        List<DBSPStatement> list = new ArrayList<>();
+        // let src = csv_source::<Tuple3<bool, Option<String>, Option<u32>>, isize>("src/test.csv");
+        DBSPLetStatement src = new DBSPLetStatement("src",
+                new DBSPApplyExpression("read_csv", data.getNonVoidType(),
+                        new DBSPStrLiteral(fileName)));
+        list.add(src);
+        list.add(new DBSPExpressionStatement(new DBSPApplyExpression(
+                "assert_eq!", null, src.getVarReference(),
+                data)));
+        DBSPExpression body = new DBSPBlockExpression(list, null);
+        DBSPFunction tester = new DBSPFunction("test", new ArrayList<>(), null, body)
+                .addAnnotation("#[test]");
+
+        PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
+        rustWriter.println(ToRustVisitor.generatePreamble());
+        rustWriter.println(ToRustVisitor.toRustString(tester));
+        rustWriter.close();
+
+        Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
+        boolean success = file.delete();
+        Assert.assertTrue(success);
     }
 }

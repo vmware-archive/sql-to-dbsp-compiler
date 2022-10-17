@@ -203,6 +203,7 @@ public class SqlTestFile {
         return result;
     }
 
+     @SuppressWarnings("SpellCheckingInspection")
      public void parse(QueryAcceptancePolicy policy) throws IOException {
          String line;
          while (!this.done) {

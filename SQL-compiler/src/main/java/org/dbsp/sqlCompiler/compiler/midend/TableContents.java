@@ -26,8 +26,6 @@ package org.dbsp.sqlCompiler.compiler.midend;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.CreateTableStatement;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.DropTableStatement;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
-import org.dbsp.sqlCompiler.ir.DBSPFunction;
-import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.util.UnsupportedException;
 import org.dbsp.util.Utilities;
@@ -45,7 +43,7 @@ import java.util.Map;
  * of a sequence of statements.
  */
 public class TableContents {
-    final List<String> tablesCreated = new ArrayList<>();
+    public final List<String> tablesCreated = new ArrayList<>();
     /**
      * Remember the last statement that created each table.
      */
@@ -67,23 +65,6 @@ public class TableContents {
         if (this.tableContents == null)
             throw new UnsupportedException("Not keeping track of table contents");
         return Utilities.getExists(this.tableContents, tableName);
-    }
-
-    /**
-     * Generates code for a function that returns a tuple
-     * containing the contents of all tables.  The tables
-     * are sorted in the order they were created.
-     * @param functionName  Name of the generated function.
-     */
-    public DBSPFunction functionWithTableContents(String functionName) {
-        DBSPZSetLiteral[] tuple = new DBSPZSetLiteral[this.tablesCreated.size()];
-        for (int i = 0; i < this.tablesCreated.size(); i++) {
-            String table = this.tablesCreated.get(i);
-            tuple[i] = this.getTableContents(table);
-        }
-        DBSPRawTupleExpression result = new DBSPRawTupleExpression(tuple);
-        return new DBSPFunction(functionName, new ArrayList<>(),
-                result.getType(), result);
     }
 
     public void execute(FrontEndStatement statement) {

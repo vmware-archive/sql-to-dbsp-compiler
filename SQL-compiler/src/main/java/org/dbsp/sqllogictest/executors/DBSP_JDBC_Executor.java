@@ -25,8 +25,6 @@ package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.sqlCompiler.ir.DBSPFunction;
-import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqllogictest.SqlStatement;
 import org.dbsp.sqllogictest.SqlTestFile;
@@ -34,7 +32,6 @@ import org.dbsp.sqllogictest.SqlTestFile;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,20 +52,15 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
     }
 
     @Override
-    DBSPFunction createInputFunction(DBSPCompiler compiler)
-            throws SQLException {
+    public DBSPZSetLiteral[] getInputSets(DBSPCompiler compiler) throws SQLException {
         List<String> tables = this.statementExecutor.getTableList();
         DBSPZSetLiteral[] tuple = new DBSPZSetLiteral[tables.size()];
         for (int i = 0; i < tables.size(); i++) {
             String table = tables.get(i);
             DBSPZSetLiteral lit = this.statementExecutor.getTableContents(table);
-            if (lit == null)
-                throw new RuntimeException("No input found for table " + table);
             tuple[i] = lit;
         }
-        DBSPRawTupleExpression result = new DBSPRawTupleExpression(tuple);
-        return new DBSPFunction("input", new ArrayList<>(),
-                result.getType(), result);
+        return tuple;
     }
 
     @Nullable

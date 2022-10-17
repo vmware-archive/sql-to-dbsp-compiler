@@ -332,7 +332,7 @@ public class SqlRuntimeLibrary {
                 }
             }
         }
-        this.program = new DBSPFile(null, declarations);
+        this.program = new DBSPFile(declarations);
     }
 
     /**

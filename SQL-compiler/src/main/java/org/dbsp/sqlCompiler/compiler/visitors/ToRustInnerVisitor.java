@@ -155,6 +155,13 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPStrLiteral literal) {
+        assert literal.value != null;
+        this.builder.append(literal.wrapSome(Utilities.escapeString(literal.value)));
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPBinaryExpression expression) {
         if (expression.left.getNonVoidType().mayBeNull) {
             this.builder.append("(")
@@ -666,6 +673,12 @@ public class ToRustInnerVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPTypeUSize type) {
         type.wrapOption(this.builder, "usize");
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPTypeStr type) {
+        type.wrapOption(this.builder, "str");
         return false;
     }
 

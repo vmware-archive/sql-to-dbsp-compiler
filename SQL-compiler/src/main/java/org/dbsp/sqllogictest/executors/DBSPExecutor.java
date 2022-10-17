@@ -24,8 +24,8 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.compiler.Solutions;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.midend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.midend.TableContents;
@@ -69,6 +69,7 @@ public class DBSPExecutor extends SqlTestExecutor {
 
     static final String rustDirectory = "../temp/src/";
     static final String testFileName = "test";
+    static final String csvBaseName = "data";
     private final boolean execute;
     private int batchSize;  // Number of queries to execute together
     private int skip;       // Number of queries to skip in each test file.
@@ -96,10 +97,40 @@ public class DBSPExecutor extends SqlTestExecutor {
         this.queriesToRun = new ArrayList<>();
     }
 
-    DBSPFunction createInputFunction(DBSPCompiler compiler) throws SqlParseException, SQLException {
+    public DBSPZSetLiteral[] getInputSets(DBSPCompiler compiler) throws SQLException, SqlParseException {
         for (SqlStatement statement : this.inputPreparation.statements)
             compiler.compileStatement(statement.statement, null);
-        return compiler.getTableContents().functionWithTableContents("input");
+        TableContents tables = compiler.getTableContents();
+        DBSPZSetLiteral[] tuple = new DBSPZSetLiteral[tables.tablesCreated.size()];
+        for (int i = 0; i < tuple.length; i++) {
+            String table = tables.tablesCreated.get(i);
+            tuple[i] = tables.getTableContents(table);
+        }
+        return tuple;
+    }
+
+    DBSPFunction createInputFunction(DBSPZSetLiteral[] tuple) throws IOException {
+        DBSPExpression[] fields = new DBSPExpression[tuple.length];
+        int totalSize = 0;
+        for (int i = 0; i < tuple.length; i++) {
+            totalSize += tuple[i].size();
+            fields[i] = tuple[i];
+        }
+
+        // If the data is large write it to a set of CSV files and read it at runtime.
+        if (totalSize > 10) {
+            for (int i = 0; i < tuple.length; i++) {
+                String fileName = (rustDirectory + csvBaseName) + i + ".csv";
+                Solutions.toCsv(fileName, tuple[i]);
+                fields[i] = new DBSPApplyExpression("read_csv",
+                        tuple[i].getNonVoidType(),
+                        new DBSPStrLiteral(fileName));
+            }
+        }
+
+        DBSPRawTupleExpression result = new DBSPRawTupleExpression(fields);
+        return new DBSPFunction("input", new ArrayList<>(),
+                result.getType(), result);
     }
 
     void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException, SQLException {
@@ -109,7 +140,8 @@ public class DBSPExecutor extends SqlTestExecutor {
         this.createTables(compiler);
         // Create function which generates inputs for all tests in this batch.
         // We know that all these tests consume the same input tables.
-        DBSPFunction inputFunction = this.createInputFunction(compiler);
+        DBSPZSetLiteral[] inputSets = this.getInputSets(compiler);
+        DBSPFunction inputFunction = this.createInputFunction(inputSets);
 
         // Generate a function and a tester for each query.
         int queryNo = 0;
@@ -174,7 +206,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                 elementType = elementType.to(DBSPTypeVec.class).getElementType();
                 DBSPVecLiteral vec = new DBSPVecLiteral(elementType);
                 container = vec;
-                expectedOutput = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, vec);
+                expectedOutput = new DBSPZSetLiteral(vec);
             } else {
                 expectedOutput = new DBSPZSetLiteral(outputType);
                 container = expectedOutput;
@@ -228,7 +260,8 @@ public class DBSPExecutor extends SqlTestExecutor {
 
     void cleanupFilesystem() {
         File directory = new File(rustDirectory);
-        FilenameFilter filter = (dir, name) -> name.startsWith(testFileName);
+        FilenameFilter filter = (dir, name) -> name.startsWith(testFileName) ||
+                (name.startsWith(csvBaseName) && name.endsWith("csv"));
         File[] files = directory.listFiles(filter);
         if (files == null)
             return;

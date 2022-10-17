@@ -21,26 +21,29 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.compiler;
 
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 
-import javax.annotation.Nullable;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
-public class DBSPTypeDate extends DBSPType {
-    public static final DBSPTypeDate instance = new DBSPTypeDate(null, false);
-
-    protected DBSPTypeDate(@Nullable Object node, boolean mayBeNull) {
-        super(node, mayBeNull);
-    }
-
-    @Override
-    public void accept(InnerVisitor visitor) {}
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        if (this.mayBeNull == mayBeNull)
-            return this;
-        return new DBSPTypeDate(this.getNode(), mayBeNull);
+public class Solutions {
+    /**
+     * Write a literal to a file as a csv format.
+     * @param fileName    File to write to.
+     * @param literal Literal to write.
+     */
+    public static File toCsv(String fileName, DBSPZSetLiteral literal) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        ToCsvVisitor visitor = new ToCsvVisitor(builder, () -> "");
+        visitor.traverse(literal);
+        File file = new File(fileName);
+        FileWriter writer = new FileWriter(file);
+        writer.write(builder.toString());
+        writer.close();
+        return file;
     }
 }

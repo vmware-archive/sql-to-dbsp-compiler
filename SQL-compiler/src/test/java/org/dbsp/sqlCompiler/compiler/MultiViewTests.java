@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
@@ -73,10 +72,10 @@ public class MultiViewTests extends BaseSQLTests {
         InputOutputPair stream = new InputOutputPair(
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {
-                        new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                        new DBSPZSetLiteral(
                                 new DBSPTupleExpression(DBSPBoolLiteral.True),
                                 new DBSPTupleExpression(DBSPBoolLiteral.False)),
-                        new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                        new DBSPZSetLiteral(
                                 new DBSPTupleExpression(new DBSPDoubleLiteral(12.0)),
                                 new DBSPTupleExpression(new DBSPDoubleLiteral(1.0)))
                 }
@@ -107,10 +106,10 @@ public class MultiViewTests extends BaseSQLTests {
         InputOutputPair stream = new InputOutputPair(
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {
-                        new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                        new DBSPZSetLiteral(
                                 new DBSPTupleExpression(DBSPBoolLiteral.True),
                                 new DBSPTupleExpression(DBSPBoolLiteral.False)),
-                        new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                        new DBSPZSetLiteral(
                                 new DBSPTupleExpression(DBSPBoolLiteral.True),
                                 new DBSPTupleExpression(DBSPBoolLiteral.False))
                 }
@@ -141,10 +140,10 @@ public class MultiViewTests extends BaseSQLTests {
         InputOutputPair stream = new InputOutputPair(
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {
-                        new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                        new DBSPZSetLiteral(
                                 new DBSPTupleExpression(DBSPBoolLiteral.True),
                                 new DBSPTupleExpression(DBSPBoolLiteral.False)),
-                        new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                        new DBSPZSetLiteral(
                                 new DBSPTupleExpression(new DBSPIntegerLiteral(10)))
                 }
         );

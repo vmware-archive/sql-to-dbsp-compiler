@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPSomeExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
@@ -52,7 +51,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 // Add first input
                 new InputOutputPair(input, firstOutput),
                 // Add an empty input
-                new InputOutputPair(this.empty, secondOutput),
+                new InputOutputPair(empty, secondOutput),
                 // Subtract the first input
                 new InputOutputPair(input.negate(), thirdOutput)
         );
@@ -61,14 +60,14 @@ public class NaiveIncrementalTests extends EndToEndTests {
     void testConstantOutput(String query,
                             DBSPZSetLiteral output) {
         DBSPZSetLiteral input = this.createInput();
-        DBSPZSetLiteral empty = new DBSPZSetLiteral(output.getNonVoidType());
+        DBSPZSetLiteral e = new DBSPZSetLiteral(output.getNonVoidType());
         this.invokeTestQueryBase(query,
                 // Add first input
                 new InputOutputPair(input, output),
                 // Add an empty input
-                new InputOutputPair(this.empty, empty),
+                new InputOutputPair(NaiveIncrementalTests.empty, e),
                 // Subtract the first input
-                new InputOutputPair(input.negate(), empty)
+                new InputOutputPair(input.negate(), e)
         );
     }
 
@@ -82,7 +81,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 // Add first input
                 new InputOutputPair(input, firstOutput),
                 // Add an empty input
-                new InputOutputPair(this.empty, secondOutput),
+                new InputOutputPair(empty, secondOutput),
                 // Subtract the first input
                 new InputOutputPair(input.negate(), thirdOutput)
         );
@@ -91,7 +90,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
     @Test @Override
     public void zero() {
         String query = "SELECT 0";
-        DBSPZSetLiteral result = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+        DBSPZSetLiteral result = new DBSPZSetLiteral(
                 new DBSPTupleExpression(new DBSPIntegerLiteral(0)));
         this.testConstantOutput(query, result);
     }
@@ -99,7 +98,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
     @Test @Override
     public void geoPointTest() {
         String query = "SELECT ST_POINT(0, 0)";
-        this.testConstantOutput(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+        this.testConstantOutput(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(
                         new DBSPSomeExpression(new DBSPRawTupleExpression(
                                 new DBSPDoubleLiteral(0), new DBSPDoubleLiteral(0))))));
@@ -108,7 +107,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
     @Override @Test
     public void geoDistanceTest() {
         String query = "SELECT ST_DISTANCE(ST_POINT(0, 0), ST_POINT(0,1))";
-        this.testConstantOutput(query, new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+        this.testConstantOutput(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(
                         new DBSPSomeExpression(new DBSPDoubleLiteral(1)))));
     }
@@ -117,7 +116,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
     public void foldTest() {
         String query = "SELECT + 91 + NULLIF ( + 93, + 38 )";
         DBSPZSetLiteral result = new DBSPZSetLiteral(
-                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
+                new DBSPTupleExpression(
                 new DBSPIntegerLiteral(184, true)));
         this.testConstantOutput(query, result);
     }
@@ -126,7 +125,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
     public void aggregateFalseTest() {
         String query = "SELECT SUM(T.COL1) FROM T WHERE FALSE";
         DBSPZSetLiteral result = new DBSPZSetLiteral(
-                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
+                new DBSPTupleExpression(
                 DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true))));
         this.testConstantOutput(query, result);
     }
@@ -135,7 +134,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
     public void constAggregateDoubleExpression() {
         String query = "SELECT 34 / SUM (1), 20 / SUM(2) FROM T GROUP BY COL1";
         this.testQuery(query,
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(
                                 new DBSPIntegerLiteral(17),
                                 new DBSPIntegerLiteral(5))));
@@ -145,7 +144,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
     public void constAggregateExpression2() {
         String query = "SELECT 34 / AVG (1) FROM T GROUP BY COL1";
         this.testQuery(query,
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPIntegerLiteral(34))));
     }
 
@@ -153,9 +152,9 @@ public class NaiveIncrementalTests extends EndToEndTests {
     public void maxConst() {
         String query = "SELECT MAX(6) FROM T";
         this.testAggregate(query,
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPIntegerLiteral(6, true))),
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
     }
 
@@ -163,9 +162,9 @@ public class NaiveIncrementalTests extends EndToEndTests {
     public void maxTest() {
         String query = "SELECT MAX(T.COL1) FROM T";
         this.testAggregate(query,
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPIntegerLiteral(10, true))),
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
     }
 
@@ -173,7 +172,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
     public void averageTest() {
         String query = "SELECT AVG(T.COL1) FROM T";
         DBSPZSetLiteral output = new DBSPZSetLiteral(
-                CalciteToDBSPCompiler.weightType, new DBSPTupleExpression(
+                new DBSPTupleExpression(
                 new DBSPIntegerLiteral(10, true)));
         this.testAggregate(query, output, new DBSPZSetLiteral(
                 output.zsetType.weightType,
@@ -184,9 +183,9 @@ public class NaiveIncrementalTests extends EndToEndTests {
     public void aggregateFloatTest() {
         String query = "SELECT SUM(T.COL2) FROM T";
         this.testAggregate(query,
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPDoubleLiteral(13.0, true))),
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeDouble.instance.setMayBeNull(true)))));
     }
 
@@ -194,9 +193,9 @@ public class NaiveIncrementalTests extends EndToEndTests {
     public void optionAggregateTest() {
         String query = "SELECT SUM(T.COL5) FROM T";
         this.testAggregate(query,
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPIntegerLiteral(1, true))),
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
     }
 
@@ -204,9 +203,9 @@ public class NaiveIncrementalTests extends EndToEndTests {
     public void aggregateTest() {
         String query = "SELECT SUM(T.COL1) FROM T";
         this.testAggregate(query,
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPIntegerLiteral(20, true))),
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
     }
 
@@ -214,11 +213,11 @@ public class NaiveIncrementalTests extends EndToEndTests {
     public void aggregateDistinctTest() {
         String query = "SELECT SUM(DISTINCT T.COL1), SUM(T.COL2) FROM T";
         this.testAggregate(query,
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(
                                 new DBSPIntegerLiteral(10, true),
                                 new DBSPDoubleLiteral(13.0, true))),
-                new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType,
+                new DBSPZSetLiteral(
                         new DBSPTupleExpression(
                                 DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)),
                                 DBSPLiteral.none(DBSPTypeDouble.instance.setMayBeNull(true)))));

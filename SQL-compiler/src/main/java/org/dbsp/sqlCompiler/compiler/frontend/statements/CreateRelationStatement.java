@@ -32,7 +32,6 @@ import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
-import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.midend.TypeCompiler;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
@@ -45,7 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base lass for CreateTableStatment and CreateViewStatement.
+ * Base class for CreateTableStatement and CreateViewStatement.
  */
 public abstract class CreateRelationStatement extends FrontEndStatement {
     public final String tableName;
@@ -101,6 +100,6 @@ public abstract class CreateRelationStatement extends FrontEndStatement {
     }
 
     public DBSPType getTableType() {
-        return new DBSPTypeZSet(this.node, this.getRowType(), CalciteToDBSPCompiler.weightType);
+        return new DBSPTypeZSet(this.node, this.getRowType());
     }
 }

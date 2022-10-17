@@ -21,26 +21,36 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.expression.literal;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeStr;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeDate extends DBSPType {
-    public static final DBSPTypeDate instance = new DBSPTypeDate(null, false);
+public class DBSPStrLiteral extends DBSPLiteral {
+    @Nullable
+    public final String value;
 
-    protected DBSPTypeDate(@Nullable Object node, boolean mayBeNull) {
-        super(node, mayBeNull);
+    @SuppressWarnings("unused")
+    public DBSPStrLiteral() {
+        this(null, true);
+    }
+
+    public DBSPStrLiteral(String value) {
+        this(value, false);
+    }
+
+    public DBSPStrLiteral(@Nullable String value, boolean nullable) {
+        super(null, DBSPTypeStr.instance.setMayBeNull(nullable), value);
+        if (value == null && !nullable)
+            throw new RuntimeException("Null value with non-nullable type");
+        this.value = value;
     }
 
     @Override
-    public void accept(InnerVisitor visitor) {}
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        if (this.mayBeNull == mayBeNull)
-            return this;
-        return new DBSPTypeDate(this.getNode(), mayBeNull);
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }
