@@ -7,6 +7,4 @@ edition = "2021"
 md5 = { version = "0.7.0" }
 sqlvalue = { path = "../sqlvalue" }
 dbsp = { git = "https://github.com/vmware/database-stream-processor.git" }
-# The following is used while I have outstanding PRs not yet merged
-# dbsp = { path = "/home/mbudiu/git/database-stream-processor" }
 size-of = { version = "0.1.1" }

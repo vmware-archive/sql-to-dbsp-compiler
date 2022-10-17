@@ -37,7 +37,7 @@ use std::fmt::{
     Result as FmtResult,
 };
 
-fn csv_source<T, Weight>(source_file_path: &str) -> OrdZSet<T, Weight>
+pub fn read_csv<T, Weight>(source_file_path: &str) -> OrdZSet<T, Weight>
 where
     T: DBData + for<'de> serde::Deserialize<'de>,
     Weight: DBWeight + HasOne,
@@ -66,16 +66,19 @@ use tuple::declare_tuples;
 
 #[cfg(test)]
 declare_tuples! {
-    Tuple2<T0, T1>,
+    Tuple3<T0, T1, T2>,
 }
 
 #[test]
 fn csv_test() {
-    let src = csv_source::<Tuple2<String, u32>, isize>("src/test.csv");
+    let src = read_csv::<Tuple3<bool, Option<String>, Option<u32>>, isize>("src/test.csv");
     assert_eq!(zset!(
-        Tuple2::new(String::from("Mihai"),0) => 1,
-        Tuple2::new(String::from("Leonid"),1) => 1,
-        Tuple2::new(String::from("Chase"),2) => 1,
-        Tuple2::new(String::from("Gerd"),3) => 1
+        Tuple3::new(true, Some(String::from("Mihai")),Some(0)) => 1,
+        Tuple3::new(false, Some(String::from("Leonid")),Some(1)) => 1,
+        Tuple3::new(true, Some(String::from("Chase")),Some(2)) => 1,
+        Tuple3::new(false, Some(String::from("Gerd")),Some(3)) => 1,
+        Tuple3::new(true, None, None) => 1,
+        Tuple3::new(false, Some(String::from("Nina")),None) => 1,
+        Tuple3::new(true, None, Some(6)) => 1,
     ), src);
 }
