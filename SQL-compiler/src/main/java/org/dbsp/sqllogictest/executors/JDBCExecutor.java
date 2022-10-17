@@ -23,7 +23,6 @@
 
 package org.dbsp.sqllogictest.executors;
 
-import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -35,7 +34,6 @@ import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
-import javax.imageio.metadata.IIOMetadataController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
@@ -365,9 +363,8 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
         rs.close();
         if (rows.size() == 0)
             return new DBSPZSetLiteral(
-                    new DBSPTypeZSet(new DBSPTypeTuple(colTypes), CalciteToDBSPCompiler.weightType));
-        return new DBSPZSetLiteral(
-                CalciteToDBSPCompiler.weightType, rows.toArray(new DBSPExpression[0]));
+                    new DBSPTypeZSet(new DBSPTypeTuple(colTypes)));
+        return new DBSPZSetLiteral(rows.toArray(new DBSPExpression[0]));
     }
 
     List<String> getTableList() throws SQLException {

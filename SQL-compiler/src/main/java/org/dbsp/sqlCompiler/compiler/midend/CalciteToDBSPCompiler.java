@@ -43,6 +43,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
+import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPTupleStructPattern;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPWildcardPattern;
@@ -82,13 +83,10 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     }
 
     /**
-     * Type of weight used in generated z-sets.
-     */
-    public static final DBSPType weightType = new DBSPTypeUser(null, "Weight", false);
-    /**
      * Variable that refers to the weight of the row in the z-set.
      */
-    public static final DBSPVariableReference weight = new DBSPVariableReference("w", CalciteToDBSPCompiler.weightType);
+    public static final DBSPVariableReference weight = new DBSPVariableReference(
+            "w", DBSPTypeZSet.defaultWeightType);
 
     // Result is deposited here
     @Nullable
@@ -253,9 +251,15 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 .getVarReference();
         DBSPClosureExpression postClosure = new DBSPClosureExpression(new DBSPTupleExpression(posts), postAccum.asParameter());
         DBSPExpression post = this.getCircuit().declareLocal("post", postClosure).getVarReference();
-
         DBSPExpression constructor = new DBSPPathExpression(DBSPTypeAny.instance,
-                new DBSPPath("Fold", "with_output"));
+                new DBSPPath(
+                        new DBSPSimplePathSegment("Fold",
+                                DBSPTypeAny.instance,
+                                new DBSPTypeUser(null, "UnimplementedSemigroup",
+                                        false, DBSPTypeAny.instance),
+                                DBSPTypeAny.instance,
+                                DBSPTypeAny.instance),
+                        new DBSPSimplePathSegment("with_output")));
         DBSPExpression folder = new DBSPApplyExpression(constructor, zero, increment, post);
         return new FoldingDescription(this.getCircuit().declareLocal("folder", folder).getVarReference(),
                 new DBSPTupleExpression(defaultZeros));
@@ -363,7 +367,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 DBSPOperator neg = new DBSPNegateOperator(aggregate, map1);
                 this.getCircuit().addOperator(neg);
                 DBSPOperator constant = new DBSPConstantOperator(
-                        aggregate, new DBSPZSetLiteral(weightType, fd.defaultZero), false);
+                        aggregate, new DBSPZSetLiteral(fd.defaultZero), false);
                 this.getCircuit().addOperator(constant);
                 DBSPOperator sum = new DBSPSumOperator(aggregate, Linq.list(constant, neg, map));
                 this.assignOperator(aggregate, sum);
@@ -838,8 +842,6 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         this.getCircuit().addOperator(index);
         // apply an aggregation function that just creates a vector.
         DBSPTypeVec vecType = new DBSPTypeVec(inputRowType);
-        DBSPExpression constructor = new DBSPPathExpression(DBSPTypeAny.instance,
-                new DBSPPath("Fold", "new"));
         DBSPExpression zero = new DBSPApplyExpression(new DBSPPathExpression(DBSPTypeAny.instance,
                 new DBSPPath(vecType.name, "new")));
         DBSPVariableReference accum = new DBSPVariableReference("a", vecType);
@@ -848,6 +850,16 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPExpression wPush = new DBSPApplyExpression("weighted_push", null, accum, row, weight);
         DBSPExpression push = new DBSPClosureExpression(wPush,
                 accum.asRefParameter(true), row.asRefParameter(), CalciteToDBSPCompiler.weight.asParameter());
+        DBSPExpression constructor = new DBSPPathExpression(DBSPTypeAny.instance,
+            new DBSPPath(
+                    new DBSPSimplePathSegment("Fold",
+                            DBSPTypeAny.instance,
+                        new DBSPTypeUser(null, "UnimplementedSemigroup",
+                                false, DBSPTypeAny.instance),
+                        DBSPTypeAny.instance,
+                        DBSPTypeAny.instance),
+                    new DBSPSimplePathSegment("new")));
+
         DBSPExpression folder = new DBSPApplyExpression(constructor, zero, push);
         DBSPAggregateOperator agg = new DBSPAggregateOperator(sort,
                 this.getCircuit().declareLocal("toVec", folder).getVarReference(),

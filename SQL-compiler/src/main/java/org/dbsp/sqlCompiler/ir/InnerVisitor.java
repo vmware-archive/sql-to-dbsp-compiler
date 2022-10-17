@@ -48,7 +48,7 @@ public abstract class InnerVisitor {
     }
 
     /**
-     * Override to initialize before visisting any node.
+     * Override to initialize before visiting any node.
      */
     public void startVisit() {}
 
@@ -194,6 +194,11 @@ public abstract class InnerVisitor {
     }
 
     public boolean preorder(DBSPTypeRawTuple node) {
+        if (this.visitSuper) return this.preorder((DBSPType) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPTypeStr node) {
         if (this.visitSuper) return this.preorder((DBSPType) node);
         else return true;
     }
@@ -418,6 +423,11 @@ public abstract class InnerVisitor {
         else return true;
     }
 
+    public boolean preorder(DBSPStrLiteral node) {
+        if (this.visitSuper) return this.preorder((DBSPLiteral) node);
+        else return true;
+    }
+
     public boolean preorder(DBSPStringLiteral node) {
         if (this.visitSuper) return this.preorder((DBSPLiteral) node);
         else return true;
@@ -532,6 +542,10 @@ public abstract class InnerVisitor {
     }
 
     public void postorder(DBSPTypeStruct node) {
+        if (this.visitSuper) this.postorder((DBSPType) node);
+    }
+
+    public void postorder(DBSPTypeStr node) {
         if (this.visitSuper) this.postorder((DBSPType) node);
     }
 
@@ -724,6 +738,10 @@ public abstract class InnerVisitor {
     }
 
     public void postorder(DBSPZSetLiteral node) {
+        if (this.visitSuper) this.postorder((DBSPLiteral) node);
+    }
+
+    public void postorder(DBSPStrLiteral node) {
         if (this.visitSuper) this.postorder((DBSPLiteral) node);
     }
 

@@ -31,14 +31,27 @@ public class DBSPTypeZSet extends DBSPTypeUser {
     public final DBSPType elementType;
     public final DBSPType weightType;
 
+    /**
+     * Default weight type.
+     */
+    public static final DBSPType defaultWeightType = new DBSPTypeUser(null, "Weight", false);
+
     public DBSPTypeZSet(@Nullable Object node, DBSPType elementType, DBSPType weightType) {
         super(node, "OrdZSet", false, elementType, weightType);
         this.elementType = elementType;
         this.weightType = weightType;
     }
 
+    public DBSPTypeZSet(@Nullable Object node, DBSPType elementType) {
+        this(node, elementType, defaultWeightType);
+    }
+
     public DBSPTypeZSet(DBSPType elementType, DBSPType weightType) {
         this(null, elementType, weightType);
+    }
+
+    public DBSPTypeZSet(DBSPType elementType) {
+        this(null, elementType, defaultWeightType);
     }
 
     @Override

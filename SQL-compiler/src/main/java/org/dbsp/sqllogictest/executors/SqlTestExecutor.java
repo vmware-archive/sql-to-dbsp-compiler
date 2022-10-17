@@ -27,7 +27,6 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqllogictest.SqlTestFile;
 import org.dbsp.util.ICastable;
 import org.dbsp.util.IModule;
-import org.dbsp.util.Logger;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;

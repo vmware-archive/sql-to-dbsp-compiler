@@ -28,7 +28,7 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import javax.annotation.Nullable;
 
 public class DBSPTypeTimestamp extends DBSPType {
-    public static DBSPTypeTimestamp instance = new DBSPTypeTimestamp(null, false);
+    public static final DBSPTypeTimestamp instance = new DBSPTypeTimestamp(null, false);
 
     protected DBSPTypeTimestamp(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);

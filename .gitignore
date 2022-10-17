@@ -26,3 +26,4 @@ SQL-compiler/target/
 SQL-compiler/.idea/
 # Compiler-generated test files
 temp/
+lib/*/target/

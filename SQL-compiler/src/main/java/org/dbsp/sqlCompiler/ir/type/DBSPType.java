@@ -49,7 +49,7 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
 
     public void wrapOption(IndentStream builder, String type) {
         if (this.mayBeNull) {
-            builder.append("Option<" + type + ">");
+            builder.append("Option<").append(type).append(">");
             return;
         }
         builder.append(type);

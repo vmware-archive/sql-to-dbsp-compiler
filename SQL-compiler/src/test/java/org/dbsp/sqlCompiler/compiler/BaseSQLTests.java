@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.visitors.*;
-import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
@@ -50,8 +49,8 @@ import java.util.List;
  * Base class for SQL-based tests.
  */
 public class BaseSQLTests {
-    static final String rustDirectory = "../temp/src";
-    static final String testFilePath = rustDirectory + "/test.rs";
+    public static final String rustDirectory = "../temp/src";
+    public static final String testFilePath = rustDirectory + "/test.rs";
 
     static class InputOutputPair {
         public final DBSPZSetLiteral[] inputs;
@@ -127,7 +126,7 @@ public class BaseSQLTests {
         return compiler;
     }
 
-    final DBSPTupleExpression e0 = new DBSPTupleExpression(
+    public static final DBSPTupleExpression e0 = new DBSPTupleExpression(
             new DBSPIntegerLiteral(10),
             new DBSPDoubleLiteral(12.0),
             DBSPBoolLiteral.True,
@@ -135,7 +134,7 @@ public class BaseSQLTests {
             DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)),
             DBSPLiteral.none(DBSPTypeDouble.instance.setMayBeNull(true))
     );
-    final DBSPTupleExpression e1 = new DBSPTupleExpression(
+    public static final DBSPTupleExpression e1 = new DBSPTupleExpression(
             new DBSPIntegerLiteral(10),
             new DBSPDoubleLiteral(1.0),
             DBSPBoolLiteral.False,
@@ -143,9 +142,9 @@ public class BaseSQLTests {
             new DBSPIntegerLiteral(1, true),
             new DBSPDoubleLiteral(0.0, true)
     );
-    final DBSPZSetLiteral z0 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0);
-    final DBSPZSetLiteral z1 = new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e1);
-    final DBSPZSetLiteral empty = new DBSPZSetLiteral(this.z0.getNonVoidType());
+    static final DBSPZSetLiteral z0 = new DBSPZSetLiteral(e0);
+    static final DBSPZSetLiteral z1 = new DBSPZSetLiteral(e1);
+    static final DBSPZSetLiteral empty = new DBSPZSetLiteral(z0.getNonVoidType());
 
     /**
      * Returns the table containing:
@@ -155,7 +154,7 @@ public class BaseSQLTests {
      * -------------------------------------------
      */
     DBSPZSetLiteral createInput() {
-        return new DBSPZSetLiteral(CalciteToDBSPCompiler.weightType, e0, e1);
+        return new DBSPZSetLiteral(e0, e1);
     }
 
     /**

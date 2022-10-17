@@ -4,5 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# dbsp = { path = "/home/mbudiu/git/database-stream-processor" }
 dbsp = { git = "https://github.com/vmware/database-stream-processor.git" }

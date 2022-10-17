@@ -49,17 +49,17 @@ public class IndentStream implements IIndentStream {
     }
 
     @Override
-    public Appendable append(CharSequence csq) throws IOException {
+    public Appendable append(CharSequence csq) {
         throw new UnsupportedException("append char sequence not supported");
     }
 
     @Override
-    public Appendable append(CharSequence csq, int start, int end) throws IOException {
+    public Appendable append(CharSequence csq, int start, int end) {
         throw new UnsupportedException("append char sequence not supported");
     }
 
     @Override
-    public Appendable append(char c) throws IOException {
+    public Appendable append(char c) {
         return this.appendChar(c);
     }
 

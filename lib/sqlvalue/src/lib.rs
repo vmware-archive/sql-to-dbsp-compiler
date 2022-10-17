@@ -54,13 +54,13 @@ impl From<f64> for SqlValue {
 
 impl From<F32> for SqlValue {
     fn from(value: F32) -> Self {
-        SqlValue::Flt(value.into())
+        SqlValue::Flt(value.into_inner())
     }
 }
 
 impl From<F64> for SqlValue {
     fn from(value: F64) -> Self {
-        SqlValue::Dbl(value.into())
+        SqlValue::Dbl(value.into_inner())
     }
 }
 
@@ -104,7 +104,7 @@ impl From<Option<F32>> for SqlValue {
     fn from(value: Option<F32>) -> Self {
         match value {
             None => SqlValue::OptFlt(None),
-            Some(x) => SqlValue::OptFlt(Some(x.into())),
+            Some(x) => SqlValue::OptFlt(Some(x.into_inner())),
         }
     }
 }
@@ -113,7 +113,7 @@ impl From<Option<F64>> for SqlValue {
     fn from(value: Option<F64>) -> Self {
         match value {
             None => SqlValue::OptDbl(None),
-            Some(x) => SqlValue::OptDbl(Some(x.into())),
+            Some(x) => SqlValue::OptDbl(Some(x.into_inner())),
         }
     }
 }

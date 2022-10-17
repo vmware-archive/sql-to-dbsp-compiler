@@ -27,7 +27,6 @@ import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -36,8 +35,8 @@ import java.util.List;
 public class DBSPFile extends DBSPNode implements IDBSPInnerNode {
     public final List<IDBSPInnerDeclaration> declarations;
 
-    public DBSPFile(@Nullable Object node, List<IDBSPInnerDeclaration> declarations) {
-        super(node);
+    public DBSPFile(List<IDBSPInnerDeclaration> declarations) {
+        super(null);
         this.declarations = declarations;
     }
 

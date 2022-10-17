@@ -36,7 +36,7 @@ public class TypeCompiler {
     public TypeCompiler() {}
 
     public static DBSPType makeZSet(DBSPType elementType) {
-        return new DBSPTypeZSet(elementType.getNode(), elementType, CalciteToDBSPCompiler.weightType);
+        return new DBSPTypeZSet(elementType.getNode(), elementType);
     }
 
     public DBSPType convertType(RelDataType dt) {

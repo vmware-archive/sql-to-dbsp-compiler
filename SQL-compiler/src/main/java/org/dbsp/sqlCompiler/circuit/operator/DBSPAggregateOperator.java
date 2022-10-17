@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
@@ -39,8 +38,7 @@ public class DBSPAggregateOperator extends DBSPUnaryOperator {
     public DBSPAggregateOperator(@Nullable Object node, DBSPExpression function,
                                  DBSPType keyType, DBSPType outputElementType, DBSPOperator input) {
         super(node, "stream_aggregate", function,
-                new DBSPTypeIndexedZSet(node, keyType, outputElementType, CalciteToDBSPCompiler.weightType), false, input);
-        this.checkResultType(function, outputElementType);
+                new DBSPTypeIndexedZSet(node, keyType, outputElementType), false, input);
         this.keyType = keyType;
         this.outputElementType = outputElementType;
     }
@@ -59,5 +57,4 @@ public class DBSPAggregateOperator extends DBSPUnaryOperator {
                     this.getNode(), this.getFunction(), this.keyType, this.outputElementType, newInputs.get(0));
         return this;
     }
-
 }

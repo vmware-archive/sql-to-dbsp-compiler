@@ -27,20 +27,34 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeDate extends DBSPType {
-    public static final DBSPTypeDate instance = new DBSPTypeDate(null, false);
+public class DBSPTypeStr extends DBSPType implements IDBSPBaseType {
+    public static final DBSPTypeStr instance = new DBSPTypeStr(null,false);
 
-    protected DBSPTypeDate(@Nullable Object node, boolean mayBeNull) {
-        super(node, mayBeNull);
-    }
-
-    @Override
-    public void accept(InnerVisitor visitor) {}
+    protected DBSPTypeStr(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (this.mayBeNull == mayBeNull)
             return this;
-        return new DBSPTypeDate(this.getNode(), mayBeNull);
+        return new DBSPTypeStr(this.getNode(), mayBeNull);
+    }
+
+    @Override
+    public String shortName() {
+        return "str";
+    }
+
+    @Override
+    public boolean sameType(@Nullable DBSPType type) {
+        if (!super.sameType(type))
+            return false;
+        assert type != null;
+        return type.is(DBSPTypeStr.class);
+    }
+
+    @Override
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

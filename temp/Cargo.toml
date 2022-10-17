@@ -4,16 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-dbsp = { git = "https://github.com/vmware/database-stream-processor.git" }
-# The following is used while I have outstanding PRs not yet merged
-# dbsp = { path = "/home/mbudiu/git/database-stream-processor" }
-
+dbsp = { git = "https://github.com/vmware/database-stream-processor.git", features = ["with-serde"] }
 tuple = { path = "../lib/tuple" }
 sqllib = { path = "../lib/sqllib" }
 sqlvalue = { path = "../lib/sqlvalue" }
-ordered-float = { version = "3.0.0" }
 serde = { version = "1.0", features = ["derive"] }
 hashing = { path = "../lib/hashing" }
 compare = { version = "0.1.0" }
 genlib = { path = "../lib/genlib" }
 size-of = { version = "0.1.1" }
+readers = { path = "../lib/readers" }

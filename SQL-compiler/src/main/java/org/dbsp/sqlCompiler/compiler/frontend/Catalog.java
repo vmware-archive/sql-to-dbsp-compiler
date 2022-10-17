@@ -32,7 +32,6 @@ import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * Maintains the catalog: a mapping from table names to table objects.

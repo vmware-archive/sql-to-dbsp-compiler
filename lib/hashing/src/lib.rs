@@ -9,8 +9,9 @@ use dbsp::{
         ZSet,
         MulByRef,
     },
+    DBData,
+    DBWeight,
 };
-use size_of::SizeOf;
 use core::{
     cmp::Ordering,
     fmt::Debug,
@@ -52,8 +53,8 @@ where
 /// if any of the zset weights is negative
 pub fn zset_to_rows<K, W>(set: &OrdZSet<K, W>) -> Vec<SqlRow>
 where
-    K: Ord + Clone + Debug + 'static + ToSqlRow + SizeOf,
-    W: ZRingValue,
+    K: DBData + ToSqlRow,
+    W: DBWeight + ZRingValue,
     usize: TryFrom<W>,
     <usize as TryFrom<W>>::Error: Debug,
 {
@@ -116,8 +117,8 @@ impl<'a> DataRows<'a> {
 /// The format is from the SqlLogicTest query output string format
 pub fn zset_to_strings<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> Vec<Vec<String>>
 where
-    K: Ord + Clone + Debug + 'static + ToSqlRow + SizeOf,
-    W: ZRingValue,
+    K: DBData + ToSqlRow,
+    W: DBWeight + ZRingValue,
     usize: TryFrom<W>,
     <usize as TryFrom<W>>::Error: Debug,
 {
@@ -133,8 +134,8 @@ where
 /// to contain a single vector with all the data.
 pub fn zset_of_vectors_to_strings<K, W>(set: &OrdZSet<Vec<K>, W>, format: String, order: SortOrder) -> Vec<Vec<String>>
 where
-    K: Ord + Clone + Debug + 'static + ToSqlRow,
-    W: ZRingValue,
+    K: DBData + ToSqlRow,
+    W: DBWeight + ZRingValue,
 {
     let mut data_rows = DataRows::new(&format, &order);
     let mut cursor = set.cursor();
@@ -157,8 +158,8 @@ where
 /// The format is from the SqlLogicTest query output string format
 pub fn hash<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> String
 where
-    K: Ord + Clone + Debug + 'static + ToSqlRow + SizeOf,
-    W: ZRingValue,
+    K: DBData + ToSqlRow,
+    W: DBWeight + ZRingValue,
     usize: TryFrom<W>,
     <usize as TryFrom<W>>::Error: Debug,
 {
@@ -178,8 +179,8 @@ where
 /// to contain a single vector with all the data.
 pub fn hash_vectors<K, W>(set: &OrdZSet<Vec<K>, W>, format: String, order: SortOrder) -> String
 where
-    K: Ord + Clone + Debug + 'static + ToSqlRow,
-    W: ZRingValue,
+    K: DBData + ToSqlRow,
+    W: DBWeight + ZRingValue,
 {
     // Result of orderby - there should be at most one row in the set.
     let mut builder = String::default();
@@ -212,8 +213,8 @@ where
 // weight of the vector.
 pub fn weighted_vector_count<K, W>(set: &OrdZSet<Vec<K>, W>) -> isize
 where
-    K: Ord + Clone + Debug + 'static + ToSqlRow,
-    W: ZRingValue,
+    K: DBData + ToSqlRow,
+    W: DBWeight + ZRingValue,
     isize: MulByRef<W, Output = isize>,
 {
     let mut sum: isize = 0;

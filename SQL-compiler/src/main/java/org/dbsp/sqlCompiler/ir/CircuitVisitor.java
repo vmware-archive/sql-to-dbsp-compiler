@@ -54,7 +54,7 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
     }
 
     /**
-     * Override to initialize before visisting any node.
+     * Override to initialize before visiting any node.
      */
     public void startVisit() {}
 

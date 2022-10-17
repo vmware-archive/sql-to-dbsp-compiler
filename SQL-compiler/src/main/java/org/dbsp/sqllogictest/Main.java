@@ -136,7 +136,7 @@ public class Main {
         executor = new NoExecutor();
         executor = dExec;
         JDBCExecutor jdbc = new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
-        executor = jdbc;
+        //executor = jdbc;
         DBSP_JDBC_Executor hybrid = new DBSP_JDBC_Executor(jdbc, true);
         executor = hybrid;
         return executor;
@@ -161,7 +161,7 @@ public class Main {
                 "select4.test",
                 "select5.test",
                  */
-                "index/",
+                "index",
                 "evidence"
         };
         if (argv.length > 1)
@@ -175,13 +175,11 @@ public class Main {
             if (file.startsWith("select5"))
                 batchSize = Math.min(batchSize, 5);
             Path path = Paths.get(benchDir + "/" + file);
-            /*
-            Logger.instance.setDebugLevel("DBSPExecutor", 1);
-            Logger.instance.setDebugLevel("JDBCExecutor", 1);
-            Logger.instance.setDebugLevel("DBSP_JDBC_Executor", 1);
-             */
-            if (executor.is(DBSP_JDBC_Executor.class))
-                executor.to(DBSP_JDBC_Executor.class).setBatchSize(batchSize, skipPerFile);
+            //Logger.instance.setDebugLevel("DBSPExecutor", 1);
+            //Logger.instance.setDebugLevel("JDBCExecutor", 1);
+            //Logger.instance.setDebugLevel("DBSP_JDBC_Executor", 1);
+            if (executor.is(DBSPExecutor.class))
+                executor.to(DBSPExecutor.class).setBatchSize(batchSize, skipPerFile);
             Files.walkFileTree(path, loader);
         }
         System.out.println("Files that could not be not parsed: " + loader.errors);
