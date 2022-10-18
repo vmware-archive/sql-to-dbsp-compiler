@@ -1,5 +1,7 @@
 #!/bin/sh
 
+pushd temp; cargo update; popd
+
 if [ ! -d ../../sqllogictest ]; then
     echo "I expected that the SQL logic tests are installed in ../../"
     echo "You can do that using 'git clone https://github.com/gregrahn/sqllogictest.git'"

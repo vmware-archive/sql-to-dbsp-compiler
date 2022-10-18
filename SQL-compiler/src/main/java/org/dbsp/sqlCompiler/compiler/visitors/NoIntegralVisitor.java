@@ -23,23 +23,21 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPIntegralOperator;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 
-import java.util.List;
-
-public class PassesVisitor extends CircuitVisitor {
-    public final List<CircuitVisitor> passes;
-
-    PassesVisitor(List<CircuitVisitor> passes) {
+/**
+ * This visitor throws if a circuit contains an integration operator.
+ * This is usually a sign that the optimizer didn't do its job properly
+ * (but there are legit streaming query circuits which would have to include integrals).
+ */
+public class NoIntegralVisitor extends CircuitVisitor {
+    public NoIntegralVisitor() {
         super(false);
-        this.passes = passes;
     }
 
     @Override
-    public DBSPCircuit apply(DBSPCircuit circuit) {
-        for (CircuitVisitor pass: this.passes)
-            circuit = pass.apply(circuit);
-        return circuit;
+    public boolean preorder(DBSPIntegralOperator node) {
+        throw new RuntimeException("Circuit contains an integration operator " + node);
     }
 }

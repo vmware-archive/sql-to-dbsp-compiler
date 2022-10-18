@@ -25,61 +25,43 @@ package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPApplyMethodExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPAsExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDecimalLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLongLiteral;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
+import java.math.BigDecimal;
 
-public class DBSPTypeInteger extends DBSPType
+public class DBSPTypeDecimal extends DBSPType
         implements IsNumericType, IDBSPBaseType {
-    private final int width;
-    public static final DBSPTypeInteger signed16 = new DBSPTypeInteger(null, 16, false);
-    public static final DBSPTypeInteger signed32 = new DBSPTypeInteger(null, 32, false);
-    public static final DBSPTypeInteger signed64 = new DBSPTypeInteger(null, 64, false);
+    public final int scale;
 
-    public DBSPTypeInteger(@Nullable Object node, int width, boolean mayBeNull) {
+    public DBSPTypeDecimal(@Nullable Object node, int scale, boolean mayBeNull) {
         super(node, mayBeNull);
-        this.width = width;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(width);
+        this.scale = scale;
     }
 
     @Override
     public String getRustString() {
-        return "i" + this.width;
+        return "rust_decimal";
     }
 
     @Override
     public DBSPLiteral getZero() {
-        if (this.width <= 32) {
-            return new DBSPIntegerLiteral(0, this.mayBeNull);
-        } else {
-            return new DBSPLongLiteral(0L, this.mayBeNull);
-        }
+        return new DBSPDecimalLiteral(null, this, new BigDecimal(0));
     }
 
     @Override
     public DBSPLiteral getOne() {
-        if (this.width <= 32) {
-            return new DBSPIntegerLiteral(1, this.mayBeNull);
-        } else {
-            return new DBSPLongLiteral(1L, this.mayBeNull);
-        }
+        return new DBSPDecimalLiteral(null, this, new BigDecimal(1));
     }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (mayBeNull == this.mayBeNull)
             return this;
-        return new DBSPTypeInteger(this.getNode(), this.width, mayBeNull);
+        return new DBSPTypeDecimal(this.getNode(), this.scale, mayBeNull);
     }
 
     @Override
@@ -87,15 +69,22 @@ public class DBSPTypeInteger extends DBSPType
         // Recall: we ignore nullability of this
         DBSPType argtype = source.getNonVoidType();
         if (argtype.is(DBSPTypeFP.class)) {
-            return new DBSPAsExpression(
-                    new DBSPApplyMethodExpression("into_inner", source.getNonVoidType(), source),
-                    this);
+            DBSPTypeFP fp = argtype.to(DBSPTypeFP.class);
+            return new DBSPApplyMethodExpression("unwrap",
+                    this,
+                    new DBSPApplyMethodExpression(
+                            "from_f" + fp.getWidth(),
+                            this.setMayBeNull(true),
+                                new DBSPApplyMethodExpression(
+                                        "into_inner", source.getNonVoidType(), source)));
         } else if (argtype.is(DBSPTypeInteger.class)){
-            return new DBSPAsExpression(source, this);
-        } else if (argtype.is(DBSPTypeString.class)) {
-            return new DBSPApplyMethodExpression(
-                    "unwrap", this,
-                    new DBSPApplyMethodExpression("parse", this.setMayBeNull(true), source));
+            DBSPTypeFP fp = argtype.to(DBSPTypeFP.class);
+            return new DBSPApplyMethodExpression("unwrap",
+                    this,
+                    new DBSPApplyMethodExpression(
+                            "from_f" + fp.getWidth(),
+                            this.setMayBeNull(true),
+                            source));
         } else {
             throw new Unimplemented();
         }
@@ -103,11 +92,7 @@ public class DBSPTypeInteger extends DBSPType
 
     @Override
     public String shortName() {
-        return "i" + this.width;
-    }
-
-    public int getWidth() {
-        return this.width;
+        return "rust_decimal";
     }
 
     @Override
@@ -115,10 +100,10 @@ public class DBSPTypeInteger extends DBSPType
         if (!super.sameType(type))
             return false;
         assert type != null;
-        if (!type.is(DBSPTypeInteger.class))
+        if (!type.is(DBSPTypeDecimal.class))
             return false;
-        DBSPTypeInteger other = type.to(DBSPTypeInteger.class);
-        return this.width == other.width;
+        DBSPTypeDecimal other = type.to(DBSPTypeDecimal.class);
+        return this.scale == other.scale;
     }
 
     @Override

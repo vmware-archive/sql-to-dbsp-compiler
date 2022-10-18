@@ -49,10 +49,6 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
         return Objects.requireNonNull(this.circuit);
     }
 
-    public CircuitVisitor setDebug(boolean debug) {
-        return this;
-    }
-
     /**
      * Override to initialize before visiting any node.
      */

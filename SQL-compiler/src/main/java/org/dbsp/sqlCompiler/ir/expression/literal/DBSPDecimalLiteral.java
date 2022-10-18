@@ -21,25 +21,26 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.ir.expression.literal;
 
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
-import java.util.List;
+import javax.annotation.Nullable;
+import java.math.BigDecimal;
 
-public class PassesVisitor extends CircuitVisitor {
-    public final List<CircuitVisitor> passes;
+public class DBSPDecimalLiteral extends DBSPLiteral {
+    @Nullable
+    public final BigDecimal value;
 
-    PassesVisitor(List<CircuitVisitor> passes) {
-        super(false);
-        this.passes = passes;
+    public DBSPDecimalLiteral(@Nullable Object node, DBSPType type, @Nullable BigDecimal value) {
+        super(node, type, value);
+        this.value = value;
     }
 
     @Override
-    public DBSPCircuit apply(DBSPCircuit circuit) {
-        for (CircuitVisitor pass: this.passes)
-            circuit = pass.apply(circuit);
-        return circuit;
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

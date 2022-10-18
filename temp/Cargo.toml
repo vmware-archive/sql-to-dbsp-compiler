@@ -12,5 +12,7 @@ serde = { version = "1.0", features = ["derive"] }
 hashing = { path = "../lib/hashing" }
 compare = { version = "0.1.0" }
 genlib = { path = "../lib/genlib" }
-size-of = { version = "0.1.1" }
+size-of = { version = "0.1.1", features = ["rust_decimal"] }
 readers = { path = "../lib/readers" }
+rust_decimal = { version = "1.26" }
+rust_decimal_macros = { version = "1.26" }

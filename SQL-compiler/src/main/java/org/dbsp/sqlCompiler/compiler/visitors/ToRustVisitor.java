@@ -56,6 +56,8 @@ public class ToRustVisitor extends CircuitVisitor {
                     "    DBWeight,\n" +
                     "    DBData,\n" +
                     "};\n" +
+                    "use rust_decimal_macros::dec;\n" +
+                    "use rust_decimal::prelude::*;\n" +
                     "use genlib::*;\n" +
                     "use size_of::*;\n" +
                     "use ::serde::{Deserialize,Serialize};\n" +

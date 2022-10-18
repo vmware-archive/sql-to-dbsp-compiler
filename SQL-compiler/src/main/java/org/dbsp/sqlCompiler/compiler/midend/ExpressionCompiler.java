@@ -35,6 +35,7 @@ import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 
@@ -79,6 +80,9 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
             return new DBSPStringLiteral(Objects.requireNonNull(literal.getValueAs(String.class)));
         else if (type.is(DBSPTypeBool.class))
             return new DBSPBoolLiteral(Objects.requireNonNull(literal.getValueAs(Boolean.class)));
+        else if (type.is(DBSPTypeDecimal.class))
+            return new DBSPDecimalLiteral(
+                    literal, type, Objects.requireNonNull(literal.getValueAs(BigDecimal.class)));
         throw new Unimplemented(literal);
     }
 
@@ -98,18 +102,18 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
 
         DBSPTypeInteger li = left.as(DBSPTypeInteger.class);
         DBSPTypeInteger ri = right.as(DBSPTypeInteger.class);
+        DBSPTypeDecimal ld = left.as(DBSPTypeDecimal.class);
+        DBSPTypeDecimal rd = right.as(DBSPTypeDecimal.class);
         DBSPTypeFP lf = left.as(DBSPTypeFP.class);
         DBSPTypeFP rf = right.as(DBSPTypeFP.class);
         if (li != null) {
-            if (ri != null) {
+            if (ri != null)
                 return new DBSPTypeInteger(null, Math.max(li.getWidth(), ri.getWidth()), false);
-            }
-            if (rf != null) {
+            if (rf != null || rd != null)
                 return right.setMayBeNull(false);
-            }
         }
         if (lf != null) {
-            if (ri != null)
+            if (ri != null || rd != null)
                 return left.setMayBeNull(false);
             if (rf != null) {
                 if (lf.getWidth() < rf.getWidth())
@@ -117,6 +121,12 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 else
                     return left.setMayBeNull(false);
             }
+        }
+        if (ld != null) {
+            if (ri != null)
+                return left.setMayBeNull(false);
+            if (rf != null)
+                return right.setMayBeNull(false);
         }
         throw new Unimplemented("Cast from " + right + " to " + left);
     }

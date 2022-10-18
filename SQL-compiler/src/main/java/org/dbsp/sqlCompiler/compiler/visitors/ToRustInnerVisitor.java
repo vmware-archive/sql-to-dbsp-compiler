@@ -162,6 +162,15 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPDecimalLiteral literal) {
+        assert literal.value != null;
+        this.builder.append("Decimal::from_str(\"")
+                .append(literal.value.toString())
+                .append("\").unwrap()");
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPBinaryExpression expression) {
         if (expression.left.getNonVoidType().mayBeNull) {
             this.builder.append("(")
@@ -189,7 +198,6 @@ public class ToRustInnerVisitor extends InnerVisitor {
         return false;
     }
 
-    @Override
     public boolean preorder(DBSPUnaryExpression expression) {
         if (expression.left.getNonVoidType().mayBeNull) {
             this.builder.append("(")
@@ -643,6 +651,12 @@ public class ToRustInnerVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPTypeDouble type) {
         type.wrapOption(this.builder,"F64");
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPTypeDecimal type) {
+        type.wrapOption(this.builder,"Decimal");
         return false;
     }
 

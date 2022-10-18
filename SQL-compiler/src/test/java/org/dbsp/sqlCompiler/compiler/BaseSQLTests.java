@@ -91,15 +91,14 @@ public class BaseSQLTests {
             PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
             writer.println(ToRustVisitor.generatePreamble());
             DBSPCircuit circuit = compiler.getResult();
-            boolean debug = false;
-            circuit = new OptimizeDistinctVisitor().setDebug(debug).apply(circuit);
+            circuit = new OptimizeDistinctVisitor().apply(circuit);
             if (incremental)
-                circuit = new IncrementalizeVisitor().setDebug(debug).apply(circuit);
+                circuit = new IncrementalizeVisitor().apply(circuit);
             if (optimize) {
-                circuit = new OptimizeIncrementalVisitor().setDebug(debug).apply(circuit);
+                circuit = new OptimizeIncrementalVisitor().apply(circuit);
                 DeadCodeVisitor dead = new DeadCodeVisitor();
-                circuit = dead.setDebug(debug).apply(circuit);
-                circuit = new RemoveOperatorsVisitor(dead.keep).setDebug(debug).apply(circuit);
+                circuit = dead.apply(circuit);
+                circuit = new RemoveOperatorsVisitor(dead.keep).apply(circuit);
             }
             writer.println(ToRustVisitor.toRustString(circuit));
             this.createTester(writer, circuit, streams);
