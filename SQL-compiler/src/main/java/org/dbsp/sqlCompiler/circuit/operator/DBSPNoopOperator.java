@@ -47,7 +47,6 @@ public class DBSPNoopOperator extends DBSPUnaryOperator {
     @Override
     public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        super.accept(visitor);
         visitor.postorder(this);
     }
 

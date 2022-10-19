@@ -147,9 +147,9 @@ public class IndentStream implements IIndentStream {
     }
 
     @Override
-    public <T extends ToIndentableString> IIndentStream join(String separator, List<T> data) {
+    public IIndentStream join(String separator, List<String> data) {
         boolean first = true;
-        for (ToIndentableString d: data) {
+        for (String d: data) {
             if (!first)
                 this.append(separator);
             first = false;
@@ -159,8 +159,8 @@ public class IndentStream implements IIndentStream {
     }
 
     @Override
-    public <T extends ToIndentableString> IIndentStream intercalate(String separator, List<T> data) {
-        for (ToIndentableString d: data) {
+    public IIndentStream intercalate(String separator, List<String> data) {
+        for (String d: data) {
             this.append(d);
             this.append(separator);
         }
@@ -168,8 +168,8 @@ public class IndentStream implements IIndentStream {
     }
 
     @Override
-    public <T extends ToIndentableString> IIndentStream intercalate(String separator, T[] data) {
-        for (ToIndentableString d: data) {
+    public IIndentStream intercalate(String separator, String[] data) {
+        for (String d: data) {
             this.append(d);
             this.append(separator);
         }

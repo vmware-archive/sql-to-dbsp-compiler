@@ -23,11 +23,8 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-public class OptimizedIncrementalTests /* extends NaiveIncrementalTests  */ {
-    /*
-    TODO
+public class OptimizedIncrementalTests extends NaiveIncrementalTests {
     public void invokeTestQueryBase(String query, BaseSQLTests.InputOutputPair... streams) {
         super.testQueryBase(query, true, true, streams);
     }
-     */
 }

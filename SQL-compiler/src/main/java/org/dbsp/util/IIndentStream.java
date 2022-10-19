@@ -34,11 +34,14 @@ public interface IIndentStream extends Appendable {
     IIndentStream joinS(String separator, List<String> data);
     IIndentStream join(String separator, String[] data);
     <T extends ToIndentableString> IIndentStream join(String separator, T[] data);
-    <T extends ToIndentableString> IIndentStream join(String separator, List<T> data);
-    <T extends ToIndentableString> IIndentStream intercalate(String separator, List<T> data);
-    <T extends ToIndentableString> IIndentStream intercalate(String separator, T[] data);
+    IIndentStream join(String separator, List<String> data);
+    IIndentStream intercalate(String separator, List<String> data);
+    IIndentStream intercalate(String separator, String[] data);
     IIndentStream intercalateS(String separator, List<String> data);
     IIndentStream newline();
+    /**
+     * Increase indentation and emit a newline.
+     */
     IIndentStream increase();
     IIndentStream decrease();
 }

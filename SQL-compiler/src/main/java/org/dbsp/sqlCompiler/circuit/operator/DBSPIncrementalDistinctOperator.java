@@ -24,17 +24,13 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class DBSPFlatMapOperator extends DBSPUnaryOperator {
-    public DBSPFlatMapOperator(@Nullable Object node, DBSPExpression expression,
-                               DBSPType resultType, DBSPOperator input) {
-        super(node, "flat_map", expression, resultType, true, input);
-        this.checkArgumentFunctionType(expression, 0, input);
+public class DBSPIncrementalDistinctOperator extends DBSPUnaryOperator {
+    public DBSPIncrementalDistinctOperator(@Nullable Object node, DBSPOperator input) {
+        super(node, "distinct_incremental", null, input.outputType, false, input);
     }
 
     @Override
@@ -46,8 +42,8 @@ public class DBSPFlatMapOperator extends DBSPUnaryOperator {
     @Override
     public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
-            return new DBSPFlatMapOperator(
-                    this.getNode(), this.getFunction(), this.outputType, newInputs.get(0));
+            return new DBSPIncrementalDistinctOperator(
+                    this.getNode(), newInputs.get(0));
         return this;
     }
 }

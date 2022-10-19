@@ -43,7 +43,7 @@ public class RemoveOperatorsVisitor extends CircuitCloneVisitor {
     @Override
     public boolean preorder(DBSPOperator node) {
         if (this.keep.contains(node))
-            this.getResult().addOperator(node);
+            this.addOperator(node);
         return false;
     }
 

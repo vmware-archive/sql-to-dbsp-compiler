@@ -29,9 +29,9 @@ import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import java.util.List;
 
 public class PassesVisitor extends CircuitVisitor {
-    public final List<CircuitVisitor> passes;
+    public final CircuitVisitor[] passes;
 
-    PassesVisitor(List<CircuitVisitor> passes) {
+    public PassesVisitor(CircuitVisitor... passes) {
         super(false);
         this.passes = passes;
     }

@@ -40,7 +40,7 @@ public class IncrementalizeVisitor extends CircuitCloneVisitor {
     public void postorder(DBSPSourceOperator operator) {
         if (this.visited.contains(operator))
             return;
-        this.getResult().addOperator(operator);
+        this.addOperator(operator);
         DBSPIntegralOperator integral = new DBSPIntegralOperator(null, operator);
         this.map(operator, integral);
     }
@@ -51,7 +51,7 @@ public class IncrementalizeVisitor extends CircuitCloneVisitor {
         DBSPDifferentialOperator diff = new DBSPDifferentialOperator(null, source);
         DBSPSinkOperator sink = new DBSPSinkOperator(operator.getNode(), operator.outputName,
                 operator.query, operator.comment, diff);
-        this.getResult().addOperator(diff);
+        this.addOperator(diff);
         this.map(operator, sink);
     }
 }

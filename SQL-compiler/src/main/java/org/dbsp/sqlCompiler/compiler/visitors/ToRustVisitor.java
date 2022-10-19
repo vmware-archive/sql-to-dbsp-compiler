@@ -277,6 +277,24 @@ public class ToRustVisitor extends CircuitVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPIncrementalAggregateOperator operator) {
+        DBSPType streamType = new DBSPTypeStream(operator.outputType);
+        builder.append(operator.comment != null ? "// " + operator.comment + "\n" : "")
+                .append("let ")
+                .append(operator.getName())
+                .append(": ");
+        streamType.accept(this.innerVisitor);
+        this.builder.append(" = ");
+        builder.append(operator.input().getName())
+                    .append(".");
+        builder.append(operator.operation)
+                .append("::<(), _>(");
+        operator.getFunction().accept(this.innerVisitor);
+        builder.append(");");
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPSumOperator operator) {
         this.builder.append(operator.comment != null ? "// " + operator.comment + "\n" : "")
                     .append("let ")
@@ -295,6 +313,27 @@ public class ToRustVisitor extends CircuitVisitor {
             this.builder.append("&").append(operator.inputs.get(i).getName());
         }
         this.builder.append("]);");
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPIncrementalJoinOperator operator) {
+        this.builder.append(operator.comment != null ? "// " + operator.comment + "\n" : "")
+                .append("let ")
+                .append(operator.getName())
+                .append(": ");
+        new DBSPTypeStream(operator.outputType).accept(this.innerVisitor);
+        this.builder.append(" = ");
+        if (!operator.inputs.isEmpty())
+            this.builder.append(operator.inputs.get(0).getName())
+                    .append(".");
+        this.builder.append(operator.operation)
+                .append("::<(), _, _, _>")
+                .append("(&");
+        this.builder.append(operator.inputs.get(1).getName());
+        this.builder.append(", ");
+        operator.getFunction().accept(this.innerVisitor);
+        this.builder.append(");");
         return false;
     }
 
