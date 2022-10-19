@@ -45,13 +45,6 @@ public abstract class DBSPUnaryOperator extends DBSPOperator {
         this.addInput(source);
     }
 
-    @Override
-    public void accept(CircuitVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        super.accept(visitor);
-        visitor.postorder(this);
-    }
-
     public DBSPOperator input() {
         return this.inputs.get(0);
     }

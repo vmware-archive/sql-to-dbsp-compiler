@@ -43,7 +43,8 @@ import java.util.function.Function;
  * - the 'force' flag is 'true'.
  * The declarations in the circuit are left unchanged.
  */
-public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSPCircuit, DBSPCircuit>, IModule {
+public class CircuitCloneVisitor extends CircuitVisitor
+        implements Function<DBSPCircuit, DBSPCircuit>, IModule {
     @Nullable
     DBSPCircuit result;
     /**
@@ -74,11 +75,20 @@ public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSP
                     .newline();
         Utilities.putNew(this.remap, old, newOp);
         if (add)
-            this.getResult().addOperator(newOp);
+            this.addOperator(newOp);
     }
 
     void map(DBSPOperator old, DBSPOperator newOp) {
         this.map(old, newOp, true);
+    }
+
+    void addOperator(DBSPOperator operator) {
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append(this.toString())
+                    .append(" adding ")
+                    .append(operator.toString())
+                    .newline();
+        this.getResult().addOperator(operator);
     }
 
     @Override
@@ -93,9 +103,24 @@ public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSP
             return;
         this.visited.add(operator);
         List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append(this.toString())
+                    .append(" replacing inputs of ")
+                    .increase()
+                    .append(operator.toString())
+                    .append(":")
+                    .join(", ", Linq.map(operator.inputs, DBSPOperator::toString))
+                    .newline()
+                    .append("with:")
+                    .join(", ", Linq.map(sources, DBSPOperator::toString))
+                    .newline()
+                    .decrease();
         DBSPOperator result = operator.replaceInputs(sources, this.force);
         this.map(operator, result);
     }
+
+    @Override
+    public void postorder(DBSPUnaryOperator operator) { this.replace(operator); }
 
     @Override
     public void postorder(DBSPAggregateOperator operator) {
@@ -172,20 +197,34 @@ public class CircuitCloneVisitor extends CircuitVisitor implements Function<DBSP
         this.replace(operator);
     }
 
+    @Override
+    public void postorder(DBSPIncrementalJoinOperator operator) {
+        this.replace(operator);
+    }
+
+    @Override
+    public void postorder(DBSPIncrementalDistinctOperator operator) {
+        this.replace(operator);
+    }
+
+    @Override
+    public void postorder(DBSPIncrementalAggregateOperator operator) {
+        this.replace(operator);
+    }
+
     public DBSPCircuit getResult() {
         return Objects.requireNonNull(this.result);
     }
 
     @Override
     public DBSPCircuit apply(DBSPCircuit circuit) {
-        this.startVisit();
+        this.startVisit(circuit);
         this.result = new DBSPCircuit(circuit.name);
         circuit.accept(this);
         this.endVisit();
         DBSPCircuit result = this.getResult();
         if (circuit.sameCircuit(result))
             return circuit;
-        //System.out.println(this.getClass() + " changed circuit");
         return result;
     }
 }

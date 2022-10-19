@@ -24,10 +24,7 @@
 package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPApplyExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPAsExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPPathExpression;
+import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 
 import javax.annotation.Nullable;
@@ -56,6 +53,16 @@ public abstract class DBSPTypeFP extends DBSPType implements IsNumericType {
         if (sourceType.is(DBSPTypeFP.class)) {
             return new DBSPApplyExpression(
                     new DBSPPathExpression(func, new DBSPPath(destType, "from")), source);
+        }
+        if (sourceType.is(DBSPTypeDecimal.class)) {
+            return new DBSPApplyExpression(
+                    new DBSPPathExpression(func, new DBSPPath(destType, "from")),
+                    new DBSPApplyMethodExpression("unwrap", this,
+                            new DBSPApplyMethodExpression("to_f" + this.getWidth(), this.setMayBeNull(true), source)));
+        }
+        if (sourceType.is(DBSPTypeString.class)) {
+            return new DBSPApplyMethodExpression("unwrap", this,
+                    new DBSPApplyMethodExpression("parse", this.setMayBeNull(true), source));
         }
         return new DBSPApplyExpression(
                 new DBSPPathExpression(func, new DBSPPath(destType, "from")),

@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.circuit.operator;
 
+import org.dbsp.sqlCompiler.compiler.midend.TypeCompiler;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
@@ -30,24 +31,32 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class DBSPFlatMapOperator extends DBSPUnaryOperator {
-    public DBSPFlatMapOperator(@Nullable Object node, DBSPExpression expression,
-                               DBSPType resultType, DBSPOperator input) {
-        super(node, "flat_map", expression, resultType, true, input);
-        this.checkArgumentFunctionType(expression, 0, input);
+public class DBSPIncrementalJoinOperator extends DBSPOperator {
+    public final DBSPType elementResultType;
+
+    public DBSPIncrementalJoinOperator(
+            @Nullable Object node, DBSPType elementResultType,
+            DBSPExpression function, boolean isMultiset,
+            DBSPOperator left, DBSPOperator right) {
+        super(node, "join", function, TypeCompiler.makeZSet(elementResultType), isMultiset);
+        this.addInput(left);
+        this.addInput(right);
+        this.elementResultType = elementResultType;
+        this.checkResultType(function, elementResultType);
+    }
+
+    @Override
+    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPIncrementalJoinOperator(
+                    this.getNode(), this.elementResultType, this.getFunction(),
+                    this.isMultiset, newInputs.get(0), newInputs.get(1));
+        return this;
     }
 
     @Override
     public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);
-    }
-
-    @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
-        if (force || this.inputsDiffer(newInputs))
-            return new DBSPFlatMapOperator(
-                    this.getNode(), this.getFunction(), this.outputType, newInputs.get(0));
-        return this;
     }
 }

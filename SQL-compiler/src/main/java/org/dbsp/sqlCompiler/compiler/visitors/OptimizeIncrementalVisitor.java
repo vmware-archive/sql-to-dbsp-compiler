@@ -24,6 +24,10 @@
 package org.dbsp.sqlCompiler.compiler.visitors;
 
 import org.dbsp.sqlCompiler.circuit.operator.*;
+import org.dbsp.util.Linq;
+import org.dbsp.util.UnsupportedException;
+
+import java.util.List;
 
 /**
  * This visitor optimizes incremental circuits by pushing integral operators
@@ -49,7 +53,7 @@ public class OptimizeIncrementalVisitor extends CircuitCloneVisitor {
         DBSPOperator source = this.mapped(operator.input());
         if (source.is(DBSPIntegralOperator.class)) {
             DBSPOperator replace = operator.replaceInputs(source.inputs, true);
-            this.getResult().addOperator(replace);
+            this.addOperator(replace);
             DBSPIntegralOperator integral = new DBSPIntegralOperator(operator.getNode(), replace);
             this.map(operator, integral);
             return;
@@ -58,9 +62,7 @@ public class OptimizeIncrementalVisitor extends CircuitCloneVisitor {
     }
 
     @Override
-    public void postorder(DBSPMapOperator operator) {
-        this.linear(operator);
-    }
+    public void postorder(DBSPMapOperator operator) { this.linear(operator); }
 
     @Override
     public void postorder(DBSPFilterOperator operator) {
@@ -70,5 +72,96 @@ public class OptimizeIncrementalVisitor extends CircuitCloneVisitor {
     @Override
     public void postorder(DBSPNegateOperator operator) {
         this.linear(operator);
+    }
+
+    @Override
+    public void postorder(DBSPIndexOperator operator) { this.linear(operator); }
+
+    @Override
+    public void postorder(DBSPFlatMapOperator operator) { this.linear(operator); }
+
+    @Override
+    public void postorder(DBSPJoinOperator operator) {
+        List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
+        if (Linq.all(sources, s -> s.is(DBSPIntegralOperator.class))) {
+            List<DBSPOperator> sourceSource = Linq.map(sources, s -> s.inputs.get(0));
+            DBSPOperator replace = new DBSPIncrementalJoinOperator(operator.getNode(), operator.elementResultType,
+                    operator.getFunction(), operator.isMultiset, sourceSource.get(0), sourceSource.get(1));
+            this.addOperator(replace);
+            DBSPIntegralOperator integral = new DBSPIntegralOperator(operator.getNode(), replace);
+            this.map(operator, integral);
+            return;
+        }
+        super.postorder(operator);
+    }
+
+    @Override
+    public void postorder(DBSPSumOperator operator) {
+        List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
+        if (Linq.all(sources, s -> s.is(DBSPIntegralOperator.class))) {
+            List<DBSPOperator> sourceSource = Linq.map(sources, s -> s.inputs.get(0));
+            DBSPOperator replace = new DBSPSumOperator(operator.getNode(), sourceSource);
+            this.addOperator(replace);
+            DBSPIntegralOperator integral = new DBSPIntegralOperator(operator.getNode(), replace);
+            this.map(operator, integral);
+            return;
+        }
+        super.postorder(operator);
+    }
+
+    @Override
+    public void postorder(DBSPSubtractOperator operator) {
+        List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
+        if (Linq.all(sources, s -> s.is(DBSPIntegralOperator.class))) {
+            List<DBSPOperator> sourceSource = Linq.map(sources, s -> s.inputs.get(0));
+            DBSPOperator replace = new DBSPSubtractOperator(operator.getNode(), sourceSource.get(0), sourceSource.get(1));
+            this.addOperator(replace);
+            DBSPIntegralOperator integral = new DBSPIntegralOperator(operator.getNode(), replace);
+            this.map(operator, integral);
+            return;
+        }
+        super.postorder(operator);
+    }
+
+    @Override
+    public void postorder(DBSPDistinctOperator operator) {
+        DBSPOperator source = this.mapped(operator.input());
+        if (source.is(DBSPIntegralOperator.class)) {
+            DBSPOperator replace = new DBSPIncrementalDistinctOperator(operator.getNode(), source.inputs.get(0));
+            this.addOperator(replace);
+            DBSPIntegralOperator integral = new DBSPIntegralOperator(operator.getNode(), replace);
+            this.map(operator, integral);
+            return;
+        }
+        super.postorder(operator);
+    }
+
+    @Override
+    public void postorder(DBSPAggregateOperator operator) {
+        DBSPOperator source = this.mapped(operator.input());
+        if (source.is(DBSPIntegralOperator.class)) {
+            DBSPOperator replace = new DBSPIncrementalAggregateOperator(
+                    source.getNode(), operator.getFunction(),
+                    operator.keyType, operator.outputElementType, source.inputs.get(0));
+            this.addOperator(replace);
+            DBSPIntegralOperator integral = new DBSPIntegralOperator(operator.getNode(), replace);
+            this.map(operator, integral);
+            return;
+        }
+        super.postorder(operator);
+    }
+
+    @Override
+    public void postorder(DBSPConstantOperator operator) {
+        this.addOperator(operator);
+        DBSPDifferentialOperator diff = new DBSPDifferentialOperator(operator.getNode(), operator);
+        this.addOperator(diff);
+        DBSPIntegralOperator integ = new DBSPIntegralOperator(operator.getNode(), diff);
+        this.map(operator, integ);
+    }
+
+    @Override
+    public void postorder(DBSPOperator operator) {
+        throw new UnsupportedException(operator);
     }
 }

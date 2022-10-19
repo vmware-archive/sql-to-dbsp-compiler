@@ -218,7 +218,6 @@ public class EndToEndTests extends BaseSQLTests {
     public void divTest() {
         String query = "SELECT T.COL1 / T.COL5 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
-                
                 new DBSPTupleExpression(DBSPLiteral.none(
                         DBSPTypeInteger.signed32.setMayBeNull(true))),
                 new DBSPTupleExpression(new DBSPIntegerLiteral(10, true))));
@@ -228,7 +227,6 @@ public class EndToEndTests extends BaseSQLTests {
     public void divIntTest() {
         String query = "SELECT T.COL5 / T.COL5 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
-                
                 new DBSPTupleExpression(DBSPLiteral.none(
                         DBSPTypeInteger.signed32.setMayBeNull(true))),
                 new DBSPTupleExpression(new DBSPIntegerLiteral(1, true))));
@@ -241,7 +239,6 @@ public class EndToEndTests extends BaseSQLTests {
     public void divZeroTest() {
         String query = "SELECT 1 / 0";
         this.testQuery(query, new DBSPZSetLiteral(
-                
                 new DBSPTupleExpression(DBSPLiteral.none(
                         DBSPTypeInteger.signed32.setMayBeNull(true)))));
     }
@@ -250,7 +247,6 @@ public class EndToEndTests extends BaseSQLTests {
     public void floatDivTest() {
         String query = "SELECT T.COL6 / T.COL6 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
-                
                 new DBSPTupleExpression(DBSPLiteral.none(
                         DBSPTypeDouble.instance.setMayBeNull(true))),
                 new DBSPTupleExpression(new DBSPDoubleLiteral(Double.NaN, true))));

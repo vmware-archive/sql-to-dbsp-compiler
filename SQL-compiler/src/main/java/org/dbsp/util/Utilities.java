@@ -141,19 +141,23 @@ public class Utilities {
         return Utilities.arraySlice(data, start, data.length);
     }
 
-    public static void compileAndTestRust(String directory, boolean quiet)
-            throws IOException, InterruptedException {
+    public static void runProcess(String directory, String... commands) throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder();
-        if (quiet)
-            processBuilder.command("cargo", "test", "-q");
-        else
-            processBuilder.command("cargo", "test", "--", "--show-output");
+        processBuilder.command(commands);
         processBuilder.directory(new File(directory));
         processBuilder.inheritIO();
         Process process = processBuilder.start();
         int exitCode = process.waitFor();
         if (exitCode != 0)
-            throw new RuntimeException("Rust process failed with exit code " + exitCode);
+            throw new RuntimeException("Process failed with exit code " + exitCode);
+    }
+
+    public static void compileAndTestRust(String directory, boolean quiet)
+            throws IOException, InterruptedException {
+        if (quiet)
+            runProcess(directory,"cargo", "test", "-q");
+        else
+            runProcess(directory,"cargo", "test", "--", "--show-output");
     }
 
     @SuppressWarnings("SpellCheckingInspection")

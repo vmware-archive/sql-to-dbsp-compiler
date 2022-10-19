@@ -26,15 +26,21 @@ package org.dbsp.sqlCompiler.circuit.operator;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class DBSPFlatMapOperator extends DBSPUnaryOperator {
-    public DBSPFlatMapOperator(@Nullable Object node, DBSPExpression expression,
-                               DBSPType resultType, DBSPOperator input) {
-        super(node, "flat_map", expression, resultType, true, input);
-        this.checkArgumentFunctionType(expression, 0, input);
+public class DBSPIncrementalAggregateOperator extends DBSPUnaryOperator {
+    public final DBSPType keyType;
+    public final DBSPType outputElementType;
+
+    public DBSPIncrementalAggregateOperator(@Nullable Object node, DBSPExpression function,
+                                            DBSPType keyType, DBSPType outputElementType, DBSPOperator input) {
+        super(node, "aggregate", function,
+                new DBSPTypeIndexedZSet(node, keyType, outputElementType), false, input);
+        this.keyType = keyType;
+        this.outputElementType = outputElementType;
     }
 
     @Override
@@ -46,8 +52,8 @@ public class DBSPFlatMapOperator extends DBSPUnaryOperator {
     @Override
     public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
-            return new DBSPFlatMapOperator(
-                    this.getNode(), this.getFunction(), this.outputType, newInputs.get(0));
+            return new DBSPIncrementalAggregateOperator(
+                    this.getNode(), this.getFunction(), this.keyType, this.outputElementType, newInputs.get(0));
         return this;
     }
 }

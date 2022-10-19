@@ -27,6 +27,7 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.visitors.*;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -84,6 +85,16 @@ public class BaseSQLTests {
         writer.println(ToRustVisitor.toRustString(tester));
     }
 
+    CircuitVisitor getOptimizer() {
+        DeadCodeVisitor dead = new DeadCodeVisitor();
+        return new PassesVisitor(
+                new OptimizeIncrementalVisitor(),
+                dead,
+                new RemoveOperatorsVisitor(dead.keep),
+                new NoIntegralVisitor()
+        );
+    }
+
     void testQueryBase(String query, boolean incremental, boolean optimize, InputOutputPair... streams) {
         try {
             query = "CREATE VIEW V AS " + query;
@@ -91,15 +102,12 @@ public class BaseSQLTests {
             PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
             writer.println(ToRustVisitor.generatePreamble());
             DBSPCircuit circuit = compiler.getResult();
-            boolean debug = false;
-            circuit = new OptimizeDistinctVisitor().setDebug(debug).apply(circuit);
+            circuit = new OptimizeDistinctVisitor().apply(circuit);
             if (incremental)
-                circuit = new IncrementalizeVisitor().setDebug(debug).apply(circuit);
+                circuit = new IncrementalizeVisitor().apply(circuit);
             if (optimize) {
-                circuit = new OptimizeIncrementalVisitor().setDebug(debug).apply(circuit);
-                DeadCodeVisitor dead = new DeadCodeVisitor();
-                circuit = dead.setDebug(debug).apply(circuit);
-                circuit = new RemoveOperatorsVisitor(dead.keep).setDebug(debug).apply(circuit);
+                CircuitVisitor optimizer = this.getOptimizer();
+                circuit = optimizer.apply(circuit);
             }
             writer.println(ToRustVisitor.toRustString(circuit));
             this.createTester(writer, circuit, streams);

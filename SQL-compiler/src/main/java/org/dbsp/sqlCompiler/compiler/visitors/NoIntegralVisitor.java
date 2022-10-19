@@ -21,33 +21,23 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.circuit.operator;
+package org.dbsp.sqlCompiler.compiler.visitors;
 
+import org.dbsp.sqlCompiler.circuit.operator.DBSPIntegralOperator;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
-import javax.annotation.Nullable;
-import java.util.List;
-
-public class DBSPFlatMapOperator extends DBSPUnaryOperator {
-    public DBSPFlatMapOperator(@Nullable Object node, DBSPExpression expression,
-                               DBSPType resultType, DBSPOperator input) {
-        super(node, "flat_map", expression, resultType, true, input);
-        this.checkArgumentFunctionType(expression, 0, input);
+/**
+ * This visitor throws if a circuit contains an integration operator.
+ * This is usually a sign that the optimizer didn't do its job properly
+ * (but there are legit streaming query circuits which would have to include integrals).
+ */
+public class NoIntegralVisitor extends CircuitVisitor {
+    public NoIntegralVisitor() {
+        super(false);
     }
 
     @Override
-    public void accept(CircuitVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        visitor.postorder(this);
-    }
-
-    @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
-        if (force || this.inputsDiffer(newInputs))
-            return new DBSPFlatMapOperator(
-                    this.getNode(), this.getFunction(), this.outputType, newInputs.get(0));
-        return this;
+    public boolean preorder(DBSPIntegralOperator node) {
+        throw new RuntimeException("Circuit contains an integration operator " + node);
     }
 }

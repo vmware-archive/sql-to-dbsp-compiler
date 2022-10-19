@@ -50,7 +50,7 @@ public class OptimizeDistinctVisitor extends CircuitCloneVisitor {
                 // distinct(filter(distinct)) = distinct(filter)
                 List<DBSPOperator> newInputs = Linq.map(input.inputs, i -> i.inputs.get(0));
                 DBSPOperator newInput = input.replaceInputs(newInputs, false);
-                this.getResult().addOperator(newInput);
+                this.addOperator(newInput);
                 distinct.replaceInputs(Linq.list(newInput), false);
                 this.map(distinct, distinct);
                 return;
@@ -65,7 +65,7 @@ public class OptimizeDistinctVisitor extends CircuitCloneVisitor {
             DBSPDistinctOperator distinct = input.to(DBSPDistinctOperator.class);
             // swap distinct after filter
             DBSPOperator newFilter = filter.replaceInputs(input.inputs, false);
-            this.getResult().addOperator(newFilter);
+            this.addOperator(newFilter);
             DBSPOperator result = distinct.replaceInputs(Linq.list(filter), false);
             this.map(filter, result);
             return;
@@ -83,7 +83,7 @@ public class OptimizeDistinctVisitor extends CircuitCloneVisitor {
             DBSPOperator newLeft = left.inputs.get(0);
             DBSPOperator newRight = right.inputs.get(0);
             DBSPOperator result = join.replaceInputs(Linq.list(newLeft, newRight), false);
-            this.getResult().addOperator(result);
+            this.addOperator(result);
             DBSPOperator distinct = new DBSPDistinctOperator(join.getNode(), result);
             this.map(join, distinct);
             return;

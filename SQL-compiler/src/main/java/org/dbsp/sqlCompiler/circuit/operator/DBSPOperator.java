@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
-import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.util.IHasName;
@@ -178,14 +177,11 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
     }
 
     @Override
-    public void accept(CircuitVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        visitor.postorder(this);
-    }
-
-    @Override
     public String toString() {
-        return this.getClass().getSimpleName() + " " +
-                this.id + ":" + this.outputName;
+        return this.getClass()
+                .getSimpleName()
+                .replace("DBSP", "")
+                .replace("Operator", "")
+                + " " + this.id;
     }
 }

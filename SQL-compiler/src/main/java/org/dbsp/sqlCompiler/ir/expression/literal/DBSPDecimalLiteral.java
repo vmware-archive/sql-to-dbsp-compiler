@@ -21,33 +21,26 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.circuit.operator;
+package org.dbsp.sqlCompiler.ir.expression.literal;
 
-import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
-import java.util.List;
+import java.math.BigDecimal;
 
-public class DBSPFlatMapOperator extends DBSPUnaryOperator {
-    public DBSPFlatMapOperator(@Nullable Object node, DBSPExpression expression,
-                               DBSPType resultType, DBSPOperator input) {
-        super(node, "flat_map", expression, resultType, true, input);
-        this.checkArgumentFunctionType(expression, 0, input);
+public class DBSPDecimalLiteral extends DBSPLiteral {
+    @Nullable
+    public final BigDecimal value;
+
+    public DBSPDecimalLiteral(@Nullable Object node, DBSPType type, @Nullable BigDecimal value) {
+        super(node, type, value);
+        this.value = value;
     }
 
     @Override
-    public void accept(CircuitVisitor visitor) {
+    public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);
-    }
-
-    @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
-        if (force || this.inputsDiffer(newInputs))
-            return new DBSPFlatMapOperator(
-                    this.getNode(), this.getFunction(), this.outputType, newInputs.get(0));
-        return this;
     }
 }

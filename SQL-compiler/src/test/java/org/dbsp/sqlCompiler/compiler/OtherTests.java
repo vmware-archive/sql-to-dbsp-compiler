@@ -106,6 +106,7 @@ public class OtherTests implements IModule {
                     .newline();
         Logger.instance.setDebugStream(save);
         Assert.assertEquals("Logging one statement\n", builder.toString());
+        Logger.instance.setDebugLevel(this.getModule(), 0);
     }
 
     @Test
