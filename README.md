@@ -200,7 +200,7 @@ are detailed below.
 | index/orderby_nosort |         N/A ||
 | index/view           |         N/A |  53,490/0 |
 | index/random         |         N/A ||
-| index/orderby        |         N/A ||
+| index/orderby        |         N/A | 310,630/0 |
 | evidence             |             ||
 
 The "index" tests cannot be executed with DBSP since it does

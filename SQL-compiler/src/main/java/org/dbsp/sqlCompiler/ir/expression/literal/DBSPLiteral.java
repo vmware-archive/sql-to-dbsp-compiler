@@ -29,6 +29,10 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
+/**
+ * This is not just a base class, it also can be used to represent NULL
+ * literals of any type.  Maybe that's a bad idea.
+ */
 public class DBSPLiteral extends DBSPExpression {
     public final boolean isNull;
     @Nullable

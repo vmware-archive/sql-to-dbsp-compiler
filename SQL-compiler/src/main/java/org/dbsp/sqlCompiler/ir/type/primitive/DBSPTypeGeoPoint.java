@@ -21,26 +21,43 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeDate extends DBSPType {
-    public static final DBSPTypeDate instance = new DBSPTypeDate(null, false);
+public class DBSPTypeGeoPoint extends DBSPTypeGeo {
+    public static DBSPTypeGeoPoint instance = new DBSPTypeGeoPoint(null, false);
 
-    protected DBSPTypeDate(@Nullable Object node, boolean mayBeNull) {
+    protected DBSPTypeGeoPoint(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);
     }
 
     @Override
-    public void accept(InnerVisitor visitor) {}
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
+    }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (this.mayBeNull == mayBeNull)
             return this;
-        return new DBSPTypeDate(this.getNode(), mayBeNull);
+        return new DBSPTypeGeoPoint(this.getNode(), mayBeNull);
+    }
+
+    @Override
+    public boolean sameType(@Nullable DBSPType type) {
+        if (!super.sameType(type))
+            return false;
+        assert type != null;
+        return type.is(DBSPTypeGeoPoint.class);
+    }
+
+    @Override
+    public String shortName() {
+        return "geopoint";
     }
 }

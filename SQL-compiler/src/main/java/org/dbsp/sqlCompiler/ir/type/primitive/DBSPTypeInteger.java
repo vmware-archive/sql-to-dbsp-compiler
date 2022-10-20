@@ -21,22 +21,20 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPApplyMethodExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPAsExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLongLiteral;
-import org.dbsp.util.Unimplemented;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public class DBSPTypeInteger extends DBSPType
-        implements IsNumericType, IDBSPBaseType {
+public class DBSPTypeInteger extends DBSPTypeBaseType
+        implements IsNumericType {
     private final int width;
     public static final DBSPTypeInteger signed16 = new DBSPTypeInteger(null, 16, false);
     public static final DBSPTypeInteger signed32 = new DBSPTypeInteger(null, 32, false);
@@ -80,25 +78,6 @@ public class DBSPTypeInteger extends DBSPType
         if (mayBeNull == this.mayBeNull)
             return this;
         return new DBSPTypeInteger(this.getNode(), this.width, mayBeNull);
-    }
-
-    @Override
-    public DBSPExpression castFrom(DBSPExpression source) {
-        // Recall: we ignore nullability of this
-        DBSPType argtype = source.getNonVoidType();
-        if (argtype.is(DBSPTypeFP.class)) {
-            return new DBSPAsExpression(
-                    new DBSPApplyMethodExpression("into_inner", source.getNonVoidType(), source),
-                    this);
-        } else if (argtype.is(DBSPTypeInteger.class)){
-            return new DBSPAsExpression(source, this);
-        } else if (argtype.is(DBSPTypeString.class)) {
-            return new DBSPApplyMethodExpression(
-                    "unwrap", this,
-                    new DBSPApplyMethodExpression("parse", this.setMayBeNull(true), source));
-        } else {
-            throw new Unimplemented();
-        }
     }
 
     @Override

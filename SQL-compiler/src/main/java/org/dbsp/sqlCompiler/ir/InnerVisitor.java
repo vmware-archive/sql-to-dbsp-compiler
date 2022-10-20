@@ -34,6 +34,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.*;
 
 /**
  * Depth-first traversal of an DBSPInnerNode hierarchy.
@@ -89,6 +90,21 @@ public abstract class InnerVisitor {
 
     public boolean preorder(DBSPType node) {
         if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPTypeBaseType node) {
+        if (this.visitSuper) return this.preorder((DBSPType) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPTypeGeo node) {
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPTypeGeoPoint node) {
+        if (this.visitSuper) return this.preorder((DBSPTypeGeo) node);
         else return true;
     }
 
@@ -154,7 +170,7 @@ public abstract class InnerVisitor {
     // Types
     
     public boolean preorder(DBSPTypeFP node) {
-        if (this.visitSuper) return this.preorder((DBSPType) node);
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
 
@@ -169,7 +185,7 @@ public abstract class InnerVisitor {
     }
 
     public boolean preorder(DBSPTypeISize node) {
-        if (this.visitSuper) return this.preorder((DBSPType) node);
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
 
@@ -179,12 +195,12 @@ public abstract class InnerVisitor {
     }
 
     public boolean preorder(DBSPTypeString node) {
-        if (this.visitSuper) return this.preorder((DBSPType) node);
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
     
     public boolean preorder(DBSPTypeUSize node) {
-        if (this.visitSuper) return this.preorder((DBSPType) node);
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
 
@@ -199,22 +215,22 @@ public abstract class InnerVisitor {
     }
 
     public boolean preorder(DBSPTypeStr node) {
-        if (this.visitSuper) return this.preorder((DBSPType) node);
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
 
     public boolean preorder(DBSPTypeInteger node) {
-        if (this.visitSuper) return this.preorder((DBSPType) node);
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
 
     public boolean preorder(DBSPTypeDecimal node) {
-        if (this.visitSuper) return this.preorder((DBSPType) node);
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
 
     public boolean preorder(DBSPTypeNull node) {
-        if (this.visitSuper) return this.preorder((DBSPType) node);
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
 
@@ -224,7 +240,7 @@ public abstract class InnerVisitor {
     }
 
     public boolean preorder(DBSPTypeBool node) {
-        if (this.visitSuper) return this.preorder((DBSPType) node);
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
 
@@ -468,6 +484,11 @@ public abstract class InnerVisitor {
         else return true;
     }
 
+    public boolean preorder(DBSPGeoPointLiteral node) {
+        if (this.visitSuper) return this.preorder((DBSPLiteral) node);
+        else return true;
+    }
+
     /*************************** POSTORDER *****************************/
 
     @SuppressWarnings("EmptyMethod")
@@ -483,6 +504,18 @@ public abstract class InnerVisitor {
 
     public void postorder(DBSPType node) {
         if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
+    }
+
+    public void postorder(DBSPTypeBaseType node) {
+        if (this.visitSuper) this.postorder((DBSPType) node);
+    }
+
+    public void postorder(DBSPTypeGeo node) {
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
+    }
+
+    public void postorder(DBSPTypeGeoPoint node) {
+        if (this.visitSuper) this.postorder((DBSPTypeGeo) node);
     }
 
     public void postorder(DBSPFile node) {
@@ -536,7 +569,7 @@ public abstract class InnerVisitor {
     // Types
 
     public void postorder(DBSPTypeFP node) {
-        if (this.visitSuper) this.postorder((DBSPType) node);
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeFloat node) {
@@ -548,7 +581,7 @@ public abstract class InnerVisitor {
     }
 
     public void postorder(DBSPTypeISize node) {
-        if (this.visitSuper) this.postorder((DBSPType) node);
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeStruct node) {
@@ -556,15 +589,15 @@ public abstract class InnerVisitor {
     }
 
     public void postorder(DBSPTypeStr node) {
-        if (this.visitSuper) this.postorder((DBSPType) node);
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeString node) {
-        if (this.visitSuper) this.postorder((DBSPType) node);
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeUSize node) {
-        if (this.visitSuper) this.postorder((DBSPType) node);
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeTuple node) {
@@ -576,15 +609,15 @@ public abstract class InnerVisitor {
     }
 
     public void postorder(DBSPTypeInteger node) {
-        if (this.visitSuper) this.postorder((DBSPType) node);
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeDecimal node) {
-        if (this.visitSuper) this.postorder((DBSPType) node);
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeNull node) {
-        if (this.visitSuper) this.postorder((DBSPType) node);
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeFunction node) {
@@ -592,7 +625,7 @@ public abstract class InnerVisitor {
     }
 
     public void postorder(DBSPTypeBool node) {
-        if (this.visitSuper) this.postorder((DBSPType) node);
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeStream node) {
@@ -784,6 +817,10 @@ public abstract class InnerVisitor {
     }
 
     public void postorder(DBSPISizeLiteral node) {
+        if (this.visitSuper) this.postorder((DBSPLiteral) node);
+    }
+
+    public void postorder(DBSPGeoPointLiteral node)  {
         if (this.visitSuper) this.postorder((DBSPLiteral) node);
     }
 }

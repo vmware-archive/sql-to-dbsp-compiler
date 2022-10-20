@@ -21,35 +21,54 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPFloatLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeString extends DBSPType implements IDBSPBaseType {
-    public static final DBSPTypeString instance = new DBSPTypeString(null,false);
-
-    protected DBSPTypeString(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
+public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType {
+    protected DBSPTypeFloat(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (this.mayBeNull == mayBeNull)
             return this;
-        return new DBSPTypeString(this.getNode(), mayBeNull);
+        return new DBSPTypeFloat(this.getNode(), mayBeNull);
     }
 
     @Override
     public String shortName() {
-        return "s";
+        return "f";
     }
+
+    public static final DBSPTypeFloat instance = new DBSPTypeFloat(null,false);
 
     @Override
     public boolean sameType(@Nullable DBSPType type) {
         if (!super.sameType(type))
             return false;
         assert type != null;
-        return type.is(DBSPTypeString.class);
+        return type.is(DBSPTypeFloat.class);
+    }
+
+    @Override
+    public int getWidth() {
+        return 32;
+    }
+
+    @Override
+    public DBSPLiteral getZero() {
+        return new DBSPFloatLiteral(0F, this.mayBeNull);
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        return new DBSPFloatLiteral(1F, this.mayBeNull);
     }
 
     @Override

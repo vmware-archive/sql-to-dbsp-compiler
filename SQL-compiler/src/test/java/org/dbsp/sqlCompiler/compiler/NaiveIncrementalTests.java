@@ -23,15 +23,11 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPSomeExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDoubleLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeDouble;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeInteger;
+import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.junit.Test;
 
 // Runs the EndToEnd tests but on an input stream with 3 elements each and
@@ -100,7 +96,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
         String query = "SELECT ST_POINT(0, 0)";
         this.testConstantOutput(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(
-                        new DBSPSomeExpression(new DBSPRawTupleExpression(
+                        new DBSPSomeExpression(new DBSPGeoPointLiteral(null,
                                 new DBSPDoubleLiteral(0), new DBSPDoubleLiteral(0))))));
     }
 

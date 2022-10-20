@@ -24,9 +24,6 @@
 package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPFieldExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
 import org.dbsp.util.Utilities;
@@ -135,23 +132,5 @@ public class DBSPTypeTuple extends DBSPType {
         for (DBSPType type: this.tupFields)
             type.accept(visitor);
         visitor.postorder(this);
-    }
-
-    @Override
-    public DBSPExpression castFrom(DBSPExpression source) {
-        DBSPType sourceType = source.getNonVoidType();
-        if (!sourceType.is(DBSPTypeTuple.class))
-            throw new UnsupportedOperationException(
-                    "Cannot cast value " + source + " with type " + sourceType + " to " + this);
-        DBSPTypeTuple sourceTuple = sourceType.to(DBSPTypeTuple.class);
-        if (this.tupFields.length != sourceTuple.size())
-            throw new UnsupportedOperationException(
-                    "Cannot cast value " + source + " with type " + sourceType + " to " + this);
-        DBSPExpression[] casts = new DBSPExpression[this.tupFields.length];
-        for (int i = 0; i < this.tupFields.length; i++) {
-            DBSPExpression field = new DBSPFieldExpression(source, i).simplify();
-            casts[i] = this.tupFields[i].castFrom(field);
-        }
-        return new DBSPTupleExpression(casts);
     }
 }

@@ -152,16 +152,23 @@ public class Main {
         String[] files = new String[] {
                 /*
                 "random/select",  //done
-                "random/expr", // done
+                "random/expr",    // done
                 "random/groupby", // done
                 "random/aggregates", // done
-                "select1.test", // done
-                "select2.test", // done
-                "select3.test", // done
-                "select4.test",
-                "select5.test",
+                "select1.test",  // done
+                "select2.test",  // done
+                "select3.test",  // done
+                "select4.test",  // done
+                "select5.test",  // done
+                "index/orderby", // done
+                "index/between", // done
+                "index/view",    // done
+                "index/in",      // done
                  */
-                "index",
+                "index/delete",
+                "index/commute",
+                "index/orderby_nosort",
+                "index/random",
                 "evidence"
         };
         if (argv.length > 1)

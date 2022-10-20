@@ -24,7 +24,7 @@
 package org.dbsp.sqlCompiler.ir.expression.literal;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeUSize;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeUSize;
 
 import javax.annotation.Nullable;
 

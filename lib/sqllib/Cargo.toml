@@ -5,3 +5,9 @@ edition = "2021"
 
 [dependencies]
 dbsp = { git = "https://github.com/vmware/database-stream-processor.git" }
+rust_decimal = { version = "1.26" }
+rust_decimal_macros = { version = "1.26" }
+geo = { version = "0.23" }
+geo-types = { version = "0.7" }
+size-of = { version = "0.1.1", features = ["rust_decimal"] }
+serde = { version = "1.0", features = ["derive"] }

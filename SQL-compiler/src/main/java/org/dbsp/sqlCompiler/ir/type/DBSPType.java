@@ -25,8 +25,10 @@ package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBaseType;
 import org.dbsp.util.IndentStream;
+import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
 
@@ -76,6 +78,27 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
     public abstract DBSPType setMayBeNull(boolean mayBeNull);
 
     /**
+     * Default implementation of cast of a source expression to the 'this' type.
+     * Only defined for base types, should be overridden for other types.
+     * For example, to cast source which is an Option[i16] to a bool
+     * the function called will be cast_to_b_i16N.
+     */
+    public DBSPExpression castFrom(DBSPExpression source) {
+        DBSPTypeBaseType base = this.as(DBSPTypeBaseType.class);
+        if (base == null)
+            throw new UnsupportedException(this);
+        DBSPType sourceType = source.getNonVoidType();
+        DBSPTypeBaseType baseSource = sourceType.as(DBSPTypeBaseType.class);
+        if (baseSource == null)
+            throw new UnsupportedException(sourceType);
+        String destName = base.shortName();
+        String srcName = baseSource.shortName();
+        String functionName = "cast_to_" + destName + (base.mayBeNull ? "N" : "") +
+                "_" + srcName + (baseSource.mayBeNull ? "N" : "");
+        return new DBSPApplyExpression(functionName, this, source);
+    }
+
+    /**
      * Similar to 'to', but handles Ref types specially.
      */
     public <T> T toRef(Class<T> clazz) {
@@ -83,13 +106,5 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
         if (ref != null)
             return ref.type.to(clazz);
         return this.to(clazz);
-    }
-
-    /**
-     * Generate code for a cast from the specified expression to this type.
-     * This function does not need to handle nullable types
-     */
-    public DBSPExpression castFrom(DBSPExpression source) {
-        throw new UnsupportedOperationException();
     }
 }

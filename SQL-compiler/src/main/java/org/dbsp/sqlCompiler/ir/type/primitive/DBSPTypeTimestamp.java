@@ -21,35 +21,32 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.expression.literal;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-public class DBSPDoubleLiteral extends DBSPLiteral {
-    @Nullable
-    public final Double value;
+public class DBSPTypeTimestamp extends DBSPTypeBaseType {
+    public static final DBSPTypeTimestamp instance = new DBSPTypeTimestamp(null, false);
 
-    public DBSPDoubleLiteral() {
-        this(null, true);
-    }
-
-    public DBSPDoubleLiteral(double value) {
-        this(value, false);
-    }
-
-    public DBSPDoubleLiteral(@Nullable Double f, boolean nullable) {
-        super(null, DBSPTypeDouble.instance.setMayBeNull(nullable), f);
-        if (f == null && !nullable)
-            throw new RuntimeException("Null value with non-nullable type");
-        this.value = f;
+    protected DBSPTypeTimestamp(@Nullable Object node, boolean mayBeNull) {
+        super(node, mayBeNull);
     }
 
     @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        visitor.postorder(this);
+    public String shortName() {
+        return "TS";
+    }
+
+    @Override
+    public void accept(InnerVisitor visitor) {}
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        if (this.mayBeNull == mayBeNull)
+            return this;
+        return new DBSPTypeTimestamp(this.getNode(), mayBeNull);
     }
 }

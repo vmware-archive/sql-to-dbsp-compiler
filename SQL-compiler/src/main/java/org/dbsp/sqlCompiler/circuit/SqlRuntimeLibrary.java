@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.pattern.*;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
+import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
@@ -197,8 +198,8 @@ public class SqlRuntimeLibrary {
         } else if (op.equals("st_distance")) {
             return new FunctionDescription("st_distance_" + suffixl + "_" + suffixr, DBSPTypeDouble.instance.setMayBeNull(anyNull));
         } else {
-            tsuffixl = ltype.to(IDBSPBaseType.class).shortName();
-            tsuffixr = (rtype == null) ? "" : rtype.to(IDBSPBaseType.class).shortName();
+            tsuffixl = ltype.to(DBSPTypeBaseType.class).shortName();
+            tsuffixr = (rtype == null) ? "" : rtype.to(DBSPTypeBaseType.class).shortName();
         }
         if (map == null)
             throw new Unimplemented(op);

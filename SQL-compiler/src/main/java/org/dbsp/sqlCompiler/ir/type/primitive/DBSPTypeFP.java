@@ -21,18 +21,17 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.expression.*;
-import org.dbsp.sqlCompiler.ir.path.DBSPPath;
+import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 
 import javax.annotation.Nullable;
 
 /**
  * Base class for floating-point types.
  */
-public abstract class DBSPTypeFP extends DBSPType implements IsNumericType {
+public abstract class DBSPTypeFP extends DBSPTypeBaseType implements IsNumericType {
     protected DBSPTypeFP(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
 
     /**
@@ -44,30 +43,6 @@ public abstract class DBSPTypeFP extends DBSPType implements IsNumericType {
      */
     @Override
     public String getRustString() { return "f" + this.getWidth(); }
-
-    protected DBSPExpression castFrom(DBSPExpression source, String destType) {
-        // Recall: we ignore nullability of this.
-        DBSPType noNull = this.setMayBeNull(false);
-        DBSPType sourceType = source.getNonVoidType();
-        DBSPTypeFunction func = new DBSPTypeFunction(noNull, source.getNonVoidType());
-        if (sourceType.is(DBSPTypeFP.class)) {
-            return new DBSPApplyExpression(
-                    new DBSPPathExpression(func, new DBSPPath(destType, "from")), source);
-        }
-        if (sourceType.is(DBSPTypeDecimal.class)) {
-            return new DBSPApplyExpression(
-                    new DBSPPathExpression(func, new DBSPPath(destType, "from")),
-                    new DBSPApplyMethodExpression("unwrap", this,
-                            new DBSPApplyMethodExpression("to_f" + this.getWidth(), this.setMayBeNull(true), source)));
-        }
-        if (sourceType.is(DBSPTypeString.class)) {
-            return new DBSPApplyMethodExpression("unwrap", this,
-                    new DBSPApplyMethodExpression("parse", this.setMayBeNull(true), source));
-        }
-        return new DBSPApplyExpression(
-                new DBSPPathExpression(func, new DBSPPath(destType, "from")),
-                new DBSPAsExpression(source, this));
-    }
 
     @Override
     public void accept(InnerVisitor visitor) {

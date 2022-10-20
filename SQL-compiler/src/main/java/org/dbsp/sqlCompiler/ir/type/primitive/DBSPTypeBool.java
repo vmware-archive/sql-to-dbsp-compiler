@@ -21,14 +21,40 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
-/**
- * Interface implemented by DBSP base types.
- */
-public interface IDBSPBaseType {
-    /**
-     * Used when generating names for library functions that depend on argument types.
-     */
-    String shortName();
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+
+import javax.annotation.Nullable;
+
+public class DBSPTypeBool extends DBSPTypeBaseType {
+    public DBSPTypeBool(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
+
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        if (this.mayBeNull == mayBeNull)
+            return this;
+        return new DBSPTypeBool(this.getNode(), mayBeNull);
+    }
+
+    @Override
+    public String shortName() {
+        return "b";
+    }
+
+    public boolean sameType(@Nullable DBSPType type) {
+        if (!super.sameType(type))
+            return false;
+        assert type != null;
+        return type.is(DBSPTypeBool.class);
+    }
+
+    public static final DBSPTypeBool instance = new DBSPTypeBool(null, false);
+
+    @Override
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
+    }
 }

@@ -21,30 +21,56 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.expression.literal;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPISizeLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 
 import javax.annotation.Nullable;
 
-public class DBSPDoubleLiteral extends DBSPLiteral {
-    @Nullable
-    public final Double value;
+/**
+ * Represents the usize Rust type.
+ */
+public class DBSPTypeISize extends DBSPTypeBaseType
+        implements IsNumericType {
+    public static final DBSPTypeISize instance = new DBSPTypeISize(null, false);
 
-    public DBSPDoubleLiteral() {
-        this(null, true);
+    @SuppressWarnings("SameParameterValue")
+    protected DBSPTypeISize(@Nullable Object node, boolean mayBeNull) {
+        super(node, mayBeNull);
     }
 
-    public DBSPDoubleLiteral(double value) {
-        this(value, false);
+    @Override
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        if (mayBeNull)
+            throw new UnsupportedOperationException();
+        return this;
     }
 
-    public DBSPDoubleLiteral(@Nullable Double f, boolean nullable) {
-        super(null, DBSPTypeDouble.instance.setMayBeNull(nullable), f);
-        if (f == null && !nullable)
-            throw new RuntimeException("Null value with non-nullable type");
-        this.value = f;
+    @Override
+    public String shortName() {
+        return "i";
+    }
+
+    @Override
+    public boolean sameType(@Nullable DBSPType type) {
+        if (!super.sameType(type))
+            return false;
+        assert type != null;
+        return type.is(DBSPTypeISize.class);
+    }
+
+    @Override
+    public DBSPLiteral getZero() {
+        return new DBSPISizeLiteral(0);
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        return new DBSPISizeLiteral(1);
     }
 
     @Override

@@ -5,3 +5,6 @@ edition = "2021"
 
 [dependencies]
 dbsp = { git = "https://github.com/vmware/database-stream-processor.git" }
+rust_decimal = { version = "1.26" }
+rust_decimal_macros = { version = "1.26" }
+sqllib = { path = "../sqllib" }

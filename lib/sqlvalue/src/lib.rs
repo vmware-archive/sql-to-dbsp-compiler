@@ -5,7 +5,10 @@
 //! to SqlRow objects when they need to be displayed.
 
 use dbsp::algebra::{F32, F64};
+use rust_decimal::prelude::*;
+use sqllib::casts::*;
 
+#[derive(Debug)]
 pub enum SqlValue {
     Int(i32),
     Long(i64),
@@ -13,6 +16,7 @@ pub enum SqlValue {
     Flt(f32),
     Dbl(f64),
     Bool(bool),
+    Decimal(Decimal),
 
     OptInt(Option<i32>),
     OptLong(Option<i64>),
@@ -20,6 +24,7 @@ pub enum SqlValue {
     OptFlt(Option<f32>),
     OptDbl(Option<f64>),
     OptBool(Option<bool>),
+    OptDecimal(Option<Decimal>),
 }
 
 impl From<i32> for SqlValue {
@@ -67,6 +72,12 @@ impl From<F64> for SqlValue {
 impl From<String> for SqlValue {
     fn from(value: String) -> Self {
         SqlValue::Str(value)
+    }
+}
+
+impl From<Decimal> for SqlValue {
+    fn from(value: Decimal) -> Self {
+        SqlValue::Decimal(value)
     }
 }
 
@@ -121,6 +132,12 @@ impl From<Option<F64>> for SqlValue {
 impl From<Option<String>> for SqlValue {
     fn from(value: Option<String>) -> Self {
         SqlValue::OptStr(value)
+    }
+}
+
+impl From<Option<Decimal>> for SqlValue {
+    fn from(value: Option<Decimal>) -> Self {
+        SqlValue::OptDecimal(value)
     }
 }
 
@@ -198,6 +215,10 @@ impl SqlLogicTestFormat for SqlValue {
             (SqlValue::OptInt(None), _) => String::from("NULL"),
             (SqlValue::OptInt(Some(x)), _) => format!("{}", x),
 
+            (SqlValue::Decimal(x), _) => format!("{}", x),
+            (SqlValue::OptDecimal(None), _) => String::from("NULL"),
+            (SqlValue::OptDecimal(Some(x)), _) => format!("{}", x),
+
             (SqlValue::Long(x), _) => format!("{}", x),
             (SqlValue::OptLong(None), _) => String::from("NULL"),
             (SqlValue::OptLong(Some(x)), _) => format!("{}", x),
@@ -217,11 +238,13 @@ impl SqlLogicTestFormat for SqlValue {
             (SqlValue::Str(x), 'T') => slt_translate_string(x),
             (SqlValue::OptStr(None), 'T') => String::from("NULL"),
             (SqlValue::OptStr(Some(x)), 'T') => slt_translate_string(x),
+            (SqlValue::OptStr(None), 'I') => String::from("NULL"),
+            (SqlValue::OptStr(Some(x)), 'I') => format!("{}", cast_to_i32_s(x.clone())),
 
             (SqlValue::OptBool(None), _) => String::from("NULL"),
             (SqlValue::Bool(b), _) => format!("{}", b),
             (SqlValue::OptBool(Some(b)), _) => format!("{}", b),
-            _ => panic!("Unexpected combination"),
+            _ => panic!("Unexpected combination {:?} {:?}", self, arg),
         }
     }
 }

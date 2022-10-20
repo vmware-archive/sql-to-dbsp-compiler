@@ -21,35 +21,15 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.expression.literal;
-
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import javax.annotation.Nullable;
 
-public class DBSPDoubleLiteral extends DBSPLiteral {
-    @Nullable
-    public final Double value;
-
-    public DBSPDoubleLiteral() {
-        this(null, true);
-    }
-
-    public DBSPDoubleLiteral(double value) {
-        this(value, false);
-    }
-
-    public DBSPDoubleLiteral(@Nullable Double f, boolean nullable) {
-        super(null, DBSPTypeDouble.instance.setMayBeNull(nullable), f);
-        if (f == null && !nullable)
-            throw new RuntimeException("Null value with non-nullable type");
-        this.value = f;
-    }
-
-    @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        visitor.postorder(this);
+/**
+ * Base class for geographic data types.
+ */
+public abstract class DBSPTypeGeo extends DBSPTypeBaseType {
+    protected DBSPTypeGeo(@Nullable Object node, boolean mayBeNull) {
+        super(node, mayBeNull);
     }
 }

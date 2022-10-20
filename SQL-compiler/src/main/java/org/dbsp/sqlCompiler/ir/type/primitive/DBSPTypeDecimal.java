@@ -21,20 +21,19 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPApplyMethodExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDecimalLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
-import org.dbsp.util.Unimplemented;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
 
-public class DBSPTypeDecimal extends DBSPType
-        implements IsNumericType, IDBSPBaseType {
+public class DBSPTypeDecimal extends DBSPTypeBaseType
+        implements IsNumericType {
     public final int scale;
 
     public DBSPTypeDecimal(@Nullable Object node, int scale, boolean mayBeNull) {
@@ -65,34 +64,8 @@ public class DBSPTypeDecimal extends DBSPType
     }
 
     @Override
-    public DBSPExpression castFrom(DBSPExpression source) {
-        // Recall: we ignore nullability of this
-        DBSPType argtype = source.getNonVoidType();
-        if (argtype.is(DBSPTypeFP.class)) {
-            DBSPTypeFP fp = argtype.to(DBSPTypeFP.class);
-            return new DBSPApplyMethodExpression("unwrap",
-                    this,
-                    new DBSPApplyMethodExpression(
-                            "from_f" + fp.getWidth(),
-                            this.setMayBeNull(true),
-                                new DBSPApplyMethodExpression(
-                                        "into_inner", source.getNonVoidType(), source)));
-        } else if (argtype.is(DBSPTypeInteger.class)){
-            DBSPTypeFP fp = argtype.to(DBSPTypeFP.class);
-            return new DBSPApplyMethodExpression("unwrap",
-                    this,
-                    new DBSPApplyMethodExpression(
-                            "from_f" + fp.getWidth(),
-                            this.setMayBeNull(true),
-                            source));
-        } else {
-            throw new Unimplemented();
-        }
-    }
-
-    @Override
     public String shortName() {
-        return "rust_decimal";
+        return "decimal";
     }
 
     @Override
