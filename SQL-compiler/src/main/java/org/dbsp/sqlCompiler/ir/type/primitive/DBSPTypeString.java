@@ -21,58 +21,36 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDoubleLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType, IDBSPBaseType {
-    protected DBSPTypeDouble(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
+public class DBSPTypeString extends DBSPTypeBaseType {
+    public static final DBSPTypeString instance = new DBSPTypeString(null,false);
+
+    protected DBSPTypeString(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (this.mayBeNull == mayBeNull)
             return this;
-        return new DBSPTypeDouble(this.getNode(), mayBeNull);
+        return new DBSPTypeString(this.getNode(), mayBeNull);
     }
 
     @Override
     public String shortName() {
-        return "d";
+        return "s";
     }
-
-    public static final DBSPTypeDouble instance = new DBSPTypeDouble(null,false);
 
     @Override
     public boolean sameType(@Nullable DBSPType type) {
         if (!super.sameType(type))
             return false;
         assert type != null;
-        return type.is(DBSPTypeDouble.class);
-    }
-
-    @Override
-    public int getWidth() {
-        return 64;
-    }
-
-    @Override
-    public DBSPExpression castFrom(DBSPExpression source) {
-        return castFrom(source, "F64");
-    }
-
-    @Override
-    public DBSPLiteral getZero() {
-        return new DBSPDoubleLiteral(0D, this.mayBeNull);
-    }
-
-    @Override
-    public DBSPLiteral getOne() {
-        return new DBSPDoubleLiteral(1D, this.mayBeNull);
+        return type.is(DBSPTypeString.class);
     }
 
     @Override

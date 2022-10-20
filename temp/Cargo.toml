@@ -16,3 +16,5 @@ size-of = { version = "0.1.1", features = ["rust_decimal"] }
 readers = { path = "../lib/readers" }
 rust_decimal = { version = "1.26" }
 rust_decimal_macros = { version = "1.26" }
+geo = { version = "0.23" }
+geo-types = { version = "0.7" }

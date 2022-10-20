@@ -2,6 +2,10 @@
 
 use std::ops::Add;
 use dbsp::algebra::{F32, F64, ZRingValue};
+use geopoint::GeoPoint;
+
+pub mod casts;
+pub mod geopoint;
 
 #[inline(always)]
 pub fn or_b_b(left: bool, right: bool) -> bool
@@ -563,14 +567,12 @@ where
     }
 }
 
-pub fn st_distance__(left: (F64, F64), right: (F64, F64)) -> F64
+pub fn st_distance__(left: GeoPoint, right: GeoPoint) -> F64
 {
-    let d1 = left.0 - right.0;
-    let d2 = left.1 - right.1;
-    F64::new((d1 * d1 + d2 * d2).into_inner().sqrt())
+    left.distance(&right)
 }
 
-pub fn st_distance_N_(left: Option<(F64, F64)>, right: (F64, F64)) -> Option<F64>
+pub fn st_distance_N_(left: Option<GeoPoint>, right: GeoPoint) -> Option<F64>
 {
     match left {
         None => None,
@@ -578,7 +580,7 @@ pub fn st_distance_N_(left: Option<(F64, F64)>, right: (F64, F64)) -> Option<F64
     }
 }
 
-pub fn st_distance__N(left: (F64, F64), right: Option<(F64, F64)>) -> Option<F64>
+pub fn st_distance__N(left: GeoPoint, right: Option<GeoPoint>) -> Option<F64>
 {
     match right {
         None => None,
@@ -586,7 +588,7 @@ pub fn st_distance__N(left: (F64, F64), right: Option<(F64, F64)>) -> Option<F64
     }
 }
 
-pub fn st_distance_N_N(left: Option<(F64, F64)>, right: Option<(F64, F64)>) -> Option<F64>
+pub fn st_distance_N_N(left: Option<GeoPoint>, right: Option<GeoPoint>) -> Option<F64>
 {
     match (left, right) {
         (None, _) => None,

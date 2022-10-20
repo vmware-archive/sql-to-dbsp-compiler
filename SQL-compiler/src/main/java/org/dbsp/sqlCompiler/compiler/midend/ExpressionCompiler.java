@@ -27,11 +27,10 @@ import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlKind;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.compiler.frontend.CalciteCompiler;
-import org.dbsp.sqlCompiler.ir.pattern.DBSPTupleStructPattern;
-import org.dbsp.sqlCompiler.ir.pattern.DBSPWildcardPattern;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
@@ -185,26 +184,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         if (fromType.sameType(to)) {
             return from;
         }
-        if (fromType.mayBeNull) {
-            if (to.mayBeNull) {
-                DBSPMatchExpression.Case none = new DBSPMatchExpression.Case(
-                        DBSPWildcardPattern.instance, DBSPLiteral.none(to));
-                DBSPVariableReference x = new DBSPVariableReference("x", fromType.setMayBeNull(false));
-                DBSPMatchExpression.Case some = new DBSPMatchExpression.Case(
-                        DBSPTupleStructPattern.somePattern(x.asPattern()),
-                        new DBSPSomeExpression(to.castFrom(x)));
-                return new DBSPMatchExpression(from, Linq.list(some, none), to);
-            } else {
-                return makeCast(new DBSPApplyMethodExpression(
-                        "unwrap", fromType.setMayBeNull(false), from), to);
-            }
-        } else {
-            if (to.mayBeNull) {
-                return new DBSPSomeExpression(makeCast(from, to.setMayBeNull(false)));
-            } else {
-                return to.castFrom(from);
-            }
-        }
+        return to.castFrom(from);
     }
 
     public static DBSPExpression makeUnaryExpression(
@@ -389,7 +369,10 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 return result;
             }
             case ST_POINT: {
-                DBSPExpression tuple = new DBSPRawTupleExpression(ops.get(0), ops.get(1));
+                DBSPExpression tuple = new DBSPGeoPointLiteral(
+                        call,
+                        makeCast(ops.get(0), DBSPTypeDouble.instance),
+                        makeCast(ops.get(1), DBSPTypeDouble.instance));
                 return makeCast(tuple, type);
             }
             case OTHER_FUNCTION: {

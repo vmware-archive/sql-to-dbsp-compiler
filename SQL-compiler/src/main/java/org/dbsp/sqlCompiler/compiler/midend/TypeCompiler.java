@@ -27,6 +27,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.dbsp.sqlCompiler.ir.type.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.Unimplemented;
 
 import java.util.ArrayList;
@@ -107,7 +108,7 @@ public class TypeCompiler {
                 case INTERVAL_SECOND:
                     throw new Unimplemented(tn);
                 case GEOMETRY:
-                    return new DBSPTypeRawTuple(DBSPTypeDouble.instance, DBSPTypeDouble.instance).setMayBeNull(nullable);
+                    return DBSPTypeGeoPoint.instance.setMayBeNull(nullable);
                 case TIMESTAMP:
                     return DBSPTypeTimestamp.instance.setMayBeNull(nullable);
                 case DATE:

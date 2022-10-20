@@ -21,51 +21,54 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPApplyMethodExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPBinaryExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
-import org.dbsp.util.Unimplemented;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDoubleLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeBool extends DBSPType implements IDBSPBaseType {
-    public DBSPTypeBool(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
+public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType {
+    protected DBSPTypeDouble(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (this.mayBeNull == mayBeNull)
             return this;
-        return new DBSPTypeBool(this.getNode(), mayBeNull);
+        return new DBSPTypeDouble(this.getNode(), mayBeNull);
     }
 
     @Override
     public String shortName() {
-        return "b";
+        return "d";
     }
 
+    public static final DBSPTypeDouble instance = new DBSPTypeDouble(null,false);
+
+    @Override
     public boolean sameType(@Nullable DBSPType type) {
         if (!super.sameType(type))
             return false;
         assert type != null;
-        return type.is(DBSPTypeBool.class);
+        return type.is(DBSPTypeDouble.class);
     }
 
-    public static final DBSPTypeBool instance = new DBSPTypeBool(null, false);
+    @Override
+    public int getWidth() {
+        return 64;
+    }
 
     @Override
-    public DBSPExpression castFrom(DBSPExpression source) {
-        DBSPType argtype = source.getNonVoidType();
-        if (argtype.is(DBSPTypeFP.class)) {
-            return new DBSPBinaryExpression(this, "!=",
-                    new DBSPApplyMethodExpression("into_inner", this.setMayBeNull(false), source),
-                    new DBSPIntegerLiteral(0));
-        } else {
-            throw new Unimplemented("Cast from " + source.getNonVoidType());
-        }
+    public DBSPLiteral getZero() {
+        return new DBSPDoubleLiteral(0D, this.mayBeNull);
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        return new DBSPDoubleLiteral(1D, this.mayBeNull);
     }
 
     @Override

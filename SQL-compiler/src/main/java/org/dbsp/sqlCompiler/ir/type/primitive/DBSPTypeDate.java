@@ -21,59 +21,32 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPUSizeLiteral;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-/**
- * Represents the usize Rust type.
- */
-public class DBSPTypeUSize extends DBSPType
-        implements IsNumericType, IDBSPBaseType {
-    public static final DBSPTypeUSize instance = new DBSPTypeUSize(null, false);
+public class DBSPTypeDate extends DBSPTypeBaseType {
+    public static final DBSPTypeDate instance = new DBSPTypeDate(null, false);
 
-    @SuppressWarnings("SameParameterValue")
-    protected DBSPTypeUSize(@Nullable Object node, boolean mayBeNull) {
+    protected DBSPTypeDate(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);
     }
 
     @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        if (mayBeNull)
-            throw new UnsupportedOperationException();
-        return this;
-    }
-
-    @Override
     public String shortName() {
-        return "u";
+        return "date";
     }
 
     @Override
-    public boolean sameType(@Nullable DBSPType type) {
-        if (!super.sameType(type))
-            return false;
-        assert type != null;
-        return type.is(DBSPTypeUSize.class);
-    }
+    public void accept(InnerVisitor visitor) {}
 
     @Override
-    public DBSPLiteral getZero() {
-        return new DBSPUSizeLiteral(0);
-    }
-
-    @Override
-    public DBSPLiteral getOne() {
-        return new DBSPUSizeLiteral(1);
-    }
-
-    @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        visitor.postorder(this);
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        if (this.mayBeNull == mayBeNull)
+            return this;
+        return new DBSPTypeDate(this.getNode(), mayBeNull);
     }
 }

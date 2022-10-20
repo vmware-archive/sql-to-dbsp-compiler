@@ -37,6 +37,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.IndentStream;
 import org.dbsp.util.Utilities;
 
@@ -60,6 +61,16 @@ public class ToRustInnerVisitor extends InnerVisitor {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean preorder(DBSPGeoPointLiteral literal) {
+        this.builder.append("GeoPoint::new(");
+        literal.left.accept(this);
+        this.builder.append(", ");
+        literal.right.accept(this);
+        this.builder.append(")");
+        return false;
     }
 
     @Override
@@ -706,6 +717,16 @@ public class ToRustInnerVisitor extends InnerVisitor {
     public boolean preorder(DBSPTypeNull type) {
         type.wrapOption(this.builder, "()");
         return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPTypeGeo type) {
+        if (type.mayBeNull)
+            this.builder.append("Option<");
+        this.builder.append("GeoPoint");
+        if (type.mayBeNull)
+            this.builder.append(">");
+        return true;
     }
 
     @Override

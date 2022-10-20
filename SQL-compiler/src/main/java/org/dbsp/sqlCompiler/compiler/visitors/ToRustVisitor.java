@@ -70,6 +70,8 @@ public class ToRustVisitor extends CircuitVisitor {
                     "};\n" +
                     "use tuple::declare_tuples;\n" +
                     "use sqllib::*;\n" +
+                    "use sqllib::casts::*;\n" +
+                    "use sqllib::geopoint::*;\n" +
                     "use sqlvalue::*;\n" +
                     "use hashing::*;\n" +
                     "use readers::*;\n" +

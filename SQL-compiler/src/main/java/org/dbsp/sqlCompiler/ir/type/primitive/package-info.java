@@ -21,33 +21,16 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
-
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-
-import javax.annotation.Nullable;
-
 /**
- * This type has a single value, NULL.
+ * Package that doesn't allow null values as method parameters.
  */
-public class DBSPTypeNull extends DBSPType {
-    public static final DBSPType instance = new DBSPTypeNull(null, true);
 
-    @SuppressWarnings("SameParameterValue")
-    protected DBSPTypeNull(@Nullable Object node, boolean mayBeNull) {
-        super(node, mayBeNull);
-    }
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        if (mayBeNull == this.mayBeNull)
-            return this;
-        return new DBSPTypeNull(null, mayBeNull);
-    }
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
 
-    @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        visitor.postorder(this);
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

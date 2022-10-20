@@ -37,6 +37,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
+import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.sqllogictest.*;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Logger;

@@ -21,26 +21,36 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeTimestamp extends DBSPType {
-    public static final DBSPTypeTimestamp instance = new DBSPTypeTimestamp(null, false);
-
-    protected DBSPTypeTimestamp(@Nullable Object node, boolean mayBeNull) {
+public abstract class DBSPTypeBaseType extends DBSPType {
+    protected DBSPTypeBaseType(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);
     }
 
-    @Override
-    public void accept(InnerVisitor visitor) {}
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        if (this.mayBeNull == mayBeNull)
-            return this;
-        return new DBSPTypeTimestamp(this.getNode(), mayBeNull);
-    }
+    /**
+     * Used when generating names for library functions that depend on argument types.
+     * Here is a map of the short type names
+     *
+     * Bool -> b
+     * Date -> date
+     * Decimal -> decimal
+     * Double -> d
+     * Float -> f
+     * GeoPoint -> geopoint
+     * Null -> null
+     * String -> s
+     * Timestamp -> TS
+     * isize -> i
+     * signed16 -> i16
+     * signed32 -> i32
+     * signed64 -> i64
+     * str -> str
+     * usize -> u
+     */
+    public abstract String shortName();
 }

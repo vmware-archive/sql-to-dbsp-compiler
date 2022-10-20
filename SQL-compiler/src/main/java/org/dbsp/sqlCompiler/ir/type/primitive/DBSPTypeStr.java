@@ -21,13 +21,14 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeStr extends DBSPType implements IDBSPBaseType {
+public class DBSPTypeStr extends DBSPTypeBaseType {
     public static final DBSPTypeStr instance = new DBSPTypeStr(null,false);
 
     protected DBSPTypeStr(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }

@@ -1,12 +1,11 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPSomeExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeDouble;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeInteger;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.junit.Test;
 
 /**
@@ -105,7 +104,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT ST_POINT(0, 0)";
         this.testQuery(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(
-                        new DBSPSomeExpression(new DBSPRawTupleExpression(
+                        new DBSPSomeExpression(new DBSPGeoPointLiteral(null,
                                 new DBSPDoubleLiteral(0), new DBSPDoubleLiteral(0))))));
     }
 
