@@ -45,9 +45,10 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
 
     /**
      * @param execute If true the tests are executed, otherwise they are only compiled to Rust.
+     * @param incremental If true generate incremental streaming circuits.
      */
-    public DBSP_JDBC_Executor(JDBCExecutor executor, boolean execute) {
-        super(execute);
+    public DBSP_JDBC_Executor(JDBCExecutor executor, boolean execute, boolean incremental) {
+        super(execute, incremental);
         this.statementExecutor = executor;
     }
 

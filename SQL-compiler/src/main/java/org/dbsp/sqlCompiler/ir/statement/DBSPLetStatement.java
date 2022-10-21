@@ -27,9 +27,14 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPVariableReference;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+
+import javax.annotation.Nullable;
 
 public class DBSPLetStatement extends DBSPStatement implements IDBSPInnerDeclaration {
     public final String variable;
+    public final DBSPType type;
+    @Nullable
     public final DBSPExpression initializer;
     public final boolean mutable;
 
@@ -37,6 +42,15 @@ public class DBSPLetStatement extends DBSPStatement implements IDBSPInnerDeclara
         super(null);
         this.variable = variable;
         this.initializer = initializer;
+        this.type = initializer.getNonVoidType();
+        this.mutable = mutable;
+    }
+
+    public DBSPLetStatement(String variable, DBSPType type, boolean mutable) {
+        super(null);
+        this.variable = variable;
+        this.initializer = null;
+        this.type = type;
         this.mutable = mutable;
     }
 
@@ -50,13 +64,15 @@ public class DBSPLetStatement extends DBSPStatement implements IDBSPInnerDeclara
     }
 
     public DBSPVariableReference getVarReference() {
-        return new DBSPVariableReference(this.variable, initializer.getNonVoidType());
+        return new DBSPVariableReference(this.variable, this.type);
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        this.initializer.accept(visitor);
+        this.type.accept(visitor);
+        if (this.initializer != null)
+            this.initializer.accept(visitor);
         visitor.postorder(this);
     }
 }

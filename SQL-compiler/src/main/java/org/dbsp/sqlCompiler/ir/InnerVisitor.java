@@ -363,6 +363,11 @@ public abstract class InnerVisitor {
         else return true;
     }
 
+    public boolean preorder(DBSPForExpression node) {
+        if (this.visitSuper) return this.preorder((DBSPExpression) node);
+        else return true;
+    }
+
     public boolean preorder(DBSPUnaryExpression node) {
         if (this.visitSuper) return this.preorder((DBSPExpression) node);
         else return true;
@@ -720,6 +725,10 @@ public abstract class InnerVisitor {
     }
 
     public void postorder(DBSPPathExpression node) {
+        if (this.visitSuper) this.postorder((DBSPExpression) node);
+    }
+
+    public void postorder(DBSPForExpression node) {
         if (this.visitSuper) this.postorder((DBSPExpression) node);
     }
 

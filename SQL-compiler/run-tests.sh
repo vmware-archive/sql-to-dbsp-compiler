@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-pushd temp; cargo update; popd
+pushd ../temp; cargo update; popd
 
 if [ ! -d ../../sqllogictest ]; then
     echo "I expected that the SQL logic tests are installed in ../../"

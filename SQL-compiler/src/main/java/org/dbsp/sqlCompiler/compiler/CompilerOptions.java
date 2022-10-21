@@ -21,18 +21,32 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.compiler;
 
-import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import javax.annotation.Nullable;
 
-public class EmptyInnerVisitor extends InnerVisitor {
-    public EmptyInnerVisitor() {
-        super(true);
-    }
+/**
+ * Packages options for a compiler from SQL to Rust.
+ */
+public class CompilerOptions {
+    /**
+     * Rust file where the output circuit is emitted.
+     */
+    @Nullable
+    public String outputFile;
+    /**
+     * SQL input script which contains table declarations and view definitions.
+     */
+    @Nullable
+    public String inputFile;
+    /**
+     * If true the compiler should generate an incremental streaming circuit.
+     */
+    public boolean incrementalize;
 
-    @Override
-    public boolean preorder(IDBSPInnerNode node) {
-        return false;
-    }
+    public CompilerOptions() {
+        this.outputFile = null;
+        this.inputFile = null;
+        this.incrementalize = false;
+    };
 }

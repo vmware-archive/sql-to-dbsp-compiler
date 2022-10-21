@@ -24,7 +24,9 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.Solutions;
+import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.midend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
@@ -32,6 +34,8 @@ import org.dbsp.sqlCompiler.compiler.midend.TableContents;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.path.DBSPPath;
+import org.dbsp.sqlCompiler.ir.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
@@ -48,6 +52,7 @@ import java.io.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Sql test executor that uses DBSP as a SQL runtime.
@@ -74,6 +79,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     private final boolean execute;
     private int batchSize;  // Number of queries to execute together
     private int skip;       // Number of queries to skip in each test file.
+    public final boolean incrementalMode;  // If true test an incremental streaming version of the circuit.
     final SqlTestPrepareInput inputPreparation;
     final SqlTestPrepareTables tablePreparation;
     final SqlTestPrepareViews viewPreparation;
@@ -88,9 +94,11 @@ public class DBSPExecutor extends SqlTestExecutor {
      * Create an executor that executes SqlLogicTest queries directly compiling to
      * Rust and using the DBSP library.
      * @param execute  If true the tests are executed, otherwise they are only compiled to Rust.
+     * @param incremental  If true the executor generates and tests incremental circuit.
      */
-    public DBSPExecutor(boolean execute) {
+    public DBSPExecutor(boolean execute, boolean incremental) {
         this.execute = execute;
+        this.incrementalMode = incremental;
         this.inputPreparation = new SqlTestPrepareInput();
         this.tablePreparation = new SqlTestPrepareTables();
         this.viewPreparation = new SqlTestPrepareViews();
@@ -134,6 +142,56 @@ public class DBSPExecutor extends SqlTestExecutor {
                 result.getType(), result);
     }
 
+    /**
+     * Example generated code for the function body:
+     *     let mut vec = Vec::new();
+     *     vec.push((data.0, zset!(), zset!(), zset!()));
+     *     vec.push((zset!(), data.1, zset!(), zset!()));
+     *     vec.push((zset!(), zset!(), data.2, zset!()));
+     *     vec.push((zset!(), zset!(), zset!(), data.3));
+     *     vec
+     */
+    DBSPFunction createStreamInputFunction(
+            DBSPFunction inputGeneratingFunction) {
+        DBSPTypeRawTuple inputType = Objects.requireNonNull(inputGeneratingFunction.returnType).to(DBSPTypeRawTuple.class);
+        DBSPType returnType = new DBSPTypeVec(inputType);
+        DBSPVariableReference vec = new DBSPVariableReference("vec", returnType);
+        DBSPLetStatement input = new DBSPLetStatement("data", inputGeneratingFunction.call());
+        List<DBSPStatement> statements = new ArrayList<>();
+        statements.add(input);
+        DBSPLetStatement let = new DBSPLetStatement(vec.variable,
+                new DBSPApplyExpression(new DBSPPathExpression(
+                        DBSPTypeAny.instance,
+                        new DBSPPath("Vec", "new"))),
+                true);
+        statements.add(let);
+        if (this.incrementalMode) {
+            for (int i = 0; i < inputType.tupFields.length; i++) {
+                DBSPExpression[] fields = new DBSPExpression[inputType.tupFields.length];
+                for (int j = 0; j < inputType.tupFields.length; j++) {
+                    DBSPType fieldType = inputType.tupFields[j];
+                    if (i == j) {
+                        fields[j] = new DBSPFieldExpression(input.getVarReference(), i);
+                    } else {
+                        fields[j] = new DBSPApplyExpression("zset!", fieldType);
+                    }
+                }
+                DBSPExpression projected = new DBSPRawTupleExpression(fields);
+                DBSPExpression expr = new DBSPApplyMethodExpression(
+                        "push", null, vec, projected);
+                DBSPStatement statement = new DBSPExpressionStatement(expr);
+                statements.add(statement);
+            }
+        } else {
+            DBSPExpression expr = new DBSPApplyMethodExpression(
+                    "push", null, vec, input.getVarReference());
+            DBSPStatement statement = new DBSPExpressionStatement(expr);
+            statements.add(statement);
+        }
+        DBSPBlockExpression block = new DBSPBlockExpression(statements, vec);
+        return new DBSPFunction("stream_input", Linq.list(), returnType, block);
+    }
+
     void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException, SQLException {
         DBSPCompiler compiler = new DBSPCompiler();
         final List<ProgramAndTester> codeGenerated = new ArrayList<>();
@@ -143,13 +201,14 @@ public class DBSPExecutor extends SqlTestExecutor {
         // We know that all these tests consume the same input tables.
         DBSPZSetLiteral[] inputSets = this.getInputSets(compiler);
         DBSPFunction inputFunction = this.createInputFunction(inputSets);
+        DBSPFunction streamInputFunction = this.createStreamInputFunction(inputFunction);
 
         // Generate a function and a tester for each query.
         int queryNo = 0;
         for (SqlTestQuery testQuery : this.queriesToRun) {
             try {
                 ProgramAndTester pc = this.generateTestCase(
-                        compiler, inputFunction, this.viewPreparation, testQuery, queryNo);
+                        compiler, streamInputFunction, this.viewPreparation, testQuery, queryNo);
                 codeGenerated.add(pc);
                 this.queriesExecuted++;
             } catch (Throwable ex) {
@@ -160,7 +219,8 @@ public class DBSPExecutor extends SqlTestExecutor {
         }
 
         // Write the code to Rust files on the filesystem.
-        List<String> filesGenerated = this.writeCodeToFiles(inputFunction, codeGenerated);
+        List<String> filesGenerated = this.writeCodeToFiles(
+                Linq.list(inputFunction, streamInputFunction), codeGenerated);
         Utilities.writeRustMain(rustDirectory + "/main.rs", filesGenerated);
         this.startTest();
         if (this.execute) {
@@ -173,7 +233,8 @@ public class DBSPExecutor extends SqlTestExecutor {
     }
 
     ProgramAndTester generateTestCase(
-            DBSPCompiler compiler, DBSPFunction inputGeneratingFunction,
+            DBSPCompiler compiler,
+            DBSPFunction inputGeneratingFunction,
             SqlTestPrepareViews viewPreparation,
             SqlTestQuery testQuery, int suffix)
             throws SqlParseException {
@@ -195,6 +256,10 @@ public class DBSPExecutor extends SqlTestExecutor {
         compiler.generateOutputForNextView(true);
         compiler.compileStatement(dbspQuery, testQuery.name);
         DBSPCircuit dbsp = compiler.getResult();
+        CompilerOptions options = new CompilerOptions();
+        options.incrementalize = this.incrementalMode;
+        CircuitOptimizer optimizer = new CircuitOptimizer(options);
+        dbsp = optimizer.optimize(dbsp);
         DBSPZSetLiteral expectedOutput = null;
         if (testQuery.outputDescription.queryResults != null) {
             IDBSPContainer container;
@@ -351,25 +416,40 @@ public class DBSPExecutor extends SqlTestExecutor {
         list.add(circ);
         DBSPType circuitOutputType = circuit.getOutputType(0);
         // the following may not be the same, since SqlLogicTest sometimes lies about the output type
-        DBSPType outputType = output != null ? new DBSPTypeRawTuple(output.getNonVoidType()) : circuitOutputType;
+        DBSPTypeRawTuple outputType = new DBSPTypeRawTuple(output != null ? output.getNonVoidType() : circuitOutputType);
         DBSPExpression[] arguments = new DBSPExpression[circuit.getInputTables().size()];
         // True if the output is a zset of vectors (generated for orderby queries)
         boolean isVector = circuitOutputType.to(DBSPTypeZSet.class).elementType.is(DBSPTypeVec.class);
 
-        list.add(new DBSPLetStatement("_in",
-                new DBSPApplyExpression(inputGeneratingFunction.getReference())));
+        DBSPLetStatement inputStream = new DBSPLetStatement("_in_stream",
+                inputGeneratingFunction.call());
+        list.add(inputStream);
         for (int i = 0; i < arguments.length; i++) {
             String inputI = circuit.getInputTables().get(i);
             int index = contents.getTableIndex(inputI);
             arguments[i] = new DBSPFieldExpression(null,
                     new DBSPVariableReference("_in", DBSPTypeAny.instance), index);
         }
-        list.add(new DBSPLetStatement("output",
-                new DBSPApplyExpression("circ", outputType, arguments)));
-
+        DBSPLetStatement createOutput = new DBSPLetStatement(
+                "output",
+                new DBSPRawTupleExpression(
+                        new DBSPApplyExpression("zset!", outputType.getFieldType(0))), true);
+        list.add(createOutput);
+        DBSPForExpression loop = new DBSPForExpression(
+                new DBSPIdentifierPattern("_in"),
+                inputStream.getVarReference(),
+                new DBSPBlockExpression(
+                        Linq.list(),
+                                new DBSPAssignmentExpression(createOutput.getVarReference(),
+                                        new DBSPApplyExpression("add_zset_tuple", outputType,
+                                                createOutput.getVarReference(),
+                                                new DBSPApplyExpression("circ", outputType, arguments)))
+                )
+        );
+        list.add(new DBSPExpressionStatement(loop));
         DBSPExpression sort = new DBSPEnumValue("SortOrder", description.order.toString());
         DBSPExpression output0 = new DBSPFieldExpression(null,
-                new DBSPVariableReference("output", DBSPTypeAny.instance), 0);
+                createOutput.getVarReference(), 0);
 
         if (description.getExpectedOutputSize() >= 0) {
             DBSPExpression count;
@@ -465,7 +545,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     }
 
     public List<String> writeCodeToFiles(
-            DBSPFunction inputFunction,
+            List<DBSPFunction> inputFunctions,
             List<ProgramAndTester> functions
     ) throws FileNotFoundException, UnsupportedEncodingException {
         String genFileName = testFileName + ".rs";
@@ -473,7 +553,8 @@ public class DBSPExecutor extends SqlTestExecutor {
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
         writer.println(ToRustVisitor.generatePreamble());
 
-        writer.println(ToRustVisitor.toRustString(inputFunction));
+        for (DBSPFunction function: inputFunctions)
+            writer.println(ToRustVisitor.toRustString(function));
         for (ProgramAndTester pt: functions) {
             writer.println(pt.program);
             writer.println(ToRustVisitor.toRustString(pt.tester));

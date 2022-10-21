@@ -249,9 +249,15 @@ public class ToRustInnerVisitor extends InnerVisitor {
     public boolean preorder(DBSPLetStatement statement) {
         this.builder.append("let ")
                 .append(statement.mutable ? "mut " : "")
-                .append(statement.variable)
-                .append(" = ");
-        statement.initializer.accept(this);
+                .append(statement.variable);
+        if (!statement.type.is(DBSPTypeAny.class)) {
+            this.builder.append(": ");
+            statement.type.accept(this);
+        }
+        if (statement.initializer != null) {
+            this.builder.append(" = ");
+            statement.initializer.accept(this);
+        }
         this.builder.append(";");
         return false;
     }
@@ -487,6 +493,17 @@ public class ToRustInnerVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPPathExpression expression) {
         expression.path.accept(this);
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPForExpression node) {
+        this.builder.append("for ");
+        node.pattern.accept(this);
+        this.builder.append(" in ");
+        node.iterated.accept(this);
+        this.builder.append(" ");
+        node.block.accept(this);
         return false;
     }
 
