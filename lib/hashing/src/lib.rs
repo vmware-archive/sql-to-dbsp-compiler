@@ -8,6 +8,7 @@ use dbsp::{
         ZRingValue,
         ZSet,
         MulByRef,
+        AddByRef,
     },
     DBData,
     DBWeight,
@@ -73,6 +74,18 @@ where
         cursor.step_key();
     }
     result
+}
+
+/// Adds tuples of zsets.  Used to handle the outputs
+/// of circuits that compute each a single view.
+pub fn add_zset_tuple<K, W>(
+    left: (OrdZSet<K, W>, ),
+    right: (OrdZSet<K, W>, )) -> (OrdZSet<K, W>, )
+where
+    K: DBData,
+    W: DBWeight,
+{
+    (left.0.add_by_ref(&right.0), )
 }
 
 struct DataRows<'a> {

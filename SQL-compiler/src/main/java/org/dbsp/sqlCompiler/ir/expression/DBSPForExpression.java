@@ -21,31 +21,37 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.ir.expression;
 
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.util.Linq;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.pattern.DBSPPattern;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeRawTuple;
 
-import java.util.List;
+public class DBSPForExpression extends DBSPExpression {
+    public final DBSPPattern pattern;
+    public final DBSPExpression iterated;
+    public final DBSPBlockExpression block;
 
-public class PassesVisitor extends CircuitVisitor {
-    public final List<CircuitVisitor> passes;
-
-    public PassesVisitor(CircuitVisitor... passes) {
-        super(false);
-        this.passes = Linq.list(passes);
-    }
-
-    public PassesVisitor(List<CircuitVisitor> passes) {
-        super(false);
-        this.passes = passes;
+    public DBSPForExpression(DBSPPattern pattern, DBSPExpression iterated, DBSPBlockExpression block) {
+        // TODO: is the type always ()?
+        super(null, DBSPTypeRawTuple.emptyTupleType);
+        this.pattern = pattern;
+        this.iterated = iterated;
+        this.block = block;
     }
 
     @Override
-    public DBSPCircuit apply(DBSPCircuit circuit) {
-        for (CircuitVisitor pass: this.passes)
-            circuit = pass.apply(circuit);
-        return circuit;
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this))
+            return;
+        this.pattern.accept(visitor);
+        this.iterated.accept(visitor);
+        this.block.accept(visitor);
+        visitor.postorder(this);
+    }
+
+    @Override
+    public boolean shallowSameExpression(DBSPExpression other) {
+        return false;
     }
 }

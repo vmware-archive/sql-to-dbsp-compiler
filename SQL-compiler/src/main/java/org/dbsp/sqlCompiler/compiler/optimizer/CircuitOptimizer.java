@@ -21,31 +21,40 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.compiler.optimizer;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.compiler.CompilerOptions;
+import org.dbsp.sqlCompiler.compiler.visitors.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.util.Linq;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class PassesVisitor extends CircuitVisitor {
-    public final List<CircuitVisitor> passes;
+public class CircuitOptimizer {
+    public final CompilerOptions options;
+    public final CircuitVisitor optimizer;
 
-    public PassesVisitor(CircuitVisitor... passes) {
-        super(false);
-        this.passes = Linq.list(passes);
+    public CircuitOptimizer(CompilerOptions options) {
+        this.options = options;
+        this.optimizer = this.getOptimizer();
     }
 
-    public PassesVisitor(List<CircuitVisitor> passes) {
-        super(false);
-        this.passes = passes;
+    CircuitVisitor getOptimizer() {
+        List<CircuitVisitor> passes = new ArrayList<>();
+        passes.add(new OptimizeDistinctVisitor());
+        if (this.options.incrementalize) {
+            passes.add(new IncrementalizeVisitor());
+            passes.add(new OptimizeIncrementalVisitor());
+        }
+        DeadCodeVisitor dead = new DeadCodeVisitor();
+        passes.add(dead);
+        passes.add(new RemoveOperatorsVisitor(dead.keep));
+        passes.add(new NoIntegralVisitor());
+        return new PassesVisitor(passes);
     }
 
-    @Override
-    public DBSPCircuit apply(DBSPCircuit circuit) {
-        for (CircuitVisitor pass: this.passes)
-            circuit = pass.apply(circuit);
-        return circuit;
+    public DBSPCircuit optimize(DBSPCircuit input) {
+        return this.optimizer.apply(input);
     }
 }

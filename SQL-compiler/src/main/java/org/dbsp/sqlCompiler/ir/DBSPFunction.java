@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.ir;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
+import org.dbsp.sqlCompiler.ir.expression.DBSPApplyExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPVariableReference;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
@@ -59,6 +60,10 @@ public class DBSPFunction extends DBSPNode implements IHasType, IDBSPInnerDeclar
         public void accept(InnerVisitor visitor) {
             if (!visitor.preorder(this)) return;
             visitor.postorder(this);
+        }
+
+        public DBSPExpression argReference() {
+            return new DBSPVariableReference(this.name, this.type);
         }
     }
 
@@ -113,5 +118,9 @@ public class DBSPFunction extends DBSPNode implements IHasType, IDBSPInnerDeclar
 
     public DBSPExpression getReference() {
         return new DBSPVariableReference(this.name, this.type);
+    }
+
+    public DBSPExpression call(DBSPExpression... arguments) {
+        return new DBSPApplyExpression(this.getReference(), arguments);
     }
 }

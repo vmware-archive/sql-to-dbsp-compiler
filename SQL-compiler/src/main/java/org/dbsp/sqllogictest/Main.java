@@ -120,6 +120,7 @@ public class Main {
     }
 
     public static SqlTestExecutor getExecutor(String[] argv) {
+        boolean incremental = true;
         // Calcite cannot parse this query
         final HashSet<String> calciteBugs = new HashSet<>();
         calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");
@@ -130,14 +131,14 @@ public class Main {
         calciteBugs.add("SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0");
         calciteBugs.add("SELECT DISTINCT - + COUNT ( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0");
 
-        DBSPExecutor dExec = new DBSPExecutor(true);
+        DBSPExecutor dExec = new DBSPExecutor(true, incremental);
         dExec.avoid(calciteBugs);
         SqlTestExecutor executor;
         executor = new NoExecutor();
         executor = dExec;
         JDBCExecutor jdbc = new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
         //executor = jdbc;
-        DBSP_JDBC_Executor hybrid = new DBSP_JDBC_Executor(jdbc, true);
+        DBSP_JDBC_Executor hybrid = new DBSP_JDBC_Executor(jdbc, true, incremental);
         executor = hybrid;
         return executor;
     }
@@ -150,7 +151,6 @@ public class Main {
         int batchSize = 500;
         int skipPerFile = 0;
         String[] files = new String[] {
-                /*
                 "random/select",  //done
                 "random/expr",    // done
                 "random/groupby", // done
@@ -164,11 +164,12 @@ public class Main {
                 "index/between", // done
                 "index/view",    // done
                 "index/in",      // done
+                /*
                  */
+                "index/random",
                 "index/delete",
                 "index/commute",
                 "index/orderby_nosort",
-                "index/random",
                 "evidence"
         };
         if (argv.length > 1)
