@@ -184,30 +184,33 @@ The DBSP executor has skipped the MySql tests.
 
 The JDBC_DBSP executor has been run against MySQL.
 
+The 'inc' column shows tests for incremental circuits, the other
+columns show tests for non-incremental (standard) implementations.
+
 The matrix represents the current test results; the numbers indicate
 the passing/failing tests in each category.  The failing test cases
 are detailed below.
 
-| Test group           | DBSP        | JDBC_DBSP |
-|----------------------|------------:|-----------|
-| random/select        | 1,120,329/0 |           |
-| random/groupby       |   118,757/0 ||
-| random/expr          | 1,317,682/1 ||
-| random/aggregates    | 1,172,825/2 ||
-| select1              |     1,000/0 ||
-| select2              |     1,000/0 ||
-| select3              |     3,320/0 ||
-| select4              |     2,832/0 ||
-| select5              |       732/0 ||
-| index/delete         |         N/A |  40,525/0 |
-| index/in             |         N/A | 130,065/0 |
-| index/commute        |         N/A ||
-| index/between        |         N/A | 121,811/0 |
-| index/orderby_nosort |         N/A ||
-| index/view           |         N/A |  53,490/0 |
-| index/random         |         N/A ||
-| index/orderby        |         N/A | 310,630/0 |
-| evidence             |             ||
+| Test group           | DBSP        | JDBC_DBSP | JDBC_DBSP inc |
+|----------------------|------------:|----------:|--------------:|
+| random/select        | 1,120,329/0 |           |               |
+| random/groupby       |   118,757/0 |           |               |
+| random/expr          | 1,317,682/1 |           |               |
+| random/aggregates    | 1,172,825/2 |           |               |
+| select1              |     1,000/0 |           |               |
+| select2              |     1,000/0 |           |               |
+| select3              |     3,320/0 |           |               |
+| select4              |     2,832/0 |           |               |
+| select5              |       732/0 |           |               |
+| index/delete         |         N/A |  40,525/0 |               |
+| index/in             |         N/A | 130,065/0 |               |
+| index/commute        |         N/A |           |               |
+| index/between        |         N/A | 121,811/0 |               |
+| index/orderby_nosort |         N/A |           |               |
+| index/view           |         N/A |  53,490/0 |               |
+| index/random         |         N/A |           |               |
+| index/orderby        |         N/A | 310,630/0 |               |
+| evidence             |             |           |               |
 
 The "index" tests cannot be executed with the `DBSPExecutor` since it
 does not support the "unique index" SQL statement.

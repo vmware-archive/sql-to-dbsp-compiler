@@ -788,22 +788,22 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
 
         DBSPType inputRowType = this.convertType(input.getRowType());
         DBSPTypeTuple resultType = this.convertType(intersect.getRowType()).to(DBSPTypeTuple.class);
-        DBSPVariableReference t = new DBSPVariableReference("t", inputRowType);
+        DBSPVariableReference t = new DBSPVariableReference("t", new DBSPTypeRef(inputRowType));
         DBSPExpression entireKey = new DBSPClosureExpression(
                 new DBSPRawTupleExpression(
                         t.applyClone(),
                         new DBSPRawTupleExpression()),
-                t.asRefParameter());
+                t.asParameter());
         DBSPVariableReference l = new DBSPVariableReference(
                 "l", new DBSPTypeRef(DBSPTypeRawTuple.emptyTupleType));
         DBSPVariableReference r = new DBSPVariableReference(
                 "r", new DBSPTypeRef(DBSPTypeRawTuple.emptyTupleType));
         DBSPVariableReference k = new DBSPVariableReference(
-                "k", inputRowType);
+                "k", new DBSPTypeRef(inputRowType));
 
         DBSPClosureExpression closure = new DBSPClosureExpression(
                 k.applyClone(),
-                k.asRefParameter(), l.asParameter(), r.asParameter());
+                k.asParameter(), l.asParameter(), r.asParameter());
         for (int i = 1; i < inputs.size(); i++) {
             DBSPOperator previousIndex = new DBSPIndexOperator(
                     intersect,
@@ -906,7 +906,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                             new DBSPLetStatement(v1.variable,
                                     v.applyClone(),true),
                             new DBSPExpressionStatement(
-                                    new DBSPApplyMethodExpression("sort_by", vecType, v1,
+                                    new DBSPApplyMethodExpression("sort_unstable_by", vecType, v1,
                                             new DBSPClosureExpression(
                                                     new DBSPApplyMethodExpression("compare", DBSPTypeAny.instance, comp.getVarReference(), a, b),
                                                     a.asRefParameter(), b.asRefParameter())))),
