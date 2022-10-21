@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.ir.expression;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeRef;
 import org.dbsp.sqlCompiler.ir.type.IHasType;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
@@ -46,7 +47,7 @@ public abstract class DBSPExpression
      * Generates an expression that calls clone() on this
      */
     public DBSPExpression applyClone() {
-        return new DBSPApplyMethodExpression("clone", this.getNonVoidType(), this);
+        return new DBSPApplyMethodExpression("clone", DBSPTypeRef.deref(this.getNonVoidType()), this);
     }
 
     @Override
