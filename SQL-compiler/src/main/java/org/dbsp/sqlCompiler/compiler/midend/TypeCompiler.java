@@ -74,11 +74,12 @@ public class TypeCompiler {
                     return DBSPTypeString.instance.setMayBeNull(nullable);
                 case NULL:
                     return DBSPTypeNull.instance;
+                case SYMBOL:
+                    return DBSPTypeKeyword.instance;
                 case BINARY:
                 case VARBINARY:
                 case UNKNOWN:
                 case ANY:
-                case SYMBOL:
                 case MULTISET:
                 case ARRAY:
                 case MAP:
@@ -93,6 +94,7 @@ public class TypeCompiler {
                 case TIME:
                 case TIME_WITH_LOCAL_TIME_ZONE:
                 case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                    throw new Unimplemented(tn);
                 case INTERVAL_YEAR:
                 case INTERVAL_YEAR_MONTH:
                 case INTERVAL_MONTH:
@@ -106,7 +108,7 @@ public class TypeCompiler {
                 case INTERVAL_MINUTE:
                 case INTERVAL_MINUTE_SECOND:
                 case INTERVAL_SECOND:
-                    throw new Unimplemented(tn);
+                    return new DBSPTypeInterval(tn, nullable);
                 case GEOMETRY:
                     return DBSPTypeGeoPoint.instance.setMayBeNull(nullable);
                 case TIMESTAMP:

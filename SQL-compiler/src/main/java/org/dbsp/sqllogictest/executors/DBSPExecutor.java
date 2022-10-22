@@ -49,6 +49,7 @@ import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 import java.io.*;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -294,6 +295,8 @@ public class DBSPExecutor extends SqlTestExecutor {
                     field = new DBSPFloatLiteral(Float.parseFloat(s));
                 else if (colType.is(DBSPTypeString.class))
                     field = new DBSPStringLiteral(s);
+                else if (colType.is(DBSPTypeDecimal.class))
+                    field = new DBSPDecimalLiteral(s, colType, new BigDecimal(s));
                 else
                     throw new RuntimeException("Unexpected type " + colType);
                 if (!colType.sameType(field.getNonVoidType()))

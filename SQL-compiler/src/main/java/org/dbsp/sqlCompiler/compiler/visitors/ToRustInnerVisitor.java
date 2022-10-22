@@ -175,9 +175,13 @@ public class ToRustInnerVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPDecimalLiteral literal) {
         assert literal.value != null;
+        if (literal.getNonVoidType().mayBeNull)
+            this.builder.append("Some(");
         this.builder.append("Decimal::from_str(\"")
                 .append(literal.value.toString())
                 .append("\").unwrap()");
+        if (literal.getNonVoidType().mayBeNull)
+            this.builder.append(")");
         return false;
     }
 

@@ -151,6 +151,8 @@ public class Main {
         int batchSize = 500;
         int skipPerFile = 0;
         String[] files = new String[] {
+                /*
+                "index/random/10/slt_good_3.test",
                 "random/select",  //done
                 "random/expr",    // done
                 "random/groupby", // done
@@ -164,12 +166,11 @@ public class Main {
                 "index/between", // done
                 "index/view",    // done
                 "index/in",      // done
-                /*
+                "index/delete",  // done
+                "index/commute", // done
+                "index/orderby_nosort", // done
                  */
                 "index/random",
-                "index/delete",
-                "index/commute",
-                "index/orderby_nosort",
                 "evidence"
         };
         if (argv.length > 1)
