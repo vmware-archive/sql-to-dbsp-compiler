@@ -193,7 +193,7 @@ are detailed below.
 
 | Test group           | DBSP        | JDBC_DBSP | JDBC_DBSP inc |
 |----------------------|------------:|----------:|--------------:|
-| random/select        | 1,120,329/0 |           |               |
+| random/select        | 1,120,329/0 |           | 1,120,329/0   |
 | random/groupby       |   118,757/0 |           |               |
 | random/expr          | 1,317,682/1 |           |               |
 | random/aggregates    | 1,172,825/2 |           |               |
@@ -204,9 +204,9 @@ are detailed below.
 | select5              |       732/0 |           |               |
 | index/delete         |         N/A |  40,525/0 |               |
 | index/in             |         N/A | 130,065/0 |               |
-| index/commute        |         N/A |           |               |
+| index/commute        |         N/A | 507,514/0 |               |
 | index/between        |         N/A | 121,811/0 |               |
-| index/orderby_nosort |         N/A |           |               |
+| index/orderby_nosort |         N/A | 490,986/0 |               |
 | index/view           |         N/A |  53,490/0 |               |
 | index/random         |         N/A |           |               |
 | index/orderby        |         N/A | 310,630/0 |               |

@@ -82,6 +82,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         else if (type.is(DBSPTypeDecimal.class))
             return new DBSPDecimalLiteral(
                     literal, type, Objects.requireNonNull(literal.getValueAs(BigDecimal.class)));
+        else if (type.is(DBSPTypeKeyword.class))
+            return new DBSPKeywordLiteral(literal, Objects.requireNonNull(literal.getValue()).toString());
         throw new Unimplemented(literal);
     }
 
@@ -376,8 +378,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 return makeCast(tuple, type);
             }
             case OTHER_FUNCTION: {
-                String opName = call.op.getName();
-                if (opName.equals("ABS")) {
+                String opName = call.op.getName().toLowerCase();
+                if (opName.equals("abs")) {
                     if (call.operands.size() != 1)
                         throw new Unimplemented(call);
                     DBSPExpression arg = ops.get(0);
@@ -385,7 +387,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                     SqlRuntimeLibrary.FunctionDescription abs =
                             SqlRuntimeLibrary.instance.getFunction("abs", argType, null, false);
                     return abs.getCall(arg);
-                } else if (opName.equals("ST_DISTANCE")) {
+                } else if (opName.equals("st_distance")) {
                     if (call.operands.size() != 2)
                         throw new Unimplemented(call);
                     DBSPExpression left = ops.get(0);
@@ -395,9 +397,16 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                     return dist.getCall(left, right);
                 }
             }
-            // fall through
+            case EXTRACT: {
+                if (call.operands.size() != 2)
+                    throw new Unimplemented(call);
+                DBSPKeywordLiteral keyword = ops.get(0).to(DBSPKeywordLiteral.class);
+                String functionName = "extract_" + keyword;
+                return new DBSPApplyExpression(functionName, type, ops.get(1));
+            }
             case FLOOR:
             case CEIL:
+                // fall through
             default:
                 throw new Unimplemented(call);
         }

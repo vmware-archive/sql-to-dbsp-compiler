@@ -25,7 +25,9 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
+import org.dbsp.util.Logger;
 import org.junit.Assert;
+import org.junit.Test;
 
 public class ComplexQueriesTest extends BaseSQLTests {
     public String fixup(String query) {
@@ -34,11 +36,52 @@ public class ComplexQueriesTest extends BaseSQLTests {
     }
 
     //@Test
+    public void taxiTest() throws SqlParseException {
+        String ddl = "CREATE TABLE green_tripdata\n" +
+                "(\n" +
+                "        lpep_pickup_datetime TIMESTAMP,\n" +
+                "        lpep_dropoff_datetime TIMESTAMP,\n" +
+                "        pickup_location_id BIGINT,\n" +
+                "        dropoff_location_id BIGINT,\n" +
+                "        trip_distance DOUBLE PRECISION,\n" +
+                "        fare_amount DOUBLE PRECISION \n" +
+                ")";
+        String query =
+                "SELECT\n" +
+                        "*,\n" +
+                        "COUNT(*) OVER(\n" +
+                        "                PARTITION BY  pickup_location_id\n" +
+                        "                ORDER BY  extract (EPOCH from  CAST (lpep_pickup_datetime AS TIMESTAMP) ) \n" +
+                        "                -- 1 hour is 3600  seconds\n" +
+                        "                RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip,\n" +
+                        "AVG(fare_amount) OVER(\n" +
+                        "                PARTITION BY  pickup_location_id\n" +
+                        "                ORDER BY  extract (EPOCH from  CAST (lpep_pickup_datetime AS TIMESTAMP) ) \n" +
+                        "                -- 1 hour is 3600  seconds\n" +
+                        "                RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS mean_fare_window_1h_pickup_zip,\n" +
+                        "COUNT(*) OVER(\n" +
+                        "                PARTITION BY  dropoff_location_id\n" +
+                        "                ORDER BY  extract (EPOCH from  CAST (lpep_dropoff_datetime AS TIMESTAMP) ) \n" +
+                        "                -- 0.5 hour is 1800  seconds\n" +
+                        "                RANGE BETWEEN 1800  PRECEDING AND 1 PRECEDING ) AS count_trips_window_30m_dropoff_zip,\n" +
+                        "case when extract (ISODOW from  CAST (lpep_dropoff_datetime AS TIMESTAMP))  > 5 then 1 else 0 end as dropoff_is_weekend\n" +
+                        "FROM green_tripdata";
+        DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
+        compiler.setGenerateInputsFromTables(true);
+        query = "CREATE VIEW V AS (" + query + ")";
+        ddl = this.fixup(ddl);
+        compiler.compileStatement(ddl, null);
+        compiler.compileStatement(query, null);
+        Assert.assertNotNull(compiler.getResult());
+    }
+
+    //@Test
     public void fraudDetectionTest() throws SqlParseException {
+        Logger.instance.setDebugLevel("CalciteCompiler", 2);
         // fraudDetection-352718.cc_data.demo_
         String ddl0 = "CREATE TABLE demographics (\n" +
-                "  cc_num FLOAT64,\n" +
-                "  first STRING,\n" +
+                " cc_num FLOAT64,\n" +
+                " first STRING,\n" +
                 " gender STRING,\n" +
                 " street STRING,\n" +
                 " city STRING,\n" +
@@ -51,9 +94,9 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 " dob DATE\n" +
                 ")";
         String ddl1 = "CREATE TABLE transactions (\n" +
-                "  trans_date_trans_time TIMESTAMP,\n" +
-                "  cc_num FLOAT64,\n" +
-                "  merchant STRING,\n" +
+                " trans_date_trans_time TIMESTAMP,\n" +
+                " cc_num FLOAT64,\n" +
+                " merchant STRING,\n" +
                 " category STRING,\n" +
                 " amt FLOAT64,\n" +
                 " trans_num STRING,\n" +
@@ -67,6 +110,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "    TIMESTAMPDIFF(YEAR, trans_date_trans_time, CAST(dob as TIMESTAMP)) AS age,\n" +
                 "    ST_DISTANCE(ST_POINT(long,lat), ST_POINT(merch_long,merch_lat)) AS distance,\n" +
                 "    TIMESTAMPDIFF(MINUTE, trans_date_trans_time, last_txn_date) AS trans_diff,\n" +
+                /*
                 "    AVG(amt) OVER(\n" +
                 "                PARTITION BY   CAST(cc_num AS NUMERIC)\n" +
                 "                ORDER BY unix_time\n" +
@@ -85,6 +129,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "                -- 1 day is 86400  seconds\n" +
                 "                RANGE BETWEEN 86400  PRECEDING AND 1 PRECEDING ) AS\n" +
                 "trans_freq_24,\n" +
+                 */
                 "  category,\n" +
                 "    amt,\n" +
                 "    state,\n" +
