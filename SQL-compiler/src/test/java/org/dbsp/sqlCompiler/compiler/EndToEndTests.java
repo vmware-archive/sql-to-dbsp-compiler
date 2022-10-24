@@ -299,7 +299,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT 34 / SUM (1) FROM T GROUP BY COL1";
         this.testQuery(query, new DBSPZSetLiteral(
                  new DBSPTupleExpression(
-                        new DBSPIntegerLiteral(17))));
+                        new DBSPIntegerLiteral(17, true))));
     }
 
     @Test
@@ -307,7 +307,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT 34 / AVG (1) FROM T GROUP BY COL1";
         this.testQuery(query, new DBSPZSetLiteral(
                  new DBSPTupleExpression(
-                        new DBSPIntegerLiteral(34))));
+                        new DBSPIntegerLiteral(34, true))));
     }
 
     @Test
@@ -315,7 +315,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT 34 / SUM (1), 20 / SUM(2) FROM T GROUP BY COL1";
         this.testQuery(query, new DBSPZSetLiteral(
                  new DBSPTupleExpression(
-                        new DBSPIntegerLiteral(17), new DBSPIntegerLiteral(5))));
+                        new DBSPIntegerLiteral(17, true), new DBSPIntegerLiteral(5, true))));
     }
 
     @Test
