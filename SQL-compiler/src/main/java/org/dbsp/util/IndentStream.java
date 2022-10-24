@@ -26,7 +26,7 @@
 package org.dbsp.util;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
 
 public class IndentStream implements IIndentStream {
     private Appendable stream;
@@ -111,7 +111,7 @@ public class IndentStream implements IIndentStream {
     }
 
     @Override
-    public IIndentStream joinS(String separator, List<String> data) {
+    public IIndentStream joinS(String separator, Collection<String> data) {
         boolean first = true;
         for (String d: data) {
             if (!first)
@@ -147,7 +147,7 @@ public class IndentStream implements IIndentStream {
     }
 
     @Override
-    public IIndentStream join(String separator, List<String> data) {
+    public IIndentStream join(String separator, Collection<String> data) {
         boolean first = true;
         for (String d: data) {
             if (!first)
@@ -159,7 +159,7 @@ public class IndentStream implements IIndentStream {
     }
 
     @Override
-    public IIndentStream intercalate(String separator, List<String> data) {
+    public IIndentStream intercalate(String separator, Collection<String> data) {
         for (String d: data) {
             this.append(d);
             this.append(separator);
@@ -177,7 +177,7 @@ public class IndentStream implements IIndentStream {
     }
 
     @Override
-    public IIndentStream intercalateS(String separator, List<String> data) {
+    public IIndentStream intercalateS(String separator, Collection<String> data) {
         for (String d: data) {
             this.append(d);
             this.append(separator);

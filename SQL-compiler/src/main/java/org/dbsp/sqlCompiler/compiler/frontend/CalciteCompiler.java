@@ -40,10 +40,7 @@ import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.rules.*;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.rel.type.RelDataTypeSystem;
+import org.apache.calcite.rel.type.*;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.ddl.SqlCreateView;
@@ -51,8 +48,11 @@ import org.apache.calcite.sql.fun.SqlLibrary;
 import org.apache.calcite.sql.fun.SqlLibraryOperatorTableFactory;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
-import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
+import org.apache.calcite.sql.type.*;
+import org.apache.calcite.sql.util.SqlOperatorTables;
+import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
@@ -98,19 +98,49 @@ public class CalciteCompiler implements IModule {
     @Nullable
     private FrontEndResult program;
     private final SqlToRelConverter.Config converterConfig;
+    private final RewriteDivision astRewriter;
+
+    /**
+     * This class rewrites instances of the division operator in the SQL AST
+     * into calls to a user-defined function DIVISION.  We do this
+     * because we don't like how Calcite infers result types for division,
+     * and we want to supply our own rules.
+     */
+    public static class RewriteDivision extends SqlShuttle {
+        @Override
+        public SqlNode visit(SqlCall call) {
+            if (call.getKind() == SqlKind.DIVIDE) {
+                return new SqlBasicCall(
+                        new SqlUnresolvedFunction(
+                                new SqlIdentifier("DIVISION", SqlParserPos.ZERO),
+                                null,
+                                null,
+                                null,
+                                null,
+                                SqlFunctionCategory.USER_DEFINED_FUNCTION),
+                        call.getOperandList(),
+                        call.getParserPosition()
+                );
+            }
+            return Objects.requireNonNull(super.visit(call));
+        }
+    }
 
     // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
     public CalciteCompiler() {
         this.program = null;
+        this.astRewriter = new RewriteDivision();
+        // Are these used for anything?
         Properties connConfigProp = new Properties();
         connConfigProp.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
         connConfigProp.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
         connConfigProp.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
+        connConfigProp.put(CalciteConnectionProperty.CONFORMANCE.camelName(), String.valueOf(SqlConformanceEnum.MYSQL_5));
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
         this.parserConfig = SqlParser.config()
                 // Add support for DDL language
                 .withParserFactory(SqlDdlParserImpl.FACTORY)
-                .withConformance(SqlConformanceEnum.BABEL);
+                .withConformance(SqlConformanceEnum.MYSQL_5);
         this.typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
         this.catalog = new Catalog("schema");
         CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
@@ -118,12 +148,40 @@ public class CalciteCompiler implements IModule {
         Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
                 rootSchema, Collections.singletonList(catalog.schemaName), this.typeFactory, connectionConfig);
 
-        // Libraries of user-defined functions.
-        SqlOperatorTable operatorTable =
-                SqlLibraryOperatorTableFactory.INSTANCE.getOperatorTable(EnumSet.of(
-                        SqlLibrary.STANDARD,
-                        SqlLibrary.SPATIAL)
-                );
+        // Custom implementation of type inference DIVISION for our division operator.
+        SqlReturnTypeInference divResultInference = new SqlReturnTypeInference() {
+            @Override
+            public @org.checkerframework.checker.nullness.qual.Nullable
+            RelDataType inferReturnType(SqlOperatorBinding opBinding) {
+                // Default policy for division.
+                RelDataType result = ReturnTypes.QUOTIENT_NULLABLE.inferReturnType(opBinding);
+                List<RelDataType> opTypes = opBinding.collectOperandTypes();
+                // If all operands are integer or decimal, result is nullable
+                // otherwise it's not.
+                boolean nullable = true;
+                for (RelDataType type: opTypes) {
+                    if (type.getSqlTypeName() == SqlTypeName.FLOAT) {
+                        nullable = false;
+                        break;
+                    }
+                }
+                if (nullable)
+                    result = opBinding.getTypeFactory().createTypeWithNullability(result, true);
+                return result;
+            }
+        };
+        SqlFunction division = new SqlFunction("DIVISION",
+                SqlKind.OTHER_FUNCTION,
+                divResultInference,
+                null,
+                OperandTypes.NUMERIC_NUMERIC,
+                SqlFunctionCategory.NUMERIC);
+        SqlOperatorTable operatorTable = SqlOperatorTables.chain(
+                // Libraries of user-defined functions.
+                SqlLibraryOperatorTableFactory.INSTANCE.getOperatorTable(
+                        EnumSet.of(SqlLibrary.STANDARD, SqlLibrary.SPATIAL)),
+                SqlOperatorTables.of(division)
+        );
 
         SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
                 .withLenientOperatorLookup(connectionConfig.lenientOperatorLookup())
@@ -352,7 +410,15 @@ public class CalciteCompiler implements IModule {
 
             if (node.getKind().equals(SqlKind.CREATE_VIEW)) {
                 SqlCreateView cv = (SqlCreateView) node;
-                RelRoot relRoot = this.converter.convertQuery(cv.query, true, true);
+                SqlNode query = cv.query;
+                if (this.getDebugLevel() > 1)
+                    Logger.instance.append(query.toString())
+                            .newline();
+                query = query.accept(this.astRewriter);
+                if (this.getDebugLevel() > 1)
+                    Logger.instance.append(Objects.requireNonNull(query).toString())
+                            .newline();
+                RelRoot relRoot = this.converter.convertQuery(query, true, true);
                 RelNode optimized = this.optimize(relRoot.rel);
                 relRoot = relRoot.withRel(optimized);
                 // Compute columns of the resulting view

@@ -1,11 +1,14 @@
 package org.dbsp.sqlCompiler.compiler;
 
+import org.dbsp.sqlCompiler.compiler.frontend.CalciteCompiler;
+import org.dbsp.sqlCompiler.compiler.midend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPSomeExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
+import org.dbsp.util.Logger;
 import org.junit.Test;
 
 /**
@@ -233,10 +236,18 @@ public class EndToEndTests extends BaseSQLTests {
 
     // Calcite seems to handle this query incorrectly, since
     // it claims that 1 / 0 is an integer instead of NULL
-    //@Test
-    @SuppressWarnings("unused")
+    @Test
     public void divZeroTest() {
         String query = "SELECT 1 / 0";
+        this.testQuery(query, new DBSPZSetLiteral(
+                new DBSPTupleExpression(DBSPLiteral.none(
+                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test
+    public void customDivisionTest() {
+        // Use a custom division operator.
+        String query = "SELECT DIVISION(1, 0)";
         this.testQuery(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
                         DBSPTypeInteger.signed32.setMayBeNull(true)))));
@@ -288,7 +299,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT 34 / SUM (1) FROM T GROUP BY COL1";
         this.testQuery(query, new DBSPZSetLiteral(
                  new DBSPTupleExpression(
-                        new DBSPIntegerLiteral(17))));
+                        new DBSPIntegerLiteral(17, true))));
     }
 
     @Test
@@ -296,7 +307,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT 34 / AVG (1) FROM T GROUP BY COL1";
         this.testQuery(query, new DBSPZSetLiteral(
                  new DBSPTupleExpression(
-                        new DBSPIntegerLiteral(34))));
+                        new DBSPIntegerLiteral(34, true))));
     }
 
     @Test
@@ -304,7 +315,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT 34 / SUM (1), 20 / SUM(2) FROM T GROUP BY COL1";
         this.testQuery(query, new DBSPZSetLiteral(
                  new DBSPTupleExpression(
-                        new DBSPIntegerLiteral(17), new DBSPIntegerLiteral(5))));
+                        new DBSPIntegerLiteral(17, true), new DBSPIntegerLiteral(5, true))));
     }
 
     @Test

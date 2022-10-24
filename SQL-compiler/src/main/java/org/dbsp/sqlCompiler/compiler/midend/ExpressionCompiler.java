@@ -211,7 +211,10 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
 
     @Override
     public DBSPExpression visitCall(RexCall call) {
-        //System.out.println(call + " " + call.getType());
+        if (this.getDebugLevel() > 1)
+            Logger.instance.append(call.toString())
+                    .append(" ")
+                    .append(call.getType().toString());
         if (call.op.kind == SqlKind.SEARCH) {
             // TODO: ideally the optimizer should do this before handing the expression to us.
             // Then we can get rid of the rexBuilder field too.
@@ -395,7 +398,10 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                     SqlRuntimeLibrary.FunctionDescription dist =
                             SqlRuntimeLibrary.instance.getFunction("st_distance", left.getNonVoidType(), right.getNonVoidType(), false);
                     return dist.getCall(left, right);
+                } else if (opName.equals("division")) {
+                    return makeBinaryExpression(call, type, "/", ops);
                 }
+                throw new Unimplemented(call);
             }
             case EXTRACT: {
                 if (call.operands.size() != 2)

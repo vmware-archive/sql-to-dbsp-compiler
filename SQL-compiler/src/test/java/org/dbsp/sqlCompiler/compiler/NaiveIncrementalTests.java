@@ -91,6 +91,23 @@ public class NaiveIncrementalTests extends EndToEndTests {
         this.testConstantOutput(query, result);
     }
 
+    @Test
+    public void customDivisionTest() {
+        // Use a custom division operator.
+        String query = "SELECT DIVISION(1, 0)";
+        this.testConstantOutput(query, new DBSPZSetLiteral(
+                new DBSPTupleExpression(DBSPLiteral.none(
+                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test
+    public void divZeroTest() {
+        String query = "SELECT 1 / 0";
+        this.testConstantOutput(query, new DBSPZSetLiteral(
+                new DBSPTupleExpression(DBSPLiteral.none(
+                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
     @Test @Override
     public void geoPointTest() {
         String query = "SELECT ST_POINT(0, 0)";
@@ -132,8 +149,8 @@ public class NaiveIncrementalTests extends EndToEndTests {
         this.testQuery(query,
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(
-                                new DBSPIntegerLiteral(17),
-                                new DBSPIntegerLiteral(5))));
+                                new DBSPIntegerLiteral(17, true),
+                                new DBSPIntegerLiteral(5, true))));
     }
 
     @Test @Override
@@ -141,7 +158,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
         String query = "SELECT 34 / AVG (1) FROM T GROUP BY COL1";
         this.testQuery(query,
                 new DBSPZSetLiteral(
-                        new DBSPTupleExpression(new DBSPIntegerLiteral(34))));
+                        new DBSPTupleExpression(new DBSPIntegerLiteral(34, true))));
     }
 
     @Test @Override

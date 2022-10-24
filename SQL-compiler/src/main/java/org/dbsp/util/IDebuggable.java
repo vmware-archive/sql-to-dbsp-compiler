@@ -29,6 +29,10 @@ public interface IDebuggable {
      */
     void setDebugLevel(String module, int level);
 
+    default <T> void setDebugLevel(Class<T> clazz, int level) {
+        this.setDebugLevel(clazz.getSimpleName(), level);
+    }
+
     /**
      * The current debug level.
      */
