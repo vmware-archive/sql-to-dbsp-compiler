@@ -23,7 +23,7 @@
 
 package org.dbsp.util;
 
-import java.util.List;
+import java.util.Collection;
 
 public interface IIndentStream extends Appendable {
     IIndentStream appendChar(char c);
@@ -31,13 +31,13 @@ public interface IIndentStream extends Appendable {
     <T extends ToIndentableString> IIndentStream append(T value);
     IIndentStream append(int value);
     IIndentStream append(long value);
-    IIndentStream joinS(String separator, List<String> data);
+    IIndentStream joinS(String separator, Collection<String> data);
     IIndentStream join(String separator, String[] data);
     <T extends ToIndentableString> IIndentStream join(String separator, T[] data);
-    IIndentStream join(String separator, List<String> data);
-    IIndentStream intercalate(String separator, List<String> data);
+    IIndentStream join(String separator, Collection<String> data);
+    IIndentStream intercalate(String separator, Collection<String> data);
     IIndentStream intercalate(String separator, String[] data);
-    IIndentStream intercalateS(String separator, List<String> data);
+    IIndentStream intercalateS(String separator, Collection<String> data);
     IIndentStream newline();
     /**
      * Increase indentation and emit a newline.

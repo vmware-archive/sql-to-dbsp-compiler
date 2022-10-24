@@ -74,14 +74,17 @@ public class ToDotVisitor extends CircuitVisitor {
                 .newline();
     }
 
-    public static void toDot(String fileName, DBSPCircuit circuit) throws IOException, InterruptedException {
+    public static void toDot(String fileName, boolean toJpg, DBSPCircuit circuit) throws IOException, InterruptedException {
         File tmp = File.createTempFile("tmp", ".dot");
         PrintWriter writer = new PrintWriter(tmp.getAbsolutePath());
         IndentStream stream = new IndentStream(writer);
         circuit.accept(new ToDotVisitor(stream));
         writer.close();
-        Utilities.runProcess(".", "dot", "-T", "jpg",
-                "-o", fileName, tmp.getAbsolutePath());
-        boolean success = tmp.delete();
+        if (toJpg)
+            Utilities.runProcess(".", "dot", "-T", "jpg",
+                    "-o", fileName, tmp.getAbsolutePath());
+        else
+            //noinspection ResultOfMethodCallIgnored
+            tmp.delete();
     }
 }

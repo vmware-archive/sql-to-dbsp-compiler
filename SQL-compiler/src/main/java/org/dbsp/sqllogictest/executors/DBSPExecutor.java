@@ -261,6 +261,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         options.incrementalize = this.incrementalMode;
         CircuitOptimizer optimizer = new CircuitOptimizer(options);
         dbsp = optimizer.optimize(dbsp);
+        //ToDotVisitor.toDot("circuit.jpg", true, dbsp);
         DBSPZSetLiteral expectedOutput = null;
         if (testQuery.outputDescription.queryResults != null) {
             IDBSPContainer container;

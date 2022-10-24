@@ -28,6 +28,7 @@ package org.dbsp.sqllogictest;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqllogictest.executors.*;
+import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -35,7 +36,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -119,40 +120,14 @@ public class Main {
         }
     }
 
-    public static SqlTestExecutor getExecutor(String[] argv) {
-        boolean incremental = true;
-        // Calcite cannot parse this query
-        final HashSet<String> calciteBugs = new HashSet<>();
-        calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");
-        // Calcite types /0 as not nullable!
-        calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
-        // The following two queries trigger a multiplication overflow.
-        // Seems like the semantics of overflow is implementation-defined in SQL.
-        calciteBugs.add("SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0");
-        calciteBugs.add("SELECT DISTINCT - + COUNT ( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0");
-
-        DBSPExecutor dExec = new DBSPExecutor(true, incremental);
-        dExec.avoid(calciteBugs);
-        SqlTestExecutor executor;
-        executor = new NoExecutor();
-        executor = dExec;
-        JDBCExecutor jdbc = new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
-        //executor = jdbc;
-        DBSP_JDBC_Executor hybrid = new DBSP_JDBC_Executor(jdbc, true, incremental);
-        executor = hybrid;
-        return executor;
-    }
-
     @SuppressWarnings("SpellCheckingInspection")
     public static void main(String[] argv) throws IOException {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
-        SqlTestExecutor executor = getExecutor(argv);
         String benchDir = "../../sqllogictest/test";
         int batchSize = 500;
         int skipPerFile = 0;
-        String[] files = new String[] {
+        List<String> files = Linq.list(
                 /*
-                "index/random/10/slt_good_3.test",
                 "random/select",  //done
                 "random/expr",    // done
                 "random/groupby", // done
@@ -170,15 +145,21 @@ public class Main {
                 "index/commute", // done
                 "index/orderby_nosort", // done
                  */
+                "random/aggregates/slt_good_12.test",
                 "index/random",
                 "evidence"
-        };
-        if (argv.length > 1)
-            files = Utilities.arraySlice(argv, 1);
+        );
+
+        String[] args = { "-e", "hybrid", "-i", "-n" };
+        if (argv.length > 0)
+            args = argv;
+        ExecutionOptions options = new ExecutionOptions(args);
+        SqlTestExecutor executor = options.getExecutor();
+        options.addDirectories(files);
         QueryAcceptancePolicy policy =
                 executor.is(DBSPExecutor.class) ? new General() : new MySql();
         TestLoader loader = new TestLoader(executor, policy);
-        for (String file : files) {
+        for (String file : options.getDirectories()) {
             if (file.startsWith("select"))
                 batchSize = Math.min(batchSize, 20);
             if (file.startsWith("select5"))

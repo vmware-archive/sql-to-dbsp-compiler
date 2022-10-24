@@ -195,7 +195,7 @@ are detailed below.
 |----------------------|------------:|----------:|--------------:|
 | random/select        | 1,120,329/0 |           | 1,120,329/0   |
 | random/groupby       |   118,757/0 |           |               |
-| random/expr          | 1,317,682/1 |           |               |
+| random/expr          | 1,317,682/0 |           |               |
 | random/aggregates    | 1,172,825/2 |           |               |
 | select1              |     1,000/0 |           |               |
 | select2              |     1,000/0 |           |               |
@@ -219,7 +219,5 @@ Failing tests with DBSP executor:
 
 - `SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )`, file `random/aggregates/slt_good_12.test`
    The Calcite parser cannot parse this query.
-- `SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2`, file `random/expr/slt_good_12.test`
-   The Calcite compiler assigns a type of "integer" to the expression 27/0
 - `SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0`, file `random/aggregates/slt_good_96.test`
    This test produces an overflow in the multiplication; the result of overflow is implementation-dependent.
