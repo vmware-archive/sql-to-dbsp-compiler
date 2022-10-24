@@ -150,12 +150,19 @@ public class Main {
                 "evidence"
         );
 
-        String[] args = { "-e", "hybrid", "-i", "-n" };
-        if (argv.length > 0)
+        String[] args = { "-e", "hybrid", "-i" };
+        if (argv.length > 0) {
             args = argv;
+        } else {
+            List<String> a = new ArrayList<>();
+            a.addAll(Linq.list(args));
+            a.addAll(files);
+            args = a.toArray(new String[0]);
+        }
         ExecutionOptions options = new ExecutionOptions(args);
         SqlTestExecutor executor = options.getExecutor();
-        options.addDirectories(files);
+
+        System.out.println(options);
         QueryAcceptancePolicy policy =
                 executor.is(DBSPExecutor.class) ? new General() : new MySql();
         TestLoader loader = new TestLoader(executor, policy);

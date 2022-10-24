@@ -94,12 +94,10 @@ public class ExecutionOptions {
                     System.err.println("Unknown option " + arg);
                     this.usage();
                 }
+            } else {
+                this.directories.add(arg);
             }
         }
-    }
-
-    void addDirectories(List<String> directories) {
-        this.directories.addAll(directories);
     }
 
     SqlTestExecutor getExecutor() {
@@ -136,5 +134,14 @@ public class ExecutionOptions {
 
     public List<String> getDirectories() {
         return this.directories;
+    }
+
+    @Override
+    public String toString() {
+        return "ExecutionOptions{" +
+                "directories=" + this.directories +
+                ", incremental=" + this.incremental +
+                ", execute=" + this.execute +
+                '}';
     }
 }
