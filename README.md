@@ -210,7 +210,7 @@ are detailed below.
 | index/view           |         N/A |  53,490/0 |               |
 | index/random         |         N/A | 188,449/0 | 188,449/0     |
 | index/orderby        |         N/A | 310,630/0 |               |
-| evidence             |             |           |               |
+| evidence             |         N/A |    153/25 |               |
 
 The "index" tests cannot be executed with the `DBSPExecutor` since it
 does not support the "unique index" SQL statement.
@@ -230,8 +230,33 @@ Failing tests with DBSP executor:
 - `DROP INDEX t1i1;`
    From `evidence/slt_lang_dropindex.test`
    MySQL needs to specify the table the index is on when dropping
-- SELECT x'303132' IN (SELECT * FROM t1)
-  SELECT x'303132' NOT IN (SELECT * FROM t1)
+- `SELECT x'303132' IN (SELECT * FROM t1)`
+  `SELECT x'303132' NOT IN (SELECT * FROM t1)`
   From `evidence/in1.test`:
   Calcite parses x'303132' as a BINARY objects and fails typechecking
   with an error: Values passed to IN operator must have compatible types
+- `CREATE TRIGGER t1r1 UPDATE ON t1 BEGIN SELECT 1; END;`
+  `DROP TRIGGER t1r1`
+  From evidence/slt_lang_droptrigger.test
+  These don't match MySQL behaviors
+- Not really relevant
+  From evidence/slt_lang_createtrigger.test
+  `CREATE TRIGGER t1r2 DELETE ON t1 BEGIN SELECT 1; END;`
+  `CREATE TRIGGER t1r3 INSERT ON t1 BEGIN SELECT 1; END;`
+  `CREATE TRIGGER t1r4 UPDATE ON t1 BEGIN SELECT 1; END;`
+  `CREATE TRIGGER t1r5 AFTER DELETE ON t1 BEGIN SELECT 1; END;`
+  `CREATE TRIGGER t1r6 AFTER INSERT ON t1 BEGIN SELECT 1; END;`
+  `CREATE TRIGGER t1r7 AFTER UPDATE ON t1 BEGIN SELECT 1; END;`
+  `CREATE TRIGGER t1r8 BEFORE DELETE ON t1 BEGIN SELECT 1; END;`
+  `CREATE TRIGGER t1r9 BEFORE INSERT ON t1 BEGIN SELECT 1; END;`
+  `CREATE TRIGGER t1r10 BEFORE UPDATE ON t1 BEGIN SELECT 1; END;`
+  `DROP TRIGGER t1r1`
+  `DROP TRIGGER t1r2`
+  `DROP TRIGGER t1r3`
+  `DROP TRIGGER t1r4`
+  `DROP TRIGGER t1r5`
+  `DROP TRIGGER t1r6`
+  `DROP TRIGGER t1r7`
+  `DROP TRIGGER t1r8`
+  `DROP TRIGGER t1r9`
+  `DROP TRIGGER t1r10`
