@@ -23,38 +23,20 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
-import org.dbsp.sqlCompiler.circuit.operator.DBSPNoopOperator;
-import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
-import org.dbsp.util.Logger;
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 
-import java.util.Set;
+import java.util.function.Function;
 
-public class RemoveOperatorsVisitor extends CircuitCloneVisitor {
-    /**
-     * Keep all operators that appear in this list.
-     * Also removes Noop operators.
-     */
-    public final Set<DBSPOperator> keep;
-
-    public RemoveOperatorsVisitor(Set<DBSPOperator> keep) {
+public class FunctorVisitor extends CircuitVisitor {
+    private final Function<DBSPCircuit, DBSPCircuit> transformation;
+    public FunctorVisitor(Function<DBSPCircuit, DBSPCircuit> trsf) {
         super(false);
-        this.keep = keep;
-        if (this.getDebugLevel() > 1)
-            Logger.instance.append(this.keep.toString())
-                    .newline();
+        this.transformation = trsf;
     }
 
     @Override
-    public boolean preorder(DBSPOperator node) {
-        if (this.keep.contains(node)) {
-            this.replace(node);
-        }
-        return false;
-    }
-
-    @Override
-    public boolean preorder(DBSPNoopOperator node) {
-        this.map(node, node.input(), false);
-        return false;
+    public DBSPCircuit apply(DBSPCircuit node) {
+        return this.transformation.apply(node);
     }
 }

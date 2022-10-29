@@ -60,6 +60,10 @@ public class Logger extends IndentStream implements IDebuggable {
         return this.debugLevel.getOrDefault(module, 0);
     }
 
+    public <T> int getDebugLevel(Class<T> clazz) {
+        return this.debugLevel.getOrDefault(clazz.getSimpleName(), 0);
+    }
+
     /**
      * Where logging should be redirected.
      * Notice that the indentation is *not* reset when the stream is changed.

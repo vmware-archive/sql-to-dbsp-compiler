@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.compiler.midend;
 
 import org.apache.calcite.rex.*;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Logger;
 
@@ -35,11 +36,13 @@ import java.util.Objects;
 public class JoinConditionAnalyzer extends RexVisitorImpl<Void> implements IModule {
     private final int leftTableColumnCount;
     private final ConditionDecomposition result;
+    private final TypeCompiler typeCompiler;
 
-    public JoinConditionAnalyzer(int leftTableColumnCount) {
+    public JoinConditionAnalyzer(int leftTableColumnCount, TypeCompiler typeCompiler) {
         super(true);
         this.leftTableColumnCount = leftTableColumnCount;
         this.result = new ConditionDecomposition();
+        this.typeCompiler = typeCompiler;
     }
 
     /**
@@ -49,10 +52,12 @@ public class JoinConditionAnalyzer extends RexVisitorImpl<Void> implements IModu
     static class EqualityTest {
         public final int leftColumn;
         public final int rightColumn;
+        public final DBSPType resultType;
 
-        EqualityTest(int leftColumn, int rightColumn) {
+        EqualityTest(int leftColumn, int rightColumn, DBSPType resultType) {
             this.leftColumn = leftColumn;
             this.rightColumn = rightColumn;
+            this.resultType = resultType;
             if (leftColumn < 0 || rightColumn < 0)
                 throw new RuntimeException("Illegal column number " + leftColumn + ":" + rightColumn);
         }
@@ -75,12 +80,12 @@ public class JoinConditionAnalyzer extends RexVisitorImpl<Void> implements IModu
             this.leftOver = leftOver;
         }
 
-        public void addEquality(RexNode left, RexNode right) {
+        public void addEquality(RexNode left, RexNode right, DBSPType resultType) {
             RexInputRef ref = Objects.requireNonNull(asInputRef(left));
             int l = ref.getIndex();
             ref = Objects.requireNonNull(asInputRef(right));
             int r = ref.getIndex() - JoinConditionAnalyzer.this.leftTableColumnCount;
-            this.comparisons.add(new EqualityTest(l, r));
+            this.comparisons.add(new EqualityTest(l, r, resultType));
         }
 
         /**
@@ -149,10 +154,13 @@ public class JoinConditionAnalyzer extends RexVisitorImpl<Void> implements IModu
                 if (leftIsLeft == rightIsLeft)
                     // Both columns refer to the same table.
                     return null;
+                DBSPType leftType = this.typeCompiler.convertType(left.getType());
+                DBSPType rightType = this.typeCompiler.convertType(right.getType());
+                DBSPType resultType = ExpressionCompiler.reduceType(leftType, rightType).setMayBeNull(false);
                 if (leftIsLeft) {
-                    this.result.addEquality(left, right);
+                    this.result.addEquality(left, right, resultType);
                 } else {
-                    this.result.addEquality(right, left);
+                    this.result.addEquality(right, left, resultType);
                 }
                 return null;
             default:

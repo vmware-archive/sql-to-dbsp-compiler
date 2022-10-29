@@ -27,8 +27,10 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.compiler.frontend.CalciteCompiler;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -144,13 +146,12 @@ public class Main {
                 "index/delete",  // done
                 "index/commute", // done
                 "index/orderby_nosort", // done
+                "index/random",  // done
                  */
-                "random/aggregates/slt_good_12.test",
-                "index/random",
-                "evidence"
+                "evidence/in1.test"
         );
 
-        String[] args = { "-e", "hybrid", "-i" };
+        String[] args = { "-e", "hybrid", "-b", "sltbugs.txt", "-i" };
         if (argv.length > 0) {
             args = argv;
         } else {
@@ -159,12 +160,21 @@ public class Main {
             a.addAll(files);
             args = a.toArray(new String[0]);
         }
+        Logger.instance.setDebugLevel(JDBCExecutor.class, 3);
+        Logger.instance.setDebugLevel(DBSPExecutor.class, 3);
+        Logger.instance.setDebugLevel(DBSP_JDBC_Executor.class, 3);
+        /*
+        Logger.instance.setDebugLevel(CalciteCompiler.class, 2);
+        Logger.instance.setDebugLevel(ToDotVisitor.class, 3);
+        Logger.instance.setDebugLevel(RemoveOperatorsVisitor.class, 3);
+         */
         ExecutionOptions options = new ExecutionOptions(args);
         SqlTestExecutor executor = options.getExecutor();
 
         System.out.println(options);
         QueryAcceptancePolicy policy =
-                executor.is(DBSPExecutor.class) ? new General() : new MySql();
+                executor.is(DBSPExecutor.class) && !executor.is(DBSP_JDBC_Executor.class)
+                        ? new General() : new MySql();
         TestLoader loader = new TestLoader(executor, policy);
         for (String file : options.getDirectories()) {
             if (file.startsWith("select"))
@@ -172,9 +182,6 @@ public class Main {
             if (file.startsWith("select5"))
                 batchSize = Math.min(batchSize, 5);
             Path path = Paths.get(benchDir + "/" + file);
-            //Logger.instance.setDebugLevel("DBSPExecutor", 1);
-            //Logger.instance.setDebugLevel("JDBCExecutor", 1);
-            //Logger.instance.setDebugLevel("DBSP_JDBC_Executor", 1);
             if (executor.is(DBSPExecutor.class))
                 executor.to(DBSPExecutor.class).setBatchSize(batchSize, skipPerFile);
             Files.walkFileTree(path, loader);

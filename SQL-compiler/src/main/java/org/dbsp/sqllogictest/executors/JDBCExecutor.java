@@ -115,21 +115,30 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
     }
 
     void statement(SqlStatement statement) throws SQLException {
-        assert this.connection != null;
-        Statement stmt = this.connection.createStatement();
-        stmt.execute(statement.statement);
-        stmt.close();
-        this.statementsExecuted++;
         if (this.getDebugLevel() > 0)
             Logger.instance.append(this.statementsExecuted)
                     .append(": ")
                     .append(statement.statement)
                     .newline();
+        assert this.connection != null;
+        Statement stmt = this.connection.createStatement();
+        try {
+            stmt.execute(statement.statement);
+        } catch (SQLException ex) {
+            stmt.close();
+            if (this.getDebugLevel() > 0)
+                Logger.instance
+                        .append("ERROR: ")
+                        .append(ex.getMessage())
+                        .newline();
+            throw ex;
+        }
+        this.statementsExecuted++;
     }
 
     boolean query(SqlTestQuery query, int queryNo) throws SQLException, NoSuchAlgorithmException {
         assert this.connection != null;
-        if (this.buggyQueries.contains(query.query)) {
+        if (this.buggyOperations.contains(query.query)) {
             System.err.println("Skipping " + query.query);
             return false;
         }
@@ -370,12 +379,11 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
         return new DBSPZSetLiteral(rows.toArray(new DBSPExpression[0]));
     }
 
-    List<String> getTableList() throws SQLException {
+    List<String> getStringResults(String query) throws SQLException {
         List<String> result = new ArrayList<>();
         assert this.connection != null;
         Statement stmt = this.connection.createStatement();
-        // TODO: This is probably not portable.
-        ResultSet rs = stmt.executeQuery("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+        ResultSet rs = stmt.executeQuery(query);
         while (rs.next()) {
             String tableName = rs.getString(1);
             result.add(tableName);
@@ -384,16 +392,39 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
         return result;
     }
 
+    List<String> getTableList() throws SQLException {
+        // TODO: This is probably not portable.
+        return this.getStringResults("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+    }
+
+    List<String> getViewList() throws SQLException {
+        // TODO: This is probably not portable.
+        return this.getStringResults("SHOW FULL TABLES WHERE Table_type = 'VIEW'");
+    }
+
     void dropAllTables() throws SQLException {
         assert this.connection != null;
         List<String> tables = this.getTableList();
         for (String tableName: tables) {
             String del = "DROP TABLE " + tableName;
+            if (this.getDebugLevel() > 1)
+                Logger.instance.append(del).newline();
             Statement drop = this.connection.createStatement();
             drop.execute(del);
             drop.close();
+        }
+    }
+
+    void dropAllViews() throws SQLException {
+        assert this.connection != null;
+        List<String> tables = this.getViewList();
+        for (String tableName: tables) {
+            String del = "DROP VIEW " + tableName;
             if (this.getDebugLevel() > 1)
                 Logger.instance.append(del).newline();
+            Statement drop = this.connection.createStatement();
+            drop.execute(del);
+            drop.close();
         }
     }
 

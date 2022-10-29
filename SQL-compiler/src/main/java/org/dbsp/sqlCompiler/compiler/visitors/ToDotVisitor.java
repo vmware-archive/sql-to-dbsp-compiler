@@ -26,14 +26,15 @@ package org.dbsp.sqlCompiler.compiler.visitors;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.util.IModule;
 import org.dbsp.util.IndentStream;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 
-public class ToDotVisitor extends CircuitVisitor {
+public class ToDotVisitor extends CircuitVisitor implements IModule {
     private final IndentStream stream;
 
     public ToDotVisitor(IndentStream stream) {
@@ -74,17 +75,26 @@ public class ToDotVisitor extends CircuitVisitor {
                 .newline();
     }
 
-    public static void toDot(String fileName, boolean toJpg, DBSPCircuit circuit) throws IOException, InterruptedException {
-        File tmp = File.createTempFile("tmp", ".dot");
-        PrintWriter writer = new PrintWriter(tmp.getAbsolutePath());
-        IndentStream stream = new IndentStream(writer);
-        circuit.accept(new ToDotVisitor(stream));
-        writer.close();
-        if (toJpg)
-            Utilities.runProcess(".", "dot", "-T", "jpg",
-                    "-o", fileName, tmp.getAbsolutePath());
-        else
-            //noinspection ResultOfMethodCallIgnored
-            tmp.delete();
+    public static DBSPCircuit toDot(String fileName, boolean toJpg, DBSPCircuit circuit) {
+        try {
+            if (Logger.instance.getDebugLevel(ToDotVisitor.class) > 0)
+                Logger.instance.append("Writing circuit to ")
+                    .append(fileName)
+                    .newline();
+            File tmp = File.createTempFile("tmp", ".dot");
+            PrintWriter writer = new PrintWriter(tmp.getAbsolutePath());
+            IndentStream stream = new IndentStream(writer);
+            circuit.accept(new ToDotVisitor(stream));
+            writer.close();
+            if (toJpg)
+                Utilities.runProcess(".", "dot", "-T", "jpg",
+                        "-o", fileName, tmp.getAbsolutePath());
+            else
+                //noinspection ResultOfMethodCallIgnored
+                tmp.delete();
+            return circuit;
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }

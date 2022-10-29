@@ -1,0 +1,22 @@
+// This file contains a list of SqlLogicTest which I believe are
+// buggy.  Each line is a statement or query that is buggy, without
+// newlines.  Lines starting with // are ignored.
+//
+// Calcite cannot parse this query
+// test/random/aggregates/slt_good_12.test
+SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )
+// The following two queries trigger a multiplication overflow.
+// Seems like the semantics of overflow is implementation-defined in SQL.
+// test/random/aggregates/slt_good_96.test
+SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0
+SELECT DISTINCT - + COUNT ( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0
+// MySQL allows updates/deletes in some views
+// test/evidence/slt_lang_createview.test
+DELETE FROM view1 WHERE x>0
+UPDATE view1 SET x=2
+// test/evidence/slt_lang_droptable/test
+DROP INDEX t1i1;
+// Calcite parses x'303132' as a BINARY objects and fails typechecking
+// with an error: Values passed to IN operator must have compatible types
+SELECT x'303132' IN (SELECT * FROM t1)
+SELECT x'303132' NOT IN (SELECT * FROM t1)

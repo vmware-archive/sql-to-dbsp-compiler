@@ -40,7 +40,7 @@ import java.util.Set;
  */
 public abstract class SqlTestExecutor implements ICastable, IModule {
     static final DecimalFormat df = new DecimalFormat("#,###");
-    protected final Set<String> buggyQueries;
+    protected final Set<String> buggyOperations;
 
     public static class TestStatistics {
         public int failed;
@@ -69,15 +69,15 @@ public abstract class SqlTestExecutor implements ICastable, IModule {
     long queriesExecuted = 0;
 
     protected SqlTestExecutor() {
-        this.buggyQueries = new HashSet<>();
+        this.buggyOperations = new HashSet<>();
     }
 
     static long seconds(long end, long start) {
         return (end - start) / 1000000000;
     }
 
-    public void avoid(HashSet<String> calciteBugs) {
-        this.buggyQueries.addAll(calciteBugs);
+    public void avoid(HashSet<String> statementsToSkip) {
+        this.buggyOperations.addAll(statementsToSkip);
     }
 
     void reportTime(int tests) {

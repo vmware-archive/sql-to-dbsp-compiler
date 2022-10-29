@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.midend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.midend.TableContents;
+import org.dbsp.sqlCompiler.compiler.visitors.ToDotVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -76,7 +77,6 @@ public class DBSPExecutor extends SqlTestExecutor {
 
     static final String rustDirectory = "../temp/src/";
     static final String testFileName = "test";
-    static final String csvBaseName = "data";
     private final boolean execute;
     private int batchSize;  // Number of queries to execute together
     private int skip;       // Number of queries to skip in each test file.
@@ -107,33 +107,43 @@ public class DBSPExecutor extends SqlTestExecutor {
         this.queriesToRun = new ArrayList<>();
     }
 
-    public DBSPZSetLiteral[] getInputSets(DBSPCompiler compiler) throws SQLException, SqlParseException {
+    public static class TableValue {
+        public final String tableName;
+        public final DBSPZSetLiteral contents;
+
+        public TableValue(String tableName, DBSPZSetLiteral contents) {
+            this.tableName = tableName;
+            this.contents = contents;
+        }
+    }
+
+    public TableValue[] getInputSets(DBSPCompiler compiler) throws SQLException, SqlParseException {
         for (SqlStatement statement : this.inputPreparation.statements)
             compiler.compileStatement(statement.statement, null);
         TableContents tables = compiler.getTableContents();
-        DBSPZSetLiteral[] tuple = new DBSPZSetLiteral[tables.tablesCreated.size()];
-        for (int i = 0; i < tuple.length; i++) {
+        TableValue[] tableValues = new TableValue[tables.tablesCreated.size()];
+        for (int i = 0; i < tableValues.length; i++) {
             String table = tables.tablesCreated.get(i);
-            tuple[i] = tables.getTableContents(table);
+            tableValues[i] = new TableValue(table, tables.getTableContents(table));
         }
-        return tuple;
+        return tableValues;
     }
 
-    DBSPFunction createInputFunction(DBSPZSetLiteral[] tuple) throws IOException {
-        DBSPExpression[] fields = new DBSPExpression[tuple.length];
+    DBSPFunction createInputFunction(TableValue[] tables) throws IOException {
+        DBSPExpression[] fields = new DBSPExpression[tables.length];
         int totalSize = 0;
-        for (int i = 0; i < tuple.length; i++) {
-            totalSize += tuple[i].size();
-            fields[i] = tuple[i];
+        for (int i = 0; i < tables.length; i++) {
+            totalSize += tables[i].contents.size();
+            fields[i] = tables[i].contents;
         }
 
         // If the data is large write it to a set of CSV files and read it at runtime.
         if (totalSize > 10) {
-            for (int i = 0; i < tuple.length; i++) {
-                String fileName = (rustDirectory + csvBaseName) + i + ".csv";
-                Solutions.toCsv(fileName, tuple[i]);
+            for (int i = 0; i < tables.length; i++) {
+                String fileName = (rustDirectory + tables[i].tableName) + ".csv";
+                Solutions.toCsv(fileName, tables[i].contents);
                 fields[i] = new DBSPApplyExpression("read_csv",
-                        tuple[i].getNonVoidType(),
+                        tables[i].contents.getNonVoidType(),
                         new DBSPStrLiteral(fileName));
             }
         }
@@ -183,6 +193,14 @@ public class DBSPExecutor extends SqlTestExecutor {
                 DBSPStatement statement = new DBSPExpressionStatement(expr);
                 statements.add(statement);
             }
+            if (inputType.tupFields.length == 0) {
+                // This case will cause no invocation of the circuit, but we need
+                // at least one.
+                DBSPExpression expr = new DBSPApplyMethodExpression(
+                        "push", null, vec, new DBSPRawTupleExpression());
+                DBSPStatement statement = new DBSPExpressionStatement(expr);
+                statements.add(statement);
+            }
         } else {
             DBSPExpression expr = new DBSPApplyMethodExpression(
                     "push", null, vec, input.getVarReference());
@@ -200,7 +218,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         this.createTables(compiler);
         // Create function which generates inputs for all tests in this batch.
         // We know that all these tests consume the same input tables.
-        DBSPZSetLiteral[] inputSets = this.getInputSets(compiler);
+        TableValue[] inputSets = this.getInputSets(compiler);
         DBSPFunction inputFunction = this.createInputFunction(inputSets);
         DBSPFunction streamInputFunction = this.createStreamInputFunction(inputFunction);
 
@@ -248,6 +266,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                     .append(suffix)
                     .append(":\n")
                     .append(dbspQuery)
+                    .append(testQuery.name != null ? " " + testQuery.name : "")
                     .append("\n");
         compiler.newCircuit("gen" + suffix);
         compiler.generateOutputForNextView(false);
@@ -261,7 +280,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         options.incrementalize = this.incrementalMode;
         CircuitOptimizer optimizer = new CircuitOptimizer(options);
         dbsp = optimizer.optimize(dbsp);
-        //ToDotVisitor.toDot("circuit.jpg", true, dbsp);
+        ToDotVisitor.toDot("circuit.jpg", true, dbsp);
         DBSPZSetLiteral expectedOutput = null;
         if (testQuery.outputDescription.queryResults != null) {
             IDBSPContainer container;
@@ -298,6 +317,9 @@ public class DBSPExecutor extends SqlTestExecutor {
                     field = new DBSPStringLiteral(s);
                 else if (colType.is(DBSPTypeDecimal.class))
                     field = new DBSPDecimalLiteral(s, colType, new BigDecimal(s));
+                else if (colType.is(DBSPTypeBool.class))
+                    // Booleans are encoded as ints
+                    field = new DBSPBoolLiteral(Integer.parseInt(s) != 0);
                 else
                     throw new RuntimeException("Unexpected type " + colType);
                 if (!colType.sameType(field.getNonVoidType()))
@@ -330,8 +352,7 @@ public class DBSPExecutor extends SqlTestExecutor {
 
     void cleanupFilesystem() {
         File directory = new File(rustDirectory);
-        FilenameFilter filter = (dir, name) -> name.startsWith(testFileName) ||
-                (name.startsWith(csvBaseName) && name.endsWith("csv"));
+        FilenameFilter filter = (dir, name) -> name.startsWith(testFileName) || name.endsWith("csv");
         File[] files = directory.listFiles(filter);
         if (files == null)
             return;
@@ -364,10 +385,27 @@ public class DBSPExecutor extends SqlTestExecutor {
                     remainingInBatch = this.batchSize;
                     seenQueries = false;
                 }
-                boolean status = this.statement(stat);
+                boolean status;
+                try {
+                    if (this.buggyOperations.contains(stat.statement)) {
+                        if (this.getDebugLevel() > 0)
+                            Logger.instance.append("Skipping buggy test ")
+                                    .append(stat.statement)
+                                    .newline();
+                        status = stat.shouldPass;
+                    } else {
+                        status = this.statement(stat);
+                    }
+                } catch (SQLException ex) {
+                    if (this.getDebugLevel() > 0)
+                        Logger.instance.append("Statement failed ")
+                                .append(stat.statement)
+                                .newline();
+                    status = false;
+                }
                 this.statementsExecuted++;
                 if (status != stat.shouldPass)
-                    throw new RuntimeException("Statement failed " + stat.statement);
+                    throw new RuntimeException("Statement " + stat.statement + " status " + status + " expected " + stat.shouldPass);
             } else {
                 SqlTestQuery query = operation.to(SqlTestQuery.class);
                 if (toSkip > 0) {
@@ -375,8 +413,11 @@ public class DBSPExecutor extends SqlTestExecutor {
                     result.ignored++;
                     continue;
                 }
-                if (this.buggyQueries.contains(query.query)) {
-                    System.err.println("Skipping " + query.query);
+                if (this.buggyOperations.contains(query.query)) {
+                    if (this.getDebugLevel() > 0)
+                        Logger.instance.append("Skipping buggy test ")
+                                .append(query.query)
+                                .newline();
                     result.ignored++;
                     continue;
                 }
@@ -525,6 +566,10 @@ public class DBSPExecutor extends SqlTestExecutor {
     }
 
     public boolean statement(SqlStatement statement) throws SQLException {
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append("Executing ")
+                    .append(statement.toString())
+                    .newline();
         String command = statement.statement.toLowerCase();
         if (command.startsWith("create index"))
             return true;

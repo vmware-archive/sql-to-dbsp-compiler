@@ -132,9 +132,8 @@ public class SqlTestFile {
     /**
      * Parse a query that executes a SqlLogicTest test.
      */
-    @SuppressWarnings("SpellCheckingInspection")
     @Nullable
-    private SqlTestQuery parseTestQuery(QueryAcceptancePolicy policy) throws IOException {
+    private SqlTestQuery parseTestQuery() throws IOException {
         @Nullable String line = this.nextLine(true);
         if (this.done)
             return null;
@@ -228,9 +227,9 @@ public class SqlTestFile {
              }
 
              if (line.startsWith("halt")) {
-                 this.nextLine(false);
                  if (policy.accept(skip, only))
                      break;
+                 continue;
              }
 
              if (line.startsWith("statement")) {
@@ -247,7 +246,7 @@ public class SqlTestFile {
                     this.add(stat);
              } else {
                  this.undoRead(line);
-                 SqlTestQuery test = this.parseTestQuery(policy);
+                 SqlTestQuery test = this.parseTestQuery();
                  if (test != null && policy.accept(skip, only))
                      this.add(test);
              }

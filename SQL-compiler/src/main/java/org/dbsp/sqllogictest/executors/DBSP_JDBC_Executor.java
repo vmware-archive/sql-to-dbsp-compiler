@@ -28,10 +28,12 @@ import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqllogictest.SqlStatement;
 import org.dbsp.sqllogictest.SqlTestFile;
+import org.dbsp.util.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,6 +44,7 @@ import java.util.regex.Pattern;
  */
 public class DBSP_JDBC_Executor extends DBSPExecutor {
     private final JDBCExecutor statementExecutor;
+    private final List<String> tablesCreated;
 
     /**
      * @param execute If true the tests are executed, otherwise they are only compiled to Rust.
@@ -50,18 +53,18 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
     public DBSP_JDBC_Executor(JDBCExecutor executor, boolean execute, boolean incremental) {
         super(execute, incremental);
         this.statementExecutor = executor;
+        this.tablesCreated = new ArrayList<>();
     }
 
     @Override
-    public DBSPZSetLiteral[] getInputSets(DBSPCompiler compiler) throws SQLException {
-        List<String> tables = this.statementExecutor.getTableList();
-        DBSPZSetLiteral[] tuple = new DBSPZSetLiteral[tables.size()];
-        for (int i = 0; i < tables.size(); i++) {
-            String table = tables.get(i);
+    public TableValue[] getInputSets(DBSPCompiler compiler) throws SQLException {
+        TableValue[] result = new TableValue[this.tablesCreated.size()];
+        int i = 0;
+        for (String table: this.tablesCreated) {
             DBSPZSetLiteral lit = this.statementExecutor.getTableContents(table);
-            tuple[i] = lit;
+            result[i++] = new TableValue(table, lit);
         }
-        return tuple;
+        return result;
     }
 
     @Nullable
@@ -72,17 +75,17 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
         if (!m.find())
             return null;
         String tableName = m.group(1);
+        this.tablesCreated.add(tableName);
         return this.statementExecutor.generateCreateStatement(tableName);
     }
 
     public boolean statement(SqlStatement statement) throws SQLException {
-        try {
-            this.statementExecutor.statement(statement);
-        } catch (SQLException ex) {
-            System.err.println("Error while executing " + statement);
-            throw ex;
-        }
+        this.statementExecutor.statement(statement);
         String command = statement.statement.toLowerCase();
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append("Executing ")
+                    .append(command)
+                    .newline();
         @Nullable
         String create = this.rewriteCreateTable(command);
         if (create != null) {
@@ -102,6 +105,7 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
             throws SqlParseException, IOException, InterruptedException, SQLException {
         this.statementExecutor.establishConnection();
         this.statementExecutor.dropAllTables();
+        this.statementExecutor.dropAllViews();
         return super.execute(file);
     }
 }

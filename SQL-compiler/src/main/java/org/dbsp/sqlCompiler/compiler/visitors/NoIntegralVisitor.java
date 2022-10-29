@@ -38,6 +38,9 @@ public class NoIntegralVisitor extends CircuitVisitor {
 
     @Override
     public boolean preorder(DBSPIntegralOperator node) {
+        try {
+            //ToDotVisitor.toDot("circuit.jpg", true, this.getCircuit());
+        } catch (Exception ignored) {}
         throw new RuntimeException("Circuit contains an integration operator " + node);
     }
 }
