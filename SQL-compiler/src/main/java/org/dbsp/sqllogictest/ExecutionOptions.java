@@ -25,6 +25,7 @@ package org.dbsp.sqllogictest;
 
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.IndentStream;
+import org.dbsp.util.Logger;
 import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
@@ -59,6 +60,8 @@ public class ExecutionOptions {
                 .append("[-i]: Incremental testing.")
                 .newline()
                 .append("[-n]: Do not execute, just parse.")
+                .newline()
+                .append("[-T module]: Increase debug level for specified module.")
                 .newline()
                 .append("[-b bugsFile]: Load a list of buggy commands to skip from this file.")
                 .newline()
@@ -103,6 +106,12 @@ public class ExecutionOptions {
                     case "-b":
                         this.bugsFile = argv[++i];
                         break;
+                    case "-T": {
+                        String module = argv[++i];
+                        int level = Logger.instance.getDebugLevel(module);
+                        Logger.instance.setDebugLevel(module, level + 1);
+                        break;
+                    }
                     default:
                         System.err.println("Unknown option " + arg);
                         this.usage();

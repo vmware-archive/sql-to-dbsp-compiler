@@ -28,6 +28,9 @@ import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 
 import java.util.function.Function;
 
+/**
+ * This visitor just applies a user-defined function to a circuit.
+ */
 public class FunctorVisitor extends CircuitVisitor {
     private final Function<DBSPCircuit, DBSPCircuit> transformation;
     public FunctorVisitor(Function<DBSPCircuit, DBSPCircuit> trsf) {

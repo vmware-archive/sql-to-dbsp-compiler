@@ -101,6 +101,12 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
     }
 
     @Override
+    void reset() {
+        this.tablesCreated.clear();
+        super.reset();
+    }
+
+    @Override
     public TestStatistics execute(SqlTestFile file)
             throws SqlParseException, IOException, InterruptedException, SQLException {
         this.statementExecutor.establishConnection();

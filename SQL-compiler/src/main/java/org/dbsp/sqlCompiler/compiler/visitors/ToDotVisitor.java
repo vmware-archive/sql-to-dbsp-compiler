@@ -34,6 +34,10 @@ import org.dbsp.util.Utilities;
 import java.io.File;
 import java.io.PrintWriter;
 
+/**
+ * This visitor dumps the circuit to a dot file so it can be visualized.
+ * A utility method can create a jpg.
+ */
 public class ToDotVisitor extends CircuitVisitor implements IModule {
     private final IndentStream stream;
 

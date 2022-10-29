@@ -27,7 +27,7 @@ package org.dbsp.sqllogictest;
 
 import java.util.List;
 
-public interface QueryAcceptancePolicy {
+public interface AcceptancePolicy {
     /**
      * Returns true if a query is accepted.
      * @param skip  List of dbs to skip.

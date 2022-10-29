@@ -280,7 +280,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         options.incrementalize = this.incrementalMode;
         CircuitOptimizer optimizer = new CircuitOptimizer(options);
         dbsp = optimizer.optimize(dbsp);
-        ToDotVisitor.toDot("circuit.jpg", true, dbsp);
+        //ToDotVisitor.toDot("circuit.jpg", true, dbsp);
         DBSPZSetLiteral expectedOutput = null;
         if (testQuery.outputDescription.queryResults != null) {
             IDBSPContainer container;
@@ -436,6 +436,10 @@ public class DBSPExecutor extends SqlTestExecutor {
         // Make sure there are no left-overs if this executor
         // is invoked to process a new file.
         this.reset();
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append("Finished executing ")
+                    .append(file.toString())
+                    .newline();
         return result;
     }
 

@@ -25,6 +25,8 @@
 
 package org.dbsp.sqllogictest;
 
+import org.dbsp.util.IModule;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
@@ -60,14 +62,12 @@ import java.util.List;
  *         30 values hashing to 3c13dee48d9356ae19af2515e05e6b54
  *
  */
-public class SqlTestFile {
+public class SqlTestFile implements IModule {
     /**
      * Current line number in test file.
      */
     private int lineno;
-
     public final List<ISqlTestOperation> fileContents;
-
     private final BufferedReader reader;
     // To support undo for reading
     @Nullable
@@ -173,7 +173,9 @@ public class SqlTestFile {
                 line = this.nextLine(false);
             }
         }
-        result.setQuery(query.toString().trim());
+
+        String q = query.toString().trim();
+        result.setQuery(q);
 
         if (!this.done) {
             line = this.nextLine(true);
@@ -203,7 +205,7 @@ public class SqlTestFile {
     }
 
      @SuppressWarnings("SpellCheckingInspection")
-     public void parse(QueryAcceptancePolicy policy) throws IOException {
+     public void parse(AcceptancePolicy policy) throws IOException {
          String line;
          while (!this.done) {
              line = this.nextLine(true);
@@ -254,6 +256,10 @@ public class SqlTestFile {
     }
 
     private void add(ISqlTestOperation operation) {
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append("Operation added ")
+                    .append(operation.toString())
+                    .newline();
         this.fileContents.add(operation);
         if (operation.is(SqlTestQuery.class))
             this.testCount++;
@@ -261,5 +267,10 @@ public class SqlTestFile {
 
     public int getTestCount() {
         return this.testCount;
+    }
+
+    @Override
+    public String toString() {
+        return this.testFile;
     }
 }
