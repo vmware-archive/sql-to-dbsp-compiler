@@ -25,8 +25,11 @@ package org.dbsp.sqllogictest;
 
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.IndentStream;
+import org.dbsp.util.Logger;
 import org.dbsp.util.UnsupportedException;
 
+import javax.annotation.Nullable;
+import java.io.*;
 import java.util.*;
 
 public class ExecutionOptions {
@@ -36,6 +39,8 @@ public class ExecutionOptions {
     final Set<String> executors;
     String executor;
     String progName;
+    @Nullable
+    String bugsFile = null;
 
     void usage() {
         IndentStream stream = new IndentStream(System.out);
@@ -54,7 +59,11 @@ public class ExecutionOptions {
                 .decrease()
                 .append("[-i]: Incremental testing.")
                 .newline()
-                .append("[-n]: Do not execute, jusr parse.")
+                .append("[-n]: Do not execute, just parse.")
+                .newline()
+                .append("[-T module]: Increase debug level for specified module.")
+                .newline()
+                .append("[-b bugsFile]: Load a list of buggy commands to skip from this file.")
                 .newline()
                 .append("`directories` is a list of directories or files under ../sqllogictest/test which will be executed")
                 .newline()
@@ -81,18 +90,32 @@ public class ExecutionOptions {
         for (int i = 0; i < argv.length; i++) {
             String arg = argv[i];
             if (arg.startsWith("-")) {
-                if (arg.equals("-e")) {
-                    String exec = argv[++i];
-                    if (!this.executors.contains(exec))
+                switch (arg) {
+                    case "-e":
+                        String exec = argv[++i];
+                        if (!this.executors.contains(exec))
+                            this.usage();
+                        this.executor = exec;
+                        break;
+                    case "-i":
+                        this.incremental = true;
+                        break;
+                    case "-n":
+                        this.execute = false;
+                        break;
+                    case "-b":
+                        this.bugsFile = argv[++i];
+                        break;
+                    case "-T": {
+                        String module = argv[++i];
+                        int level = Logger.instance.getDebugLevel(module);
+                        Logger.instance.setDebugLevel(module, level + 1);
+                        break;
+                    }
+                    default:
+                        System.err.println("Unknown option " + arg);
                         this.usage();
-                    this.executor = exec;
-                } else if (arg.equals("-i")) {
-                    this.incremental = true;
-                } else if (arg.equals("-n")) {
-                    this.execute = false;
-                } else {
-                    System.err.println("Unknown option " + arg);
-                    this.usage();
+                        break;
                 }
             } else {
                 this.directories.add(arg);
@@ -100,30 +123,45 @@ public class ExecutionOptions {
         }
     }
 
-    SqlTestExecutor getExecutor() {
-        // Calcite cannot parse this query
-        final HashSet<String> calciteBugs = new HashSet<>();
-        calciteBugs.add("SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )");
-        // Calcite types /0 as not nullable!
-        // calciteBugs.add("SELECT - - 96 * 11 * + CASE WHEN NOT + 84 NOT BETWEEN 27 / 0 AND COALESCE ( + 61, + AVG ( 81 ) / + 39 + COUNT ( * ) ) THEN - 69 WHEN NULL > ( - 15 ) THEN NULL ELSE NULL END AS col2");
-        // The following two queries trigger a multiplication overflow.
-        // Seems like the semantics of overflow is implementation-defined in SQL.
-        calciteBugs.add("SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0");
-        calciteBugs.add("SELECT DISTINCT - + COUNT ( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0");
+    HashSet<String> readBugsFile(String fileName) throws IOException {
+        HashSet<String> bugs = new HashSet<>();
+        File file = new File(fileName);
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) break;
+                if (line.startsWith("//"))
+                    continue;
+                bugs.add(line);
+            }
+        }
+        return bugs;
+    }
+
+    SqlTestExecutor getExecutor() throws IOException {
+        HashSet<String> sltBugs = new HashSet<>();
+        if (this.bugsFile != null) {
+            sltBugs = this.readBugsFile(this.bugsFile);
+        }
 
         switch (this.executor) {
             case "none":
                 return new NoExecutor();
             case "DBSP":
                 DBSPExecutor dExec = new DBSPExecutor(this.execute, this.incremental);
-                dExec.avoid(calciteBugs);
+                dExec.avoid(sltBugs);
                 return dExec;
             case "JDBC": {
-                return new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
+                JDBCExecutor jdbc =  new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
+                jdbc.avoid(sltBugs);
+                return jdbc;
             }
             case "hybrid": {
                 JDBCExecutor jdbc = new JDBCExecutor("jdbc:mysql://localhost/slt", "user", "password");
-                return new DBSP_JDBC_Executor(jdbc, this.execute, incremental);
+                jdbc.avoid(sltBugs);
+                DBSP_JDBC_Executor result = new DBSP_JDBC_Executor(jdbc, this.execute, incremental);
+                result.avoid(sltBugs);
+                return result;
             }
             default: {
                 this.usage();

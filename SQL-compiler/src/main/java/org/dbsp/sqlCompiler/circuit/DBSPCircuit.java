@@ -32,14 +32,12 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeRawTuple;
 import org.dbsp.sqlCompiler.ir.type.IHasType;
-import org.dbsp.util.Linq;
-import org.dbsp.util.NameGen;
-import org.dbsp.util.Utilities;
+import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
+public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
     public final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
     public final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
     public final List<DBSPOperator> operators = new ArrayList<>();
@@ -73,7 +71,10 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
     }
 
     public void addOperator(DBSPOperator operator) {
-        // System.out.println("Adding " + operator);
+        if (this.getDebugLevel() > 0)
+            Logger.instance.append("Adding ")
+                    .append(operator.toString())
+                    .newline();
         Utilities.putNew(this.operatorDeclarations, operator.outputName, operator);
         if (operator.is(DBSPSourceOperator.class))
             this.inputOperators.add(operator.to(DBSPSourceOperator.class));

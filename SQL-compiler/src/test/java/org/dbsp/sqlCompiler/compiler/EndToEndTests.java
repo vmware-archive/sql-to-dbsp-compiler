@@ -1,14 +1,12 @@
 package org.dbsp.sqlCompiler.compiler;
 
-import org.dbsp.sqlCompiler.compiler.frontend.CalciteCompiler;
-import org.dbsp.sqlCompiler.compiler.midend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPSomeExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
-import org.dbsp.util.Logger;
 import org.junit.Test;
 
 /**
@@ -300,6 +298,13 @@ public class EndToEndTests extends BaseSQLTests {
         this.testQuery(query, new DBSPZSetLiteral(
                  new DBSPTupleExpression(
                         new DBSPIntegerLiteral(17, true))));
+    }
+
+    @Test
+    public void inTest() {
+        String query = "SELECT 3 in (SELECT COL5 FROM T)";
+        this.testQuery(query, new DBSPZSetLiteral(
+                new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeBool.instance.setMayBeNull(true)))));
     }
 
     @Test

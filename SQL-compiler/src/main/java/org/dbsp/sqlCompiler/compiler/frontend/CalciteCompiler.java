@@ -202,8 +202,6 @@ public class CalciteCompiler implements IModule {
         RelOptPlanner planner = new HepPlanner(new HepProgramBuilder().build());
         this.cluster = RelOptCluster.create(planner, new RexBuilder(this.typeFactory));
         this.converterConfig = SqlToRelConverter.config()
-                .withTrimUnusedFields(true)
-                .withDecorrelationEnabled(true)
                 .withExpand(true);
         this.converter = new SqlToRelConverter(
                 (type, query, schema, path) -> null,

@@ -382,24 +382,25 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
             }
             case OTHER_FUNCTION: {
                 String opName = call.op.getName().toLowerCase();
-                if (opName.equals("abs")) {
-                    if (call.operands.size() != 1)
-                        throw new Unimplemented(call);
-                    DBSPExpression arg = ops.get(0);
-                    DBSPType argType = arg.getNonVoidType();
-                    SqlRuntimeLibrary.FunctionDescription abs =
-                            SqlRuntimeLibrary.instance.getFunction("abs", argType, null, false);
-                    return abs.getCall(arg);
-                } else if (opName.equals("st_distance")) {
-                    if (call.operands.size() != 2)
-                        throw new Unimplemented(call);
-                    DBSPExpression left = ops.get(0);
-                    DBSPExpression right = ops.get(1);
-                    SqlRuntimeLibrary.FunctionDescription dist =
-                            SqlRuntimeLibrary.instance.getFunction("st_distance", left.getNonVoidType(), right.getNonVoidType(), false);
-                    return dist.getCall(left, right);
-                } else if (opName.equals("division")) {
-                    return makeBinaryExpression(call, type, "/", ops);
+                switch (opName) {
+                    case "abs":
+                        if (call.operands.size() != 1)
+                            throw new Unimplemented(call);
+                        DBSPExpression arg = ops.get(0);
+                        DBSPType argType = arg.getNonVoidType();
+                        SqlRuntimeLibrary.FunctionDescription abs =
+                                SqlRuntimeLibrary.instance.getFunction("abs", argType, null, false);
+                        return abs.getCall(arg);
+                    case "st_distance":
+                        if (call.operands.size() != 2)
+                            throw new Unimplemented(call);
+                        DBSPExpression left = ops.get(0);
+                        DBSPExpression right = ops.get(1);
+                        SqlRuntimeLibrary.FunctionDescription dist =
+                                SqlRuntimeLibrary.instance.getFunction("st_distance", left.getNonVoidType(), right.getNonVoidType(), false);
+                        return dist.getCall(left, right);
+                    case "division":
+                        return makeBinaryExpression(call, type, "/", ops);
                 }
                 throw new Unimplemented(call);
             }

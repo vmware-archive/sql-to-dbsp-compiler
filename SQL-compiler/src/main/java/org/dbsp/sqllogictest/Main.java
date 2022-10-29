@@ -29,6 +29,7 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -46,7 +47,7 @@ public class Main {
     // Following are queries that calcite fails to parse.
     static final String[] skipFiles = {};
 
-    static class General implements QueryAcceptancePolicy {
+    static class PostgresPolicy implements AcceptancePolicy {
         @Override
         public boolean accept(List<String> skip, List<String> only) {
             if (only.contains("postgresql"))
@@ -57,7 +58,7 @@ public class Main {
         }
     }
 
-    static class MySql implements QueryAcceptancePolicy {
+    static class MySqlPolicy implements AcceptancePolicy {
         @Override
         public boolean accept(List<String> skip, List<String> only) {
             if (only.contains("mysql"))
@@ -72,14 +73,15 @@ public class Main {
         int errors = 0;
         private final SqlTestExecutor executor;
         final SqlTestExecutor.TestStatistics statistics;
-        private final QueryAcceptancePolicy policy;
+        private final AcceptancePolicy policy;
 
         /**
          * Creates a new class that reads tests from a directory tree and executes them.
          * @param executor Program that knows how to generate and run the tests.
-         * @param policy   Policy that dictates which tests can be executed.
+         * @param policy   Policy that dictates which operations can be executed.
          */
-        TestLoader(SqlTestExecutor executor, QueryAcceptancePolicy policy) {
+        TestLoader(SqlTestExecutor executor,
+                   AcceptancePolicy policy) {
             this.executor = executor;
             this.statistics = new SqlTestExecutor.TestStatistics();
             this.policy = policy;
@@ -97,6 +99,7 @@ public class Main {
                 // validates the test
                 SqlTestFile test = null;
                 try {
+                    System.out.println(file);
                     test = new SqlTestFile(file.toString());
                     test.parse(this.policy);
                 } catch (Exception ex) {
@@ -107,7 +110,6 @@ public class Main {
                 }
                 if (test != null) {
                     try {
-                        System.out.println(file);
                         SqlTestExecutor.TestStatistics stats = this.executor.execute(test);
                         this.statistics.add(stats);
                     } catch (SqlParseException | IOException | InterruptedException |
@@ -127,8 +129,8 @@ public class Main {
         int batchSize = 500;
         int skipPerFile = 0;
         List<String> files = Linq.list(
-                /*
-                "random/select",  //done
+                 /*
+               "random/select",  //done
                 "random/expr",    // done
                 "random/groupby", // done
                 "random/aggregates", // done
@@ -144,13 +146,12 @@ public class Main {
                 "index/delete",  // done
                 "index/commute", // done
                 "index/orderby_nosort", // done
+                "index/random",  // done
                  */
-                "random/aggregates/slt_good_12.test",
-                "index/random",
                 "evidence"
         );
 
-        String[] args = { "-e", "hybrid", "-i" };
+        String[] args = { "-e", "hybrid", "-b", "sltbugs.txt", "-i" };
         if (argv.length > 0) {
             args = argv;
         } else {
@@ -159,12 +160,22 @@ public class Main {
             a.addAll(files);
             args = a.toArray(new String[0]);
         }
+        /*
+        Logger.instance.setDebugLevel(JDBCExecutor.class, 3);
+        Logger.instance.setDebugLevel(DBSPExecutor.class, 3);
+        Logger.instance.setDebugLevel(DBSP_JDBC_Executor.class, 3);
+        Logger.instance.setDebugLevel(SqlTestFile.class, 3);
+        Logger.instance.setDebugLevel(CalciteCompiler.class, 2);
+        Logger.instance.setDebugLevel(ToDotVisitor.class, 3);
+        Logger.instance.setDebugLevel(RemoveOperatorsVisitor.class, 3);
+         */
         ExecutionOptions options = new ExecutionOptions(args);
         SqlTestExecutor executor = options.getExecutor();
 
         System.out.println(options);
-        QueryAcceptancePolicy policy =
-                executor.is(DBSPExecutor.class) ? new General() : new MySql();
+        AcceptancePolicy policy =
+                executor.is(DBSPExecutor.class) && !executor.is(DBSP_JDBC_Executor.class)
+                        ? new PostgresPolicy() : new MySqlPolicy();
         TestLoader loader = new TestLoader(executor, policy);
         for (String file : options.getDirectories()) {
             if (file.startsWith("select"))
@@ -172,9 +183,6 @@ public class Main {
             if (file.startsWith("select5"))
                 batchSize = Math.min(batchSize, 5);
             Path path = Paths.get(benchDir + "/" + file);
-            //Logger.instance.setDebugLevel("DBSPExecutor", 1);
-            //Logger.instance.setDebugLevel("JDBCExecutor", 1);
-            //Logger.instance.setDebugLevel("DBSP_JDBC_Executor", 1);
             if (executor.is(DBSPExecutor.class))
                 executor.to(DBSPExecutor.class).setBatchSize(batchSize, skipPerFile);
             Files.walkFileTree(path, loader);

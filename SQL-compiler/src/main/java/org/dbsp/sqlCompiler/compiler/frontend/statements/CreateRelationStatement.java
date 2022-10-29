@@ -102,4 +102,12 @@ public abstract class CreateRelationStatement extends FrontEndStatement {
     public DBSPType getTableType() {
         return new DBSPTypeZSet(this.node, this.getRowType());
     }
+
+    @Override
+    public String toString() {
+        return "CreateRelationStatement{" +
+                "tableName='" + this.tableName + '\'' +
+                ", columns=" + this.columns +
+                '}';
+    }
 }

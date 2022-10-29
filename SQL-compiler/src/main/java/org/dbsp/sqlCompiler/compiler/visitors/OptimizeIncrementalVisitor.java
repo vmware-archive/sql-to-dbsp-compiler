@@ -81,6 +81,9 @@ public class OptimizeIncrementalVisitor extends CircuitCloneVisitor {
     public void postorder(DBSPFlatMapOperator operator) { this.linear(operator); }
 
     @Override
+    public void postorder(DBSPNoopOperator operator) { this.linear(operator); }
+
+    @Override
     public void postorder(DBSPJoinOperator operator) {
         List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
         if (Linq.all(sources, s -> s.is(DBSPIntegralOperator.class))) {

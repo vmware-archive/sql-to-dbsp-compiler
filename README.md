@@ -208,7 +208,7 @@ are detailed below.
 | index/between        |         N/A | 121,811/0 |               |
 | index/orderby_nosort |         N/A | 490,986/0 |               |
 | index/view           |         N/A |  53,490/0 |               |
-| index/random         |         N/A |           |               |
+| index/random         |         N/A | 188,449/0 | 188,449/0     |
 | index/orderby        |         N/A | 310,630/0 |               |
 | evidence             |             |           |               |
 
@@ -217,7 +217,21 @@ does not support the "unique index" SQL statement.
 
 Failing tests with DBSP executor:
 
-- `SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )`, file `random/aggregates/slt_good_12.test`
+- `SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )`,
+   From `random/aggregates/slt_good_12.test`
    The Calcite parser cannot parse this query.
-- `SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0`, file `random/aggregates/slt_good_96.test`
+- `SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0`,
+   From `random/aggregates/slt_good_96.test`
    This test produces an overflow in the multiplication; the result of overflow is implementation-dependent.
+- `DELETE FROM view1 WHERE x>0`
+- `UPDATE view1 SET x=2`
+   From `evidence/slt_lang_createview.test`
+   MySQL allows updates and deletions in some views
+- `DROP INDEX t1i1;`
+   From `evidence/slt_lang_dropindex.test`
+   MySQL needs to specify the table the index is on when dropping
+- SELECT x'303132' IN (SELECT * FROM t1)
+  SELECT x'303132' NOT IN (SELECT * FROM t1)
+  From `evidence/in1.test`:
+  Calcite parses x'303132' as a BINARY objects and fails typechecking
+  with an error: Values passed to IN operator must have compatible types

@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.util.Utilities;
 
 import java.io.IOException;
 import java.util.Map;
@@ -101,7 +102,7 @@ public class ToCsvVisitor extends InnerVisitor {
     public boolean preorder(DBSPStringLiteral literal) {
         try {
             if (literal.value != null)
-                this.appendable.append(literal.value);
+                this.appendable.append(Utilities.escapeString(literal.value));
             else
                 this.appendable.append(this.nullRepresentation.get());
         } catch (IOException ex) {
@@ -126,12 +127,9 @@ public class ToCsvVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPTupleExpression node) {
         try {
-            boolean first = true;
             for (DBSPExpression expression : node.fields) {
-                if (!first)
-                    this.appendable.append(",");
-                first = false;
                 expression.accept(this);
+                this.appendable.append(",");
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);

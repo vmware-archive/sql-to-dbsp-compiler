@@ -32,11 +32,14 @@ import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.DBSPApplyExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPBlockExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPStrLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
@@ -130,6 +133,37 @@ public class OtherTests implements IModule {
         File file = Solutions.toCsv(fileName, data);
         List<DBSPStatement> list = new ArrayList<>();
         // let src = csv_source::<Tuple3<bool, Option<String>, Option<u32>>, isize>("src/test.csv");
+        DBSPLetStatement src = new DBSPLetStatement("src",
+                new DBSPApplyExpression("read_csv", data.getNonVoidType(),
+                        new DBSPStrLiteral(fileName)));
+        list.add(src);
+        list.add(new DBSPExpressionStatement(new DBSPApplyExpression(
+                "assert_eq!", null, src.getVarReference(),
+                data)));
+        DBSPExpression body = new DBSPBlockExpression(list, null);
+        DBSPFunction tester = new DBSPFunction("test", new ArrayList<>(), null, body)
+                .addAnnotation("#[test]");
+
+        PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
+        rustWriter.println(ToRustVisitor.generatePreamble());
+        rustWriter.println(ToRustVisitor.toRustString(tester));
+        rustWriter.close();
+
+        Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
+        boolean success = file.delete();
+        Assert.assertTrue(success);
+    }
+
+    @Test
+    public void rustCsvTest2() throws IOException, InterruptedException {
+        DBSPZSetLiteral data = new DBSPZSetLiteral(
+                new DBSPTupleExpression(new DBSPIntegerLiteral(1, true)),
+                new DBSPTupleExpression(new DBSPIntegerLiteral(2, true)),
+                new DBSPTupleExpression(DBSPIntegerLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))
+        );
+        String fileName = BaseSQLTests.rustDirectory + "/" + "test.csv";
+        File file = Solutions.toCsv(fileName, data);
+        List<DBSPStatement> list = new ArrayList<>();
         DBSPLetStatement src = new DBSPLetStatement("src",
                 new DBSPApplyExpression("read_csv", data.getNonVoidType(),
                         new DBSPStrLiteral(fileName)));

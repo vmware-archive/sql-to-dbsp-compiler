@@ -537,7 +537,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 .to(DBSPTypeTuple.class);
 
         JoinConditionAnalyzer analyzer = new JoinConditionAnalyzer(
-                leftElementType.to(DBSPTypeTuple.class).size());
+                leftElementType.to(DBSPTypeTuple.class).size(), this.typeCompiler);
         JoinConditionAnalyzer.ConditionDecomposition decomposition = analyzer.analyze(join.getCondition());
         // If any key field is nullable we need to filter the inputs; this will make key columns non-nullable
         DBSPOperator filteredLeft = this.filterNonNullKeys(join, Linq.map(decomposition.comparisons, c -> c.leftColumn), left);
@@ -559,14 +559,10 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPVariableReference t = new DBSPVariableReference("t", Objects.requireNonNull(lr.getNonVoidType()));
         List<DBSPExpression> leftKeyFields = Linq.map(
                 decomposition.comparisons,
-                c -> new DBSPFieldExpression(l, c.leftColumn));
-        leftKeyFields = Linq.map(leftKeyFields,
-                c -> ExpressionCompiler.makeCast(c, c.getNonVoidType().setMayBeNull(false)));
+                c -> ExpressionCompiler.makeCast(new DBSPFieldExpression(l, c.leftColumn), c.resultType));
         List<DBSPExpression> rightKeyFields = Linq.map(
                 decomposition.comparisons,
-                c -> new DBSPFieldExpression(r, c.rightColumn));
-        rightKeyFields = Linq.map(rightKeyFields,
-                c -> ExpressionCompiler.makeCast(c, c.getNonVoidType().setMayBeNull(false)));
+                c -> ExpressionCompiler.makeCast(new DBSPFieldExpression(r, c.rightColumn), c.resultType));
         DBSPExpression leftKey = new DBSPRawTupleExpression(leftKeyFields);
         DBSPExpression rightKey = new DBSPRawTupleExpression(rightKeyFields);
 
