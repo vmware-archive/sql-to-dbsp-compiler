@@ -27,6 +27,7 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.compiler.visitors.PassesVisitor;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Logger;
@@ -46,28 +47,6 @@ import java.util.List;
 public class Main {
     // Following are queries that calcite fails to parse.
     static final String[] skipFiles = {};
-
-    static class PostgresPolicy implements AcceptancePolicy {
-        @Override
-        public boolean accept(List<String> skip, List<String> only) {
-            if (only.contains("postgresql"))
-                return true;
-            if (!only.isEmpty())
-                return false;
-            return !skip.contains("postgresql");
-        }
-    }
-
-    static class MySqlPolicy implements AcceptancePolicy {
-        @Override
-        public boolean accept(List<String> skip, List<String> only) {
-            if (only.contains("mysql"))
-                return true;
-            if (!only.isEmpty())
-                return false;
-            return !skip.contains("mysql");
-        }
-    }
 
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
@@ -129,10 +108,9 @@ public class Main {
         int batchSize = 500;
         int skipPerFile = 0;
         List<String> files = Linq.list(
-                 /*
-               "random/select",  //done
-                "random/expr",    // done
                 "random/groupby", // done
+                "random/select",  //done
+                "random/expr",    // done
                 "random/aggregates", // done
                 "select1.test",  // done
                 "select2.test",  // done
@@ -147,11 +125,18 @@ public class Main {
                 "index/commute", // done
                 "index/orderby_nosort", // done
                 "index/random",  // done
+                 /*
                  */
                 "evidence"
         );
 
-        String[] args = { "-e", "hybrid", "-b", "sltbugs.txt", "-i" };
+        String[] args = {
+                "-e", "hybrid",
+                "-b", "psqlsltbugs.txt",
+                "-i",
+                "-d", "psql",
+                "-u", "user0"
+        };
         if (argv.length > 0) {
             args = argv;
         } else {
@@ -161,6 +146,7 @@ public class Main {
             args = a.toArray(new String[0]);
         }
         /*
+        Logger.instance.setDebugLevel(PassesVisitor.class, 3);
         Logger.instance.setDebugLevel(JDBCExecutor.class, 3);
         Logger.instance.setDebugLevel(DBSPExecutor.class, 3);
         Logger.instance.setDebugLevel(DBSP_JDBC_Executor.class, 3);
@@ -173,9 +159,7 @@ public class Main {
         SqlTestExecutor executor = options.getExecutor();
 
         System.out.println(options);
-        AcceptancePolicy policy =
-                executor.is(DBSPExecutor.class) && !executor.is(DBSP_JDBC_Executor.class)
-                        ? new PostgresPolicy() : new MySqlPolicy();
+        AcceptancePolicy policy = options.getAcceptancePolicy();
         TestLoader loader = new TestLoader(executor, policy);
         for (String file : options.getDirectories()) {
             if (file.startsWith("select"))

@@ -211,10 +211,10 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
 
     @Override
     public DBSPExpression visitCall(RexCall call) {
-        if (this.getDebugLevel() > 1)
-            Logger.instance.append(call.toString())
-                    .append(" ")
-                    .append(call.getType().toString());
+        Logger.instance.from(this, 2)
+                .append(call.toString())
+                .append(" ")
+                .append(call.getType().toString());
         if (call.op.kind == SqlKind.SEARCH) {
             // TODO: ideally the optimizer should do this before handing the expression to us.
             // Then we can get rid of the rexBuilder field too.
@@ -420,10 +420,10 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
     }
 
     DBSPExpression compile(RexNode expression) {
-        if (this.getDebugLevel() > 2)
-            Logger.instance.append("Compiling ")
-                    .append(expression.toString())
-                    .newline();
+        Logger.instance.from(this, 3)
+                .append("Compiling ")
+                .append(expression.toString())
+                .newline();
         return expression.accept(this);
     }
 }

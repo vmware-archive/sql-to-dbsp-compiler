@@ -41,18 +41,17 @@ public class OptimizeDistinctVisitor extends CircuitCloneVisitor {
             this.map(distinct, input);
             return;
         }
-        if (input.is(DBSPFilterOperator.class) ||
-            input.is(DBSPJoinOperator.class) ||
+        if (input.is(DBSPJoinOperator.class) ||
             input.is(DBSPMapOperator.class) ||
             input.is(DBSPSumOperator.class)) {
             boolean allDistinct = Linq.all(input.inputs, i -> i.is(DBSPDistinctOperator.class));
             if (allDistinct) {
-                // distinct(filter(distinct)) = distinct(filter)
+                // distinct(map(distinct)) = distinct(map)
                 List<DBSPOperator> newInputs = Linq.map(input.inputs, i -> i.inputs.get(0));
                 DBSPOperator newInput = input.replaceInputs(newInputs, false);
                 this.addOperator(newInput);
-                distinct.replaceInputs(Linq.list(newInput), false);
-                this.map(distinct, distinct);
+                DBSPOperator newDistinct = distinct.replaceInputs(Linq.list(newInput), false);
+                this.map(distinct, newDistinct);
                 return;
             }
         }
@@ -66,7 +65,7 @@ public class OptimizeDistinctVisitor extends CircuitCloneVisitor {
             // swap distinct after filter
             DBSPOperator newFilter = filter.replaceInputs(input.inputs, false);
             this.addOperator(newFilter);
-            DBSPOperator result = distinct.replaceInputs(Linq.list(filter), false);
+            DBSPOperator result = distinct.replaceInputs(Linq.list(newFilter), false);
             this.map(filter, result);
             return;
         }

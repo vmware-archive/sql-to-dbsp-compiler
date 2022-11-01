@@ -171,10 +171,10 @@ public class JoinConditionAnalyzer extends RexVisitorImpl<Void> implements IModu
     }
 
     JoinConditionAnalyzer.ConditionDecomposition analyze(RexNode expression) {
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append("Analyzing ")
-                    .append(expression.toString())
-                    .newline();
+        Logger.instance.from(this, 1)
+                .append("Analyzing ")
+                .append(expression.toString())
+                .newline();
         expression.accept(this);
         return this.result;
     }

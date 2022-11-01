@@ -55,8 +55,10 @@ import java.util.List;
 
 
 public class OtherTests implements IModule {
+    static final CompilerOptions options = new CompilerOptions();
+
     private DBSPCompiler compileDef() throws SqlParseException {
-        DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +
@@ -99,14 +101,13 @@ public class OtherTests implements IModule {
         Appendable save = Logger.instance.setDebugStream(builder);
         Logger.instance.setDebugLevel(this.getModule(), 1);
         Assert.assertEquals("OtherTests", this.getModule());
-        Assert.assertEquals(1, this.getDebugLevel());
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append("Logging one statement")
-                    .newline();
+        Logger.instance.from(this, 1)
+                .append("Logging one statement")
+                .newline();
         Logger.instance.setDebugLevel(this.getModule(), 0);
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append("This one is not logged")
-                    .newline();
+        Logger.instance.from(this, 1)
+                .append("This one is not logged")
+                .newline();
         Logger.instance.setDebugStream(save);
         Assert.assertEquals("Logging one statement\n", builder.toString());
         Logger.instance.setDebugLevel(this.getModule(), 0);
@@ -121,8 +122,8 @@ public class OtherTests implements IModule {
         String[] lines = builder.toString().split("\n");
         Arrays.sort(lines);
         Assert.assertEquals(
-                "10,1.0,false,Hi,1,0.0\n" +
-                "10,12.0,true,Hi,,",
+                "10,1.0,false,\"Hi\",1,0.0,\n" +
+                "10,12.0,true,\"Hi\",,,",
                 String.join("\n", lines));
     }
 

@@ -47,11 +47,9 @@ public class CircuitOptimizer {
             passes.add(new IncrementalizeVisitor());
             passes.add(new OptimizeIncrementalVisitor());
         }
-        //passes.add(new FunctorVisitor(c -> ToDotVisitor.toDot("circuit2.jpg", true, c)));
         DeadCodeVisitor dead = new DeadCodeVisitor();
         passes.add(dead);
-        passes.add(new RemoveOperatorsVisitor(dead.keep));
-        //passes.add(new FunctorVisitor(c -> ToDotVisitor.toDot("circuit3.jpg", true, c)));
+        passes.add(new RemoveOperatorsVisitor(dead.reachable));
         passes.add(new NoIntegralVisitor());
         return new PassesVisitor(passes);
     }

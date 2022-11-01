@@ -90,7 +90,7 @@ public class BaseSQLTests {
         return new PassesVisitor(
                 new OptimizeIncrementalVisitor(),
                 dead,
-                new RemoveOperatorsVisitor(dead.keep),
+                new RemoveOperatorsVisitor(dead.reachable),
                 new NoIntegralVisitor()
         );
     }
@@ -118,8 +118,10 @@ public class BaseSQLTests {
         }
     }
 
+    final static CompilerOptions options = new CompilerOptions();
+
     DBSPCompiler compileQuery(String query) throws SqlParseException {
-        DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +

@@ -66,13 +66,13 @@ public class CircuitCloneVisitor extends CircuitVisitor
     }
 
     void map(DBSPOperator old, DBSPOperator newOp, boolean add) {
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append(this.toString())
-                    .append(":")
-                    .append(old.toString())
-                    .append(" -> ")
-                    .append(newOp.toString())
-                    .newline();
+        Logger.instance.from(this, 1)
+                .append(this.toString())
+                .append(":")
+                .append(old.toString())
+                .append(" -> ")
+                .append(newOp.toString())
+                .newline();
         Utilities.putNew(this.remap, old, newOp);
         if (add)
             this.addOperator(newOp);
@@ -83,11 +83,11 @@ public class CircuitCloneVisitor extends CircuitVisitor
     }
 
     void addOperator(DBSPOperator operator) {
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append(this.toString())
-                    .append(" adding ")
-                    .append(operator.toString())
-                    .newline();
+        Logger.instance.from(this, 1)
+                .append(this.toString())
+                .append(" adding ")
+                .append(operator.toString())
+                .newline();
         this.getResult().addOperator(operator);
     }
 
@@ -103,18 +103,18 @@ public class CircuitCloneVisitor extends CircuitVisitor
             return;
         this.visited.add(operator);
         List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append(this.toString())
-                    .append(" replacing inputs of ")
-                    .increase()
-                    .append(operator.toString())
-                    .append(":")
-                    .join(", ", Linq.map(operator.inputs, DBSPOperator::toString))
-                    .newline()
-                    .append("with:")
-                    .join(", ", Linq.map(sources, DBSPOperator::toString))
-                    .newline()
-                    .decrease();
+        Logger.instance.from(this, 1)
+                .append(this.toString())
+                .append(" replacing inputs of ")
+                .increase()
+                .append(operator.toString())
+                .append(":")
+                .join(", ", Linq.map(operator.inputs, DBSPOperator::toString))
+                .newline()
+                .append("with:")
+                .join(", ", Linq.map(sources, DBSPOperator::toString))
+                .newline()
+                .decrease();
         DBSPOperator result = operator.replaceInputs(sources, this.force);
         this.map(operator, result);
     }

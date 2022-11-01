@@ -275,6 +275,6 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + this.id;
+        return this.getClass().getSimpleName();
     }
 }

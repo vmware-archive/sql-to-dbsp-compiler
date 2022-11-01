@@ -256,10 +256,10 @@ public class SqlTestFile implements IModule {
     }
 
     private void add(ISqlTestOperation operation) {
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append("Operation added ")
-                    .append(operation.toString())
-                    .newline();
+        Logger.instance.from(this, 2)
+                .append("Operation added ")
+                .append(operation.toString())
+                .newline();
         this.fileContents.add(operation);
         if (operation.is(SqlTestQuery.class))
             this.testCount++;

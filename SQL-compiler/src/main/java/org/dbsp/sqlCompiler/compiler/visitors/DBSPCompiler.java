@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.compiler.visitors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
 import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
@@ -47,11 +48,13 @@ import javax.annotation.Nullable;
 public class DBSPCompiler implements IModule {
     final CalciteCompiler frontend;
     final CalciteToDBSPCompiler midend;
+    public final CompilerOptions options;
 
-    public DBSPCompiler() {
-        this.frontend = new CalciteCompiler();
+    public DBSPCompiler(CompilerOptions options) {
+        this.options = options;
+        this.frontend = new CalciteCompiler(options);
         this.frontend.startCompilation();
-        this.midend = new CalciteToDBSPCompiler(this.frontend, true);
+        this.midend = new CalciteToDBSPCompiler(this.frontend, true, options);
     }
 
     /**

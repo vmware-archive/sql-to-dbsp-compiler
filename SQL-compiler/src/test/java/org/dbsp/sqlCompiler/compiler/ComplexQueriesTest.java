@@ -66,7 +66,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                         "                RANGE BETWEEN 1800  PRECEDING AND 1 PRECEDING ) AS count_trips_window_30m_dropoff_zip,\n" +
                         "case when extract (ISODOW from  CAST (lpep_dropoff_datetime AS TIMESTAMP))  > 5 then 1 else 0 end as dropoff_is_weekend\n" +
                         "FROM green_tripdata";
-        DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         ddl = this.fixup(ddl);
@@ -145,7 +145,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "          FROM  transactions AS t1\n" +
                 "          LEFT JOIN  demographics AS t2\n" +
                 "ON t1.cc_num =t2.cc_num)";
-        DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         ddl0 = this.fixup(ddl0);

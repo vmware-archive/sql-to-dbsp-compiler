@@ -35,6 +35,8 @@ import java.util.function.Supplier;
 
 /**
  * This visitor can be used to serialize ZSet literals to a CSV representation.
+ * Notice that there is *always* a trailing comma after the last column.
+ * This allows the deserialized unambiguously figure out missing values in the last column.
  */
 public class ToCsvVisitor extends InnerVisitor {
     private final Appendable appendable;

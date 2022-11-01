@@ -81,8 +81,8 @@ public class ToDotVisitor extends CircuitVisitor implements IModule {
 
     public static DBSPCircuit toDot(String fileName, boolean toJpg, DBSPCircuit circuit) {
         try {
-            if (Logger.instance.getDebugLevel(ToDotVisitor.class) > 0)
-                Logger.instance.append("Writing circuit to ")
+            Logger.instance.from("ToDotVisitor", 1)
+                    .append("Writing circuit to ")
                     .append(fileName)
                     .newline();
             File tmp = File.createTempFile("tmp", ".dot");

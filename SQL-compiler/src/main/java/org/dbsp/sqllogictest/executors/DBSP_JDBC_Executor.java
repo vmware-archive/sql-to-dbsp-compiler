@@ -24,6 +24,7 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqllogictest.SqlStatement;
@@ -48,10 +49,10 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
 
     /**
      * @param execute If true the tests are executed, otherwise they are only compiled to Rust.
-     * @param incremental If true generate incremental streaming circuits.
+     * @param options Compilation options.
      */
-    public DBSP_JDBC_Executor(JDBCExecutor executor, boolean execute, boolean incremental) {
-        super(execute, incremental);
+    public DBSP_JDBC_Executor(JDBCExecutor executor, boolean execute, CompilerOptions options) {
+        super(execute, options);
         this.statementExecutor = executor;
         this.tablesCreated = new ArrayList<>();
     }
@@ -82,10 +83,10 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
     public boolean statement(SqlStatement statement) throws SQLException {
         this.statementExecutor.statement(statement);
         String command = statement.statement.toLowerCase();
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append("Executing ")
-                    .append(command)
-                    .newline();
+        Logger.instance.from(this, 1)
+                .append("Executing ")
+                .append(command)
+                .newline();
         @Nullable
         String create = this.rewriteCreateTable(command);
         if (create != null) {

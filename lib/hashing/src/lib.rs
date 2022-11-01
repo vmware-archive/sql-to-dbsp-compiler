@@ -12,6 +12,7 @@ use dbsp::{
     },
     DBData,
     DBWeight,
+    zset,
 };
 use core::{
     cmp::Ordering,
@@ -127,6 +128,7 @@ impl<'a> DataRows<'a> {
         self.rows
     }
 }
+
 /// The format is from the SqlLogicTest query output string format
 pub fn zset_to_strings<K, W>(set: &OrdZSet<K, W>, format: String, order: SortOrder) -> Vec<Vec<String>>
 where
@@ -165,6 +167,23 @@ where
         cursor.step_key();
     }
     data_rows.get()
+}
+
+/// Blow up a zset into multiple zsets, one for each "element"
+pub fn to_elements<K, W>(set: &OrdZSet<K, W>) -> Vec<OrdZSet<K, W>>
+where
+    K: DBData,
+    W: DBWeight,
+{
+    let mut cursor = set.cursor();
+    let mut result = Vec::new();
+    while cursor.key_valid() {
+        let w = cursor.weight();
+        let k = cursor.key();
+        result.push(zset!(k.clone() => w));
+        cursor.step_key();
+    }
+    result
 }
 
 /// This function mimics the md5 checksum computation from SqlLogicTest

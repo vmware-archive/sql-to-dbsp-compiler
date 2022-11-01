@@ -37,9 +37,11 @@ import org.junit.Test;
  * Tests that invoke the CalciteToDBSPCompiler.
  */
 public class DBSPCompilerTests {
+    static final CompilerOptions options = new CompilerOptions();
+
     @Test
     public void DDLTest() throws SqlParseException {
-        DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +
@@ -54,7 +56,7 @@ public class DBSPCompilerTests {
 
     @Test
     public void DDLAndInsertTest() throws SqlParseException {
-        DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +
