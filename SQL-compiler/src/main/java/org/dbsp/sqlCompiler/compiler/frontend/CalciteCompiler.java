@@ -53,7 +53,7 @@ import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
 import org.apache.calcite.sql.type.*;
 import org.apache.calcite.sql.util.SqlOperatorTables;
 import org.apache.calcite.sql.util.SqlShuttle;
-import org.apache.calcite.sql.validate.SqlConformanceEnum;
+import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.RelDecorrelator;
@@ -61,11 +61,9 @@ import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.Pair;
+import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
-import org.dbsp.util.IModule;
-import org.dbsp.util.Linq;
-import org.dbsp.util.Logger;
-import org.dbsp.util.Unimplemented;
+import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -127,20 +125,19 @@ public class CalciteCompiler implements IModule {
     }
 
     // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
-    public CalciteCompiler() {
+    public CalciteCompiler(CompilerOptions options) {
         this.program = null;
         this.astRewriter = new RewriteDivision();
-        // Are these used for anything?
         Properties connConfigProp = new Properties();
         connConfigProp.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
         connConfigProp.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
         connConfigProp.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        connConfigProp.put(CalciteConnectionProperty.CONFORMANCE.camelName(), String.valueOf(SqlConformanceEnum.MYSQL_5));
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
+        SqlConformance conformance = connectionConfig.conformance();
         this.parserConfig = SqlParser.config()
                 // Add support for DDL language
                 .withParserFactory(SqlDdlParserImpl.FACTORY)
-                .withConformance(SqlConformanceEnum.MYSQL_5);
+                .withConformance(conformance);
         this.typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
         this.catalog = new Catalog("schema");
         CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
@@ -186,7 +183,6 @@ public class CalciteCompiler implements IModule {
         SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
                 .withLenientOperatorLookup(connectionConfig.lenientOperatorLookup())
                 .withTypeCoercionEnabled(true)
-                .withConformance(connectionConfig.conformance())
                 .withDefaultNullCollation(connectionConfig.defaultNullCollation())
                 .withIdentifierExpansion(true);
 
@@ -351,37 +347,36 @@ public class CalciteCompiler implements IModule {
     }
 
     RelNode optimize(RelNode rel) {
-        int debugLevel = this.getDebugLevel();
-        if (debugLevel > 1)
-            Logger.instance.append("Before optimizer")
-                    .increase()
-                    .append(getPlan(rel))
-                    .decrease()
-                    .newline();
+        Logger.instance.from(this, 2)
+                .append("Before optimizer")
+                .increase()
+                .append(getPlan(rel))
+                .decrease()
+                .newline();
 
         RelBuilder relBuilder = this.converterConfig.getRelBuilderFactory().create(
                 cluster, null);
         // This converts correlated sub-queries into standard joins.
         rel = RelDecorrelator.decorrelateQuery(rel, relBuilder);
-        if (debugLevel > 1)
-            Logger.instance.append("After decorrelator")
-                    .increase()
-                    .append(getPlan(rel))
-                    .decrease()
-                    .newline();
+        Logger.instance.from(this, 2)
+                .append("After decorrelator")
+                .increase()
+                .append(getPlan(rel))
+                .decrease()
+                .newline();
 
         int stage = 0;
         for (HepProgram program: getOptimizationStages(rel)) {
             HepPlanner planner = new HepPlanner(program);
             planner.setRoot(rel);
             rel = planner.findBestExp();
-            if (debugLevel > 2)
-                Logger.instance.append("After optimizer stage ")
-                        .append(stage)
-                        .increase()
-                        .append(getPlan(rel))
-                        .decrease()
-                        .newline();
+            Logger.instance.from(this, 3)
+                    .append("After optimizer stage ")
+                    .append(stage)
+                    .increase()
+                    .append(getPlan(rel))
+                    .decrease()
+                    .newline();
             stage++;
         }
         return rel;
@@ -409,13 +404,13 @@ public class CalciteCompiler implements IModule {
             if (node.getKind().equals(SqlKind.CREATE_VIEW)) {
                 SqlCreateView cv = (SqlCreateView) node;
                 SqlNode query = cv.query;
-                if (this.getDebugLevel() > 1)
-                    Logger.instance.append(query.toString())
-                            .newline();
+                Logger.instance.from(this, 2)
+                        .append(query.toString())
+                        .newline();
                 query = query.accept(this.astRewriter);
-                if (this.getDebugLevel() > 1)
-                    Logger.instance.append(Objects.requireNonNull(query).toString())
-                            .newline();
+                Logger.instance.from(this, 2)
+                        .append(Objects.requireNonNull(query).toString())
+                        .newline();
                 RelRoot relRoot = this.converter.convertQuery(query, true, true);
                 RelNode optimized = this.optimize(relRoot.rel);
                 relRoot = relRoot.withRel(optimized);

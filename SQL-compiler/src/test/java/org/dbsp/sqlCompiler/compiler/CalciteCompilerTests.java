@@ -35,9 +35,11 @@ import org.junit.Test;
  * Test the calcite compiler infrastructure.
  */
 public class CalciteCompilerTests {
+    static final CompilerOptions options = new CompilerOptions();
+
     @Test
     public void DDLTest() throws SqlParseException {
-        CalciteCompiler calcite = new CalciteCompiler();
+        CalciteCompiler calcite = new CalciteCompiler(options);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT" +
                 ", COL2 DOUBLE" +
@@ -52,7 +54,7 @@ public class CalciteCompilerTests {
 
     @Test
     public void DDLAndInsertTest() throws SqlParseException {
-        CalciteCompiler calcite = new CalciteCompiler();
+        CalciteCompiler calcite = new CalciteCompiler(options);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT" +
                 ", COL2 DOUBLE" +

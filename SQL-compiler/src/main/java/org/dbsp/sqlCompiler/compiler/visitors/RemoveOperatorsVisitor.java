@@ -39,9 +39,9 @@ public class RemoveOperatorsVisitor extends CircuitCloneVisitor {
     public RemoveOperatorsVisitor(Set<DBSPOperator> keep) {
         super(false);
         this.keep = keep;
-        if (this.getDebugLevel() > 1)
-            Logger.instance.append(this.keep.toString())
-                    .newline();
+        Logger.instance.from(this, 2)
+                .append(this.keep.toString())
+                .newline();
     }
 
     @Override

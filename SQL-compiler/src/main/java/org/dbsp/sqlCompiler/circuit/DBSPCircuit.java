@@ -71,10 +71,10 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
     }
 
     public void addOperator(DBSPOperator operator) {
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append("Adding ")
-                    .append(operator.toString())
-                    .newline();
+        Logger.instance.from(this, 1)
+                .append("Adding ")
+                .append(operator.toString())
+                .newline();
         Utilities.putNew(this.operatorDeclarations, operator.outputName, operator);
         if (operator.is(DBSPSourceOperator.class))
             this.inputOperators.add(operator.to(DBSPSourceOperator.class));

@@ -31,7 +31,6 @@ import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.midend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.midend.TableContents;
-import org.dbsp.sqlCompiler.compiler.visitors.ToDotVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -80,7 +79,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     private final boolean execute;
     private int batchSize;  // Number of queries to execute together
     private int skip;       // Number of queries to skip in each test file.
-    public final boolean incrementalMode;  // If true test an incremental streaming version of the circuit.
+    public final CompilerOptions options;
     final SqlTestPrepareInput inputPreparation;
     final SqlTestPrepareTables tablePreparation;
     final SqlTestPrepareViews viewPreparation;
@@ -95,15 +94,15 @@ public class DBSPExecutor extends SqlTestExecutor {
      * Create an executor that executes SqlLogicTest queries directly compiling to
      * Rust and using the DBSP library.
      * @param execute  If true the tests are executed, otherwise they are only compiled to Rust.
-     * @param incremental  If true the executor generates and tests incremental circuit.
+     * @param options  Options to use for compilation.
      */
-    public DBSPExecutor(boolean execute, boolean incremental) {
+    public DBSPExecutor(boolean execute, CompilerOptions options) {
         this.execute = execute;
-        this.incrementalMode = incremental;
         this.inputPreparation = new SqlTestPrepareInput();
         this.tablePreparation = new SqlTestPrepareTables();
         this.viewPreparation = new SqlTestPrepareViews();
         this.batchSize = 10;
+        this.options = options;
         this.queriesToRun = new ArrayList<>();
     }
 
@@ -176,20 +175,30 @@ public class DBSPExecutor extends SqlTestExecutor {
                         new DBSPPath("Vec", "new"))),
                 true);
         statements.add(let);
-        if (this.incrementalMode) {
+        if (this.options.incrementalize) {
             for (int i = 0; i < inputType.tupFields.length; i++) {
+                DBSPExpression field = new DBSPFieldExpression(input.getVarReference(), i);
+                DBSPExpression elems = new DBSPApplyExpression("to_elements",
+                        DBSPTypeAny.instance, new DBSPBorrowExpression(field));
+
+                DBSPVariableReference e = new DBSPVariableReference("e", DBSPTypeAny.instance);
                 DBSPExpression[] fields = new DBSPExpression[inputType.tupFields.length];
                 for (int j = 0; j < inputType.tupFields.length; j++) {
                     DBSPType fieldType = inputType.tupFields[j];
                     if (i == j) {
-                        fields[j] = new DBSPFieldExpression(input.getVarReference(), i);
+                        fields[j] = e.applyClone();
                     } else {
                         fields[j] = new DBSPApplyExpression("zset!", fieldType);
                     }
                 }
                 DBSPExpression projected = new DBSPRawTupleExpression(fields);
+                DBSPExpression lambda = new DBSPClosureExpression(projected, e.asParameter());
+                DBSPExpression iter = new DBSPApplyMethodExpression(
+                        "iter", DBSPTypeAny.instance, elems);
+                DBSPExpression map = new DBSPApplyMethodExpression(
+                        "map", DBSPTypeAny.instance, iter, lambda);
                 DBSPExpression expr = new DBSPApplyMethodExpression(
-                        "push", null, vec, projected);
+                        "extend", null, vec, map);
                 DBSPStatement statement = new DBSPExpressionStatement(expr);
                 statements.add(statement);
             }
@@ -212,7 +221,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     }
 
     void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException, SQLException {
-        DBSPCompiler compiler = new DBSPCompiler();
+        DBSPCompiler compiler = new DBSPCompiler(this.options);
         final List<ProgramAndTester> codeGenerated = new ArrayList<>();
         // Create input tables
         this.createTables(compiler);
@@ -231,7 +240,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                 codeGenerated.add(pc);
                 this.queriesExecuted++;
             } catch (Throwable ex) {
-                System.err.println("Error while compiling " + testQuery.query);
+                System.err.println("Error while compiling " + testQuery.query + ": " + ex.getMessage());
                 throw ex;
             }
             queryNo++;
@@ -261,13 +270,13 @@ public class DBSPExecutor extends SqlTestExecutor {
         String dbspQuery = origQuery;
         if (!dbspQuery.toLowerCase().contains("create view"))
             dbspQuery = "CREATE VIEW V AS (" + origQuery + ")";
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append("Query ")
-                    .append(suffix)
-                    .append(":\n")
-                    .append(dbspQuery)
-                    .append(testQuery.name != null ? " " + testQuery.name : "")
-                    .append("\n");
+        Logger.instance.from(this, 1)
+                .append("Query ")
+                .append(suffix)
+                .append(":\n")
+                .append(dbspQuery)
+                .append(testQuery.name != null ? " " + testQuery.name : "")
+                .append("\n");
         compiler.newCircuit("gen" + suffix);
         compiler.generateOutputForNextView(false);
         for (SqlStatement view: viewPreparation.definitions()) {
@@ -276,9 +285,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         compiler.generateOutputForNextView(true);
         compiler.compileStatement(dbspQuery, testQuery.name);
         DBSPCircuit dbsp = compiler.getResult();
-        CompilerOptions options = new CompilerOptions();
-        options.incrementalize = this.incrementalMode;
-        CircuitOptimizer optimizer = new CircuitOptimizer(options);
+        CircuitOptimizer optimizer = new CircuitOptimizer(compiler.options);
         dbsp = optimizer.optimize(dbsp);
         //ToDotVisitor.toDot("circuit.jpg", true, dbsp);
         DBSPZSetLiteral expectedOutput = null;
@@ -388,19 +395,19 @@ public class DBSPExecutor extends SqlTestExecutor {
                 boolean status;
                 try {
                     if (this.buggyOperations.contains(stat.statement)) {
-                        if (this.getDebugLevel() > 0)
-                            Logger.instance.append("Skipping buggy test ")
-                                    .append(stat.statement)
-                                    .newline();
+                        Logger.instance.from(this, 1)
+                                .append("Skipping buggy test ")
+                                .append(stat.statement)
+                                .newline();
                         status = stat.shouldPass;
                     } else {
                         status = this.statement(stat);
                     }
                 } catch (SQLException ex) {
-                    if (this.getDebugLevel() > 0)
-                        Logger.instance.append("Statement failed ")
-                                .append(stat.statement)
-                                .newline();
+                    Logger.instance.from(this, 1)
+                            .append("Statement failed ")
+                            .append(stat.statement)
+                            .newline();
                     status = false;
                 }
                 this.statementsExecuted++;
@@ -414,10 +421,10 @@ public class DBSPExecutor extends SqlTestExecutor {
                     continue;
                 }
                 if (this.buggyOperations.contains(query.query)) {
-                    if (this.getDebugLevel() > 0)
-                        Logger.instance.append("Skipping buggy test ")
-                                .append(query.query)
-                                .newline();
+                    Logger.instance.from(this, 1)
+                            .append("Skipping buggy test ")
+                            .append(query.query)
+                            .newline();
                     result.ignored++;
                     continue;
                 }
@@ -436,10 +443,10 @@ public class DBSPExecutor extends SqlTestExecutor {
         // Make sure there are no left-overs if this executor
         // is invoked to process a new file.
         this.reset();
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append("Finished executing ")
-                    .append(file.toString())
-                    .newline();
+        Logger.instance.from(this, 1)
+                .append("Finished executing ")
+                .append(file.toString())
+                .newline();
         return result;
     }
 
@@ -570,10 +577,10 @@ public class DBSPExecutor extends SqlTestExecutor {
     }
 
     public boolean statement(SqlStatement statement) throws SQLException {
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append("Executing ")
-                    .append(statement.toString())
-                    .newline();
+        Logger.instance.from(this, 1)
+                .append("Executing ")
+                .append(statement.toString())
+                .newline();
         String command = statement.statement.toLowerCase();
         if (command.startsWith("create index"))
             return true;

@@ -159,7 +159,8 @@ database that supports JDBC and can handle the correct syntax of the
 queries can be used.
 
 To use this executor you have to install a suitable database and its
-JDBC connector.  For example, you can install MySQL:
+JDBC connector; we have tested with MySQL and Postgres.  
+For example, you can install MySQL:
 
 - Downloadable from <https://dev.mysql.com/downloads/mysql>.
 
@@ -167,9 +168,9 @@ JDBC connector.  For example, you can install MySQL:
 The maven pom.xml file already includes the mysql driver, you should
 add the jar for your favorite DB.
 
-- If you want to run these tests you need to create a mysql account
-with username `user` and password `password`, and a database named
-`slt` (from Sql Logic Test).
+- If you want to run these tests you need to create a database named
+`slt` (from Sql Logic Test), and an appropriate user account.  Details
+about the account and password are supplied as constructor parameters.
 
 #### The hybrid `DBSP_JDBC_Executor`
 
@@ -179,10 +180,6 @@ DBSP as a query engine.  It should be able to execute all SqlLogicTest
 queries that are supported by the underlying database.
 
 #### SqlLogicTest Test results
-
-The DBSP executor has skipped the MySql tests.
-
-The JDBC_DBSP executor has been run against MySQL.
 
 The 'inc' column shows tests for incremental circuits, the other
 columns show tests for non-incremental (standard) implementations.
@@ -195,7 +192,7 @@ are detailed below.
 |----------------------|------------:|----------:|--------------:|
 | random/select        | 1,120,329/0 |           | 1,120,329/0   |
 | random/groupby       |   118,757/0 |           |               |
-| random/expr          | 1,317,682/0 |           |               |
+| random/expr          | 1,317,682/0 |           | 1,198,926/0   |
 | random/aggregates    | 1,172,825/2 |           |               |
 | select1              |     1,000/0 |           |               |
 | select2              |     1,000/0 |           |               |
@@ -215,48 +212,4 @@ are detailed below.
 The "index" tests cannot be executed with the `DBSPExecutor` since it
 does not support the "unique index" SQL statement.
 
-Failing tests with DBSP executor:
-
-- `SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )`,
-   From `random/aggregates/slt_good_12.test`
-   The Calcite parser cannot parse this query.
-- `SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0`,
-   From `random/aggregates/slt_good_96.test`
-   This test produces an overflow in the multiplication; the result of overflow is implementation-dependent.
-- `DELETE FROM view1 WHERE x>0`
-- `UPDATE view1 SET x=2`
-   From `evidence/slt_lang_createview.test`
-   MySQL allows updates and deletions in some views
-- `DROP INDEX t1i1;`
-   From `evidence/slt_lang_dropindex.test`
-   MySQL needs to specify the table the index is on when dropping
-- `SELECT x'303132' IN (SELECT * FROM t1)`
-  `SELECT x'303132' NOT IN (SELECT * FROM t1)`
-  From `evidence/in1.test`:
-  Calcite parses x'303132' as a BINARY objects and fails typechecking
-  with an error: Values passed to IN operator must have compatible types
-- `CREATE TRIGGER t1r1 UPDATE ON t1 BEGIN SELECT 1; END;`
-  `DROP TRIGGER t1r1`
-  From evidence/slt_lang_droptrigger.test
-  These don't match MySQL behaviors
-- Not really relevant
-  From evidence/slt_lang_createtrigger.test
-  `CREATE TRIGGER t1r2 DELETE ON t1 BEGIN SELECT 1; END;`
-  `CREATE TRIGGER t1r3 INSERT ON t1 BEGIN SELECT 1; END;`
-  `CREATE TRIGGER t1r4 UPDATE ON t1 BEGIN SELECT 1; END;`
-  `CREATE TRIGGER t1r5 AFTER DELETE ON t1 BEGIN SELECT 1; END;`
-  `CREATE TRIGGER t1r6 AFTER INSERT ON t1 BEGIN SELECT 1; END;`
-  `CREATE TRIGGER t1r7 AFTER UPDATE ON t1 BEGIN SELECT 1; END;`
-  `CREATE TRIGGER t1r8 BEFORE DELETE ON t1 BEGIN SELECT 1; END;`
-  `CREATE TRIGGER t1r9 BEFORE INSERT ON t1 BEGIN SELECT 1; END;`
-  `CREATE TRIGGER t1r10 BEFORE UPDATE ON t1 BEGIN SELECT 1; END;`
-  `DROP TRIGGER t1r1`
-  `DROP TRIGGER t1r2`
-  `DROP TRIGGER t1r3`
-  `DROP TRIGGER t1r4`
-  `DROP TRIGGER t1r5`
-  `DROP TRIGGER t1r6`
-  `DROP TRIGGER t1r7`
-  `DROP TRIGGER t1r8`
-  `DROP TRIGGER t1r9`
-  `DROP TRIGGER t1r10`
+The JDBC executor used Postgres as a backing databse.

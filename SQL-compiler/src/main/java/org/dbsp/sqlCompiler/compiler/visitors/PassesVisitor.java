@@ -25,11 +25,13 @@ package org.dbsp.sqlCompiler.compiler.visitors;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.util.IModule;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 
 import java.util.List;
 
-public class PassesVisitor extends CircuitVisitor {
+public class PassesVisitor extends CircuitVisitor implements IModule {
     public final List<CircuitVisitor> passes;
 
     public PassesVisitor(CircuitVisitor... passes) {
@@ -44,8 +46,30 @@ public class PassesVisitor extends CircuitVisitor {
 
     @Override
     public DBSPCircuit apply(DBSPCircuit circuit) {
-        for (CircuitVisitor pass: this.passes)
+        int count = 0;
+        if (this.getDebugLevel() >= 3) {
+            Logger.instance.from(this, 3)
+                    .append("Writing circuit to before.jpg")
+                    .newline();
+            ToDotVisitor.toDot("0before.jpg", true, circuit);
+        }
+        ++count;
+        for (CircuitVisitor pass: this.passes) {
+            Logger.instance.from(this, 1)
+                    .append("Executing ")
+                    .append(pass.toString())
+                    .newline();
             circuit = pass.apply(circuit);
+            if (this.getDebugLevel() >= 3) {
+                String name = count + pass.toString().replace(" ", "_") + ".jpg";
+                Logger.instance.from(this, 3)
+                        .append("Writing circuit to ")
+                        .append(name)
+                        .newline();
+                ToDotVisitor.toDot(name, true, circuit);
+            }
+            ++count;
+        }
         return circuit;
     }
 }

@@ -41,7 +41,7 @@ public class CastTests extends BaseSQLTests {
 
     @Override
     DBSPCompiler compileQuery(String query) throws SqlParseException {
-        DBSPCompiler compiler = new DBSPCompiler().newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +

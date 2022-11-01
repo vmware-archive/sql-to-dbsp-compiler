@@ -1,7 +1,17 @@
 // This file contains a list of SqlLogicTest which I believe are
-// buggy.  Each line is a statement or query that is buggy, without
+// buggy when using MySQL.  Each line is a statement or query that is buggy, without
 // newlines.  Lines starting with // are ignored.
 //
+// Calcite cannot parse this MySQL query due to DIV and SIGNED
+// random/groupby/slt_good_12.test
+SELECT - col0 * - - col2 * + col2 DIV - col2 AS col0 FROM tab0 cor0 GROUP BY col0, col2
+SELECT + col1 DIV ( - col1 ) - - col1 FROM tab2 GROUP BY col1, col2, col1
+SELECT DISTINCT - CAST( + - CAST( + 0 AS SIGNED ) AS SIGNED ) AS col0 FROM tab2 AS cor0 GROUP BY col1, col2
+SELECT ALL + COALESCE ( + 23, - col2 DIV - 95 ) FROM tab2 WHERE NOT 84 IS NULL GROUP BY col2
+SELECT DISTINCT col1 col2 FROM tab2 GROUP BY col1, col1, col2 HAVING NOT - col2 > CAST( + 20 AS SIGNED )
+SELECT ALL + + 67 FROM tab2 cor0 GROUP BY col1, col2 HAVING NOT NULL = + CAST( NULL AS SIGNED )
+SELECT DISTINCT - 44 + - col1 + + col1, - col1 + - col1 * col1 AS col1 FROM tab0 AS cor0 GROUP BY col1, col1
+SELECT ( col0 ) DIV - - col0 + - col2 col2 FROM tab2 AS cor0 GROUP BY col0, col2
 // Calcite cannot parse this query
 // test/random/aggregates/slt_good_12.test
 SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )

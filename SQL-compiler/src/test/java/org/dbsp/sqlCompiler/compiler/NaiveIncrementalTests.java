@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.compiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPSomeExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.junit.Test;
@@ -91,13 +92,22 @@ public class NaiveIncrementalTests extends EndToEndTests {
         this.testConstantOutput(query, result);
     }
 
-    @Test
+    @Test @Override
     public void customDivisionTest() {
         // Use a custom division operator.
         String query = "SELECT DIVISION(1, 0)";
         this.testConstantOutput(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
                         DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test @Override
+    public void inTest() {
+        String query = "SELECT 3 in (SELECT COL5 FROM T)";
+        this.testAggregate(query,
+                new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeBool.instance.setMayBeNull(true)))),
+                new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPBoolLiteral(false, true)))
+        );
     }
 
     @Test

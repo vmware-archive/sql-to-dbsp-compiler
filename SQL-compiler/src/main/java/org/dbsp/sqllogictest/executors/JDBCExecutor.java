@@ -49,6 +49,7 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
     public final String db_url;
     public final String user;
     public final String password;
+    public final String dialect;
     @Nullable
     Connection connection;
 
@@ -107,30 +108,30 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
         }
     }
 
-    public JDBCExecutor(String db_url, String user, String password) {
+    public JDBCExecutor(String db_url, String dialect, String user, String password) {
         this.db_url = db_url;
         this.user = user;
         this.password = password;
+        this.dialect = dialect;
         this.connection = null;
     }
 
     void statement(SqlStatement statement) throws SQLException {
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append(this.statementsExecuted)
-                    .append(": ")
-                    .append(statement.statement)
-                    .newline();
+        Logger.instance.from(this, 1)
+                .append(this.statementsExecuted)
+                .append(": ")
+                .append(statement.statement)
+                .newline();
         assert this.connection != null;
         Statement stmt = this.connection.createStatement();
         try {
             stmt.execute(statement.statement);
         } catch (SQLException ex) {
             stmt.close();
-            if (this.getDebugLevel() > 0)
-                Logger.instance
-                        .append("ERROR: ")
-                        .append(ex.getMessage())
-                        .newline();
+            Logger.instance.from(this, 1)
+                    .append("ERROR: ")
+                    .append(ex.getMessage())
+                    .newline();
             throw ex;
         }
         this.statementsExecuted++;
@@ -148,11 +149,11 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
         stmt.close();
         resultSet.close();
         this.queriesExecuted++;
-        if (this.getDebugLevel() > 0)
-            Logger.instance.append(this.queriesExecuted)
-                    .append(": ")
-                    .append(query.query)
-                    .newline();
+        Logger.instance.from(this, 1)
+                .append(this.queriesExecuted)
+                .append(": ")
+                .append(query.query)
+                .newline();
         return true;
     }
 
@@ -393,22 +394,39 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
     }
 
     List<String> getTableList() throws SQLException {
-        // TODO: This is probably not portable.
-        return this.getStringResults("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+        switch (this.dialect) {
+            case "mysql":
+                return this.getStringResults("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+            case "psql":
+                return this.getStringResults("SELECT tableName FROM pg_catalog.pg_tables\n" +
+                        "    WHERE schemaname != 'information_schema' AND\n" +
+                        "    schemaname != 'pg_catalog'");
+            default:
+                throw new UnsupportedOperationException(this.dialect);
+        }
     }
 
     List<String> getViewList() throws SQLException {
-        // TODO: This is probably not portable.
-        return this.getStringResults("SHOW FULL TABLES WHERE Table_type = 'VIEW'");
+        switch (this.dialect) {
+            case "mysql":
+                return this.getStringResults("SHOW FULL TABLES WHERE Table_type = 'VIEW'");
+            case "psql":
+                return this.getStringResults("SELECT table_name \n" +
+                        "FROM information_schema.views \n" +
+                        "WHERE table_schema NOT IN ('information_schema', 'pg_catalog') \n");
+            default:
+                throw new UnsupportedOperationException(this.dialect);
+        }
     }
+
+
 
     void dropAllTables() throws SQLException {
         assert this.connection != null;
         List<String> tables = this.getTableList();
         for (String tableName: tables) {
             String del = "DROP TABLE " + tableName;
-            if (this.getDebugLevel() > 1)
-                Logger.instance.append(del).newline();
+            Logger.instance.from(this, 2).append(del).newline();
             Statement drop = this.connection.createStatement();
             drop.execute(del);
             drop.close();
@@ -420,8 +438,7 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
         List<String> tables = this.getViewList();
         for (String tableName: tables) {
             String del = "DROP VIEW " + tableName;
-            if (this.getDebugLevel() > 1)
-                Logger.instance.append(del).newline();
+            Logger.instance.from(this, 2).append(del).newline();
             Statement drop = this.connection.createStatement();
             drop.execute(del);
             drop.close();

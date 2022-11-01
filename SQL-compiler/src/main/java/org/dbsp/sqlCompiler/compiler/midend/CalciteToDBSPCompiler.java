@@ -36,6 +36,7 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.*;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
+import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.frontend.*;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
@@ -97,18 +98,21 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     final Map<RelNode, DBSPOperator> nodeOperator;
     final TypeCompiler typeCompiler;
     final TableContents tableContents;
+    final CompilerOptions options;
 
     /**
      * Create a compiler that translated from calcite to DBSP circuits.
      * @param calciteCompiler     Calcite compiler.
      * @param trackTableContents  If true this compiler will track INSERT and DELETE statements.
+     * @param options             Options for compilation.
      */
-    public CalciteToDBSPCompiler(CalciteCompiler calciteCompiler, boolean trackTableContents) {
+    public CalciteToDBSPCompiler(CalciteCompiler calciteCompiler, boolean trackTableContents, CompilerOptions options) {
         this.circuit = null;
         this.typeCompiler = new TypeCompiler();
         this.calciteCompiler = calciteCompiler;
         this.nodeOperator = new HashMap<>();
         this.tableContents = new TableContents(trackTableContents);
+        this.options = options;
     }
 
     /**
@@ -148,10 +152,10 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     <T> boolean visitIfMatches(RelNode node, Class<T> clazz, Consumer<T> method) {
         T value = ICastable.as(node, clazz);
         if (value != null) {
-            if (this.getDebugLevel() > 3)
-                Logger.instance.append("Processing ")
-                        .append(node.toString())
-                        .newline();
+            Logger.instance.from(this, 4)
+                    .append("Processing ")
+                    .append(node.toString())
+                    .newline();
             method.accept(value);
             return true;
         }
@@ -917,10 +921,10 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     public void visit(
             RelNode node, int ordinal,
             @org.checkerframework.checker.nullness.qual.Nullable RelNode parent) {
-        if (this.getDebugLevel() > 2)
-            Logger.instance.append("Visiting ")
-                    .append(node.toString())
-                    .newline();
+        Logger.instance.from(this, 3)
+                .append("Visiting ")
+                .append(node.toString())
+                .newline();
         if (this.nodeOperator.containsKey(node))
             // We have already done this one.  This can happen because the
             // plan can be a DAG, not just a tree.
@@ -948,9 +952,9 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         if (statement.is(CreateViewStatement.class)) {
             CreateViewStatement view = statement.to(CreateViewStatement.class);
             RelNode rel = view.getRelNode();
-            if (this.getDebugLevel() > 2)
-                Logger.instance.append(CalciteCompiler.getPlan(rel))
-                        .newline();
+            Logger.instance.from(this, 3)
+                    .append(CalciteCompiler.getPlan(rel))
+                    .newline();
             this.go(rel);
             // TODO: connect the result of the query compilation with
             // the fields of rel; for now we assume that these are 1/1

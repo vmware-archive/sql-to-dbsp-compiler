@@ -43,10 +43,15 @@ public class CompilerOptions {
      * If true the compiler should generate an incremental streaming circuit.
      */
     public boolean incrementalize;
+    /**
+     * SQL dialect compiled.
+     */
+    public String dialect;
 
     public CompilerOptions() {
         this.outputFile = null;
         this.inputFile = null;
         this.incrementalize = false;
+        this.dialect = "psql";
     };
 }

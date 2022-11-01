@@ -28,8 +28,12 @@ import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSourceOperator;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.util.IModule;
+import org.dbsp.util.Logger;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -37,37 +41,48 @@ import java.util.Set;
  * operators that are 'used' by other operators (inputs, outputs,
  * and sources).
  */
-public class DeadCodeVisitor extends CircuitVisitor {
-    public final Set<DBSPOperator> keep = new HashSet<>();
+public class DeadCodeVisitor extends CircuitVisitor implements IModule {
+    public final Set<DBSPOperator> reachable = new HashSet<>();
 
     public DeadCodeVisitor() {
         super(true);
     }
 
-    @Override
-    public void startVisit(IDBSPOuterNode node) {
-        this.keep.clear();
+    public void keep(DBSPOperator operator) {
+        Logger.instance.from(this, 1)
+                .append(operator.toString())
+                .append(" reachable")
+                .newline();
+        this.reachable.add(operator);
     }
 
-    boolean keepSources(DBSPOperator operator) {
-        this.keep.addAll(operator.inputs);
-        return false;
+    @Override
+    public void startVisit(IDBSPOuterNode node) {
+        this.reachable.clear();
     }
 
     @Override
     public boolean preorder(DBSPSourceOperator operator) {
-        this.keep.add(operator);
-        return this.keepSources(operator);
+        this.keep(operator);
+        return false;
     }
 
     @Override
     public boolean preorder(DBSPSinkOperator operator) {
-        this.keep.add(operator);
-        return this.keepSources(operator);
+        List<DBSPOperator> r = new ArrayList<>();
+        r.add(operator);
+        while (!r.isEmpty()) {
+            DBSPOperator op = r.remove(0);
+            if (this.reachable.contains(op))
+                continue;
+            this.keep(op);
+            r.addAll(op.inputs);
+        }
+        return false;
     }
 
     @Override
     public boolean preorder(DBSPOperator operator) {
-        return this.keepSources(operator);
+        return false;
     }
 }

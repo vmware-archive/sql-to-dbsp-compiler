@@ -31,8 +31,10 @@ import java.util.Map;
  * The logger extends IndentStream, and thus provides the capability
  * to output nicely indented hierarchical visualizations.
  */
-public class Logger extends IndentStream implements IDebuggable {
+public class Logger implements IDebuggable {
     private final Map<String, Integer> debugLevel = new HashMap<>();
+    private final IndentStream debugStream;
+    private final IndentStream noStream;
 
     /**
      * There is only one instance of the logger for the whole program.
@@ -40,7 +42,41 @@ public class Logger extends IndentStream implements IDebuggable {
     public static final Logger instance = new Logger();
 
     private Logger() {
-        super(System.err);
+        this.debugStream = new IndentStream(System.err);
+        this.noStream = new IndentStream(new Appendable() {
+            // Ignore everything.
+            @Override
+            public Appendable append(CharSequence csq) {
+                return this;
+            }
+
+            @Override
+            public Appendable append(CharSequence csq, int start, int end) {
+                return this;
+            }
+
+            @Override
+            public Appendable append(char c) {
+                return this;
+            }
+        });
+    }
+
+    public IndentStream from(String module, int level) {
+        int debugLevel = this.getDebugLevel(module);
+        if (debugLevel >= level)
+            return this.debugStream;
+        return this.noStream;
+    }
+
+    /**
+     * Get the logging stream.
+     * @param module  Module which does the logging.
+     * @param level   Level of message that is being logged.
+     * @return        A stream where the message can be appended.
+     */
+    public IndentStream from(IModule module, int level) {
+        return this.from(module.getModule(), level);
     }
 
     /**
@@ -70,6 +106,6 @@ public class Logger extends IndentStream implements IDebuggable {
      */
     @Override
     public Appendable setDebugStream(Appendable writer) {
-        return super.setOutputStream(writer);
+        return this.debugStream.setOutputStream(writer);
     }
 }
