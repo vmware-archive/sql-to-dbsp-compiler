@@ -108,25 +108,23 @@ public class Main {
         int batchSize = 500;
         int skipPerFile = 0;
         List<String> files = Linq.list(
-                "random/groupby", // done
+                "random/groupby", 
                 "random/select",  //done
-                "random/expr",    // done
-                "random/aggregates", // done
-                "select1.test",  // done
-                "select2.test",  // done
-                "select3.test",  // done
-                "select4.test",  // done
-                "select5.test",  // done
-                "index/orderby", // done
-                "index/between", // done
-                "index/view",    // done
-                "index/in",      // done
-                "index/delete",  // done
-                "index/commute", // done
-                "index/orderby_nosort", // done
-                "index/random",  // done
-                 /*
-                 */
+                "random/expr",    
+                "random/aggregates", 
+                "select1.test",  
+                "select2.test",  
+                "select3.test",  
+                "select4.test",  
+                "select5.test",  
+                "index/orderby", 
+                "index/between", 
+                "index/view",    
+                "index/in",      
+                "index/delete",  
+                "index/commute", 
+                "index/orderby_nosort", 
+                "index/random",  
                 "evidence"
         );
 
@@ -135,7 +133,7 @@ public class Main {
                 "-b", "psqlsltbugs.txt",
                 "-i",
                 "-d", "psql",
-                "-u", "user0"
+                "-u", "user"
         };
         if (argv.length > 0) {
             args = argv;

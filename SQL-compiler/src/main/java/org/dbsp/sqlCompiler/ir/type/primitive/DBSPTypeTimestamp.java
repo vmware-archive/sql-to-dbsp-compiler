@@ -24,11 +24,14 @@
 package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLongLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeTimestamp extends DBSPTypeBaseType {
+public class DBSPTypeTimestamp extends DBSPTypeBaseType implements IsNumericType {
     public static final DBSPTypeTimestamp instance = new DBSPTypeTimestamp(null, false);
 
     protected DBSPTypeTimestamp(@Nullable Object node, boolean mayBeNull) {
@@ -37,16 +40,33 @@ public class DBSPTypeTimestamp extends DBSPTypeBaseType {
 
     @Override
     public String shortName() {
-        return "TS";
+        return "i64";
     }
 
     @Override
-    public void accept(InnerVisitor visitor) {}
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
+    }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (this.mayBeNull == mayBeNull)
             return this;
         return new DBSPTypeTimestamp(this.getNode(), mayBeNull);
+    }
+
+    public String getRustString() {
+        return "i64";
+    }
+
+    @Override
+    public DBSPLiteral getZero() {
+        return new DBSPLongLiteral(0L, this.mayBeNull);
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        return new DBSPLongLiteral(1L, this.mayBeNull);
     }
 }

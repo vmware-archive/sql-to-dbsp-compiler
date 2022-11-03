@@ -705,6 +705,12 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPTypeTimestamp type) {
+        type.wrapOption(this.builder, type.getRustString());
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPTypeInteger type) {
         type.wrapOption(this.builder, type.getRustString());
         return false;

@@ -98,7 +98,7 @@ public abstract class InnerVisitor {
         else return true;
     }
 
-    public boolean preorder(DBSPTypeInterval node) {
+    public boolean preorder(DBSPTypeMillisInterval node) {
         if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
@@ -220,6 +220,11 @@ public abstract class InnerVisitor {
     }
 
     public boolean preorder(DBSPTypeStr node) {
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPTypeTimestamp node) {
         if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
@@ -520,7 +525,7 @@ public abstract class InnerVisitor {
         if (this.visitSuper) this.postorder((DBSPType) node);
     }
 
-    public void postorder(DBSPTypeInterval node) {
+    public void postorder(DBSPTypeMillisInterval node) {
         if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
@@ -620,6 +625,10 @@ public abstract class InnerVisitor {
 
     public void postorder(DBSPTypeRawTuple node) {
         if (this.visitSuper) this.postorder((DBSPType) node);
+    }
+
+    public void postorder(DBSPTypeTimestamp node) {
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeInteger node) {

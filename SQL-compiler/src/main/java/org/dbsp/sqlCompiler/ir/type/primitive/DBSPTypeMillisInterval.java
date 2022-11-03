@@ -29,11 +29,11 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import javax.annotation.Nullable;
 
 /**
- * Models the SQL Interval type.  A difference between two dates,
- * with a bunch of restrictions.
+ * Models the SQL Interval type for days-seconds.
+ * Always stores the interval value in milliseconds.
  */
-public class DBSPTypeInterval extends DBSPTypeBaseType {
-    public DBSPTypeInterval(@Nullable Object node, boolean mayBeNull) {
+public class DBSPTypeMillisInterval extends DBSPTypeBaseType {
+    public DBSPTypeMillisInterval(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);
     }
 
@@ -48,7 +48,7 @@ public class DBSPTypeInterval extends DBSPTypeBaseType {
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (this.mayBeNull == mayBeNull)
             return this;
-        return new DBSPTypeInterval(this.getNode(), mayBeNull);
+        return new DBSPTypeMillisInterval(this.getNode(), mayBeNull);
     }
 
     @Override

@@ -25,13 +25,16 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.compiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.*;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDecimal;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 
@@ -103,8 +106,51 @@ public class CastTests extends BaseSQLTests {
     }
 
     @Test
-    public void castFromFP() {
+    public void castFromFPTest() {
         String query = "SELECT T.COL1 + T.COL2 + T.COL3 + T.COL5 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPDoubleLiteral(100203245.0))));
+    }
+
+    @Test
+    public void timestampTableTest() throws SqlParseException, IOException, InterruptedException {
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        compiler.setGenerateInputsFromTables(true);
+        String ddl = "CREATE TABLE T (\n" +
+                "COL1 TIMESTAMP NOT NULL" +
+                ")";
+        compiler.compileStatement(ddl, null);
+        String query = "CREATE VIEW V AS (SELECT COL1 FROM T)";
+        compiler.compileStatement(query, null);
+        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
+        writer.println(ToRustVisitor.generatePreamble());
+        DBSPCircuit circuit = compiler.getResult();
+        writer.println(ToRustVisitor.toRustString(circuit));
+        DBSPZSetLiteral input = new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPLongLiteral(100)));
+        InputOutputPair streams = new InputOutputPair(input, input);
+        this.createTester(writer, circuit, streams);
+        writer.close();
+        Utilities.compileAndTestRust(rustDirectory, false);
+    }
+
+    @Test
+    public void timestampAddTableTest() throws SqlParseException, IOException, InterruptedException {
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        compiler.setGenerateInputsFromTables(true);
+        String ddl = "CREATE TABLE T (\n" +
+                "COL1 TIMESTAMP NOT NULL" +
+                ")";
+        compiler.compileStatement(ddl, null);
+        String query = "CREATE VIEW V AS (SELECT TIMESTAMPADD(SECOND, 10, COL1) FROM T)";
+        compiler.compileStatement(query, null);
+        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
+        writer.println(ToRustVisitor.generatePreamble());
+        DBSPCircuit circuit = compiler.getResult();
+        writer.println(ToRustVisitor.toRustString(circuit));
+        DBSPZSetLiteral input = new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPLongLiteral(100)));
+        InputOutputPair streams = new InputOutputPair(input,
+                new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPLongLiteral(10100))));
+        this.createTester(writer, circuit, streams);
+        writer.close();
+        Utilities.compileAndTestRust(rustDirectory, false);
     }
 }

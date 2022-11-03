@@ -84,6 +84,9 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                     literal, type, Objects.requireNonNull(literal.getValueAs(BigDecimal.class)));
         else if (type.is(DBSPTypeKeyword.class))
             return new DBSPKeywordLiteral(literal, Objects.requireNonNull(literal.getValue()).toString());
+        else if (type.is(DBSPTypeMillisInterval.class))
+            return new DBSPLongLiteral(literal, Objects.requireNonNull(
+                    literal.getValueAs(BigDecimal.class)).longValue(), type.mayBeNull);
         throw new Unimplemented(literal);
     }
 
