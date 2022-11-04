@@ -25,6 +25,8 @@ package org.dbsp.sqlCompiler.compiler.midend;
 
 import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.util.DateString;
+import org.apache.calcite.util.TimestampString;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.compiler.frontend.CalciteCompiler;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -85,8 +87,14 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         else if (type.is(DBSPTypeKeyword.class))
             return new DBSPKeywordLiteral(literal, Objects.requireNonNull(literal.getValue()).toString());
         else if (type.is(DBSPTypeMillisInterval.class))
-            return new DBSPLongLiteral(literal, Objects.requireNonNull(
-                    literal.getValueAs(BigDecimal.class)).longValue(), type.mayBeNull);
+            return new DBSPIntervalMillisLiteral(literal, type, Objects.requireNonNull(
+                    literal.getValueAs(BigDecimal.class)).longValue());
+        else if (type.is(DBSPTypeTimestamp.class)) {
+            return new DBSPTimestampLiteral(literal, type,
+                    Objects.requireNonNull(literal.getValueAs(TimestampString.class)));
+        } else if (type.is(DBSPTypeDate.class)) {
+            return new DBSPDateLiteral(literal, type, Objects.requireNonNull(literal.getValueAs(DateString.class)));
+        }
         throw new Unimplemented(literal);
     }
 
@@ -144,7 +152,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
             return DBSPLiteral.none(type);
         }
         SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
-                op, commonBase.setMayBeNull(leftType.mayBeNull), commonBase.setMayBeNull(rightType.mayBeNull), true);
+                op, type, commonBase.setMayBeNull(leftType.mayBeNull), commonBase.setMayBeNull(rightType.mayBeNull), true);
         return new DBSPApplyExpression("agg_" + function.function, function.returnType, left, right);
     }
 
@@ -159,6 +167,13 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         return makeCast(accumulator, type);
     }
 
+    @SuppressWarnings("unused")
+    public static boolean needCommonType(String op, DBSPType result, DBSPType left, DBSPType right) {
+        if (left.is(IsDateType.class) || right.is(IsDateType.class))
+            return false;
+        return true;
+    }
+
     public static DBSPExpression makeBinaryExpression(
             Object node, DBSPType type, String op, List<DBSPExpression> operands) {
         // Why doesn't Calcite do this?
@@ -170,18 +185,22 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
             throw new Unimplemented(node);
         DBSPType leftType = left.getNonVoidType();
         DBSPType rightType = right.getNonVoidType();
-        DBSPType commonBase = reduceType(leftType, rightType);
-        if (commonBase.is(DBSPTypeNull.class)) {
-            // Result is always NULL.  Perhaps we should give a warning?
-            return DBSPLiteral.none(type);
+
+        if (needCommonType(op, type, leftType, rightType)) {
+            DBSPType commonBase = reduceType(leftType, rightType);
+            if (commonBase.is(DBSPTypeNull.class)) {
+                // Result is always NULL.  Perhaps we should give a warning?
+                return DBSPLiteral.none(type);
+            }
+            if (!leftType.setMayBeNull(false).sameType(commonBase))
+                left = makeCast(left, commonBase.setMayBeNull(leftType.mayBeNull));
+            if (!rightType.setMayBeNull(false).sameType(commonBase))
+                right = makeCast(right, commonBase.setMayBeNull(rightType.mayBeNull));
         }
-        if (!leftType.setMayBeNull(false).sameType(commonBase))
-            left = makeCast(left, commonBase.setMayBeNull(leftType.mayBeNull));
-        if (!rightType.setMayBeNull(false).sameType(commonBase))
-            right = makeCast(right, commonBase.setMayBeNull(rightType.mayBeNull));
         SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
-                op, commonBase.setMayBeNull(leftType.mayBeNull), commonBase.setMayBeNull(rightType.mayBeNull), false);
-        return function.getCall(left, right);
+                op, type, left.getNonVoidType(), right.getNonVoidType(), false);
+        DBSPExpression call = function.getCall(left, right);
+        return makeCast(call, type);
     }
 
     public static DBSPExpression makeCast(DBSPExpression from, DBSPType to) {
@@ -290,7 +309,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 }
                 SqlRuntimeLibrary.FunctionDescription function =
                         SqlRuntimeLibrary.instance.getFunction(
-                                functionName, arg.getNonVoidType(), null, false);
+                                functionName, type, arg.getNonVoidType(), null, false);
                 return function.getCall(arg);
             }
             case PLUS_PREFIX:
@@ -392,7 +411,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                         DBSPExpression arg = ops.get(0);
                         DBSPType argType = arg.getNonVoidType();
                         SqlRuntimeLibrary.FunctionDescription abs =
-                                SqlRuntimeLibrary.instance.getFunction("abs", argType, null, false);
+                                SqlRuntimeLibrary.instance.getFunction("abs", type, argType, null, false);
                         return abs.getCall(arg);
                     case "st_distance":
                         if (call.operands.size() != 2)
@@ -400,7 +419,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                         DBSPExpression left = ops.get(0);
                         DBSPExpression right = ops.get(1);
                         SqlRuntimeLibrary.FunctionDescription dist =
-                                SqlRuntimeLibrary.instance.getFunction("st_distance", left.getNonVoidType(), right.getNonVoidType(), false);
+                                SqlRuntimeLibrary.instance.getFunction("st_distance", type, left.getNonVoidType(), right.getNonVoidType(), false);
                         return dist.getCall(left, right);
                     case "division":
                         return makeBinaryExpression(call, type, "/", ops);
@@ -414,6 +433,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 String functionName = "extract_" + keyword;
                 return new DBSPApplyExpression(functionName, type, ops.get(1));
             }
+            case REINTERPRET:
+                return makeCast(ops.get(0), type);
             case FLOOR:
             case CEIL:
                 // fall through

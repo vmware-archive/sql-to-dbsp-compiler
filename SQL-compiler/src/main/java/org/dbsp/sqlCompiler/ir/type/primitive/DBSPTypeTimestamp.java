@@ -25,13 +25,15 @@ package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLongLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPTimestampLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.IsDateType;
 import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeTimestamp extends DBSPTypeBaseType implements IsNumericType {
+public class DBSPTypeTimestamp extends DBSPTypeBaseType
+        implements IsNumericType, IsDateType {
     public static final DBSPTypeTimestamp instance = new DBSPTypeTimestamp(null, false);
 
     protected DBSPTypeTimestamp(@Nullable Object node, boolean mayBeNull) {
@@ -40,7 +42,7 @@ public class DBSPTypeTimestamp extends DBSPTypeBaseType implements IsNumericType
 
     @Override
     public String shortName() {
-        return "i64";
+        return "Timestamp";
     }
 
     @Override
@@ -57,16 +59,24 @@ public class DBSPTypeTimestamp extends DBSPTypeBaseType implements IsNumericType
     }
 
     public String getRustString() {
-        return "i64";
+        return "Timestamp";
     }
 
     @Override
     public DBSPLiteral getZero() {
-        return new DBSPLongLiteral(0L, this.mayBeNull);
+        return new DBSPTimestampLiteral(0L, this.mayBeNull);
     }
 
     @Override
     public DBSPLiteral getOne() {
-        return new DBSPLongLiteral(1L, this.mayBeNull);
+        return new DBSPTimestampLiteral(1L, this.mayBeNull);
+    }
+
+    @Override
+    public boolean sameType(@Nullable DBSPType other) {
+        if (!super.sameType(other))
+            return false;
+        assert other != null;
+        return other.is(DBSPTypeTimestamp.class);
     }
 }

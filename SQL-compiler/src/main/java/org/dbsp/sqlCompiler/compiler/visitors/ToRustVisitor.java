@@ -69,9 +69,13 @@ public class ToRustVisitor extends CircuitVisitor {
                     "    rc::Rc,\n" +
                     "};\n" +
                     "use tuple::declare_tuples;\n" +
+                    "use sqllib::{" +
+                    "    casts::*,\n" +
+                    "    geopoint::*,\n" +
+                    "    timestamp::*,\n" +
+                    "    interval::*,\n" +
+                    "};\n" +
                     "use sqllib::*;\n" +
-                    "use sqllib::casts::*;\n" +
-                    "use sqllib::geopoint::*;\n" +
                     "use sqlvalue::*;\n" +
                     "use hashing::*;\n" +
                     "use readers::*;\n" +

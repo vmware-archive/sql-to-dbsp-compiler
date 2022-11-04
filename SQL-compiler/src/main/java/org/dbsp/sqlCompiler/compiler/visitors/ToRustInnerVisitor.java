@@ -64,6 +64,33 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPTimestampLiteral literal) {
+        assert literal.value != null;
+        this.builder.append("Timestamp::new(");
+        this.builder.append(Long.toString((Long)literal.value));
+        this.builder.append(")");
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPDateLiteral literal) {
+        assert literal.value != null;
+        this.builder.append("Date::new(");
+        this.builder.append(Integer.toString((int)literal.value));
+        this.builder.append(")");
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPIntervalMillisLiteral literal) {
+        assert literal.value != null;
+        this.builder.append("ShortInterval::new(");
+        this.builder.append(Long.toString((Long)literal.value));
+        this.builder.append(")");
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPGeoPointLiteral literal) {
         this.builder.append("GeoPoint::new(");
         literal.left.accept(this);
@@ -712,6 +739,18 @@ public class ToRustInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPTypeInteger type) {
+        type.wrapOption(this.builder, type.getRustString());
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPTypeMillisInterval type) {
+        type.wrapOption(this.builder, type.getRustString());
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPTypeMonthsInterval type) {
         type.wrapOption(this.builder, type.getRustString());
         return false;
     }

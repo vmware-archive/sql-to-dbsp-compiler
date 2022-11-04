@@ -56,4 +56,12 @@ public class DBSPTypeNull extends DBSPTypeBaseType {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);
     }
+
+    @Override
+    public boolean sameType(@Nullable DBSPType other) {
+        if (!super.sameType(other))
+            return false;
+        assert other != null;
+        return other.is(DBSPTypeNull.class);
+    }
 }

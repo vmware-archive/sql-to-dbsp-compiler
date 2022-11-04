@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class DBSPRawTupleExpression extends DBSPBaseTupleExpression {
     public DBSPRawTupleExpression(DBSPExpression... expressions) {
-        super(null, new DBSPTypeRawTuple(Linq.map(expressions, DBSPExpression::getType, DBSPType.class)), expressions);
+        super(null, new DBSPTypeRawTuple(Linq.map(expressions, DBSPExpression::getNonVoidType, DBSPType.class)), expressions);
     }
 
     public <T extends DBSPExpression> DBSPRawTupleExpression(List<T> fields) {

@@ -24,7 +24,12 @@
 package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntervalMillisLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.IsDateType;
+import org.dbsp.sqlCompiler.ir.type.IsNumericType;
+import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
 
@@ -32,7 +37,9 @@ import javax.annotation.Nullable;
  * Models the SQL Interval type for days-seconds.
  * Always stores the interval value in milliseconds.
  */
-public class DBSPTypeMillisInterval extends DBSPTypeBaseType {
+public class DBSPTypeMillisInterval extends DBSPTypeBaseType implements IsNumericType, IsDateType {
+    public static final DBSPType instance = new DBSPTypeMillisInterval(null, false);
+
     public DBSPTypeMillisInterval(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);
     }
@@ -52,7 +59,30 @@ public class DBSPTypeMillisInterval extends DBSPTypeBaseType {
     }
 
     @Override
+    public String getRustString() {
+        return "ShortInterval";
+    }
+
+    @Override
     public String shortName() {
-        return "interval";
+        return "ShortInterval";
+    }
+
+    @Override
+    public DBSPLiteral getZero() {
+        return new DBSPIntervalMillisLiteral(0, this.mayBeNull);
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        throw new UnsupportedException("One millisecond");
+    }
+
+    @Override
+    public boolean sameType(@Nullable DBSPType other) {
+        if (!super.sameType(other))
+            return false;
+        assert other != null;
+        return other.is(DBSPTypeMillisInterval.class);
     }
 }

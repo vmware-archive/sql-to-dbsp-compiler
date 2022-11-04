@@ -103,6 +103,11 @@ public abstract class InnerVisitor {
         else return true;
     }
 
+    public boolean preorder(DBSPTypeMonthsInterval node) {
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
+        else return true;
+    }
+
     public boolean preorder(DBSPTypeGeo node) {
         if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
@@ -440,6 +445,26 @@ public abstract class InnerVisitor {
     }
     
     public boolean preorder(DBSPVecLiteral node) {
+        if (this.visitSuper) return this.preorder((DBSPLiteral) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPTimestampLiteral node) {
+        if (this.visitSuper) return this.preorder((DBSPLiteral) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPDateLiteral node) {
+        if (this.visitSuper) return this.preorder((DBSPLiteral) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPIntervalMillisLiteral node) {
+        if (this.visitSuper) return this.preorder((DBSPLiteral) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPIntervalMonthsLiteral node) {
         if (this.visitSuper) return this.preorder((DBSPLiteral) node);
         else return true;
     }
@@ -797,6 +822,18 @@ public abstract class InnerVisitor {
     // Literals
     public void postorder(DBSPLiteral node) {
         if (this.visitSuper) this.postorder((DBSPExpression) node);
+    }
+
+    public void postorder(DBSPTimestampLiteral node) {
+        if (this.visitSuper) this.postorder((DBSPLiteral) node);
+    }
+
+    public void postorder(DBSPDateLiteral node) {
+        if (this.visitSuper) this.postorder((DBSPLiteral) node);
+    }
+
+    public void postorder(DBSPIntervalMillisLiteral node) {
+        if (this.visitSuper) this.postorder((DBSPLiteral) node);
     }
 
     public void postorder(DBSPVecLiteral node) {

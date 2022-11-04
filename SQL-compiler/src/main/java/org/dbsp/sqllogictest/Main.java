@@ -109,7 +109,7 @@ public class Main {
         int skipPerFile = 0;
         List<String> files = Linq.list(
                 "random/groupby", 
-                "random/select",  //done
+                "random/select",
                 "random/expr",    
                 "random/aggregates", 
                 "select1.test",  

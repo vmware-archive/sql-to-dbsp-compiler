@@ -98,7 +98,7 @@ public class TypeCompiler {
                 case INTERVAL_YEAR:
                 case INTERVAL_YEAR_MONTH:
                 case INTERVAL_MONTH:
-                    throw new Unimplemented(tn);
+                    return new DBSPTypeMonthsInterval(tn, nullable);
                 case INTERVAL_DAY:
                 case INTERVAL_DAY_HOUR:
                 case INTERVAL_DAY_MINUTE:

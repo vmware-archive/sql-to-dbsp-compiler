@@ -50,6 +50,7 @@ public class SqlRuntimeLibrary {
 
     private final HashSet<String> aggregateFunctions = new HashSet<>();
     private final HashMap<String, String> arithmeticFunctions = new HashMap<>();
+    private final HashMap<String, String> dateFunctions = new HashMap<>();
     private final HashMap<String, String> doubleFunctions = new HashMap<>();
     private final HashMap<String, String> stringFunctions = new HashMap<>();
     private final HashMap<String, String> booleanFunctions = new HashMap<>();
@@ -120,6 +121,9 @@ public class SqlRuntimeLibrary {
         this.doubleFunctions.put("abs", "abs");
         this.arithmeticFunctions.put("is_distinct", "is_distinct");
 
+        this.dateFunctions.put("plus", "+");
+        this.dateFunctions.put("minus", "-");
+
         //this.stringFunctions.put("s_concat", "+");
         this.stringFunctions.put("eq", "==");
         this.stringFunctions.put("neq", "!=");
@@ -162,17 +166,34 @@ public class SqlRuntimeLibrary {
         public DBSPApplyExpression getCall(DBSPExpression... arguments) {
             return new DBSPApplyExpression(this.function, this.returnType, arguments);
         }
+
+        @Override
+        public String toString() {
+            return "FunctionDescription{" +
+                    "function='" + function + '\'' +
+                    ", returnType=" + returnType +
+                    '}';
+        }
     }
     
     public FunctionDescription getFunction(
-            String op, DBSPType ltype, @Nullable DBSPType rtype, boolean aggregate) {
+            String op, @Nullable DBSPType expectedReturnType, DBSPType ltype, @Nullable DBSPType rtype, boolean aggregate) {
         HashMap<String, String> map = null;
-        DBSPType returnType;
         boolean anyNull = ltype.mayBeNull || (rtype != null && rtype.mayBeNull);
+        String suffixReturn = "";  // suffix based on the return type
 
-        returnType = ltype.setMayBeNull(anyNull);
+        DBSPType returnType = ltype.setMayBeNull(anyNull);
         if (ltype.as(DBSPTypeBool.class) != null) {
             map = this.booleanFunctions;
+        } else if (ltype.is(IsDateType.class)) {
+            map = this.dateFunctions;
+            if (op.equals("-")) {
+                if (ltype.is(DBSPTypeTimestamp.class) || ltype.is(DBSPTypeDate.class)) {
+                    assert expectedReturnType != null;
+                    returnType = expectedReturnType;
+                    suffixReturn = "_" + returnType.to(DBSPTypeBaseType.class).shortName();
+                }
+            }
         } else if (ltype.is(IsNumericType.class)) {
             map = this.arithmeticFunctions;
         } else if (ltype.is(DBSPTypeString.class)){
@@ -187,7 +208,6 @@ public class SqlRuntimeLibrary {
                 op.equals("is_false") || op.equals("is_not_false") ||
                 op.equals("is_distinct"))
             returnType = DBSPTypeBool.instance;
-
         String suffixl = ltype.mayBeNull ? "N" : "";
         String suffixr = rtype == null ? "" : (rtype.mayBeNull ? "N" : "");
         String tsuffixl;
@@ -205,7 +225,7 @@ public class SqlRuntimeLibrary {
             throw new Unimplemented(op);
         for (String k: map.keySet()) {
             if (map.get(k).equals(op)) {
-                return new FunctionDescription(k + "_" + tsuffixl + suffixl + "_" + tsuffixr + suffixr, returnType);
+                return new FunctionDescription(k + "_" + tsuffixl + suffixl + "_" + tsuffixr + suffixr + suffixReturn, returnType);
             }
         }
         throw new Unimplemented("Could not find `" + op + "` for type " + ltype);
@@ -298,7 +318,7 @@ public class SqlRuntimeLibrary {
                         */
 
                         // The general rule is: if any operand is NULL, the result is NULL.
-                        FunctionDescription function = this.getFunction(op, leftType, rightType, false);
+                        FunctionDescription function = this.getFunction(op, null, leftType, rightType, false);
                         DBSPFunction.Argument left = new DBSPFunction.Argument("left", leftType);
                         DBSPFunction.Argument right = new DBSPFunction.Argument("right", rightType);
                         DBSPType type = function.returnType;

@@ -21,46 +21,36 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type.primitive;
+package org.dbsp.sqlCompiler.ir.expression.literal;
 
+import org.apache.calcite.util.TimestampString;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.util.UnsupportedException;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeTimestamp;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
-/**
- * This corresponds to the Calcite 'SYMBOL' type,
- * which is the type of various keywords that appear in SQL expressions.
- * It should never surface in code.
- */
-public class DBSPTypeKeyword extends DBSPTypeBaseType {
-    public static final DBSPTypeKeyword instance = new DBSPTypeKeyword();
+public class DBSPTimestampLiteral extends DBSPLiteral {
+    public DBSPTimestampLiteral(@Nullable Object node, DBSPType type, @Nullable Long value) {
+        super(node, type, value);
+    }
 
-    protected DBSPTypeKeyword() {
-        super(null, false);
+    public DBSPTimestampLiteral(@Nullable Object node, DBSPType type, TimestampString value) {
+        super(node, type, value.getMillisSinceEpoch());
+    }
+
+    public DBSPTimestampLiteral(long value) {
+        this(null, DBSPTypeTimestamp.instance, value);
+    }
+
+    public DBSPTimestampLiteral(long value, boolean mayBeNull) {
+        this(null, DBSPTypeTimestamp.instance.setMayBeNull(mayBeNull), value);
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
-        throw new UnsupportedException(this);
-    }
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        throw new UnsupportedException(this);
-    }
-
-    @Override
-    public String shortName() {
-        throw new UnsupportedException(this);
-    }
-
-    @Override
-    public boolean sameType(@Nullable DBSPType other) {
-        if (!super.sameType(other))
-            return false;
-        assert other != null;
-        return other.is(DBSPTypeKeyword.class);
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

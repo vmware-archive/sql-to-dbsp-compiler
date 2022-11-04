@@ -159,7 +159,7 @@ database that supports JDBC and can handle the correct syntax of the
 queries can be used.
 
 To use this executor you have to install a suitable database and its
-JDBC connector; we have tested with MySQL and Postgres.  
+JDBC connector; we have tested with MySQL and Postgres.
 For example, you can install MySQL:
 
 - Downloadable from <https://dev.mysql.com/downloads/mysql>.
@@ -191,7 +191,7 @@ are detailed below.
 | Test group           | DBSP        | JDBC_DBSP | JDBC_DBSP inc |
 |----------------------|------------:|----------:|--------------:|
 | random/select        | 1,120,329/0 |           | 1,120,329/0   |
-| random/groupby       |   118,757/0 |           |               |
+| random/groupby       |   118,757/0 |           |   118,757/0   |
 | random/expr          | 1,317,682/0 |           | 1,198,926/0   |
 | random/aggregates    | 1,172,825/2 |           |               |
 | select1              |     1,000/0 |           |               |
