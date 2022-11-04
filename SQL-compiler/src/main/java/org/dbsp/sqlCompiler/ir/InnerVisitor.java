@@ -98,7 +98,12 @@ public abstract class InnerVisitor {
         else return true;
     }
 
-    public boolean preorder(DBSPTypeInterval node) {
+    public boolean preorder(DBSPTypeMillisInterval node) {
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPTypeMonthsInterval node) {
         if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
@@ -220,6 +225,11 @@ public abstract class InnerVisitor {
     }
 
     public boolean preorder(DBSPTypeStr node) {
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPTypeTimestamp node) {
         if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
     }
@@ -438,6 +448,26 @@ public abstract class InnerVisitor {
         if (this.visitSuper) return this.preorder((DBSPLiteral) node);
         else return true;
     }
+
+    public boolean preorder(DBSPTimestampLiteral node) {
+        if (this.visitSuper) return this.preorder((DBSPLiteral) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPDateLiteral node) {
+        if (this.visitSuper) return this.preorder((DBSPLiteral) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPIntervalMillisLiteral node) {
+        if (this.visitSuper) return this.preorder((DBSPLiteral) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPIntervalMonthsLiteral node) {
+        if (this.visitSuper) return this.preorder((DBSPLiteral) node);
+        else return true;
+    }
     
     public boolean preorder(DBSPFloatLiteral node) {
         if (this.visitSuper) return this.preorder((DBSPLiteral) node);
@@ -520,7 +550,7 @@ public abstract class InnerVisitor {
         if (this.visitSuper) this.postorder((DBSPType) node);
     }
 
-    public void postorder(DBSPTypeInterval node) {
+    public void postorder(DBSPTypeMillisInterval node) {
         if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
@@ -620,6 +650,10 @@ public abstract class InnerVisitor {
 
     public void postorder(DBSPTypeRawTuple node) {
         if (this.visitSuper) this.postorder((DBSPType) node);
+    }
+
+    public void postorder(DBSPTypeTimestamp node) {
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeInteger node) {
@@ -788,6 +822,18 @@ public abstract class InnerVisitor {
     // Literals
     public void postorder(DBSPLiteral node) {
         if (this.visitSuper) this.postorder((DBSPExpression) node);
+    }
+
+    public void postorder(DBSPTimestampLiteral node) {
+        if (this.visitSuper) this.postorder((DBSPLiteral) node);
+    }
+
+    public void postorder(DBSPDateLiteral node) {
+        if (this.visitSuper) this.postorder((DBSPLiteral) node);
+    }
+
+    public void postorder(DBSPIntervalMillisLiteral node) {
+        if (this.visitSuper) this.postorder((DBSPLiteral) node);
     }
 
     public void postorder(DBSPVecLiteral node) {

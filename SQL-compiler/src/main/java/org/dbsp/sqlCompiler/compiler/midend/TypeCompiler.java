@@ -98,6 +98,7 @@ public class TypeCompiler {
                 case INTERVAL_YEAR:
                 case INTERVAL_YEAR_MONTH:
                 case INTERVAL_MONTH:
+                    return new DBSPTypeMonthsInterval(tn, nullable);
                 case INTERVAL_DAY:
                 case INTERVAL_DAY_HOUR:
                 case INTERVAL_DAY_MINUTE:
@@ -108,7 +109,7 @@ public class TypeCompiler {
                 case INTERVAL_MINUTE:
                 case INTERVAL_MINUTE_SECOND:
                 case INTERVAL_SECOND:
-                    return new DBSPTypeInterval(tn, nullable);
+                    return new DBSPTypeMillisInterval(tn, nullable);
                 case GEOMETRY:
                     return DBSPTypeGeoPoint.instance.setMayBeNull(nullable);
                 case TIMESTAMP:

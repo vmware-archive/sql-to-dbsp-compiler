@@ -25,45 +25,28 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.compiler.visitors.*;
+import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.ir.expression.literal.*;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDecimal;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPTimestampLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.util.Utilities;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.math.BigDecimal;
 
-public class CastTests extends BaseSQLTests {
-    DBSPTypeDecimal tenTwo = new DBSPTypeDecimal(null, 2, true);
-    DBSPTypeDecimal tenFour = new DBSPTypeDecimal(null, 4, false);
-
+public class TimeTests extends BaseSQLTests {
     @Override
     DBSPCompiler compileQuery(String query) throws SqlParseException {
         DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
-                "COL1 INT NOT NULL" +
-                ", COL2 DOUBLE NOT NULL" +
-                ", COL3 VARCHAR NOT NULL" +
-                ", COL4 DECIMAL(10,2)" +
-                ", COL5 DECIMAL(10, 4) NOT NULL" +
+                "COL1 TIMESTAMP NOT NULL" +
                 ")";
         compiler.compileStatement(ddl, null);
         compiler.compileStatement(query, null);
         return compiler;
-    }
-
-    @Override
-    DBSPZSetLiteral createInput() {
-        return new DBSPZSetLiteral(new DBSPTupleExpression(
-                new DBSPIntegerLiteral(10),
-                new DBSPDoubleLiteral(12.0),
-                new DBSPStringLiteral("100100"),
-                DBSPLiteral.none(tenTwo),
-                new DBSPDecimalLiteral(null, tenFour, new BigDecimal(100103123))));
     }
 
     void testQuery(String query, DBSPZSetLiteral expectedOutput) {
@@ -83,29 +66,48 @@ public class CastTests extends BaseSQLTests {
         }
     }
 
-    @Test
-    public void intAndString() {
-        String query = "SELECT '1' + 2";
-        this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(new DBSPIntegerLiteral(3))));
+    @Override
+    DBSPZSetLiteral createInput() {
+        return new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPTimestampLiteral(100)));
     }
 
     @Test
-    public void intAndStringTable() {
-        String query = "SELECT T.COL1 + T.COL3 FROM T";
-        this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(new DBSPIntegerLiteral(100110))));
-    }
-
-    @Test
-    public void idTest() {
-        String query = "SELECT * FROM T";
+    public void timestampTableTest() {
+        String query = "SELECT COL1 FROM T";
         this.testQuery(query, this.createInput());
     }
 
     @Test
-    public void castFromFPTest() {
-        String query = "SELECT T.COL1 + T.COL2 + T.COL3 + T.COL5 FROM T";
-        this.testQuery(query, new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPDoubleLiteral(100203245.0))));
+    public void timestampAddTableTest() {
+        String query =
+                "SELECT " +
+                        "TIMESTAMPADD(SECOND, 10, COL1), " +
+                        "TIMESTAMPADD(HOUR, 1, COL1), " +
+                        "TIMESTAMPADD(MINUTE, 10, COL1) " +
+                        "FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                new DBSPTupleExpression(
+                        new DBSPTimestampLiteral(10100),
+                        new DBSPTimestampLiteral(3600100),
+                        new DBSPTimestampLiteral(600100)
+                        )));
+    }
+
+    @Test
+    public void timestampParse() {
+        String query = "SELECT TIMESTAMP '2020-04-30 12:25:13.45'";
+        this.testQuery(query, new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPTimestampLiteral(1588249513450L))));
+    }
+
+    @Test
+    public void timestampDiffTest() {
+        String query =
+                "SELECT timestampdiff(MONTH, TIMESTAMP'2021-02-28 12:00:00', TIMESTAMP'2021-03-28 11:59:59'), " +
+                "timestampdiff(MONTH, TIMESTAMP'2021-02-28 12:00:00', TIMESTAMP'2021-03-28 12:00:00'), " +
+                "timestampdiff(YEAR, DATE'2021-01-01', DATE'1900-03-28')";
+        this.testQuery(query, new DBSPZSetLiteral(
+                new DBSPTupleExpression(
+                        new DBSPIntegerLiteral(0), new DBSPIntegerLiteral(1), new DBSPIntegerLiteral(-120)
+                )));
     }
 }

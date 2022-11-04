@@ -24,11 +24,15 @@
 package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.IsDateType;
+import org.dbsp.sqlCompiler.ir.type.IsNumericType;
+import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeDate extends DBSPTypeBaseType {
+public class DBSPTypeDate extends DBSPTypeBaseType implements IsNumericType, IsDateType {
     public static final DBSPTypeDate instance = new DBSPTypeDate(null, false);
 
     protected DBSPTypeDate(@Nullable Object node, boolean mayBeNull) {
@@ -48,5 +52,23 @@ public class DBSPTypeDate extends DBSPTypeBaseType {
         if (this.mayBeNull == mayBeNull)
             return this;
         return new DBSPTypeDate(this.getNode(), mayBeNull);
+    }
+
+    @Override
+    public DBSPLiteral getZero() {
+        throw new UnsupportedException(instance);
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        throw new UnsupportedException(instance);
+    }
+
+    @Override
+    public boolean sameType(@Nullable DBSPType other) {
+        if (!super.sameType(other))
+            return false;
+        assert other != null;
+        return other.is(DBSPTypeDate.class);
     }
 }

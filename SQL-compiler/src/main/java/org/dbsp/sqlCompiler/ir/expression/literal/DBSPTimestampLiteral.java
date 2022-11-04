@@ -21,38 +21,36 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type.primitive;
+package org.dbsp.sqlCompiler.ir.expression.literal;
 
+import org.apache.calcite.util.TimestampString;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeTimestamp;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
-/**
- * Models the SQL Interval type.  A difference between two dates,
- * with a bunch of restrictions.
- */
-public class DBSPTypeInterval extends DBSPTypeBaseType {
-    public DBSPTypeInterval(@Nullable Object node, boolean mayBeNull) {
-        super(node, mayBeNull);
+public class DBSPTimestampLiteral extends DBSPLiteral {
+    public DBSPTimestampLiteral(@Nullable Object node, DBSPType type, @Nullable Long value) {
+        super(node, type, value);
+    }
+
+    public DBSPTimestampLiteral(@Nullable Object node, DBSPType type, TimestampString value) {
+        super(node, type, value.getMillisSinceEpoch());
+    }
+
+    public DBSPTimestampLiteral(long value) {
+        this(null, DBSPTypeTimestamp.instance, value);
+    }
+
+    public DBSPTimestampLiteral(long value, boolean mayBeNull) {
+        this(null, DBSPTypeTimestamp.instance.setMayBeNull(mayBeNull), value);
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this))
-            return;
+        if (!visitor.preorder(this)) return;
         visitor.postorder(this);
-    }
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        if (this.mayBeNull == mayBeNull)
-            return this;
-        return new DBSPTypeInterval(this.getNode(), mayBeNull);
-    }
-
-    @Override
-    public String shortName() {
-        return "interval";
     }
 }

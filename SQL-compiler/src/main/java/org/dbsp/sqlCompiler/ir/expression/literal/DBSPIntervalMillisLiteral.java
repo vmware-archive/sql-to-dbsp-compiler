@@ -21,46 +21,30 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type.primitive;
+package org.dbsp.sqlCompiler.ir.expression.literal;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.util.UnsupportedException;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeMillisInterval;
 
 import javax.annotation.Nullable;
 
-/**
- * This corresponds to the Calcite 'SYMBOL' type,
- * which is the type of various keywords that appear in SQL expressions.
- * It should never surface in code.
- */
-public class DBSPTypeKeyword extends DBSPTypeBaseType {
-    public static final DBSPTypeKeyword instance = new DBSPTypeKeyword();
+public class DBSPIntervalMillisLiteral extends DBSPLiteral {
+    public DBSPIntervalMillisLiteral(@Nullable Object node, DBSPType type, @Nullable Object value) {
+        super(node, type, value);
+    }
 
-    protected DBSPTypeKeyword() {
-        super(null, false);
+    public DBSPIntervalMillisLiteral(long value) {
+        this(null, DBSPTypeMillisInterval.instance, value);
+    }
+
+    public DBSPIntervalMillisLiteral(long value, boolean mayBeNull) {
+        this(null, DBSPTypeMillisInterval.instance.setMayBeNull(mayBeNull), value);
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
-        throw new UnsupportedException(this);
-    }
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        throw new UnsupportedException(this);
-    }
-
-    @Override
-    public String shortName() {
-        throw new UnsupportedException(this);
-    }
-
-    @Override
-    public boolean sameType(@Nullable DBSPType other) {
-        if (!super.sameType(other))
-            return false;
-        assert other != null;
-        return other.is(DBSPTypeKeyword.class);
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

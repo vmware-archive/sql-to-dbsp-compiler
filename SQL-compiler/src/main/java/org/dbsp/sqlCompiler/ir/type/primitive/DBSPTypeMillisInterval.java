@@ -24,36 +24,58 @@
 package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntervalMillisLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.IsDateType;
+import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
 
 /**
- * This corresponds to the Calcite 'SYMBOL' type,
- * which is the type of various keywords that appear in SQL expressions.
- * It should never surface in code.
+ * Models the SQL Interval type for days-seconds.
+ * Always stores the interval value in milliseconds.
  */
-public class DBSPTypeKeyword extends DBSPTypeBaseType {
-    public static final DBSPTypeKeyword instance = new DBSPTypeKeyword();
+public class DBSPTypeMillisInterval extends DBSPTypeBaseType implements IsNumericType, IsDateType {
+    public static final DBSPType instance = new DBSPTypeMillisInterval(null, false);
 
-    protected DBSPTypeKeyword() {
-        super(null, false);
+    public DBSPTypeMillisInterval(@Nullable Object node, boolean mayBeNull) {
+        super(node, mayBeNull);
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
-        throw new UnsupportedException(this);
+        if (!visitor.preorder(this))
+            return;
+        visitor.postorder(this);
     }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
-        throw new UnsupportedException(this);
+        if (this.mayBeNull == mayBeNull)
+            return this;
+        return new DBSPTypeMillisInterval(this.getNode(), mayBeNull);
+    }
+
+    @Override
+    public String getRustString() {
+        return "ShortInterval";
     }
 
     @Override
     public String shortName() {
-        throw new UnsupportedException(this);
+        return "ShortInterval";
+    }
+
+    @Override
+    public DBSPLiteral getZero() {
+        return new DBSPIntervalMillisLiteral(0, this.mayBeNull);
+    }
+
+    @Override
+    public DBSPLiteral getOne() {
+        throw new UnsupportedException("One millisecond");
     }
 
     @Override
@@ -61,6 +83,6 @@ public class DBSPTypeKeyword extends DBSPTypeBaseType {
         if (!super.sameType(other))
             return false;
         assert other != null;
-        return other.is(DBSPTypeKeyword.class);
+        return other.is(DBSPTypeMillisInterval.class);
     }
 }

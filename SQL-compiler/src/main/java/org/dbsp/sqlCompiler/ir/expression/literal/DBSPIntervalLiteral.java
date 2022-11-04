@@ -24,14 +24,14 @@
 package org.dbsp.sqlCompiler.ir.expression.literal;
 
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInterval;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeMillisInterval;
 
 import javax.annotation.Nullable;
 
 public class DBSPIntervalLiteral extends DBSPLiteral {
     public DBSPIntervalLiteral(@Nullable Object node, DBSPType type, @Nullable Object value) {
         super(node, type, value);
-        if (!type.is(DBSPTypeInterval.class))
+        if (!type.is(DBSPTypeMillisInterval.class))
             throw new RuntimeException("Type is not an interval " + type);
     }
 }

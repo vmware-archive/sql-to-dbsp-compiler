@@ -40,11 +40,15 @@ public class DBSPLongLiteral extends DBSPLiteral {
         this(value, false);
     }
 
-    public DBSPLongLiteral(@Nullable Long value, boolean nullable) {
-        super(null, DBSPTypeInteger.signed64.setMayBeNull(nullable), value);
+    public DBSPLongLiteral(@Nullable Object node, @Nullable Long value, boolean nullable) {
+        super(node, DBSPTypeInteger.signed64.setMayBeNull(nullable), value);
         if (value == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = value;
+    }
+
+    public DBSPLongLiteral(@Nullable Long value, boolean nullable) {
+        this(null, value, nullable);
     }
 
     @Override

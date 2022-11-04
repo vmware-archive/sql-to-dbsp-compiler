@@ -1,11 +1,22 @@
 #![allow(non_snake_case)]
 
-use std::ops::Add;
-use dbsp::algebra::{F32, F64, ZRingValue};
-use geopoint::GeoPoint;
-
 pub mod casts;
 pub mod geopoint;
+pub mod interval;
+pub mod timestamp;
+
+use std::ops::Add;
+use chrono::{Utc, TimeZone, Datelike};
+use dbsp::algebra::{F32, F64, ZRingValue};
+use geopoint::GeoPoint;
+use crate::interval::{
+    ShortInterval,
+    LongInterval,
+};
+use crate::timestamp::{
+    Timestamp,
+    Date,
+};
 
 #[inline(always)]
 pub fn or_b_b(left: bool, right: bool) -> bool
@@ -594,5 +605,90 @@ pub fn st_distance_N_N(left: Option<GeoPoint>, right: Option<GeoPoint>) -> Optio
         (None, _) => None,
         (_, None) => None,
         (Some(x), Some(y)) => Some(st_distance__(x, y)),
+    }
+}
+
+pub fn times_ShortInterval_i64(left: ShortInterval, right: i64) -> ShortInterval {
+    left * right
+}
+
+pub fn times_ShortIntervalN_i64(left: Option<ShortInterval>, right: i64) -> Option<ShortInterval> {
+    match left {
+        None => None,
+        Some(x) => Some(x * right),
+    }
+}
+
+pub fn times_ShortInterval_i64N(left: ShortInterval, right: Option<i64>) -> Option<ShortInterval> {
+    match right {
+        None => None,
+        Some(x) => Some(left * x),
+    }
+}
+
+pub fn times_ShortIntervalN_i64N(left: Option<ShortInterval>, right: Option<i64>) -> Option<ShortInterval> {
+    match (left, right) {
+        (None, _) => None,
+        (_, None) => None,
+        (Some(x), Some(y)) => Some(x * y),
+    }
+}
+
+pub fn plus_Timestamp_ShortInterval(left: Timestamp, right: ShortInterval) -> Timestamp {
+    Timestamp::from(left.add(right.milliseconds()))
+}
+
+pub fn minus_Timestamp_Timestamp_ShortInterval(left: Timestamp, right: Timestamp) -> ShortInterval {
+    ShortInterval::from(left.milliseconds() - right.milliseconds())
+}
+
+pub fn minus_Timestamp_Timestamp_LongInterval(left: Timestamp, right: Timestamp) -> LongInterval {
+    let ldate = Utc.timestamp(left.milliseconds() / 1000, (left.milliseconds() % 1000) as u32);
+    let rdate = Utc.timestamp(right.milliseconds() / 1000, (right.milliseconds() % 1000) as u32);
+    let ly = ldate.year();
+    let lm = ldate.month() as i32;
+    let ld = ldate.day() as i32;
+    let lt = ldate.time();
+
+    let ry = rdate.year();
+    let mut rm = rdate.month() as i32;
+    let rd = rdate.day() as i32;
+    let rt = rdate.time();
+    if (ld < rd) || ((ld == rd) && lt < rt) {
+        // the full month is not yet elapsed
+        rm = rm + 1;
+    }
+    LongInterval::from((ly - ry) * 12 + lm - rm)
+}
+
+pub fn minus_date_date_LongInterval(left: Date, right: Date) -> LongInterval {
+    let ld = Utc.timestamp(left.days() as i64 * 86400, 0);
+    let rd = Utc.timestamp(right.days() as i64 * 86400, 0);
+    let ly = ld.year();
+    let lm = ld.month() as i32;
+    let ry = rd.year();
+    let rm = rd.month() as i32;
+    LongInterval::from((ly - ry) * 12 + lm - rm)
+}
+
+pub fn minus_dateN_date_LongInterval(left: Option<Date>, right: Date) -> Option<LongInterval> {
+    match left {
+        None => None,
+        Some(x) => Some(LongInterval::new(x.days() - right.days())),
+    }
+}
+
+pub fn minus_date_dateN_LongInterval(left: Date, right: Option<Date>) -> Option<LongInterval> {
+    match right {
+        None => None,
+        Some(x) => Some(LongInterval::new(left.days() - x.days())),
+    }
+}
+
+pub fn minus_dateN_dateN_LongInterval(left: Option<Date>, right: Option<Date>) -> Option<LongInterval> {
+    match (left, right) {
+        (None, _) => None,
+        (_, None) => None,
+        (Some(x), Some(y)) => Some(LongInterval::new(x.days() - y.days())),
     }
 }

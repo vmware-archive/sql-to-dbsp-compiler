@@ -21,46 +21,9 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type.primitive;
-
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.util.UnsupportedException;
-
-import javax.annotation.Nullable;
+package org.dbsp.sqlCompiler.ir.type;
 
 /**
- * This corresponds to the Calcite 'SYMBOL' type,
- * which is the type of various keywords that appear in SQL expressions.
- * It should never surface in code.
+ * interface implemented by types that look like dates.
  */
-public class DBSPTypeKeyword extends DBSPTypeBaseType {
-    public static final DBSPTypeKeyword instance = new DBSPTypeKeyword();
-
-    protected DBSPTypeKeyword() {
-        super(null, false);
-    }
-
-    @Override
-    public void accept(InnerVisitor visitor) {
-        throw new UnsupportedException(this);
-    }
-
-    @Override
-    public DBSPType setMayBeNull(boolean mayBeNull) {
-        throw new UnsupportedException(this);
-    }
-
-    @Override
-    public String shortName() {
-        throw new UnsupportedException(this);
-    }
-
-    @Override
-    public boolean sameType(@Nullable DBSPType other) {
-        if (!super.sameType(other))
-            return false;
-        assert other != null;
-        return other.is(DBSPTypeKeyword.class);
-    }
-}
+public interface IsDateType {}

@@ -75,6 +75,19 @@ public class ToCsvVisitor extends InnerVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPTimestampLiteral literal) {
+        try {
+            if (literal.value != null)
+                this.appendable.append(Long.toString((Long)literal.value));
+            else
+                this.appendable.append(this.nullRepresentation.get());
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPFloatLiteral literal) {
         try {
             if (literal.value != null)

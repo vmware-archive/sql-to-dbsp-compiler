@@ -8,7 +8,8 @@
 // * GeoPoint -> geopoint
 // * Null -> null
 // * String -> s
-// * Timestamp -> TS    (no implementation yet)
+// * Timestamp -> Timestamp
+// * Interval -> ShortInteval or LongInterval
 // * isize -> i         (not a SQL type, never nullable)
 // * signed16 -> i16
 // * signed32 -> i32
@@ -21,7 +22,10 @@
 use dbsp::algebra::{F32, F64, HasZero, HasOne};
 use rust_decimal::prelude::*;
 use rust_decimal_macros::dec;
-use crate::geopoint::*;
+use crate::{
+    interval::*,
+    geopoint::*,
+};
 
 /////////// cast to b
 
@@ -1840,6 +1844,18 @@ pub fn cast_to_i64_u(value: usize) -> i64
     value as i64
 }
 
+#[inline]
+pub fn cast_to_i64_ShortInterval(value: ShortInterval) -> i64
+{
+    value.milliseconds()
+}
+
+#[inline]
+pub fn cast_to_i64_LongInterval(value: LongInterval) -> i64
+{
+    value.days() as i64
+}
+
 /////////// cast to i64N
 
 #[inline]
@@ -1960,4 +1976,12 @@ pub fn cast_to_i64N_i64N(value: Option<i64>) -> Option<i64>
 pub fn cast_to_i64N_u(value: usize) -> Option<i64>
 {
     Some(value as i64)
+}
+
+//////// casts to Short interval
+
+#[inline]
+pub fn cast_to_ShortInterval_i64(value: i64) -> ShortInterval
+{
+    ShortInterval::from(value)
 }
