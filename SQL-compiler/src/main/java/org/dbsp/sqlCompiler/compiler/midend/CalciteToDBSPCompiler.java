@@ -1019,14 +1019,6 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         throw new Unimplemented(statement.node);
     }
 
-    public DBSPCircuit compile(FrontEndResult fromFrontEnd) {
-        if (this.circuit == null)
-            throw new RuntimeException("Circuit not initialized?");
-        for (FrontEndStatement statement: fromFrontEnd.statements)
-            this.compile(statement);
-        return this.circuit;
-    }
-
     public TableContents getTableContents() {
         return this.tableContents;
     }

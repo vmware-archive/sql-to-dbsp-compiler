@@ -23,7 +23,7 @@
 
 package org.dbsp.sqllogictest.executors;
 
-import org.dbsp.sqllogictest.SqlTestFile;
+import org.dbsp.sqllogictest.SLTTestFile;
 
 /**
  * This executor does not execute the tests at all.
@@ -31,7 +31,7 @@ import org.dbsp.sqllogictest.SqlTestFile;
  */
 public class NoExecutor extends SqlTestExecutor {
     @Override
-    public TestStatistics execute(SqlTestFile testFile) {
+    public TestStatistics execute(SLTTestFile testFile) {
         TestStatistics result = new TestStatistics();
         this.startTest();
         result.failed = 0;

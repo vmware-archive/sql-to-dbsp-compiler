@@ -28,7 +28,7 @@ import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqllogictest.SqlStatement;
-import org.dbsp.sqllogictest.SqlTestFile;
+import org.dbsp.sqllogictest.SLTTestFile;
 import org.dbsp.util.Logger;
 
 import javax.annotation.Nullable;
@@ -108,7 +108,7 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
     }
 
     @Override
-    public TestStatistics execute(SqlTestFile file)
+    public TestStatistics execute(SLTTestFile file)
             throws SqlParseException, IOException, InterruptedException, SQLException {
         this.statementExecutor.establishConnection();
         this.statementExecutor.dropAllTables();

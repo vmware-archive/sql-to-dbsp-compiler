@@ -21,27 +21,18 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.expression.literal;
+package org.dbsp.zetasqltest;
 
-import org.apache.calcite.util.DateString;
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDate;
+import java.util.ArrayList;
+import java.util.List;
 
-import javax.annotation.Nullable;
+/**
+ * Abstraction for a .test file from Zeta SQL Tests.
+ */
+public class ZetaSQLTestFile {
+    public final List<ZetaSQLTest> tests;
 
-public class DBSPDateLiteral extends DBSPLiteral {
-    public DBSPDateLiteral(@Nullable Object node, DBSPType type, DateString value) {
-        super(node, type, value.getDaysSinceEpoch());
-    }
-
-    public DBSPDateLiteral(String value) {
-        super(null, DBSPTypeDate.instance, new DateString(value).getDaysSinceEpoch());
-    }
-
-    @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        visitor.postorder(this);
+    public ZetaSQLTestFile() {
+        this.tests = new ArrayList<>();
     }
 }

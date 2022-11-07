@@ -62,7 +62,7 @@ import java.util.List;
  *         30 values hashing to 3c13dee48d9356ae19af2515e05e6b54
  *
  */
-public class SqlTestFile implements IModule {
+public class SLTTestFile implements IModule {
     /**
      * Current line number in test file.
      */
@@ -76,7 +76,7 @@ public class SqlTestFile implements IModule {
     private boolean done;
     private int testCount;
 
-    public SqlTestFile(String testFile) throws IOException {
+    public SLTTestFile(String testFile) throws IOException {
         File file = new File(testFile);
         this.reader = new BufferedReader(new FileReader(file));
         this.fileContents = new ArrayList<>();

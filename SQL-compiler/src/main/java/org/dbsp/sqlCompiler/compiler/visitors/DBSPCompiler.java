@@ -53,7 +53,6 @@ public class DBSPCompiler implements IModule {
     public DBSPCompiler(CompilerOptions options) {
         this.options = options;
         this.frontend = new CalciteCompiler(options);
-        this.frontend.startCompilation();
         this.midend = new CalciteToDBSPCompiler(this.frontend, true, options);
     }
 

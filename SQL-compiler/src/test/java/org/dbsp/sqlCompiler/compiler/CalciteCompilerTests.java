@@ -47,7 +47,6 @@ public class CalciteCompilerTests {
                 ", COL4 VARCHAR" +
                 ")";
 
-        calcite.startCompilation();
         FrontEndStatement i = calcite.compile(ddl, null);
         Assert.assertNotNull(i);
     }
@@ -62,7 +61,6 @@ public class CalciteCompilerTests {
                 ", COL4 VARCHAR" +
                 ")";
 
-        calcite.startCompilation();
         calcite.compile(ddl, null);
         String insert = "INSERT INTO T VALUES(0, 0.0, true, 'Hi')";
         FrontEndStatement i = calcite.compile(insert, null);

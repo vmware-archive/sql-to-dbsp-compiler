@@ -94,7 +94,6 @@ public class CalciteCompiler implements IModule {
     public final RelOptCluster cluster;
     public final RelDataTypeFactory typeFactory;
     @Nullable
-    private FrontEndResult program;
     private final SqlToRelConverter.Config converterConfig;
     private final RewriteDivision astRewriter;
 
@@ -126,7 +125,6 @@ public class CalciteCompiler implements IModule {
 
     // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
     public CalciteCompiler(CompilerOptions options) {
-        this.program = null;
         this.astRewriter = new RewriteDivision();
         Properties connConfigProp = new Properties();
         connConfigProp.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
@@ -342,10 +340,6 @@ public class CalciteCompiler implements IModule {
         }
     }
 
-    public void startCompilation() {
-        this.program = new FrontEndResult();
-    }
-
     RelNode optimize(RelNode rel) {
         Logger.instance.from(this, 2)
                 .append("Before optimizer")
@@ -387,8 +381,6 @@ public class CalciteCompiler implements IModule {
      */
     public FrontEndStatement compile(String sqlStatement,
                                      @Nullable String comment) throws SqlParseException {
-        if (this.program == null)
-            throw new RuntimeException("Did you call startCompilation? Program is null");
         SqlNode node = this.parse(sqlStatement);
         if (SqlKind.DDL.contains(node.getKind())) {
             if (node.getKind().equals(SqlKind.DROP_TABLE) ||
@@ -396,7 +388,6 @@ public class CalciteCompiler implements IModule {
                 FrontEndStatement result = this.state.emulate(node, sqlStatement, comment);
                 if (result.is(DropTableStatement.class) ||
                         result.is(CreateTableStatement.class)) {
-                    this.program.addStatement(result);
                     return result;
                 }
             }
@@ -428,7 +419,6 @@ public class CalciteCompiler implements IModule {
                         columns, cv.query, relRoot);
                 // From Calcite's point of view we treat this view just as another table.
                 this.state.schema.addTable(viewName, view.getEmulatedTable());
-                this.program.addStatement(view);
                 return view;
             }
         }
@@ -437,7 +427,6 @@ public class CalciteCompiler implements IModule {
             FrontEndStatement result = this.state.emulate(node, sqlStatement, comment);
             TableModifyStatement stat = result.as(TableModifyStatement.class);
             if (stat != null) {
-                this.program.addStatement(stat);
                 RelRoot values = this.converter.convertQuery(stat.data, true, true);
                 values = values.withRel(this.optimize(values.rel));
                 stat.setTranslation(values.rel);
@@ -446,9 +435,5 @@ public class CalciteCompiler implements IModule {
         }
 
         throw new Unimplemented(node);
-    }
-
-    public FrontEndResult getResult() {
-        return Objects.requireNonNull(this.program);
     }
 }

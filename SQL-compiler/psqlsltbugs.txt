@@ -5,3 +5,8 @@ INSERT OR REPLACE INTO t1 VALUES(2, 'insert or replace')
 // Expected to fail
 REPLACE INTO t1 VALUES(2, 'replace')
 // Expected to pass
+SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0
+SELECT DISTINCT - + COUNT ( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0
+// Trigger a multiplication overflow.
+// Seems like the semantics of overflow is implementation-defined in SQL.
+// test/random/aggregates/slt_good_96.test

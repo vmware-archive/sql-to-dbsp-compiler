@@ -378,7 +378,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     }
 
     @Override
-    public TestStatistics execute(SqlTestFile file)
+    public TestStatistics execute(SLTTestFile file)
             throws SqlParseException, IOException, InterruptedException, SQLException {
         TestStatistics result = new TestStatistics();
         boolean seenQueries = false;
