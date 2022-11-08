@@ -77,17 +77,15 @@ public class TimeTests extends BaseSQLTests {
     @Test
     public void timestampTableTest() {
         String query = "SELECT COL1 FROM T";
-        this.testQuery(query, this.createInput());
+        this.testQuery(query, new DBSPTimestampLiteral(100));
     }
 
     @Test
     public void timestampAddTableTest() {
         String query =
-                "SELECT " +
-                        "TIMESTAMPADD(SECOND, 10, COL1), " +
-                        "TIMESTAMPADD(HOUR, 1, COL1), " +
-                        "TIMESTAMPADD(MINUTE, 10, COL1) " +
-                        "FROM T";
+                "SELECT TIMESTAMPADD(SECOND, 10, COL1), " +
+                " TIMESTAMPADD(HOUR, 1, COL1), " +
+                " TIMESTAMPADD(MINUTE, 10, COL1) FROM T";
         this.testQuery(query,
                         new DBSPTimestampLiteral(10100),
                         new DBSPTimestampLiteral(3600100),
