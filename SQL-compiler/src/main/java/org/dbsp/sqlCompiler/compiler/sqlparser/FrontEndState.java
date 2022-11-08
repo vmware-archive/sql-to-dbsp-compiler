@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.frontend;
+package org.dbsp.sqlCompiler.compiler.sqlparser;
 
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -32,7 +32,7 @@ import org.apache.calcite.sql.ddl.SqlColumnDeclaration;
 import org.apache.calcite.sql.ddl.SqlCreateTable;
 import org.apache.calcite.sql.ddl.SqlDropTable;
 import org.apache.calcite.sql.validate.SqlValidator;
-import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
+import org.dbsp.sqlCompiler.compiler.sqlparser.statements.*;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;

@@ -21,13 +21,13 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.midend;
+package org.dbsp.sqlCompiler.compiler.frontend;
 
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
-import org.dbsp.sqlCompiler.compiler.frontend.statements.CreateTableStatement;
-import org.dbsp.sqlCompiler.compiler.frontend.statements.TableModifyStatement;
+import org.dbsp.sqlCompiler.compiler.sqlparser.statements.CreateTableStatement;
+import org.dbsp.sqlCompiler.compiler.sqlparser.statements.TableModifyStatement;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;

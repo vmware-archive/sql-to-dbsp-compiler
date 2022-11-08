@@ -21,19 +21,37 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.frontend.statements;
+package org.dbsp.sqlCompiler.compiler.sqlparser.statements;
 
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * Describes a table as produced by a CREATE TABLE DDL statement.
+ * The representation of a CREATE VIEW AS ... DDL statement.
  */
-public class CreateTableStatement extends CreateRelationStatement {
-    public CreateTableStatement(@Nullable SqlNode node, String statement, String tableName, @Nullable String comment, List<RelDataTypeField> columns) {
+public class CreateViewStatement extends CreateRelationStatement {
+    /**
+     * Compiled and optimized query.
+     */
+    private final RelRoot compiled;
+    public final SqlNode query;
+
+    public CreateViewStatement(@Nullable SqlNode node, String statement,
+                               String tableName, @Nullable String comment,
+                               List<RelDataTypeField> columns, SqlNode query,
+                               RelRoot compiled) {
         super(node, statement, tableName, comment, columns);
+        this.query = query;
+        this.compiled = compiled;
+    }
+
+    public RelNode getRelNode() {
+        return Objects.requireNonNull(this.compiled).rel;
     }
 }

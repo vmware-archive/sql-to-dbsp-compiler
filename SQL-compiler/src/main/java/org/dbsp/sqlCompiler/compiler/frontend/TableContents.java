@@ -21,11 +21,11 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.midend;
+package org.dbsp.sqlCompiler.compiler.frontend;
 
-import org.dbsp.sqlCompiler.compiler.frontend.statements.CreateTableStatement;
-import org.dbsp.sqlCompiler.compiler.frontend.statements.DropTableStatement;
-import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
+import org.dbsp.sqlCompiler.compiler.sqlparser.statements.CreateTableStatement;
+import org.dbsp.sqlCompiler.compiler.sqlparser.statements.DropTableStatement;
+import org.dbsp.sqlCompiler.compiler.sqlparser.statements.FrontEndStatement;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.util.UnsupportedException;
 import org.dbsp.util.Utilities;

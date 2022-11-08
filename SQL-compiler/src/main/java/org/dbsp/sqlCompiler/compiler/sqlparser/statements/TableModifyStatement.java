@@ -21,16 +21,37 @@
  * SOFTWARE.
  */
 
+package org.dbsp.sqlCompiler.compiler.sqlparser.statements;
+
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.sql.SqlNode;
+
+import javax.annotation.Nullable;
+
 /**
- * Package that doesn't allow null values as method parameters.
+ * Describes a SQL statements that modifies a table
+ * (e.g., an INSERT statement).
  */
+public class TableModifyStatement extends FrontEndStatement {
+    public final String tableName;
+    public final SqlNode data;
+    @Nullable
+    public RelNode rel;
 
-@ParametersAreNonnullByDefault
-@FieldsAreNonnullByDefault
-@MethodsAreNonnullByDefault
-package org.dbsp.sqlCompiler.compiler.frontend.statements;
+    public TableModifyStatement(SqlNode node, String statement, String tableName,
+                                SqlNode data, @Nullable String comment) {
+        super(node, statement, comment);
+        this.tableName = tableName;
+        this.data = data;
+        this.rel = null;
+    }
 
-import org.dbsp.util.FieldsAreNonnullByDefault;
-import org.dbsp.util.MethodsAreNonnullByDefault;
+    public void setTranslation(RelNode rel) {
+        this.rel = rel;
+    }
 
-import javax.annotation.ParametersAreNonnullByDefault;
+    @Override
+    public SqlNode getNode() {
+        return this.node;
+    }
+}

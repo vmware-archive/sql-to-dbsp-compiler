@@ -21,36 +21,16 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.frontend.statements;
-
-import org.apache.calcite.sql.SqlNode;
-import org.dbsp.util.ICastable;
-
-import javax.annotation.Nullable;
-
 /**
- * This class is a base class for the results produced by the DDL execution simulator.
+ * Package that doesn't allow null values as method parameters.
  */
-public abstract class FrontEndStatement implements ICastable {
-    @Nullable public final SqlNode node;
-    /**
-     * Original statement compiled.
-     */
-    public final String statement;
-    @Nullable
-    public final String comment;
 
-    protected FrontEndStatement(@Nullable SqlNode node, String statement, @Nullable String comment) {
-        this.node = node;
-        this.statement = statement;
-        this.comment = comment;
-    }
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqlCompiler.compiler.sqlparser.statements;
 
-    @Nullable
-    public SqlNode getNode() { return this.node; }
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
 
-    @Override
-    public void error(String message) {
-        throw new RuntimeException(message + ": " + this.getNode());
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;
