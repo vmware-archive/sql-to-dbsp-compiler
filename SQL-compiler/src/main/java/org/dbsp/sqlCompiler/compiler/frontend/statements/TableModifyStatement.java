@@ -21,36 +21,37 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.sqlparser.statements;
+package org.dbsp.sqlCompiler.compiler.frontend.statements;
 
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlNode;
-import org.dbsp.util.ICastable;
 
 import javax.annotation.Nullable;
 
 /**
- * This class is a base class for the results produced by the DDL execution simulator.
+ * Describes a SQL statements that modifies a table
+ * (e.g., an INSERT statement).
  */
-public abstract class FrontEndStatement implements ICastable {
-    @Nullable public final SqlNode node;
-    /**
-     * Original statement compiled.
-     */
-    public final String statement;
+public class TableModifyStatement extends FrontEndStatement {
+    public final String tableName;
+    public final SqlNode data;
     @Nullable
-    public final String comment;
+    public RelNode rel;
 
-    protected FrontEndStatement(@Nullable SqlNode node, String statement, @Nullable String comment) {
-        this.node = node;
-        this.statement = statement;
-        this.comment = comment;
+    public TableModifyStatement(SqlNode node, String statement, String tableName,
+                                SqlNode data, @Nullable String comment) {
+        super(node, statement, comment);
+        this.tableName = tableName;
+        this.data = data;
+        this.rel = null;
     }
 
-    @Nullable
-    public SqlNode getNode() { return this.node; }
+    public void setTranslation(RelNode rel) {
+        this.rel = rel;
+    }
 
     @Override
-    public void error(String message) {
-        throw new RuntimeException(message + ": " + this.getNode());
+    public SqlNode getNode() {
+        return this.node;
     }
 }

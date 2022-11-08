@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.sqlparser.statements;
+package org.dbsp.sqlCompiler.compiler.frontend.statements;
 
 import org.apache.calcite.DataContext;
 import org.apache.calcite.linq4j.Enumerable;

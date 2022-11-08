@@ -24,9 +24,7 @@
 package org.dbsp.sqlCompiler.compiler.sqlparser;
 
 import org.apache.calcite.avatica.util.Casing;
-import org.apache.calcite.config.CalciteConnectionConfig;
-import org.apache.calcite.config.CalciteConnectionConfigImpl;
-import org.apache.calcite.config.CalciteConnectionProperty;
+import org.apache.calcite.config.*;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.plan.*;
 import org.apache.calcite.plan.hep.HepMatchOrder;
@@ -43,7 +41,10 @@ import org.apache.calcite.rel.rules.*;
 import org.apache.calcite.rel.type.*;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.*;
+import org.apache.calcite.sql.ddl.SqlColumnDeclaration;
+import org.apache.calcite.sql.ddl.SqlCreateTable;
 import org.apache.calcite.sql.ddl.SqlCreateView;
+import org.apache.calcite.sql.ddl.SqlDropTable;
 import org.apache.calcite.sql.fun.SqlLibrary;
 import org.apache.calcite.sql.fun.SqlLibraryOperatorTableFactory;
 import org.apache.calcite.sql.parser.SqlParseException;
@@ -62,7 +63,7 @@ import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.Pair;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
-import org.dbsp.sqlCompiler.compiler.sqlparser.statements.*;
+import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
@@ -90,10 +91,8 @@ public class CalciteCompiler implements IModule {
     private final SqlValidator validator;
     private final Catalog catalog;
     private final SqlToRelConverter converter;
-    private final FrontEndState state;
     public final RelOptCluster cluster;
     public final RelDataTypeFactory typeFactory;
-    @Nullable
     private final SqlToRelConverter.Config converterConfig;
     private final RewriteDivision astRewriter;
 
@@ -133,6 +132,7 @@ public class CalciteCompiler implements IModule {
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
         SqlConformance conformance = connectionConfig.conformance();
         this.parserConfig = SqlParser.config()
+                .withLex(options.dialect)
                 // Add support for DDL language
                 .withParserFactory(SqlDdlParserImpl.FACTORY)
                 .withConformance(conformance);
@@ -140,6 +140,9 @@ public class CalciteCompiler implements IModule {
         this.catalog = new Catalog("schema");
         CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
         rootSchema.add(catalog.schemaName, this.catalog);
+        // Register new types
+        rootSchema.add("INT64", factory -> factory.createSqlType(SqlTypeName.INTEGER));
+        rootSchema.add("STRING", factory -> factory.createSqlType(SqlTypeName.VARCHAR));
         Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
                 rootSchema, Collections.singletonList(catalog.schemaName), this.typeFactory, connectionConfig);
 
@@ -172,9 +175,13 @@ public class CalciteCompiler implements IModule {
                 OperandTypes.NUMERIC_NUMERIC,
                 SqlFunctionCategory.NUMERIC);
         SqlOperatorTable operatorTable = SqlOperatorTables.chain(
-                // Libraries of user-defined functions.
+                // Libraries of user-defined functions supported.
                 SqlLibraryOperatorTableFactory.INSTANCE.getOperatorTable(
-                        EnumSet.of(SqlLibrary.STANDARD, SqlLibrary.SPATIAL)),
+                        // Standard SQL functions
+                        EnumSet.of(SqlLibrary.STANDARD,
+                                // Geospatial functions
+                                SqlLibrary.SPATIAL)),
+                // Our custom division operation
                 SqlOperatorTables.of(division)
         );
 
@@ -205,7 +212,6 @@ public class CalciteCompiler implements IModule {
                 StandardConvertletTable.INSTANCE,
                 this.converterConfig
         );
-        this.state = new FrontEndState(this.catalog, this.typeFactory, this.validator);
     }
 
     /**
@@ -329,7 +335,7 @@ public class CalciteCompiler implements IModule {
      * representation of the query.
      * @param sql  SQL query to compile
      */
-    private SqlNode parse(String sql) throws SqlParseException {
+    public SqlNode parse(String sql) throws SqlParseException {
         // This is a weird API - the parser depends on the query string!
         try {
             SqlParser sqlParser = SqlParser.create(sql, this.parserConfig);
@@ -376,20 +382,73 @@ public class CalciteCompiler implements IModule {
         return rel;
     }
 
+    RelDataType convertType(SqlDataTypeSpec spec) {
+        SqlTypeNameSpec type = spec.getTypeNameSpec();
+        RelDataType result = type.deriveType(this.validator);
+        if (Objects.requireNonNull(spec.getNullable()))
+            result = this.typeFactory.createTypeWithNullability(result, true);
+        return result;
+    }
+
+    List<RelDataTypeField> getColumnTypes(SqlNodeList list) {
+        List<RelDataTypeField> result = new ArrayList<>();
+        int index = 0;
+        for (SqlNode col: Objects.requireNonNull(list)) {
+            if (col.getKind().equals(SqlKind.COLUMN_DECL)) {
+                SqlColumnDeclaration cd = (SqlColumnDeclaration)col;
+                RelDataType type = this.convertType(cd.dataType);
+                String name = Catalog.identifierToString(cd.name);
+                RelDataTypeField field = new RelDataTypeFieldImpl(name, index++, type);
+                result.add(field);
+                continue;
+            }
+            throw new Unimplemented(col);
+        }
+        return result;
+    }
+
+    public List<RelDataTypeField> getColumnTypes(RelRoot relRoot) {
+        List<RelDataTypeField> columns = new ArrayList<>();
+        RelDataType rowType = relRoot.rel.getRowType();
+        for (Pair<Integer, String> field : relRoot.fields) {
+            String name = field.right;
+            RelDataTypeField f = rowType.getField(name, false, false);
+            columns.add(f);
+        }
+        return columns;
+    }
+
     /**
      * Compile a SQL statement.  Return a description
      */
-    public FrontEndStatement compile(String sqlStatement,
-                                     @Nullable String comment) throws SqlParseException {
-        SqlNode node = this.parse(sqlStatement);
+    public FrontEndStatement compile(
+            String sqlStatement,
+            SqlNode node,
+            @Nullable String comment) throws SqlParseException {
         if (SqlKind.DDL.contains(node.getKind())) {
-            if (node.getKind().equals(SqlKind.DROP_TABLE) ||
-                node.getKind().equals(SqlKind.CREATE_TABLE)) {
-                FrontEndStatement result = this.state.emulate(node, sqlStatement, comment);
-                if (result.is(DropTableStatement.class) ||
-                        result.is(CreateTableStatement.class)) {
-                    return result;
+            if (node.getKind().equals(SqlKind.DROP_TABLE)) {
+                SqlDropTable dt = (SqlDropTable) node;
+                String tableName = Catalog.identifierToString(dt.name);
+                this.catalog.dropTable(tableName);
+                return new DropTableStatement(node, sqlStatement, tableName, comment);
+            } else if (node.getKind().equals(SqlKind.CREATE_TABLE)) {
+                SqlCreateTable ct = (SqlCreateTable)node;
+                String tableName = Catalog.identifierToString(ct.name);
+                List<RelDataTypeField> cols;
+                if (ct.columnList != null) {
+                    cols = this.getColumnTypes(Objects.requireNonNull(ct.columnList));
+                } else {
+                    if (ct.query == null)
+                        throw new UnsupportedException(node);
+                    Logger.instance.from(this, 1)
+                            .append(ct.query.toString())
+                            .newline();
+                    RelRoot relRoot = this.converter.convertQuery(ct.query, true, true);
+                    cols = this.getColumnTypes(relRoot);
                 }
+                CreateTableStatement table = new CreateTableStatement(node, sqlStatement, tableName, comment, cols);
+                this.catalog.addTable(tableName, table.getEmulatedTable());
+                return table;
             }
 
             if (node.getKind().equals(SqlKind.CREATE_VIEW)) {
@@ -403,30 +462,27 @@ public class CalciteCompiler implements IModule {
                         .append(Objects.requireNonNull(query).toString())
                         .newline();
                 RelRoot relRoot = this.converter.convertQuery(query, true, true);
+                List<RelDataTypeField> columns = this.getColumnTypes(relRoot);
                 RelNode optimized = this.optimize(relRoot.rel);
                 relRoot = relRoot.withRel(optimized);
-                // Compute columns of the resulting view
                 String viewName = Catalog.identifierToString(cv.name);
-                List<RelDataTypeField> columns = new ArrayList<>();
-                RelDataType rowType = optimized.getRowType();
-                for (Pair<Integer, String> field : relRoot.fields) {
-                    String name = field.right;
-                    RelDataTypeField f = rowType.getField(name, false, false);
-                    columns.add(f);
-                }
                 CreateViewStatement view = new CreateViewStatement(node, sqlStatement,
                         Catalog.identifierToString(cv.name), comment,
                         columns, cv.query, relRoot);
                 // From Calcite's point of view we treat this view just as another table.
-                this.state.schema.addTable(viewName, view.getEmulatedTable());
+                this.catalog.addTable(viewName, view.getEmulatedTable());
                 return view;
             }
         }
 
         if (SqlKind.DML.contains(node.getKind())) {
-            FrontEndStatement result = this.state.emulate(node, sqlStatement, comment);
-            TableModifyStatement stat = result.as(TableModifyStatement.class);
-            if (stat != null) {
+            if (node instanceof SqlInsert) {
+                SqlInsert insert = (SqlInsert) node;
+                SqlNode table = insert.getTargetTable();
+                if (!(table instanceof SqlIdentifier))
+                    throw new Unimplemented(table);
+                SqlIdentifier id = (SqlIdentifier) table;
+                TableModifyStatement stat = new TableModifyStatement(node, sqlStatement, id.toString(), insert.getSource(), comment);
                 RelRoot values = this.converter.convertQuery(stat.data, true, true);
                 values = values.withRel(this.optimize(values.rel));
                 stat.setTranslation(values.rel);

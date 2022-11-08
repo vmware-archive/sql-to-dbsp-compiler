@@ -23,11 +23,12 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
-import org.dbsp.sqlCompiler.compiler.sqlparser.statements.FrontEndStatement;
+import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
 import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
 import org.dbsp.util.IModule;
@@ -80,7 +81,8 @@ public class DBSPCompiler implements IModule {
     }
 
     public void compileStatement(String statement, @Nullable String comment) throws SqlParseException {
-        FrontEndStatement fe = this.frontend.compile(statement, comment);
+        SqlNode node = this.frontend.parse(statement);
+        FrontEndStatement fe = this.frontend.compile(statement, node, comment);
         this.midend.compile(fe);
     }
 

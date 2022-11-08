@@ -1,7 +1,5 @@
 package org.dbsp.sqlCompiler.compiler;
 
-import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPSomeExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
@@ -77,15 +75,6 @@ public class EndToEndTests extends BaseSQLTests {
         DBSPZSetLiteral output = this.createInput();
         output.add(output);
         this.testQuery(query, output);
-    }
-
-    @Test
-    public void zetaTest() throws SqlParseException {
-        String query = "CREATE TABLE R AS\n" +
-                "SELECT cast(1 as int64) as primary_key,\n" +
-                "       cast(1 as int64) as id, cast(\"a1\" as string) as a UNION ALL\n" +
-                "  SELECT 2, 2, \"a2\"";
-        DBSPCompiler compiler = this.compileQuery(query);
     }
 
     @Test

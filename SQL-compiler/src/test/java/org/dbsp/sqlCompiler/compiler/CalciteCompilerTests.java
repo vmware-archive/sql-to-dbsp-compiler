@@ -25,9 +25,9 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
-import org.dbsp.sqlCompiler.compiler.sqlparser.statements.FrontEndStatement;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -47,23 +47,18 @@ public class CalciteCompilerTests {
                 ", COL4 VARCHAR" +
                 ")";
 
-        FrontEndStatement i = calcite.compile(ddl, null);
-        Assert.assertNotNull(i);
+        SqlNode node = calcite.parse(ddl);
+        Assert.assertNotNull(node);
     }
 
     @Test
-    public void DDLAndInsertTest() throws SqlParseException {
+    public void DDLQueryTest() throws SqlParseException {
         CalciteCompiler calcite = new CalciteCompiler(options);
-        String ddl = "CREATE TABLE T (\n" +
-                "COL1 INT" +
-                ", COL2 DOUBLE" +
-                ", COL3 BOOLEAN" +
-                ", COL4 VARCHAR" +
-                ")";
-
-        calcite.compile(ddl, null);
-        String insert = "INSERT INTO T VALUES(0, 0.0, true, 'Hi')";
-        FrontEndStatement i = calcite.compile(insert, null);
-        Assert.assertNotNull(i);
+        String query = "CREATE TABLE R AS\n" +
+                "SELECT cast(1 as int64) as primary_key,\n" +
+                "       cast(1 as int64) as id, cast(\"a1\" as string) as a UNION ALL\n" +
+                "  SELECT 2, 2, \"a2\"";
+        SqlNode node = calcite.parse(query);
+        Assert.assertNotNull(node);
     }
 }

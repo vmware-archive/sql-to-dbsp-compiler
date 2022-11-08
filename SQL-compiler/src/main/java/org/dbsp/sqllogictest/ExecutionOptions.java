@@ -23,6 +23,7 @@
 
 package org.dbsp.sqllogictest;
 
+import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.IndentStream;
@@ -243,7 +244,16 @@ public class ExecutionOptions {
         }
 
         CompilerOptions options = new CompilerOptions();
-        options.dialect = this.dialect;
+        switch (this.dialect) {
+            case "mysql":
+                options.dialect = Lex.MYSQL;
+                break;
+            case "psql":
+                options.dialect = Lex.ORACLE;
+                break;
+            default:
+                this.usage();
+        }
         options.incrementalize = this.incremental;
 
         switch (this.executor) {
