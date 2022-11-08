@@ -28,9 +28,9 @@ import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.Solutions;
 import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.midend.ExpressionCompiler;
+import org.dbsp.sqlCompiler.compiler.frontend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.compiler.midend.TableContents;
+import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -378,7 +378,7 @@ public class DBSPExecutor extends SqlTestExecutor {
     }
 
     @Override
-    public TestStatistics execute(SqlTestFile file)
+    public TestStatistics execute(SLTTestFile file)
             throws SqlParseException, IOException, InterruptedException, SQLException {
         TestStatistics result = new TestStatistics();
         boolean seenQueries = false;

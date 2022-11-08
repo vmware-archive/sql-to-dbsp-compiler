@@ -23,13 +23,14 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
-import org.dbsp.sqlCompiler.compiler.frontend.CalciteCompiler;
+import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
-import org.dbsp.sqlCompiler.compiler.midend.CalciteToDBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.midend.TableContents;
+import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
 import org.dbsp.util.IModule;
 
 import javax.annotation.Nullable;
@@ -53,7 +54,6 @@ public class DBSPCompiler implements IModule {
     public DBSPCompiler(CompilerOptions options) {
         this.options = options;
         this.frontend = new CalciteCompiler(options);
-        this.frontend.startCompilation();
         this.midend = new CalciteToDBSPCompiler(this.frontend, true, options);
     }
 
@@ -81,7 +81,8 @@ public class DBSPCompiler implements IModule {
     }
 
     public void compileStatement(String statement, @Nullable String comment) throws SqlParseException {
-        FrontEndStatement fe = this.frontend.compile(statement, comment);
+        SqlNode node = this.frontend.parse(statement);
+        FrontEndStatement fe = this.frontend.compile(statement, node, comment);
         this.midend.compile(fe);
     }
 

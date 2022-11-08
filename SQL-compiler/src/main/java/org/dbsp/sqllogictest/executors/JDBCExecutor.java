@@ -456,7 +456,7 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
     }
 
     @Override
-    public TestStatistics execute(SqlTestFile file) throws SQLException, NoSuchAlgorithmException {
+    public TestStatistics execute(SLTTestFile file) throws SQLException, NoSuchAlgorithmException {
         this.startTest();
         this.establishConnection();
         this.dropAllTables();

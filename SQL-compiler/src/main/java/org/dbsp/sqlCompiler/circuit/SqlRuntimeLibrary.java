@@ -123,6 +123,7 @@ public class SqlRuntimeLibrary {
 
         this.dateFunctions.put("plus", "+");
         this.dateFunctions.put("minus", "-");
+        this.dateFunctions.put("times", "*");
 
         //this.stringFunctions.put("s_concat", "+");
         this.stringFunctions.put("eq", "==");

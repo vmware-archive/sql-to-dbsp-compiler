@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
+import org.apache.calcite.config.Lex;
+
 import javax.annotation.Nullable;
 
 /**
@@ -46,12 +48,12 @@ public class CompilerOptions {
     /**
      * SQL dialect compiled.
      */
-    public String dialect;
+    public Lex dialect;
 
     public CompilerOptions() {
         this.outputFile = null;
         this.inputFile = null;
         this.incrementalize = false;
-        this.dialect = "psql";
+        this.dialect = Lex.ORACLE;
     };
 }

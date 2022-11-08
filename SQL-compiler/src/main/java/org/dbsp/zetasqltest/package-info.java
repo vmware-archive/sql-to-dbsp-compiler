@@ -19,26 +19,20 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ *
  */
-
-package org.dbsp.sqlCompiler.compiler.frontend;
-
-import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * All the statements compiled by the front-end, in order.
+ * Package that doesn't allow null values as method parameters.
  */
-public class FrontEndResult {
-    public final List<FrontEndStatement> statements;
 
-    public FrontEndResult() {
-        this.statements = new ArrayList<>();
-    }
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.zetasqltest;
 
-    public void addStatement(FrontEndStatement result) {
-        this.statements.add(result);
-    }
-}
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
+
+import javax.annotation.ParametersAreNonnullByDefault;

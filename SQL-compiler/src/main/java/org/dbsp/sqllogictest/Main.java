@@ -27,10 +27,8 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.compiler.visitors.PassesVisitor;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
-import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -76,10 +74,10 @@ public class Main {
                     return FileVisitResult.CONTINUE;
             if (attrs.isRegularFile() && extension != null && extension.equals("test")) {
                 // validates the test
-                SqlTestFile test = null;
+                SLTTestFile test = null;
                 try {
                     System.out.println(file);
-                    test = new SqlTestFile(file.toString());
+                    test = new SLTTestFile(file.toString());
                     test.parse(this.policy);
                 } catch (Exception ex) {
                     // We can't yet parse all kinds of tests
@@ -108,9 +106,9 @@ public class Main {
         int batchSize = 500;
         int skipPerFile = 0;
         List<String> files = Linq.list(
-                "random/groupby", 
-                "random/select",
-                "random/expr",    
+                //"random/groupby",
+                //"random/select",
+                //"random/expr",
                 "random/aggregates", 
                 "select1.test",  
                 "select2.test",  

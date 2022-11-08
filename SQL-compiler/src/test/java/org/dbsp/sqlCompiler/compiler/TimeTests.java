@@ -27,7 +27,9 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDateLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPTimestampLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
@@ -49,7 +51,7 @@ public class TimeTests extends BaseSQLTests {
         return compiler;
     }
 
-    void testQuery(String query, DBSPZSetLiteral expectedOutput) {
+    void testQuery(String query, DBSPExpression... fields) {
         try {
             query = "CREATE VIEW V AS " + query;
             DBSPCompiler compiler = this.compileQuery(query);
@@ -57,6 +59,7 @@ public class TimeTests extends BaseSQLTests {
             writer.println(ToRustVisitor.generatePreamble());
             DBSPCircuit circuit = compiler.getResult();
             writer.println(ToRustVisitor.toRustString(circuit));
+            DBSPZSetLiteral expectedOutput = new DBSPZSetLiteral(new DBSPTupleExpression(fields));
             InputOutputPair streams = new InputOutputPair(this.createInput(), expectedOutput);
             this.createTester(writer, circuit, streams);
             writer.close();
@@ -74,29 +77,32 @@ public class TimeTests extends BaseSQLTests {
     @Test
     public void timestampTableTest() {
         String query = "SELECT COL1 FROM T";
-        this.testQuery(query, this.createInput());
+        this.testQuery(query, new DBSPTimestampLiteral(100));
     }
 
     @Test
     public void timestampAddTableTest() {
         String query =
-                "SELECT " +
-                        "TIMESTAMPADD(SECOND, 10, COL1), " +
-                        "TIMESTAMPADD(HOUR, 1, COL1), " +
-                        "TIMESTAMPADD(MINUTE, 10, COL1) " +
-                        "FROM T";
-        this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(
+                "SELECT TIMESTAMPADD(SECOND, 10, COL1), " +
+                " TIMESTAMPADD(HOUR, 1, COL1), " +
+                " TIMESTAMPADD(MINUTE, 10, COL1) FROM T";
+        this.testQuery(query,
                         new DBSPTimestampLiteral(10100),
                         new DBSPTimestampLiteral(3600100),
                         new DBSPTimestampLiteral(600100)
-                        )));
+                        );
     }
 
     @Test
     public void timestampParse() {
         String query = "SELECT TIMESTAMP '2020-04-30 12:25:13.45'";
-        this.testQuery(query, new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPTimestampLiteral(1588249513450L))));
+        this.testQuery(query, new DBSPTimestampLiteral(1588249513450L));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void timestampParseIllegal() {
+        String query = "SELECT DATE '1997-02-29'";
+        this.testQuery(query, new DBSPDateLiteral("1997-02-29"));
     }
 
     @Test
@@ -105,9 +111,8 @@ public class TimeTests extends BaseSQLTests {
                 "SELECT timestampdiff(MONTH, TIMESTAMP'2021-02-28 12:00:00', TIMESTAMP'2021-03-28 11:59:59'), " +
                 "timestampdiff(MONTH, TIMESTAMP'2021-02-28 12:00:00', TIMESTAMP'2021-03-28 12:00:00'), " +
                 "timestampdiff(YEAR, DATE'2021-01-01', DATE'1900-03-28')";
-        this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(
-                        new DBSPIntegerLiteral(0), new DBSPIntegerLiteral(1), new DBSPIntegerLiteral(-120)
-                )));
+        this.testQuery(query,
+                new DBSPIntegerLiteral(0), new DBSPIntegerLiteral(1), new DBSPIntegerLiteral(-120)
+                );
     }
 }

@@ -21,14 +21,14 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.midend;
+package org.dbsp.sqlCompiler.compiler.frontend;
 
 import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.util.DateString;
 import org.apache.calcite.util.TimestampString;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.compiler.frontend.CalciteCompiler;
+import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.*;

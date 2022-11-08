@@ -44,6 +44,10 @@ public class DBSPTimestampLiteral extends DBSPLiteral {
         this(null, DBSPTypeTimestamp.instance, value);
     }
 
+    public DBSPTimestampLiteral(String string) {
+        this(null, DBSPTypeTimestamp.instance, new TimestampString(string));
+    }
+
     public DBSPTimestampLiteral(long value, boolean mayBeNull) {
         this(null, DBSPTypeTimestamp.instance.setMayBeNull(mayBeNull), value);
     }

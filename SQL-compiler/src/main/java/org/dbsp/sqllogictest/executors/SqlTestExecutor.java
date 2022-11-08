@@ -24,7 +24,7 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqllogictest.SqlTestFile;
+import org.dbsp.sqllogictest.SLTTestFile;
 import org.dbsp.util.ICastable;
 import org.dbsp.util.IModule;
 
@@ -98,5 +98,5 @@ public abstract class SqlTestExecutor implements ICastable, IModule {
     /**
      * Execute the specified test file.
      */
-    public abstract TestStatistics execute(SqlTestFile testFile) throws SqlParseException, IOException, InterruptedException, SQLException, NoSuchAlgorithmException;
+    public abstract TestStatistics execute(SLTTestFile testFile) throws SqlParseException, IOException, InterruptedException, SQLException, NoSuchAlgorithmException;
 }

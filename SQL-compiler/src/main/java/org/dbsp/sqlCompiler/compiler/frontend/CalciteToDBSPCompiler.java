@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.midend;
+package org.dbsp.sqlCompiler.compiler.frontend;
 
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
@@ -37,9 +37,9 @@ import org.apache.calcite.sql.*;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
-import org.dbsp.sqlCompiler.compiler.frontend.*;
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
+import org.dbsp.sqlCompiler.compiler.sqlparser.*;
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
@@ -1017,14 +1017,6 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         }
         assert statement.node != null;
         throw new Unimplemented(statement.node);
-    }
-
-    public DBSPCircuit compile(FrontEndResult fromFrontEnd) {
-        if (this.circuit == null)
-            throw new RuntimeException("Circuit not initialized?");
-        for (FrontEndStatement statement: fromFrontEnd.statements)
-            this.compile(statement);
-        return this.circuit;
     }
 
     public TableContents getTableContents() {

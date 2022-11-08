@@ -23,7 +23,9 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
+import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
@@ -93,6 +95,23 @@ public class OtherTests implements IModule {
     public void toRustTest() {
         String query = "SELECT T.COL3 FROM T";
         this.testQuery(query);
+    }
+
+    @Test
+    public void DDLZsetaSyntaxTest() throws SqlParseException {
+        // ZetaSQL query syntax - BIG_QUERY dialect
+        String query = "CREATE TABLE R AS\n" +
+                "SELECT cast(1 as int64) as primary_key,\n" +
+                "       cast(1 as int64) as id, cast(\"a1\" as string) as a UNION ALL\n" +
+                "  SELECT 2, 2, \"a2\"";
+        CompilerOptions options = new CompilerOptions();
+        options.dialect = Lex.BIG_QUERY;
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        Logger.instance.setDebugLevel(CalciteCompiler.class, 2);
+        compiler.compileStatement(query, null);
+        DBSPCircuit circuit = compiler.getResult();
+        String rust = ToRustVisitor.toRustString(circuit);
+        Assert.assertNotNull(rust);
     }
 
     @Test
