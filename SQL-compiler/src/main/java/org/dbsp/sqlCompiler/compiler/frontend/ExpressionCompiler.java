@@ -120,7 +120,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         DBSPTypeFP rf = right.as(DBSPTypeFP.class);
         if (li != null) {
             if (ri != null)
-                return new DBSPTypeInteger(null, Math.max(li.getWidth(), ri.getWidth()), false);
+                return new DBSPTypeInteger(null, Math.max(li.getWidth(), ri.getWidth()), true,false);
             if (rf != null || rd != null)
                 return right.setMayBeNull(false);
         }

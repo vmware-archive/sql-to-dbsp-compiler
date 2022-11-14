@@ -55,13 +55,13 @@ public class TypeCompiler {
                 case BOOLEAN:
                     return new DBSPTypeBool(tn, nullable);
                 case TINYINT:
-                    return new DBSPTypeInteger(tn, 8, nullable);
+                    return new DBSPTypeInteger(tn, 8, true, nullable);
                 case SMALLINT:
-                    return new DBSPTypeInteger(tn, 16, nullable);
+                    return new DBSPTypeInteger(tn, 16, true, nullable);
                 case INTEGER:
-                    return new DBSPTypeInteger(tn, 32, nullable);
+                    return new DBSPTypeInteger(tn, 32, true, nullable);
                 case BIGINT:
-                    return new DBSPTypeInteger(tn, 64, nullable);
+                    return new DBSPTypeInteger(tn, 64, true, nullable);
                 case DECIMAL:
                     return new DBSPTypeDecimal(tn, tn.getMinScale(), nullable);
                 case FLOAT:

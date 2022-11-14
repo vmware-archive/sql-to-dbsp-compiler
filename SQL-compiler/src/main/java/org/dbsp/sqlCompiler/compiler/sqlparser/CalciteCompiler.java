@@ -143,6 +143,9 @@ public class CalciteCompiler implements IModule {
         // Register new types
         rootSchema.add("INT64", factory -> factory.createSqlType(SqlTypeName.INTEGER));
         rootSchema.add("STRING", factory -> factory.createSqlType(SqlTypeName.VARCHAR));
+        rootSchema.add("BOOL", factory -> factory.createSqlType(SqlTypeName.BOOLEAN));
+        // TODO: not entirely correct
+        rootSchema.add("UINT64", factory -> factory.createSqlType(SqlTypeName.INTEGER));
         Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
                 rootSchema, Collections.singletonList(catalog.schemaName), this.typeFactory, connectionConfig);
 

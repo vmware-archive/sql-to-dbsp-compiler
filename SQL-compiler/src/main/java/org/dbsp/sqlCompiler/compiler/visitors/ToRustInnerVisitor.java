@@ -172,7 +172,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
     public boolean preorder(DBSPIntegerLiteral literal) {
         assert literal.value != null;
         String val = Integer.toString(literal.value);
-        this.builder.append(literal.wrapSome(val + "i32"));
+        this.builder.append(literal.wrapSome(val + literal.getIntegerType().getRustString()));
         return false;
     }
 
@@ -180,7 +180,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
     public boolean preorder(DBSPLongLiteral literal) {
         assert literal.value != null;
         String val = Long.toString(literal.value);
-        this.builder.append(literal.wrapSome(val + "i64"));
+        this.builder.append(literal.wrapSome(val + literal.getIntegerType().getRustString()));
         return false;
     }
 

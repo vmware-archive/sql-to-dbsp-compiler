@@ -36,13 +36,19 @@ import java.util.Objects;
 public class DBSPTypeInteger extends DBSPTypeBaseType
         implements IsNumericType {
     private final int width;
-    public static final DBSPTypeInteger signed16 = new DBSPTypeInteger(null, 16, false);
-    public static final DBSPTypeInteger signed32 = new DBSPTypeInteger(null, 32, false);
-    public static final DBSPTypeInteger signed64 = new DBSPTypeInteger(null, 64, false);
+    private final boolean signed;
 
-    public DBSPTypeInteger(@Nullable Object node, int width, boolean mayBeNull) {
+    public static final DBSPTypeInteger signed16 = new DBSPTypeInteger(null, 16, true,false);
+    public static final DBSPTypeInteger signed32 = new DBSPTypeInteger(null, 32, true,false);
+    public static final DBSPTypeInteger signed64 = new DBSPTypeInteger(null, 64, true,false);
+    public static final DBSPTypeInteger unsigned16 = new DBSPTypeInteger(null, 16, false,false);
+    public static final DBSPTypeInteger unsigned32 = new DBSPTypeInteger(null, 32, false,false);
+    public static final DBSPTypeInteger unsigned64 = new DBSPTypeInteger(null, 64, false,false);
+
+    public DBSPTypeInteger(@Nullable Object node, int width, boolean signed, boolean mayBeNull) {
         super(node, mayBeNull);
         this.width = width;
+        this.signed = signed;
     }
 
     @Override
@@ -52,7 +58,7 @@ public class DBSPTypeInteger extends DBSPTypeBaseType
 
     @Override
     public String getRustString() {
-        return "i" + this.width;
+        return (this.signed ? "i" : "u") + this.width;
     }
 
     @Override
@@ -77,12 +83,12 @@ public class DBSPTypeInteger extends DBSPTypeBaseType
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (mayBeNull == this.mayBeNull)
             return this;
-        return new DBSPTypeInteger(this.getNode(), this.width, mayBeNull);
+        return new DBSPTypeInteger(this.getNode(), this.width, this.signed, mayBeNull);
     }
 
     @Override
     public String shortName() {
-        return "i" + this.width;
+        return (this.signed ? "i" : "u") + this.width;
     }
 
     public int getWidth() {
@@ -97,7 +103,7 @@ public class DBSPTypeInteger extends DBSPTypeBaseType
         if (!type.is(DBSPTypeInteger.class))
             return false;
         DBSPTypeInteger other = type.to(DBSPTypeInteger.class);
-        return this.width == other.width;
+        return this.width == other.width && this.signed == other.signed;
     }
 
     @Override

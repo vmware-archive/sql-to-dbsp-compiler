@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
@@ -98,7 +97,7 @@ public class OtherTests implements IModule {
     }
 
     @Test
-    public void DDLZsetaSyntaxTest() throws SqlParseException {
+    public void DDLZetaSyntaxTest() throws SqlParseException {
         // ZetaSQL query syntax - BIG_QUERY dialect
         String query = "CREATE TABLE R AS\n" +
                 "SELECT cast(1 as int64) as primary_key,\n" +
@@ -107,11 +106,41 @@ public class OtherTests implements IModule {
         CompilerOptions options = new CompilerOptions();
         options.dialect = Lex.BIG_QUERY;
         DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
-        Logger.instance.setDebugLevel(CalciteCompiler.class, 2);
         compiler.compileStatement(query, null);
         DBSPCircuit circuit = compiler.getResult();
         String rust = ToRustVisitor.toRustString(circuit);
         Assert.assertNotNull(rust);
+    }
+
+    @Test
+    public void DDLZetaOverTest() throws SqlParseException {
+        String query = "CREATE TABLE TestTable AS\n" +
+                "SELECT cast(1 as int64) as row_id,\n" +
+                "       cast(null as bool) as bool_val,\n" +
+                "       cast(null as int64) as int64_val,\n" +
+                "       cast(null as uint64) as uint64_val,\n" +
+                "       cast(null as double) as double_val,\n" +
+                "       cast(null as string) as str_val UNION ALL\n" +
+                "  SELECT 2,  true,  2,    3,    1.5,  \"A\"   UNION ALL\n" +
+                "  SELECT 3,  false, 1,    6,    1.5,  \"A\"   UNION ALL\n" +
+                "  SELECT 4,  null,  null, 2,    2.5,  \"B\"   UNION ALL\n" +
+                "  SELECT 5,  false, 1,    null, 3.5,  \"A\"   UNION ALL\n" +
+                "  SELECT 6,  true,  2,    2,    null, \"C\"   UNION ALL\n" +
+                "  SELECT 7,  null,  1,    5,    -0.5,  null UNION ALL\n" +
+                "  SELECT 8,  true,  4,    2,    -1.5,  \"A\"  UNION ALL\n" +
+                "  SELECT 9,  false, 2,    3,    1.5,   \"B\"  UNION ALL\n" +
+                "  SELECT 10, true,  3,    1,    2.5,   \"B\"\n";
+        CompilerOptions options = new CompilerOptions();
+        options.dialect = Lex.BIG_QUERY;
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        compiler.compileStatement(query, null);
+        compiler.compileStatement("SELECT int64_val, COUNT(*) OVER " +
+                "(ORDER BY int64_val RANGE UNBOUNDED PRECEDING)\n" +
+                "FROM (SELECT int64_val FROM TestTable)\n", null);
+        DBSPCircuit circuit = compiler.getResult();
+        String rust = ToRustVisitor.toRustString(circuit);
+        Assert.assertNotNull(rust);
+        System.out.println(rust);
     }
 
     @Test

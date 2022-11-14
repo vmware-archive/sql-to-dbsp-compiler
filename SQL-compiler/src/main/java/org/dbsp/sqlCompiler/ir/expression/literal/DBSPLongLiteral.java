@@ -51,6 +51,11 @@ public class DBSPLongLiteral extends DBSPLiteral {
         this(null, value, nullable);
     }
 
+    public DBSPTypeInteger getIntegerType() {
+        assert this.type != null;
+        return this.type.to(DBSPTypeInteger.class);
+    }
+
     @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;

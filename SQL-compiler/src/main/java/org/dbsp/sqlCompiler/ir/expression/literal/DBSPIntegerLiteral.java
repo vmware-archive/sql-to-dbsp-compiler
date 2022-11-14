@@ -52,4 +52,9 @@ public class DBSPIntegerLiteral extends DBSPLiteral {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);
     }
+
+    public DBSPTypeInteger getIntegerType() {
+        assert this.type != null;
+        return this.type.to(DBSPTypeInteger.class);
+    }
 }
