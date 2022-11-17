@@ -193,20 +193,20 @@ are detailed below.
 | random/select        | 1,120,329/0 |           | 1,120,329/0   |
 | random/groupby       |   118,757/0 |           |   118,757/0   |
 | random/expr          | 1,317,682/0 |           | 1,198,926/0   |
-| random/aggregates    | 1,172,825/2 |           |               |
-| select1              |     1,000/0 |           |               |
-| select2              |     1,000/0 |           |               |
-| select3              |     3,320/0 |           |               |
-| select4              |     2,832/0 |           |               |
-| select5              |       732/0 |           |               |
+| random/aggregates    | 1,172,825/2 |           | 1,172/825/2   |
+| select1              |     1,000/0 |           |     1,000/0   |
+| select2              |     1,000/0 |           |     1,000/0   |
+| select3              |     3,320/0 |           |     3,320/0   |
+| select4              |     2,832/0 |           |     2,832/0   |
+| select5              |       732/0 |           |       732/0   |
 | index/delete         |         N/A |  40,525/0 |               |
 | index/in             |         N/A | 130,065/0 |               |
 | index/commute        |         N/A | 507,514/0 |               |
-| index/between        |         N/A | 121,811/0 |               |
+| index/between        |         N/A | 121,811/0 |   121,811/0   |
 | index/orderby_nosort |         N/A | 490,986/0 |               |
 | index/view           |         N/A |  53,490/0 |               |
-| index/random         |         N/A | 188,449/0 | 188,449/0     |
-| index/orderby        |         N/A | 310,630/0 |               |
+| index/random         |         N/A | 188,449/0 |   188,449/0   |
+| index/orderby        |         N/A | 310,630/0 |   310,630/0   |
 | evidence             |         N/A |    153/25 |               |
 
 The "index" tests cannot be executed with the `DBSPExecutor` since it
