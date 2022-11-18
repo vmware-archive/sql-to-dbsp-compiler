@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
+import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPNoopOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.util.Logger;
@@ -39,22 +40,41 @@ public class RemoveOperatorsVisitor extends CircuitCloneVisitor {
     public RemoveOperatorsVisitor(Set<DBSPOperator> keep) {
         super(false);
         this.keep = keep;
-        Logger.instance.from(this, 2)
-                .append(this.keep.toString())
-                .newline();
     }
 
     @Override
     public boolean preorder(DBSPOperator node) {
         if (this.keep.contains(node)) {
             this.replace(node);
+        } else {
+            Logger.instance.from(this, 2)
+                    .append("Removing ")
+                    .append(node.toString())
+                    .newline();
         }
         return false;
     }
 
     @Override
     public boolean preorder(DBSPNoopOperator node) {
-        this.map(node, node.input(), false);
+        if (this.keep.contains(node)) {
+            DBSPOperator input = this.mapped(node.input());
+            this.map(node, input, false);
+        } else {
+            Logger.instance.from(this, 2)
+                    .append("Removing ")
+                    .append(node.toString())
+                    .newline();
+        }
         return false;
+    }
+
+    @Override
+    public void startVisit(IDBSPOuterNode node) {
+        super.startVisit(node);
+        Logger.instance.from(this, 2)
+                .append("Keeping ")
+                .append(this.keep.toString())
+                .newline();
     }
 }

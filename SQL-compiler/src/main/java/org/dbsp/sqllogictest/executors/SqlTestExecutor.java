@@ -41,6 +41,10 @@ import java.util.Set;
 public abstract class SqlTestExecutor implements ICastable, IModule {
     static final DecimalFormat df = new DecimalFormat("#,###");
     protected final Set<String> buggyOperations;
+    /**
+     * If true validate the status of the SQL statements executed.
+     */
+    protected boolean validateStatus = true;
 
     public static class TestStatistics {
         public int failed;
@@ -78,6 +82,10 @@ public abstract class SqlTestExecutor implements ICastable, IModule {
 
     public void avoid(HashSet<String> statementsToSkip) {
         this.buggyOperations.addAll(statementsToSkip);
+    }
+
+    public void setValidateStatus(boolean validate) {
+        this.validateStatus = validate;
     }
 
     void reportTime(int tests) {

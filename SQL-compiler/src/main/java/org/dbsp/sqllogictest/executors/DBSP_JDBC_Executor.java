@@ -111,8 +111,8 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
     public TestStatistics execute(SLTTestFile file)
             throws SqlParseException, IOException, InterruptedException, SQLException {
         this.statementExecutor.establishConnection();
-        this.statementExecutor.dropAllTables();
         this.statementExecutor.dropAllViews();
+        this.statementExecutor.dropAllTables();
         return super.execute(file);
     }
 }

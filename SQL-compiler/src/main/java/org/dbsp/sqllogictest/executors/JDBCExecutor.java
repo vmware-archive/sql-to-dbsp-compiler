@@ -437,7 +437,7 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
         assert this.connection != null;
         List<String> tables = this.getViewList();
         for (String tableName: tables) {
-            String del = "DROP VIEW " + tableName;
+            String del = "DROP VIEW IF EXISTS " + tableName + " CASCADE";
             Logger.instance.from(this, 2).append(del).newline();
             Statement drop = this.connection.createStatement();
             drop.execute(del);
