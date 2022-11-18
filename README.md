@@ -25,7 +25,11 @@ which is expected to be in a parallel directory.
 
 The testing programs use sqllogictest -- see the (section on testing)[#testing]
 
-Some tests use MySQL.
+Some tests use MySQL or Postgres.  To run these tests you need to
+create a database named 'slt' and a user account in the database.  In
+the `run-tests.sh` script you should replace the `-u user` with the
+user name you have created, and `-p password` with the user's
+password.
 
 ## Running
 

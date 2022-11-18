@@ -10,4 +10,4 @@ fi
 
 mvn test
 echo "Running sqllogictest tests"
-mvn compile exec:java -Dexec.mainClass="org.dbsp.sqllogictest.Main"
+mvn compile exec:java -Dexec.mainClass="org.dbsp.sqllogictest.Main" -Dexec.args="-i -s -e hybrid -u user -p password -d psql -b psqlsltbugs.txt"
