@@ -643,8 +643,8 @@ pub fn minus_Timestamp_Timestamp_ShortInterval(left: Timestamp, right: Timestamp
 }
 
 pub fn minus_Timestamp_Timestamp_LongInterval(left: Timestamp, right: Timestamp) -> LongInterval {
-    let ldate = Utc.timestamp(left.milliseconds() / 1000, (left.milliseconds() % 1000) as u32);
-    let rdate = Utc.timestamp(right.milliseconds() / 1000, (right.milliseconds() % 1000) as u32);
+    let ldate = Utc.timestamp_opt(left.milliseconds() / 1000, (left.milliseconds() % 1000) as u32).single().unwrap();
+    let rdate = Utc.timestamp_opt(right.milliseconds() / 1000, (right.milliseconds() % 1000) as u32).single().unwrap();
     let ly = ldate.year();
     let lm = ldate.month() as i32;
     let ld = ldate.day() as i32;
@@ -662,8 +662,8 @@ pub fn minus_Timestamp_Timestamp_LongInterval(left: Timestamp, right: Timestamp)
 }
 
 pub fn minus_date_date_LongInterval(left: Date, right: Date) -> LongInterval {
-    let ld = Utc.timestamp(left.days() as i64 * 86400, 0);
-    let rd = Utc.timestamp(right.days() as i64 * 86400, 0);
+    let ld = Utc.timestamp_opt(left.days() as i64 * 86400, 0).single().unwrap();
+    let rd = Utc.timestamp_opt(right.days() as i64 * 86400, 0).single().unwrap();
     let ly = ld.year();
     let lm = ld.month() as i32;
     let ry = rd.year();

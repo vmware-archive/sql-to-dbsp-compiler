@@ -27,13 +27,8 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
-import org.dbsp.sqlCompiler.compiler.visitors.PassesVisitor;
-import org.dbsp.sqlCompiler.compiler.visitors.RemoveOperatorsVisitor;
-import org.dbsp.sqlCompiler.compiler.visitors.ToDotVisitor;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
-import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -48,9 +43,6 @@ import java.util.List;
  * Execute all SqlLogicTest tests.
  */
 public class Main {
-    // Following are queries that calcite fails to parse.
-    static final String[] skipFiles = {};
-
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
         private final SqlTestExecutor executor;
@@ -72,11 +64,15 @@ public class Main {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             String extension = Utilities.getFileExtension(file.toString());
-            String str = file.toString();
-            //noinspection RedundantOperationOnEmptyContainer
-            for (String d: skipFiles)
-                if (str.contains("expr/slt_good_" + d + "."))
-                    return FileVisitResult.CONTINUE;
+            int batchSize = 500;
+            int skipPerFile = 0;
+            String name = file.getFileName().toString();
+            if (name.startsWith("select"))
+                batchSize = Math.min(batchSize, 20);
+            if (name.startsWith("select5"))
+                batchSize = Math.min(batchSize, 5);
+            if (executor.is(DBSPExecutor.class))
+                executor.to(DBSPExecutor.class).setBatchSize(batchSize, skipPerFile);
             if (attrs.isRegularFile() && extension != null && extension.equals("test")) {
                 // validates the test
                 SLTTestFile test = null;
@@ -108,10 +104,9 @@ public class Main {
     public static void main(String[] argv) throws IOException {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         String benchDir = "../../sqllogictest/test";
-        int batchSize = 500;
-        int skipPerFile = 0;
         List<String> files = Linq.list(
                 /*
+                 */
                 "random/groupby",
                 "random/select",
                 "random/expr",
@@ -123,7 +118,6 @@ public class Main {
                 "select5.test",
                 "index/orderby", 
                 "index/between",
-                 */
                 "index/view/",
                 "index/in",      
                 "index/delete",  
@@ -166,13 +160,7 @@ public class Main {
         AcceptancePolicy policy = options.getAcceptancePolicy();
         TestLoader loader = new TestLoader(executor, policy);
         for (String file : options.getDirectories()) {
-            if (file.startsWith("select"))
-                batchSize = Math.min(batchSize, 20);
-            if (file.startsWith("select5"))
-                batchSize = Math.min(batchSize, 5);
             Path path = Paths.get(benchDir + "/" + file);
-            if (executor.is(DBSPExecutor.class))
-                executor.to(DBSPExecutor.class).setBatchSize(batchSize, skipPerFile);
             Files.walkFileTree(path, loader);
         }
         System.out.println("Files that could not be not parsed: " + loader.errors);

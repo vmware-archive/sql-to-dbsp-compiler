@@ -38,6 +38,9 @@ To run the tests:
 $> cd SQL-compiler
 $> ./run-tests.sh
 
+Beware that the full sql logic tests can run for a few weeks, there
+are more than 7 million of them!
+
 ## Incremental view maintenance
 
 The DBSP runtime is optimized for performing incremental view

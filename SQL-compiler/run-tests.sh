@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 pushd ../temp; cargo update; popd
 
 if [ ! -d ../../sqllogictest ]; then
@@ -8,6 +10,6 @@ if [ ! -d ../../sqllogictest ]; then
     exit 1
 fi
 
-mvn test
+#mvn test
 echo "Running sqllogictest tests"
-mvn compile exec:java -Dexec.mainClass="org.dbsp.sqllogictest.Main" -Dexec.args="-i -s -e hybrid -u user -p password -d psql -b psqlsltbugs.txt"
+mvn compile exec:java -Dexec.mainClass="org.dbsp.sqllogictest.Main" -Dexec.args="-i -s -e hybrid -u user -p password -d psql -b psqlsltbugs.txt ."

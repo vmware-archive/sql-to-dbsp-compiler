@@ -112,7 +112,7 @@ public class OtherTests implements IModule {
         Assert.assertNotNull(rust);
     }
 
-    @Test
+    //@Test
     public void DDLZetaOverTest() throws SqlParseException {
         String query = "CREATE TABLE TestTable AS\n" +
                 "SELECT cast(1 as int64) as row_id,\n" +
