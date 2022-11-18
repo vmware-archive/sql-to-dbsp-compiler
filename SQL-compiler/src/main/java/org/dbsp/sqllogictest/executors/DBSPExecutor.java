@@ -411,7 +411,8 @@ public class DBSPExecutor extends SqlTestExecutor {
                     status = false;
                 }
                 this.statementsExecuted++;
-                if (status != stat.shouldPass)
+                if (this.validateStatus &&
+                        status != stat.shouldPass)
                     throw new RuntimeException("Statement " + stat.statement + " status " + status + " expected " + stat.shouldPass);
             } else {
                 SqlTestQuery query = operation.to(SqlTestQuery.class);

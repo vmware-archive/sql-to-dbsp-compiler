@@ -27,8 +27,13 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
+import org.dbsp.sqlCompiler.compiler.visitors.PassesVisitor;
+import org.dbsp.sqlCompiler.compiler.visitors.RemoveOperatorsVisitor;
+import org.dbsp.sqlCompiler.compiler.visitors.ToDotVisitor;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -106,18 +111,20 @@ public class Main {
         int batchSize = 500;
         int skipPerFile = 0;
         List<String> files = Linq.list(
-                //"random/groupby",
-                //"random/select",
-                //"random/expr",
+                /*
+                "random/groupby",
+                "random/select",
+                "random/expr",
                 "random/aggregates", 
                 "select1.test",  
                 "select2.test",  
                 "select3.test",  
                 "select4.test",  
-                "select5.test",  
+                "select5.test",
                 "index/orderby", 
-                "index/between", 
-                "index/view",    
+                "index/between",
+                 */
+                "index/view/",
                 "index/in",      
                 "index/delete",  
                 "index/commute", 
@@ -127,11 +134,13 @@ public class Main {
         );
 
         String[] args = {
-                "-e", "hybrid",
-                "-b", "psqlsltbugs.txt",
-                "-i",
-                "-d", "psql",
-                "-u", "user"
+                "-s",                   // do not validate command status
+                "-e", "hybrid",         // hybrid executor DBSP + JDBC
+                "-b", "psqlsltbugs.txt",// list of tests to exclude
+                "-i",                   // incremental (streaming) testing
+                "-d", "psql",           // SQL dialect to use
+                "-u", "user",           // database user name
+                "-p", "password"        // database password
         };
         if (argv.length > 0) {
             args = argv;
@@ -142,13 +151,12 @@ public class Main {
             args = a.toArray(new String[0]);
         }
         /*
-        Logger.instance.setDebugLevel(PassesVisitor.class, 3);
         Logger.instance.setDebugLevel(JDBCExecutor.class, 3);
         Logger.instance.setDebugLevel(DBSPExecutor.class, 3);
         Logger.instance.setDebugLevel(DBSP_JDBC_Executor.class, 3);
-        Logger.instance.setDebugLevel(SqlTestFile.class, 3);
+        Logger.instance.setDebugLevel(SLTTestFile.class, 3);
         Logger.instance.setDebugLevel(CalciteCompiler.class, 2);
-        Logger.instance.setDebugLevel(ToDotVisitor.class, 3);
+        Logger.instance.setDebugLevel(PassesVisitor.class, 3);
         Logger.instance.setDebugLevel(RemoveOperatorsVisitor.class, 3);
          */
         ExecutionOptions options = new ExecutionOptions(args);

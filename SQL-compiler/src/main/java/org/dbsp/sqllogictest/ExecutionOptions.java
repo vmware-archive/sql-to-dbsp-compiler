@@ -44,6 +44,7 @@ public class ExecutionOptions {
     String progName;
     String user;
     String password;
+    boolean validateStatus;
     @Nullable
     String bugsFile = null;
 
@@ -107,6 +108,8 @@ public class ExecutionOptions {
                 .newline()
                 .append("`directories` is a list of directories or files under ../sqllogictest/test which will be executed")
                 .newline()
+                .append("[-s]: Ignore the status of SQL commands executed")
+                .newline()
                 .decrease();
         System.exit(1);
     }
@@ -116,6 +119,9 @@ public class ExecutionOptions {
             String arg = argv[i];
             if (arg.startsWith("-")) {
                 switch (arg) {
+                    case "-s":
+                        this.validateStatus = false;
+                        break;
                     case "-e":
                         String exec = argv[++i];
                         if (!this.legalExecutors.contains(exec))
@@ -234,6 +240,7 @@ public class ExecutionOptions {
         JDBCExecutor jdbc =  new JDBCExecutor(this.jdbcConnectionString(), this.dialect,
                 this.user, this.password);
         jdbc.avoid(sltBugs);
+        jdbc.setValidateStatus(this.validateStatus);
         return jdbc;
     }
 
@@ -262,6 +269,7 @@ public class ExecutionOptions {
             case "DBSP":
                 DBSPExecutor dExec = new DBSPExecutor(this.execute, options);
                 dExec.avoid(sltBugs);
+                dExec.setValidateStatus(this.validateStatus);
                 return dExec;
             case "JDBC": {
                 return this.jdbcExecutor(sltBugs);
@@ -270,6 +278,7 @@ public class ExecutionOptions {
                 JDBCExecutor jdbc = this.jdbcExecutor(sltBugs);
                 DBSP_JDBC_Executor result = new DBSP_JDBC_Executor(jdbc, this.execute, options);
                 result.avoid(sltBugs);
+                result.setValidateStatus(this.validateStatus);
                 return result;
             }
             default: {
