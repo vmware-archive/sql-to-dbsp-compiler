@@ -224,10 +224,12 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             DBSPExpression increment = this.getCircuit().declareLocal("inc", folder.increment)
                     .getVarReference();
             increments[aggIndex] = increment;
-            accumulatorTypes[aggIndex] = folder.increment.getResultType();
+            DBSPType incType = folder.increment.getResultType();
+            accumulatorTypes[aggIndex] = incType;
+            DBSPExpression identity = new DBSPPathExpression(new DBSPTypeFunction(incType, incType),
+                        new DBSPPath(new DBSPSimplePathSegment("identity", incType)));
             DBSPExpression post = this.getCircuit().declareLocal("post",
-                    folder.postprocess != null ? folder.postprocess :
-                            new DBSPVariableReference("identity", DBSPTypeAny.instance))
+                    folder.postprocess != null ? folder.postprocess : identity)
                     .getVarReference();
             posts[aggIndex] = post;
             defaultZeros[aggIndex] = folder.emptySetResult;
@@ -255,12 +257,13 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 .getVarReference();
         DBSPClosureExpression postClosure = new DBSPClosureExpression(new DBSPTupleExpression(posts), postAccum.asParameter());
         DBSPExpression post = this.getCircuit().declareLocal("post", postClosure).getVarReference();
+        DBSPType aggregationResultType = postClosure.getResultType();
         DBSPExpression constructor = new DBSPPathExpression(DBSPTypeAny.instance,
                 new DBSPPath(
                         new DBSPSimplePathSegment("Fold",
                                 DBSPTypeAny.instance,
                                 new DBSPTypeUser(null, "UnimplementedSemigroup",
-                                        false, DBSPTypeAny.instance),
+                                        false, aggregationResultType),
                                 DBSPTypeAny.instance,
                                 DBSPTypeAny.instance),
                         new DBSPSimplePathSegment("with_output")));
