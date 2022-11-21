@@ -154,10 +154,20 @@ public class Utilities {
 
     public static void compileAndTestRust(String directory, boolean quiet)
             throws IOException, InterruptedException {
-        if (quiet)
-            runProcess(directory,"cargo", "test", "-q");
-        else
-            runProcess(directory,"cargo", "test", "--", "--show-output");
+        try {
+            if (quiet)
+                runProcess(directory, "cargo", "test", "-q");
+            else
+                runProcess(directory, "cargo", "test", "--", "--show-output");
+        } catch (RuntimeException ex) {
+            // Sometimes the rust compiler crashes.
+            // Retry after deleting 'target'
+            runProcess(directory, "rm", "-rf", "../target");
+            if (quiet)
+                runProcess(directory, "cargo", "test", "-q");
+            else
+                runProcess(directory, "cargo", "test", "--", "--show-output");
+        }
     }
 
     @SuppressWarnings("SpellCheckingInspection")

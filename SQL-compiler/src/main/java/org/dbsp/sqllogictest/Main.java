@@ -27,8 +27,10 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -61,6 +63,7 @@ public class Main {
             this.policy = policy;
         }
 
+        @SuppressWarnings("ConstantConditions")
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             String extension = Utilities.getFileExtension(file.toString());
@@ -149,9 +152,9 @@ public class Main {
         Logger.instance.setDebugLevel(DBSPExecutor.class, 3);
         Logger.instance.setDebugLevel(DBSP_JDBC_Executor.class, 3);
         Logger.instance.setDebugLevel(SLTTestFile.class, 3);
-        Logger.instance.setDebugLevel(CalciteCompiler.class, 2);
         Logger.instance.setDebugLevel(PassesVisitor.class, 3);
         Logger.instance.setDebugLevel(RemoveOperatorsVisitor.class, 3);
+        Logger.instance.setDebugLevel(CalciteCompiler.class, 2);
          */
         ExecutionOptions options = new ExecutionOptions(args);
         SqlTestExecutor executor = options.getExecutor();
