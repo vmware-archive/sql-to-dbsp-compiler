@@ -1,5 +1,7 @@
 package org.dbsp.sqlCompiler.compiler;
 
+import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.visitors.PassesVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPSomeExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
@@ -7,6 +9,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
+import org.dbsp.util.Logger;
 import org.junit.Test;
 
 /**
@@ -16,9 +19,24 @@ import org.junit.Test;
  * from the declared views.
  */
 public class EndToEndTests extends BaseSQLTests {
+    /**
+     * T is
+     * -------------------------------------------
+     * | 10 | 12.0 | true  | Hi | NULL    | NULL |
+     * | 10 |  1.0 | false | Hi | Some[1] |  0.0 |
+     * -------------------------------------------
+     */
+
     void testQuery(String query, DBSPZSetLiteral expectedOutput) {
         DBSPZSetLiteral input = this.createInput();
         super.testQueryBase(query, false, false, new InputOutputPair(input, expectedOutput));
+    }
+
+    @Test
+    public void overTest() {
+        DBSPExpression t = new DBSPTupleExpression(new DBSPIntegerLiteral(10), new DBSPLongLiteral(2));
+        String query = "SELECT T.COL1, COUNT(*) OVER (ORDER BY T.COL1 RANGE UNBOUNDED PRECEDING) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(t, t));
     }
 
     @Test

@@ -46,10 +46,10 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
      */
     private final TypeCompiler typeCompiler = new TypeCompiler();
     @Nullable
-    private final DBSPVariableReference inputRow;
+    public final DBSPVariablePath inputRow;
     private final RexBuilder rexBuilder;
 
-    public ExpressionCompiler(@Nullable DBSPVariableReference inputRow, CalciteCompiler calciteCompiler) {
+    public ExpressionCompiler(@Nullable DBSPVariablePath inputRow, CalciteCompiler calciteCompiler) {
         super(true);
         this.inputRow = inputRow;
         this.rexBuilder = calciteCompiler.getRexBuilder();
@@ -169,9 +169,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
 
     @SuppressWarnings("unused")
     public static boolean needCommonType(String op, DBSPType result, DBSPType left, DBSPType right) {
-        if (left.is(IsDateType.class) || right.is(IsDateType.class))
-            return false;
-        return true;
+        return !left.is(IsDateType.class) && !right.is(IsDateType.class);
     }
 
     public static DBSPExpression makeBinaryExpression(
@@ -323,6 +321,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
             case BIT_XOR:
                 return makeBinaryExpressions(call, type, "^", ops);
             case CAST:
+            case REINTERPRET:
                 return makeCast(ops.get(0), type);
             case IS_NULL:
             case IS_NOT_NULL: {
@@ -433,8 +432,6 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 String functionName = "extract_" + keyword;
                 return new DBSPApplyExpression(functionName, type, ops.get(1));
             }
-            case REINTERPRET:
-                return makeCast(ops.get(0), type);
             case FLOOR:
             case CEIL:
                 // fall through

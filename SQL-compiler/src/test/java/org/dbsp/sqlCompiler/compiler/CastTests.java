@@ -32,13 +32,12 @@ import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDecimal;
 import org.dbsp.util.Utilities;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 
 public class CastTests extends BaseSQLTests {
-    DBSPTypeDecimal tenTwo = new DBSPTypeDecimal(null, 2, true);
-    DBSPTypeDecimal tenFour = new DBSPTypeDecimal(null, 4, false);
+    final DBSPTypeDecimal tenTwo = new DBSPTypeDecimal(null, 2, true);
+    final DBSPTypeDecimal tenFour = new DBSPTypeDecimal(null, 4, false);
 
     @Override
     DBSPCompiler compileQuery(String query) throws SqlParseException {

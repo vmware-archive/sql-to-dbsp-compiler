@@ -65,6 +65,16 @@ public class DBSPTypeDate extends DBSPTypeBaseType implements IsNumericType, IsD
     }
 
     @Override
+    public DBSPLiteral getMaxValue() {
+        throw new UnsupportedException(this);
+    }
+
+    @Override
+    public DBSPLiteral getMinValue() {
+        throw new UnsupportedException(this);
+    }
+
+    @Override
     public boolean sameType(@Nullable DBSPType other) {
         if (!super.sameType(other))
             return false;

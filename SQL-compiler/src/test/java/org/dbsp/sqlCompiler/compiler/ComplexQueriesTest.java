@@ -24,11 +24,13 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.util.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
+@SuppressWarnings("SpellCheckingInspection")
 public class ComplexQueriesTest extends BaseSQLTests {
     public String fixup(String query) {
         return query.replace("FLOAT64", "DOUBLE")
@@ -39,10 +41,10 @@ public class ComplexQueriesTest extends BaseSQLTests {
     public void taxiTest() throws SqlParseException {
         String ddl = "CREATE TABLE green_tripdata\n" +
                 "(\n" +
-                "        lpep_pickup_datetime TIMESTAMP,\n" +
-                "        lpep_dropoff_datetime TIMESTAMP,\n" +
-                "        pickup_location_id BIGINT,\n" +
-                "        dropoff_location_id BIGINT,\n" +
+                "        lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
+                "        lpep_dropoff_datetime TIMESTAMP NOT NULL,\n" +
+                "        pickup_location_id BIGINT NOT NULL,\n" +
+                "        dropoff_location_id BIGINT NOT NULL,\n" +
                 "        trip_distance DOUBLE PRECISION,\n" +
                 "        fare_amount DOUBLE PRECISION \n" +
                 ")";
@@ -67,6 +69,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                         "case when extract (ISODOW from  CAST (lpep_dropoff_datetime AS TIMESTAMP))  > 5 then 1 else 0 end as dropoff_is_weekend\n" +
                         "FROM green_tripdata";
         DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        Logger.instance.setDebugLevel(CalciteCompiler.class, 3);
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         ddl = this.fixup(ddl);
@@ -94,7 +97,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 " dob DATE\n" +
                 ")";
         String ddl1 = "CREATE TABLE transactions (\n" +
-                " trans_date_trans_time TIMESTAMP,\n" +
+                " trans_date_trans_time TIMESTAMP NOT NULL,\n" +
                 " cc_num FLOAT64,\n" +
                 " merchant STRING,\n" +
                 " category STRING,\n" +

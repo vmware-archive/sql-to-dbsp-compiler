@@ -33,9 +33,9 @@ import java.util.function.Function;
  */
 public class FunctorVisitor extends CircuitVisitor {
     private final Function<DBSPCircuit, DBSPCircuit> transformation;
-    public FunctorVisitor(Function<DBSPCircuit, DBSPCircuit> trsf) {
+    public FunctorVisitor(Function<DBSPCircuit, DBSPCircuit> transform) {
         super(false);
-        this.transformation = trsf;
+        this.transformation = transform;
     }
 
     @Override

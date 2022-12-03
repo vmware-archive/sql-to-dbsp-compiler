@@ -62,4 +62,16 @@ public abstract class DBSPExpression
      * are the same class with all fields equal as pointers.
      */
     public abstract boolean shallowSameExpression(DBSPExpression other);
+
+    public DBSPExpression deref() {
+        return new DBSPDerefExpression(this);
+    }
+
+    public DBSPExpression field(int index) {
+        return new DBSPFieldExpression(this, index);
+    }
+
+    public DBSPClosureExpression closure(DBSPClosureExpression.Parameter... parameters) {
+        return new DBSPClosureExpression(this, parameters);
+    }
 }

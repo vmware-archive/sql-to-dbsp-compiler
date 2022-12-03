@@ -59,7 +59,7 @@ public class DBSPFieldExpression extends DBSPExpression {
         this(node, expression, fieldNo, getFieldType(expression.getNonVoidType(), fieldNo));
     }
 
-    public DBSPFieldExpression(DBSPExpression expression, int fieldNo) {
+    DBSPFieldExpression(DBSPExpression expression, int fieldNo) {
         this(null, expression, fieldNo);
     }
 

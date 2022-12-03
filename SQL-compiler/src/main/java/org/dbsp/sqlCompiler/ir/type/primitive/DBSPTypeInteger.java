@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLongLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.IsNumericType;
+import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -76,6 +77,34 @@ public class DBSPTypeInteger extends DBSPTypeBaseType
             return new DBSPIntegerLiteral(1, this.mayBeNull);
         } else {
             return new DBSPLongLiteral(1L, this.mayBeNull);
+        }
+    }
+
+    @Override
+    public DBSPLiteral getMaxValue() {
+        switch (this.width) {
+            case 16:
+                return new DBSPIntegerLiteral((int)Short.MAX_VALUE, this.mayBeNull);
+            case 32:
+                return new DBSPIntegerLiteral(Integer.MAX_VALUE, this.mayBeNull);
+            case 64:
+                return new DBSPLongLiteral(Long.MAX_VALUE, this.mayBeNull);
+            default:
+                throw new UnsupportedException(this);
+        }
+    }
+
+    @Override
+    public DBSPLiteral getMinValue() {
+        switch (this.width) {
+            case 16:
+                return new DBSPIntegerLiteral((int)Short.MIN_VALUE, this.mayBeNull);
+            case 32:
+                return new DBSPIntegerLiteral(Integer.MIN_VALUE, this.mayBeNull);
+            case 64:
+                return new DBSPLongLiteral(Long.MIN_VALUE, this.mayBeNull);
+            default:
+                throw new UnsupportedException(this);
         }
     }
 

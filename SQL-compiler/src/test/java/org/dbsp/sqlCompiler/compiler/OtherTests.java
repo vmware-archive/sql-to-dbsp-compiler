@@ -47,15 +47,13 @@ import org.dbsp.util.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 
-public class OtherTests implements IModule {
+public class OtherTests extends BaseSQLTests implements IModule {
     static final CompilerOptions options = new CompilerOptions();
 
     private DBSPCompiler compileDef() throws SqlParseException {
@@ -73,7 +71,7 @@ public class OtherTests implements IModule {
         return compiler;
     }
 
-    private DBSPCircuit compileQuery(String query) throws SqlParseException {
+    public DBSPCircuit queryToCircuit(String query) throws SqlParseException {
         DBSPCompiler compiler = this.compileDef();
         compiler.compileStatement(query, null);
         return compiler.getResult();
@@ -82,7 +80,7 @@ public class OtherTests implements IModule {
     private void testQuery(String query) {
         try {
             query = "CREATE VIEW V AS " + query;
-            DBSPCircuit circuit = this.compileQuery(query);
+            DBSPCircuit circuit = this.queryToCircuit(query);
             String rust = ToRustVisitor.toRustString(circuit);
             Assert.assertNotNull(rust);
         } catch (Exception ex) {
@@ -112,18 +110,18 @@ public class OtherTests implements IModule {
         Assert.assertNotNull(rust);
     }
 
-    //@Test
-    public void DDLZetaOverTest() throws SqlParseException {
+    @Test
+    public void DDLZetaOverTest() throws SqlParseException, IOException, InterruptedException {
         String query = "CREATE TABLE TestTable AS\n" +
                 "SELECT cast(1 as int64) as row_id,\n" +
                 "       cast(null as bool) as bool_val,\n" +
-                "       cast(null as int64) as int64_val,\n" +
+                "       cast(1 as int64) as int64_val,\n" +
                 "       cast(null as uint64) as uint64_val,\n" +
                 "       cast(null as double) as double_val,\n" +
                 "       cast(null as string) as str_val UNION ALL\n" +
                 "  SELECT 2,  true,  2,    3,    1.5,  \"A\"   UNION ALL\n" +
                 "  SELECT 3,  false, 1,    6,    1.5,  \"A\"   UNION ALL\n" +
-                "  SELECT 4,  null,  null, 2,    2.5,  \"B\"   UNION ALL\n" +
+                "  SELECT 4,  null,  2,    2,    2.5,  \"B\"   UNION ALL\n" +
                 "  SELECT 5,  false, 1,    null, 3.5,  \"A\"   UNION ALL\n" +
                 "  SELECT 6,  true,  2,    2,    null, \"C\"   UNION ALL\n" +
                 "  SELECT 7,  null,  1,    5,    -0.5,  null UNION ALL\n" +
@@ -134,13 +132,15 @@ public class OtherTests implements IModule {
         options.dialect = Lex.BIG_QUERY;
         DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.compileStatement(query, null);
-        compiler.compileStatement("SELECT int64_val, COUNT(*) OVER " +
+        compiler.compileStatement("CREATE VIEW V AS SELECT int64_val, COUNT(*) OVER " +
                 "(ORDER BY int64_val RANGE UNBOUNDED PRECEDING)\n" +
                 "FROM (SELECT int64_val FROM TestTable)\n", null);
         DBSPCircuit circuit = compiler.getResult();
-        String rust = ToRustVisitor.toRustString(circuit);
-        Assert.assertNotNull(rust);
-        System.out.println(rust);
+        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
+        writer.println(ToRustVisitor.generatePreamble());
+        writer.println(ToRustVisitor.toRustString(circuit));
+        writer.close();
+        Utilities.compileAndTestRust(rustDirectory, false);
     }
 
     @Test

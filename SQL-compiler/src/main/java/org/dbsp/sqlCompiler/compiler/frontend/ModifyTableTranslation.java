@@ -79,8 +79,10 @@ class ModifyTableTranslation {
             int index = 0;
             DBSPType[] columnTypes = new DBSPType[columnList.size()];
             for (SqlNode node : columnList) {
-                if (!(node instanceof SqlIdentifier))
+                if (!(node instanceof SqlIdentifier)) {
+                    assert statement.node != null;
                     throw new Unimplemented(statement.node);
+                }
                 SqlIdentifier id = (SqlIdentifier) node;
                 int actualIndex = tableDefinition.getColumnIndex(id);
                 // This must be a permutation

@@ -34,13 +34,13 @@ public class DBSPTypeRef extends DBSPType {
     public final DBSPType type;
     public final boolean mutable;
 
-    public DBSPTypeRef(DBSPType type, boolean mutable) {
+    DBSPTypeRef(DBSPType type, boolean mutable) {
         super(null, false);
         this.type = type;
         this.mutable = mutable;
     }
 
-    public DBSPTypeRef(DBSPType type) {
+    DBSPTypeRef(DBSPType type) {
         this(type, false);
     }
 

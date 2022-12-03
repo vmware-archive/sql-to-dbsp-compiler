@@ -39,7 +39,7 @@ import org.dbsp.sqlCompiler.ir.type.primitive.*;
 /**
  * Depth-first traversal of an DBSPInnerNode hierarchy.
  */
-@SuppressWarnings("SameReturnValue")
+@SuppressWarnings("SameReturnValue, EmptyMethod")
 public abstract class InnerVisitor {
     /// If true each visit call will visit by default the superclass.
     final boolean visitSuper;
@@ -428,7 +428,7 @@ public abstract class InnerVisitor {
         else return true;
     }
 
-    public boolean preorder(DBSPVariableReference node) {
+    public boolean preorder(DBSPVariablePath node) {
         if (this.visitSuper) return this.preorder((DBSPExpression) node);
         else return true;
     }
@@ -811,7 +811,7 @@ public abstract class InnerVisitor {
         if (this.visitSuper) this.postorder((DBSPExpression) node);
     }
 
-    public void postorder(DBSPVariableReference node) {
+    public void postorder(DBSPVariablePath node) {
         if (this.visitSuper) this.postorder((DBSPExpression) node);
     }
 

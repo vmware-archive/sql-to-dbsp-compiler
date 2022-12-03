@@ -29,9 +29,12 @@ import org.dbsp.util.Unimplemented;
 /**
  * SQL contains a large number of keywords that appear in various places.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class DBSPKeywordLiteral extends DBSPLiteral {
     enum Keyword {
         DOW,    // Day of week
+        EPOCH,
+        ISODOW,
     }
 
     public final Keyword keyword;
@@ -41,6 +44,12 @@ public class DBSPKeywordLiteral extends DBSPLiteral {
         switch (keyword.toLowerCase()) {
             case "dow":
                 this.keyword = Keyword.DOW;
+                break;
+            case "epoch":
+                this.keyword = Keyword.EPOCH;
+                break;
+            case "isodow":
+                this.keyword = Keyword.ISODOW;
                 break;
             default:
                 throw new Unimplemented(node);

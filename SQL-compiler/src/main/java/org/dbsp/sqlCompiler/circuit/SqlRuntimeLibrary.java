@@ -241,12 +241,12 @@ public class SqlRuntimeLibrary {
                         Collections.singletonList(arg),
                         DBSPTypeBool.instance,
                         new DBSPMatchExpression(
-                                new DBSPVariableReference("b", arg.getNonVoidType()),
+                                arg.getNonVoidType().var("b"),
                                 Arrays.asList(
                                     new DBSPMatchExpression.Case(
                                             DBSPTupleStructPattern.somePattern(
                                                     new DBSPIdentifierPattern("x")),
-                                            new DBSPVariableReference("x", DBSPTypeBool.instance)
+                                            DBSPTypeBool.instance.var("x")
                                     ),
                                     new DBSPMatchExpression.Case(
                                             DBSPWildcardPattern.instance,
@@ -325,17 +325,17 @@ public class SqlRuntimeLibrary {
                         DBSPType type = function.returnType;
                         DBSPExpression def;
                         if (i == 0) {
-                            DBSPExpression leftVar = new DBSPVariableReference("left", rawType);
-                            DBSPExpression rightVar = new DBSPVariableReference("right", rawType);
+                            DBSPExpression leftVar = rawType.var("left");
+                            DBSPExpression rightVar = rawType.var("right");
                             def = new DBSPBinaryExpression(type, op, leftVar, rightVar);
                         } else {
                             def = new DBSPBinaryExpression(type, op,
-                                    new DBSPVariableReference("l", rawType),
-                                    new DBSPVariableReference("r", rawType));
+                                    rawType.var("l"),
+                                    rawType.var("r"));
                             def = new DBSPMatchExpression(
                                     new DBSPRawTupleExpression(
-                                            new DBSPVariableReference("left", leftType),
-                                            new DBSPVariableReference("right", rightType)),
+                                            leftType.var("left"),
+                                            rightType.var("right")),
                                     Arrays.asList(
                                             new DBSPMatchExpression.Case(
                                                     new DBSPTuplePattern(leftMatch, rightMatch),

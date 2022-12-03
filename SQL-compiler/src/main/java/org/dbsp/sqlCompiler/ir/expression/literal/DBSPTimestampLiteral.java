@@ -29,7 +29,6 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeTimestamp;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 public class DBSPTimestampLiteral extends DBSPLiteral {
     public DBSPTimestampLiteral(@Nullable Object node, DBSPType type, @Nullable Long value) {

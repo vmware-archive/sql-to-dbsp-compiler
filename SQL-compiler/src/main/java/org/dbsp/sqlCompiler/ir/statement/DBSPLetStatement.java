@@ -26,7 +26,7 @@ package org.dbsp.sqlCompiler.ir.statement;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPVariableReference;
+import org.dbsp.sqlCompiler.ir.expression.DBSPVariablePath;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
@@ -63,8 +63,8 @@ public class DBSPLetStatement extends DBSPStatement implements IDBSPInnerDeclara
         return this.variable;
     }
 
-    public DBSPVariableReference getVarReference() {
-        return new DBSPVariableReference(this.variable, this.type);
+    public DBSPVariablePath getVarReference() {
+        return this.type.var(this.variable);
     }
 
     @Override

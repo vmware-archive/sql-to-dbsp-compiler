@@ -120,6 +120,15 @@ public class CircuitCloneVisitor extends CircuitVisitor
     }
 
     @Override
+    public void postorder(DBSPWindowAggregateOperator operator) { this.replace(operator); }
+
+    @Override
+    public void postorder(DBSPNoopOperator operator) { this.replace(operator); }
+
+    @Override
+    public void postorder(DBSPMapIndexOperator operator) { this.replace(operator); }
+
+    @Override
     public void postorder(DBSPUnaryOperator operator) { this.replace(operator); }
 
     @Override

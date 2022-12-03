@@ -72,6 +72,16 @@ public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType {
     }
 
     @Override
+    public DBSPLiteral getMaxValue() {
+        return new DBSPFloatLiteral(Float.MAX_VALUE, this.mayBeNull);
+    }
+
+    @Override
+    public DBSPLiteral getMinValue() {
+        return new DBSPFloatLiteral(Float.MIN_VALUE, this.mayBeNull);
+    }
+
+    @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);

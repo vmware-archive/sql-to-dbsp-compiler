@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.ir.type;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.expression.*;
+import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBaseType;
 import org.dbsp.util.IndentStream;
 import org.dbsp.util.UnsupportedException;
@@ -107,4 +108,26 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
             return ref.type.to(clazz);
         return this.to(clazz);
     }
+
+    public DBSPType ref() {
+        return new DBSPTypeRef(this);
+    }
+
+    public DBSPType ref(boolean mutable) {
+        return new DBSPTypeRef(this, mutable);
+    }
+
+    public DBSPVariablePath var(String variable) {
+        return new DBSPVariablePath(variable, this);
+    }
+
+    public DBSPPathExpression path(DBSPPath path) {
+        return new DBSPPathExpression(this, path);
+    }
+
+    /**
+     * This forces a Rust Option type, which is not the same as setting mayBeNull to true.
+     * With mayBeNull we can't represent 'Option[Option[T]]'
+     */
+    public DBSPType toOption() { return new DBSPTypeUser(this.getNode(), "Option", false, this); }
 }

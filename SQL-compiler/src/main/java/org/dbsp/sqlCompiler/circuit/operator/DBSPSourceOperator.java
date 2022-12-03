@@ -25,13 +25,14 @@ package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
 public class DBSPSourceOperator extends DBSPOperator {
     public DBSPSourceOperator(@Nullable Object node, DBSPType outputType, String name) {
-        super(node, "", null, outputType, false, null, name);
+        super(node, "", null, outputType, false, Linq.list(), name);
     }
 
     @Override

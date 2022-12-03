@@ -28,6 +28,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPISizeLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.IsNumericType;
+import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
 
@@ -71,6 +72,16 @@ public class DBSPTypeISize extends DBSPTypeBaseType
     @Override
     public DBSPLiteral getOne() {
         return new DBSPISizeLiteral(1);
+    }
+
+    @Override
+    public DBSPLiteral getMaxValue() {
+        throw new UnsupportedException(this);
+    }
+
+    @Override
+    public DBSPLiteral getMinValue() {
+        throw new UnsupportedException(this);
     }
 
     @Override

@@ -165,23 +165,22 @@ public class DBSPExecutor extends SqlTestExecutor {
             DBSPFunction inputGeneratingFunction) {
         DBSPTypeRawTuple inputType = Objects.requireNonNull(inputGeneratingFunction.returnType).to(DBSPTypeRawTuple.class);
         DBSPType returnType = new DBSPTypeVec(inputType);
-        DBSPVariableReference vec = new DBSPVariableReference("vec", returnType);
+        DBSPVariablePath vec = returnType.var("vec");
         DBSPLetStatement input = new DBSPLetStatement("data", inputGeneratingFunction.call());
         List<DBSPStatement> statements = new ArrayList<>();
         statements.add(input);
         DBSPLetStatement let = new DBSPLetStatement(vec.variable,
-                new DBSPApplyExpression(new DBSPPathExpression(
-                        DBSPTypeAny.instance,
+                new DBSPApplyExpression(DBSPTypeAny.instance.path(
                         new DBSPPath("Vec", "new"))),
                 true);
         statements.add(let);
         if (this.options.incrementalize) {
             for (int i = 0; i < inputType.tupFields.length; i++) {
-                DBSPExpression field = new DBSPFieldExpression(input.getVarReference(), i);
+                DBSPExpression field = input.getVarReference().field(i);
                 DBSPExpression elems = new DBSPApplyExpression("to_elements",
                         DBSPTypeAny.instance, new DBSPBorrowExpression(field));
 
-                DBSPVariableReference e = new DBSPVariableReference("e", DBSPTypeAny.instance);
+                DBSPVariablePath e = DBSPTypeAny.instance.var("e");
                 DBSPExpression[] fields = new DBSPExpression[inputType.tupFields.length];
                 for (int j = 0; j < inputType.tupFields.length; j++) {
                     DBSPType fieldType = inputType.tupFields[j];
@@ -192,7 +191,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                     }
                 }
                 DBSPExpression projected = new DBSPRawTupleExpression(fields);
-                DBSPExpression lambda = new DBSPClosureExpression(projected, e.asParameter());
+                DBSPExpression lambda = projected.closure(e.asParameter());
                 DBSPExpression iter = new DBSPApplyMethodExpression(
                         "iter", DBSPTypeAny.instance, elems);
                 DBSPExpression map = new DBSPApplyMethodExpression(
@@ -485,7 +484,7 @@ public class DBSPExecutor extends SqlTestExecutor {
             String inputI = circuit.getInputTables().get(i);
             int index = contents.getTableIndex(inputI);
             arguments[i] = new DBSPFieldExpression(null,
-                    new DBSPVariableReference("_in", DBSPTypeAny.instance), index);
+                    DBSPTypeAny.instance.var("_in"), index);
         }
         DBSPLetStatement createOutput = new DBSPLetStatement(
                 "output",
@@ -536,7 +535,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                     elementType = oType.elementType;
                 }
                 DBSPExpression zset_to_strings = new DBSPQualifyTypeExpression(
-                        new DBSPVariableReference(functionProducingStrings, DBSPTypeAny.instance),
+                        DBSPTypeAny.instance.var(functionProducingStrings),
                         elementType,
                         oType.weightType
                 );
@@ -569,7 +568,7 @@ public class DBSPExecutor extends SqlTestExecutor {
             list.add(
                     new DBSPExpressionStatement(
                             new DBSPApplyExpression("assert_eq!", null,
-                                    new DBSPVariableReference("_hash", DBSPTypeString.instance),
+                                    DBSPTypeString.instance.var("_hash"),
                                     new DBSPStringLiteral(description.hash))));
         }
         DBSPExpression body = new DBSPBlockExpression(list, null);

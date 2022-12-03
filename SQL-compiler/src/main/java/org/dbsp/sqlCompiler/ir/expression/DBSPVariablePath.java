@@ -27,15 +27,15 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeRef;
 
 /**
- * Reference to a variable by name.
+ * A special case of a PathExpression in Rust which refers to a variable by name.
+ * More convenient that using always Paths.
  */
-public class DBSPVariableReference extends DBSPExpression {
+public class DBSPVariablePath extends DBSPExpression {
     public final String variable;
 
-    public DBSPVariableReference(String variable, DBSPType type) {
+    public DBSPVariablePath(String variable, DBSPType type) {
         super(null, type);
         this.variable = variable;
     }
@@ -59,7 +59,7 @@ public class DBSPVariableReference extends DBSPExpression {
     public DBSPClosureExpression.Parameter asRefParameter(boolean mutable) {
         return new DBSPClosureExpression.Parameter(
                 this.asPattern(),
-                new DBSPTypeRef(this.getNonVoidType(), mutable));
+                this.getNonVoidType().ref(mutable));
     }
 
     public DBSPClosureExpression.Parameter asRefParameter() {
@@ -78,7 +78,7 @@ public class DBSPVariableReference extends DBSPExpression {
     public boolean shallowSameExpression(DBSPExpression other) {
         if (this == other)
             return true;
-        DBSPVariableReference fe = other.as(DBSPVariableReference.class);
+        DBSPVariablePath fe = other.as(DBSPVariablePath.class);
         if (fe == null)
             return false;
         return this.variable.equals(fe.variable) &&

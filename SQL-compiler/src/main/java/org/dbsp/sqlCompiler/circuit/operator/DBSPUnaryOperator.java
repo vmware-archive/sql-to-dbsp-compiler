@@ -23,11 +23,11 @@
 
 package org.dbsp.sqlCompiler.circuit.operator;
 
-import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public abstract class DBSPUnaryOperator extends DBSPOperator {
     protected DBSPUnaryOperator(@Nullable Object node, String operation,
@@ -40,7 +40,7 @@ public abstract class DBSPUnaryOperator extends DBSPOperator {
     protected DBSPUnaryOperator(@Nullable Object node, String operation,
                                 @Nullable DBSPExpression function, DBSPType outputType,
                                 boolean isMultiset, DBSPOperator source,
-                                @Nullable String comment, String outputName) {
+                                List<String> comment, String outputName) {
         super(node, operation, function, outputType, isMultiset, comment, outputName);
         this.addInput(source);
     }

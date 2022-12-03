@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.ir.expression;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeRef;
 
 /**
  * An expression of the form &expression.
@@ -34,7 +33,7 @@ public class DBSPBorrowExpression extends DBSPExpression {
     public final boolean mut;
 
     public DBSPBorrowExpression(DBSPExpression expression, boolean mutable) {
-        super(null, new DBSPTypeRef(expression.getNonVoidType()));
+        super(null, expression.getNonVoidType().ref());
         this.expression = expression;
         this.mut = mutable;
     }

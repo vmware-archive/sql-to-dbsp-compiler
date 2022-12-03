@@ -28,6 +28,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDecimalLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.IsNumericType;
+import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
@@ -54,6 +55,16 @@ public class DBSPTypeDecimal extends DBSPTypeBaseType
     @Override
     public DBSPLiteral getOne() {
         return new DBSPDecimalLiteral(null, this, new BigDecimal(1));
+    }
+
+    @Override
+    public DBSPLiteral getMaxValue() {
+        throw new UnsupportedException(this);
+    }
+
+    @Override
+    public DBSPLiteral getMinValue() {
+        throw new UnsupportedException(this);
     }
 
     @Override

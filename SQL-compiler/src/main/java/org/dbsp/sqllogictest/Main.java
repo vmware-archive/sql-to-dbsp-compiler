@@ -27,10 +27,8 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
-import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
