@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPTimestampLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.IsDateType;
 import org.dbsp.sqlCompiler.ir.type.IsNumericType;
+import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
 
@@ -64,13 +65,24 @@ public class DBSPTypeTimestamp extends DBSPTypeBaseType
 
     @Override
     public DBSPLiteral getZero() {
-        return new DBSPTimestampLiteral(0L, this.mayBeNull);
+        return new DBSPTimestampLiteral(0);
     }
 
     @Override
     public DBSPLiteral getOne() {
-        return new DBSPTimestampLiteral(1L, this.mayBeNull);
+        throw new UnsupportedException(this);
     }
+
+    @Override
+    public DBSPLiteral getMaxValue() {
+        return new DBSPTimestampLiteral(Long.MAX_VALUE);
+    }
+
+    @Override
+    public DBSPLiteral getMinValue() {
+        throw new UnsupportedException(this);
+    }
+
 
     @Override
     public boolean sameType(@Nullable DBSPType other) {

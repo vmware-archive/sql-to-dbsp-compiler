@@ -62,12 +62,11 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
      * True if the output of the operator is a multiset.
      */
     public final boolean isMultiset;
-    @Nullable
-    public final String comment;
+    public final List<String> comment;
 
     protected DBSPOperator(@Nullable Object node, String operation,
                            @Nullable DBSPExpression function, DBSPType outputType,
-                           boolean isMultiset, @Nullable String comment, String outputName) {
+                           boolean isMultiset, List<String> comment, String outputName) {
         super(node);
         this.inputs = new ArrayList<>();
         this.operation = operation;
@@ -81,7 +80,7 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
     public DBSPOperator(@Nullable Object node, String operation,
                         @Nullable DBSPExpression function,
                         DBSPType outputType, boolean isMultiset) {
-        this(node, operation, function, outputType, isMultiset, null,
+        this(node, operation, function, outputType, isMultiset, Linq.list(),
                 new NameGen("stream").toString());
     }
 
@@ -113,11 +112,11 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
         DBSPTypeZSet zSet = source.outputType.as(DBSPTypeZSet.class);
         DBSPTypeIndexedZSet iZSet = source.outputType.as(DBSPTypeIndexedZSet.class);
         if (zSet != null) {
-            sourceElementType = new DBSPTypeRef(zSet.elementType);
+            sourceElementType = zSet.elementType.ref();
         } else if (iZSet != null) {
             sourceElementType = new DBSPTypeRawTuple(
-                    new DBSPTypeRef(iZSet.keyType),
-                    new DBSPTypeRef(iZSet.elementType));
+                    iZSet.keyType.ref(),
+                    iZSet.elementType.ref());
         } else {
             throw new RuntimeException("Source " + source + " does not produce an (Indexed)ZSet, but "
                     + source.outputType);

@@ -31,8 +31,7 @@ import org.dbsp.sqlCompiler.ir.path.DBSPPath;
  */
 public class DBSPSomeExpression extends DBSPStructExpression {
     public DBSPSomeExpression(DBSPExpression argument) {
-        super(new DBSPPathExpression(
-                argument.getNonVoidType(),
+        super(argument.getNonVoidType().setMayBeNull(true).path(
                 new DBSPPath("Some")), argument.getNonVoidType().setMayBeNull(true), argument);
     }
 

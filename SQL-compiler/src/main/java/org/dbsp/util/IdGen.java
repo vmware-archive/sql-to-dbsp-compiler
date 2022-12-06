@@ -29,8 +29,8 @@ package org.dbsp.util;
  * Base class for objects that have unique Ids.
  */
 public class IdGen {
-    static int idGen = 0;
-    public final int id;
+    static long idGen = 0;
+    public final long id;
 
     public IdGen() {
         this.id = idGen++;

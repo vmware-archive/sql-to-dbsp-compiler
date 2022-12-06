@@ -110,6 +110,17 @@ public class NaiveIncrementalTests extends EndToEndTests {
         );
     }
 
+    @Test @Override
+    public void correlatedAggregate() {
+        String query = "SELECT Sum(r.COL1 * r.COL5) FROM T r\n" +
+                "WHERE\n" +
+                "0.5 * (SELECT Sum(r1.COL5) FROM T r1) =\n" +
+                "(SELECT Sum(r2.COL5) FROM T r2 WHERE r2.COL1 = r.COL1)";
+        this.testAggregate(query,
+                new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPIntegerLiteral(10, true))),
+                new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
     @Test
     public void divZeroTest() {
         String query = "SELECT 1 / 0";

@@ -34,13 +34,13 @@ public class DBSPTypeRef extends DBSPType {
     public final DBSPType type;
     public final boolean mutable;
 
-    public DBSPTypeRef(DBSPType type, boolean mutable) {
+    DBSPTypeRef(DBSPType type, boolean mutable) {
         super(null, false);
         this.type = type;
         this.mutable = mutable;
     }
 
-    public DBSPTypeRef(DBSPType type) {
+    DBSPTypeRef(DBSPType type) {
         this(type, false);
     }
 
@@ -66,15 +66,5 @@ public class DBSPTypeRef extends DBSPType {
         if (!visitor.preorder(this)) return;
         this.type.accept(visitor);
         visitor.postorder(this);
-    }
-
-    /**
-     * Given a type that is expected to be a reference type,
-     * compute the type that is the dereferenced type.
-     */
-    public static DBSPType deref(DBSPType otherType) {
-        if (otherType.is(DBSPTypeAny.class))
-            return otherType;
-        return otherType.to(DBSPTypeRef.class).type;
     }
 }

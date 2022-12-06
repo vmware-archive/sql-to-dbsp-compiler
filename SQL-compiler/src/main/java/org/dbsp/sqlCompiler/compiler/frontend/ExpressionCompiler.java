@@ -46,24 +46,57 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
      */
     private final TypeCompiler typeCompiler = new TypeCompiler();
     @Nullable
-    private final DBSPVariableReference inputRow;
+    public final DBSPVariablePath inputRow;
     private final RexBuilder rexBuilder;
+    private final List<RexLiteral> constants;
 
-    public ExpressionCompiler(@Nullable DBSPVariableReference inputRow, CalciteCompiler calciteCompiler) {
-        super(true);
-        this.inputRow = inputRow;
-        this.rexBuilder = calciteCompiler.getRexBuilder();
+    public ExpressionCompiler(@Nullable DBSPVariablePath inputRow, CalciteCompiler calciteCompiler) {
+        this(inputRow, Linq.list(), calciteCompiler);
     }
 
+    /**
+     * Create a compiler that will translate expressions pertaining to a row.
+     * @param inputRow         Variable representing the row being compiled.
+     * @param constants        Additional constants.  Expressions compiled
+     *                         may use RexInputRef, which are field references
+     *                         within the row.  Calcite seems to number constants
+     *                         as additional fields within the row, after the end of
+     *                         the input row.
+     * @param calciteCompiler  Handle to the Calcite compiler, in case we need
+     *                         to do some more preprocessing of the expressions.
+     */
+    public ExpressionCompiler(@Nullable DBSPVariablePath inputRow,
+                              List<RexLiteral> constants,
+                              CalciteCompiler calciteCompiler) {
+        super(true);
+        this.inputRow = inputRow;
+        this.constants = constants;
+        this.rexBuilder = calciteCompiler.getRexBuilder();
+        if (inputRow != null &&
+                !inputRow.getNonVoidType().is(DBSPTypeRef.class))
+            throw new TranslationException("Expected a reference type for row", inputRow.getNode());
+    }
+
+    /**
+     * Convert an expression that refers to a field in the input row.
+     * @param inputRef   index in the input row.
+     * @return           the corresponding DBSP expression.
+     */
     @Override
     public DBSPExpression visitInputRef(RexInputRef inputRef) {
         // DBSPType type = this.typeCompiler.convertType(inputRef.getType());
         // Unfortunately it looks like we can't trust the type coming from Calcite.
         if (this.inputRow == null)
             throw new RuntimeException("Row referenced without a row context");
-        return new DBSPFieldExpression(
-                inputRef, this.inputRow,
-                inputRef.getIndex());
+        DBSPTypeTuple type = this.inputRow.getNonVoidType().deref().to(DBSPTypeTuple.class);
+        int index = inputRef.getIndex();
+        if (index < type.size())
+            return new DBSPFieldExpression(
+                    inputRef, this.inputRow,
+                    inputRef.getIndex());
+        if (index - type.size() < this.constants.size())
+            return this.visitLiteral(this.constants.get(index - type.size()));
+        throw new TranslationException("Index in row out of bounds ", inputRef);
     }
 
     @Override
@@ -169,9 +202,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
 
     @SuppressWarnings("unused")
     public static boolean needCommonType(String op, DBSPType result, DBSPType left, DBSPType right) {
-        if (left.is(IsDateType.class) || right.is(IsDateType.class))
-            return false;
-        return true;
+        return !left.is(IsDateType.class) && !right.is(IsDateType.class);
     }
 
     public static DBSPExpression makeBinaryExpression(
@@ -323,6 +354,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
             case BIT_XOR:
                 return makeBinaryExpressions(call, type, "^", ops);
             case CAST:
+            case REINTERPRET:
                 return makeCast(ops.get(0), type);
             case IS_NULL:
             case IS_NOT_NULL: {
@@ -433,8 +465,6 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 String functionName = "extract_" + keyword;
                 return new DBSPApplyExpression(functionName, type, ops.get(1));
             }
-            case REINTERPRET:
-                return makeCast(ops.get(0), type);
             case FLOOR:
             case CEIL:
                 // fall through

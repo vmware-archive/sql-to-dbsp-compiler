@@ -25,7 +25,10 @@ package org.dbsp.zetasqltest;
 
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 
+import javax.annotation.Nullable;
+
 public class ZetaSQLTest {
-    String statement;
+    String statement = "";
+    @Nullable
     DBSPZSetLiteral result;
 }

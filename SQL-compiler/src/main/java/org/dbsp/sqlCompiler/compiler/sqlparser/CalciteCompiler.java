@@ -85,7 +85,6 @@ import java.util.*;
  * - compile SqlNode to RelNode
  * - optimize RelNode
  */
-@SuppressWarnings("FieldCanBeLocal")
 public class CalciteCompiler implements IModule {
     private final SqlParser.Config parserConfig;
     private final SqlValidator validator;
@@ -307,9 +306,12 @@ public class CalciteCompiler implements IModule {
                 CoreRules.PROJECT_JOIN_JOIN_REMOVE,
                 CoreRules.PROJECT_JOIN_REMOVE
                 );
+        HepProgram window = createProgram(
+                CoreRules.PROJECT_TO_LOGICAL_PROJECT_AND_WINDOW
+        );
             if (avoidBushyJoin(rel))
-                return Linq.list(constantFold, removeEmpty, distinctAggregates, mergeNodes, remove);
-            return Linq.list(constantFold, removeEmpty, distinctAggregates, multiJoins, mergeNodes, remove);
+                return Linq.list(constantFold, removeEmpty, window, distinctAggregates, mergeNodes, remove);
+            return Linq.list(constantFold, removeEmpty, window, distinctAggregates, multiJoins, mergeNodes, remove);
             /*
         return Linq.list(
                 CoreRules.PROJECT_JOIN_TRANSPOSE)
@@ -382,6 +384,13 @@ public class CalciteCompiler implements IModule {
                     .newline();
             stage++;
         }
+
+        Logger.instance.from(this, 2)
+                .append("After optimizer ")
+                .increase()
+                .append(getPlan(rel))
+                .decrease()
+                .newline();
         return rel;
     }
 
@@ -427,7 +436,7 @@ public class CalciteCompiler implements IModule {
     public FrontEndStatement compile(
             String sqlStatement,
             SqlNode node,
-            @Nullable String comment) throws SqlParseException {
+            @Nullable String comment) {
         if (SqlKind.DDL.contains(node.getKind())) {
             if (node.getKind().equals(SqlKind.DROP_TABLE)) {
                 SqlDropTable dt = (SqlDropTable) node;

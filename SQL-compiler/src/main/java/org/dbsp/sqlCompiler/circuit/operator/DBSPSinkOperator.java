@@ -33,7 +33,7 @@ public class DBSPSinkOperator extends DBSPOperator {
 
     public DBSPSinkOperator(@Nullable Object node,
                             String outputName, String query,
-                            @Nullable String comment, DBSPOperator input) {
+                            List<String> comment, DBSPOperator input) {
         super(node, "inspect", null, input.outputType, input.isMultiset, comment, outputName);
         this.addInput(input);
         this.query = query;

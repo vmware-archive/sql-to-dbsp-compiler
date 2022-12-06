@@ -125,12 +125,22 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
         else return true;
     }
 
+    public boolean preorder(DBSPWindowAggregateOperator node) {
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
+        else return true;
+    }
+
     public boolean preorder(DBSPConstantOperator node) {
         if (this.visitSuper) return this.preorder((DBSPOperator) node);
         else return true;
     }
 
     public boolean preorder(DBSPMapOperator node) {
+        if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPMapIndexOperator node) {
         if (this.visitSuper) return this.preorder((DBSPUnaryOperator) node);
         else return true;
     }
@@ -225,11 +235,19 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
         if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
     }
 
+    public void postorder(DBSPWindowAggregateOperator node) {
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
+    }
+
     public void postorder(DBSPConstantOperator node) {
         if (this.visitSuper) this.postorder((DBSPOperator) node);
     }
 
     public void postorder(DBSPMapOperator node) {
+        if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
+    }
+
+    public void postorder(DBSPMapIndexOperator node) {
         if (this.visitSuper) this.postorder((DBSPUnaryOperator) node);
     }
 

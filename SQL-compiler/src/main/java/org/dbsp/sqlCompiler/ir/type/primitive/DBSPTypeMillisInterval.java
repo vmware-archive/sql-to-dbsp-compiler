@@ -75,7 +75,17 @@ public class DBSPTypeMillisInterval extends DBSPTypeBaseType implements IsNumeri
 
     @Override
     public DBSPLiteral getOne() {
-        throw new UnsupportedException("One millisecond");
+        throw new UnsupportedException(this);
+    }
+
+    @Override
+    public DBSPLiteral getMaxValue() {
+        throw new UnsupportedException(this);
+    }
+
+    @Override
+    public DBSPLiteral getMinValue() {
+        throw new UnsupportedException(this);
     }
 
     @Override

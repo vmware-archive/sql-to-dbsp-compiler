@@ -84,6 +84,14 @@ public class OptimizeIncrementalVisitor extends CircuitCloneVisitor {
     public void postorder(DBSPNoopOperator operator) { this.linear(operator); }
 
     @Override
+    public void postorder(DBSPWindowAggregateOperator operator) { this.linear(operator); }
+
+    @Override
+    public void postorder(DBSPMapIndexOperator operator) {
+        this.linear(operator);
+    }
+
+    @Override
     public void postorder(DBSPJoinOperator operator) {
         List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
         if (Linq.all(sources, s -> s.is(DBSPIntegralOperator.class))) {
@@ -159,8 +167,8 @@ public class OptimizeIncrementalVisitor extends CircuitCloneVisitor {
         this.addOperator(operator);
         DBSPDifferentialOperator diff = new DBSPDifferentialOperator(operator.getNode(), operator);
         this.addOperator(diff);
-        DBSPIntegralOperator integ = new DBSPIntegralOperator(operator.getNode(), diff);
-        this.map(operator, integ);
+        DBSPIntegralOperator integral = new DBSPIntegralOperator(operator.getNode(), diff);
+        this.map(operator, integral);
     }
 
     @Override

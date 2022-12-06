@@ -28,8 +28,9 @@ import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.*;
-import org.dbsp.util.IndentStream;
-import org.dbsp.util.Linq;
+import org.dbsp.util.*;
+
+import java.util.List;
 
 /**
  * This visitor generate a Rust implementation of the program.
@@ -50,7 +51,12 @@ public class ToRustVisitor extends CircuitVisitor {
                     "use dbsp::{\n" +
                     "    algebra::{ZSet, MulByRef, F32, F64, UnimplementedSemigroup},\n" +
                     "    circuit::{Circuit, Stream},\n" +
-                    "    operator::{Generator, FilterMap, Fold},\n" +
+                    "    operator::{\n" +
+                    "        Generator,\n" +
+                    "        FilterMap,\n" +
+                    "        Fold,\n" +
+                    "        time_series::{RelRange, RelOffset, OrdPartitionedIndexedZSet},\n" +
+                    "    },\n" +
                     "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
                     "    zset,\n" +
                     "    DBWeight,\n" +
@@ -225,8 +231,7 @@ public class ToRustVisitor extends CircuitVisitor {
 
     @Override
     public boolean preorder(DBSPSourceOperator operator) {
-        this.builder
-                .append(operator.comment != null ? "// " + operator.comment + "\n" : "")
+        this.writeComments(operator)
                 .append("let ")
                 .append(operator.getName())
                 .append(" = ")
@@ -238,11 +243,8 @@ public class ToRustVisitor extends CircuitVisitor {
 
     @Override
     public boolean preorder(DBSPSinkOperator operator) {
-        this.builder
-                .append("// ")
-                .append(operator.query)
-                .append("\n")
-                .append(operator.comment != null ? "// " + operator.comment + "\n" : "")
+        this.writeComments(Linq.list(operator.query.split("\n")));
+        this.writeComments(operator)
                 .append(operator.input().getName())
                 .append(".")
                 .append(operator.operation) // inspect
@@ -256,7 +258,7 @@ public class ToRustVisitor extends CircuitVisitor {
     @Override
     public boolean preorder(DBSPOperator operator) {
         DBSPType streamType = new DBSPTypeStream(operator.outputType);
-        builder.append(operator.comment != null ? "// " + operator.comment + "\n" : "")
+        this.writeComments(operator)
                 .append("let ")
                 .append(operator.getName())
                 .append(": ");
@@ -283,9 +285,37 @@ public class ToRustVisitor extends CircuitVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPWindowAggregateOperator operator) {
+        // We generate two DBSP operator calls: partitioned_rolling_aggregate
+        // and map_index
+        DBSPType streamType = new DBSPTypeStream(operator.outputType);
+        String tmp = new NameGen("stream").toString();
+        this.writeComments(operator)
+                .append("let ")
+                .append(tmp)
+                .append(" = ")
+                .append(operator.input().getName())
+                .append(".partitioned_rolling_aggregate(");
+        operator.aggregator.accept(this.innerVisitor);
+        builder.append(", ");
+        operator.window.accept(this.innerVisitor);
+        builder.append(");")
+                .newline();
+
+        this.builder.append("let ")
+                .append(operator.getName())
+                .append(": ");
+        streamType.accept(this.innerVisitor);
+        builder.append(" = " )
+                .append(tmp)
+                .append(".map_index(|(key, (ts, agg))| { ((*key, *ts), agg.unwrap())});");
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPIncrementalAggregateOperator operator) {
         DBSPType streamType = new DBSPTypeStream(operator.outputType);
-        builder.append(operator.comment != null ? "// " + operator.comment + "\n" : "")
+        this.writeComments(operator)
                 .append("let ")
                 .append(operator.getName())
                 .append(": ");
@@ -302,7 +332,7 @@ public class ToRustVisitor extends CircuitVisitor {
 
     @Override
     public boolean preorder(DBSPSumOperator operator) {
-        this.builder.append(operator.comment != null ? "// " + operator.comment + "\n" : "")
+        this.writeComments(operator)
                     .append("let ")
                     .append(operator.getName())
                     .append(": ");
@@ -322,9 +352,17 @@ public class ToRustVisitor extends CircuitVisitor {
         return false;
     }
 
+    IIndentStream writeComments(List<String> strings) {
+        return this.builder.intercalate("\n", Linq.map(strings, c -> "// " + c));
+    }
+
+     IIndentStream writeComments(DBSPOperator operator) {
+        return this.writeComments(operator.comment);
+    }
+
     @Override
     public boolean preorder(DBSPIncrementalJoinOperator operator) {
-        this.builder.append(operator.comment != null ? "// " + operator.comment + "\n" : "")
+        this.writeComments(operator)
                 .append("let ")
                 .append(operator.getName())
                 .append(": ");

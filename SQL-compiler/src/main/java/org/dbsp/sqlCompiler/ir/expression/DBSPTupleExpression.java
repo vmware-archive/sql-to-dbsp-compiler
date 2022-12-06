@@ -48,6 +48,16 @@ public class DBSPTupleExpression extends DBSPBaseTupleExpression {
         this(null, expressions);
     }
 
+    /**
+     * Extend this tuple by appending more fields.
+     */
+    public DBSPTupleExpression extend(DBSPExpression... extra) {
+        DBSPExpression[] fields = new DBSPExpression[this.size() + extra.length];
+        System.arraycopy(this.fields, 0, fields, 0, this.fields.length);
+        System.arraycopy(extra, 0, fields, fields.length, extra.length);
+        return new DBSPTupleExpression(fields);
+    }
+
     public DBSPTupleExpression(List<DBSPExpression> fields) {
         this(null, fields.toArray(new DBSPExpression[0]));
     }

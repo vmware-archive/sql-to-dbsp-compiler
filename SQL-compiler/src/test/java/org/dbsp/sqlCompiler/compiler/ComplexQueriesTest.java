@@ -29,20 +29,21 @@ import org.dbsp.util.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
+@SuppressWarnings("SpellCheckingInspection")
 public class ComplexQueriesTest extends BaseSQLTests {
     public String fixup(String query) {
         return query.replace("FLOAT64", "DOUBLE")
                 .replace("STRING", "VARCHAR");
     }
 
-    //@Test
+    @Test
     public void taxiTest() throws SqlParseException {
         String ddl = "CREATE TABLE green_tripdata\n" +
                 "(\n" +
-                "        lpep_pickup_datetime TIMESTAMP,\n" +
-                "        lpep_dropoff_datetime TIMESTAMP,\n" +
-                "        pickup_location_id BIGINT,\n" +
-                "        dropoff_location_id BIGINT,\n" +
+                "        lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
+                "        lpep_dropoff_datetime TIMESTAMP NOT NULL,\n" +
+                "        pickup_location_id BIGINT NOT NULL,\n" +
+                "        dropoff_location_id BIGINT NOT NULL,\n" +
                 "        trip_distance DOUBLE PRECISION,\n" +
                 "        fare_amount DOUBLE PRECISION \n" +
                 ")";
@@ -76,6 +77,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
     }
 
     //@Test
+    // Not yet supported because of LAG
     public void fraudDetectionTest() throws SqlParseException {
         Logger.instance.setDebugLevel("CalciteCompiler", 2);
         // fraudDetection-352718.cc_data.demo_
@@ -94,7 +96,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 " dob DATE\n" +
                 ")";
         String ddl1 = "CREATE TABLE transactions (\n" +
-                " trans_date_trans_time TIMESTAMP,\n" +
+                " trans_date_trans_time TIMESTAMP NOT NULL,\n" +
                 " cc_num FLOAT64,\n" +
                 " merchant STRING,\n" +
                 " category STRING,\n" +

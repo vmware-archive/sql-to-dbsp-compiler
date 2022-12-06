@@ -263,7 +263,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
-    public boolean preorder(DBSPVariableReference expression) {
+    public boolean preorder(DBSPVariablePath expression) {
         this.builder.append(expression.variable);
         return false;
     }

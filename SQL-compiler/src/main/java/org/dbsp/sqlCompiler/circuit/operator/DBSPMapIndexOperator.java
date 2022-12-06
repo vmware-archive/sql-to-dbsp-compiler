@@ -24,23 +24,28 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPClosureExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPVariablePath;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeRawTuple;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class DBSPNoopOperator extends DBSPUnaryOperator {
-    static DBSPClosureExpression getClosure() {
-        DBSPVariablePath var = DBSPTypeAny.instance.var("i");
-        return var.deref().closure(var.asRefParameter());
-    }
+public class DBSPMapIndexOperator extends DBSPUnaryOperator {
+    public final DBSPType keType;
+    public final DBSPType valueType;
 
-    public DBSPNoopOperator(@Nullable Object node, DBSPOperator source,
-                            List<String> comment, String outputName) {
-        super(node, "map", getClosure(),
-                source.getNonVoidType(), source.isMultiset, source, comment, outputName);
+    // Expression must return a tuple that is composed of a key and a value
+    public DBSPMapIndexOperator(@Nullable Object node, DBSPExpression expression,
+                                DBSPType keyType, DBSPType valueType, DBSPOperator input) {
+        super(node, "map_index", expression,
+                new DBSPTypeIndexedZSet(node, keyType, valueType), true, input);
+        DBSPType outputElementType = new DBSPTypeRawTuple(keyType, valueType);
+        this.keType = keyType;
+        this.valueType = valueType;
+        this.checkResultType(expression, outputElementType);
+        this.checkArgumentFunctionType(expression, 0, input);
     }
 
     @Override
@@ -51,6 +56,9 @@ public class DBSPNoopOperator extends DBSPUnaryOperator {
 
     @Override
     public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
-        return new DBSPNoopOperator(this.getNode(), newInputs.get(0), this.comment, this.outputName);
+        if (force || this.inputsDiffer(newInputs))
+            return new DBSPMapIndexOperator(
+                    this.getNode(), this.getFunction(), this.keType, this.valueType, newInputs.get(0));
+        return this;
     }
 }

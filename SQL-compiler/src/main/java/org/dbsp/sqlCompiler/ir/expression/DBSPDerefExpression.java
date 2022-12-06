@@ -32,8 +32,8 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeRef;
 public class DBSPDerefExpression extends DBSPExpression {
     public final DBSPExpression expression;
 
-    public DBSPDerefExpression(DBSPExpression expression) {
-        super(null, DBSPTypeRef.deref(expression.getNonVoidType()));
+    DBSPDerefExpression(DBSPExpression expression) {
+        super(null, expression.getNonVoidType().deref());
         this.expression = expression;
     }
 

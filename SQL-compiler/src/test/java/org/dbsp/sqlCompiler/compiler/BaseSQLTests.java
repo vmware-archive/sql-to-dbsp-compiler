@@ -167,10 +167,6 @@ public class BaseSQLTests {
         return new DBSPZSetLiteral(e0, e1);
     }
 
-    DBSPExpression[] inputRows() {
-        return new DBSPExpression[] { e0, e1 };
-    }
-
     /**
      * Generates a Rust function which tests a DBSP circuit.
      * @param circuit       DBSP circuit that will be tested.

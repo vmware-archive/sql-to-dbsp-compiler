@@ -35,12 +35,12 @@ public class CompilerOptions {
      * Rust file where the output circuit is emitted.
      */
     @Nullable
-    public String outputFile;
+    public final String outputFile;
     /**
      * SQL input script which contains table declarations and view definitions.
      */
     @Nullable
-    public String inputFile;
+    public final String inputFile;
     /**
      * If true the compiler should generate an incremental streaming circuit.
      */
@@ -55,5 +55,5 @@ public class CompilerOptions {
         this.inputFile = null;
         this.incrementalize = false;
         this.dialect = Lex.ORACLE;
-    };
+    }
 }

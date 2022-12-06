@@ -35,6 +35,7 @@ import org.dbsp.sqlCompiler.ir.type.IHasType;
 import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * An expression of the form |var1, var2, ...| body.
@@ -54,9 +55,9 @@ public class DBSPClosureExpression extends DBSPExpression {
             this.type = type;
         }
 
-        public Parameter(DBSPVariableReference... variables) {
+        public Parameter(DBSPVariablePath... variables) {
             super(null);
-            this.pattern = new DBSPTuplePattern(Linq.map(variables, DBSPVariableReference::asPattern, DBSPPattern.class));
+            this.pattern = new DBSPTuplePattern(Linq.map(variables, DBSPVariablePath::asPattern, DBSPPattern.class));
             this.type = new DBSPTypeRawTuple(Linq.map(variables, DBSPExpression::getType, DBSPType.class));
         }
 
@@ -85,6 +86,10 @@ public class DBSPClosureExpression extends DBSPExpression {
         return this.getFunctionType().resultType;
     }
 
+    public DBSPType getNonVoidResultType() {
+        return Objects.requireNonNull(this.getFunctionType().resultType);
+    }
+
     public DBSPClosureExpression(@Nullable Object node, DBSPExpression body, Parameter... variables) {
         // In Rust in general we can't write the type of a closure.
         super(node, new DBSPTypeFunction(body.getType(), Linq.map(variables, Parameter::getType, DBSPType.class)));
@@ -92,7 +97,7 @@ public class DBSPClosureExpression extends DBSPExpression {
         this.parameters = variables;
     }
 
-    public DBSPClosureExpression(DBSPExpression body, Parameter... variables) {
+    DBSPClosureExpression(DBSPExpression body, Parameter... variables) {
         this(null, body, variables);
     }
 

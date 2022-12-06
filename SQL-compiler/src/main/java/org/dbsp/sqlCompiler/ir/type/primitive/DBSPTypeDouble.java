@@ -72,6 +72,16 @@ public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType {
     }
 
     @Override
+    public DBSPLiteral getMaxValue() {
+        return new DBSPDoubleLiteral(Double.MAX_VALUE, this.mayBeNull);
+    }
+
+    @Override
+    public DBSPLiteral getMinValue() {
+        return new DBSPDoubleLiteral(Double.MIN_VALUE, this.mayBeNull);
+    }
+
+    @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);

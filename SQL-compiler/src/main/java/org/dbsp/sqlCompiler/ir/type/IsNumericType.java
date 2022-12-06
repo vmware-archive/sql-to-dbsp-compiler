@@ -32,4 +32,6 @@ public interface IsNumericType {
     default String getRustString() { return this.toString(); }
     DBSPLiteral getZero();
     DBSPLiteral getOne();
+    DBSPLiteral getMaxValue();
+    DBSPLiteral getMinValue();
 }

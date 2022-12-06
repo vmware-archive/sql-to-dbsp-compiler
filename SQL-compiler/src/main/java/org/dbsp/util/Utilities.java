@@ -104,6 +104,7 @@ public class Utilities {
      * @param value  Value to insert in map.
      * @return       The inserted value.
      */
+    @SuppressWarnings("UnusedReturnValue")
     public static <K, V, VE extends V> VE putNew(Map<K, V> map, K key, VE value) {
         V previous = map.put(Objects.requireNonNull(key), Objects.requireNonNull(value));
         if (previous != null)
@@ -152,6 +153,7 @@ public class Utilities {
             throw new RuntimeException("Process failed with exit code " + exitCode);
     }
 
+    static final boolean retry = false;
     public static void compileAndTestRust(String directory, boolean quiet)
             throws IOException, InterruptedException {
         try {
@@ -160,9 +162,10 @@ public class Utilities {
             else
                 runProcess(directory, "cargo", "test", "--", "--show-output");
         } catch (RuntimeException ex) {
-            // Sometimes the rust compiler crashes.
-            // Retry after deleting 'target'
-            runProcess(directory, "rm", "-rf", "../target");
+            if (!retry)
+                throw ex;
+            // Sometimes the rust compiler crashes; retry.
+            runProcess(directory, "cargo", "clean");
             if (quiet)
                 runProcess(directory, "cargo", "test", "-q");
             else
@@ -180,5 +183,11 @@ public class Utilities {
             r.append(hexCode[(b & 0xF)]);
         }
         return r.toString();
+    }
+
+    public static List<String> toList(@Nullable String comment) {
+        if (comment == null)
+            return Linq.list();
+        return Linq.list(comment.split("\n"));
     }
 }

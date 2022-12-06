@@ -40,10 +40,17 @@ public class DBSPApplyExpression extends DBSPExpression {
     public final DBSPExpression function;
     public final DBSPExpression[] arguments;
 
+    void checkArgs() {
+        for (DBSPExpression arg: this.arguments)
+            if (arg == null)
+                throw new RuntimeException("Null arg");
+    }
+
     public DBSPApplyExpression(String function, @Nullable DBSPType returnType, DBSPExpression... arguments) {
         super(null, returnType);
         this.function = new DBSPPathExpression(DBSPTypeAny.instance, new DBSPPath(function));
         this.arguments = arguments;
+        this.checkArgs();
     }
 
     @Nullable
@@ -58,6 +65,7 @@ public class DBSPApplyExpression extends DBSPExpression {
         super(null, DBSPApplyExpression.getReturnType(function.getNonVoidType()));
         this.function = function;
         this.arguments = arguments;
+        this.checkArgs();
     }
 
     @Override
