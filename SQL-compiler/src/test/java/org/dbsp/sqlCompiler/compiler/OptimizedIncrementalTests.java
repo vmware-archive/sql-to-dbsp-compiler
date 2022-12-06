@@ -23,43 +23,8 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import org.dbsp.sqlCompiler.compiler.visitors.PassesVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
-import org.dbsp.util.Logger;
-import org.junit.Test;
-
 public class OptimizedIncrementalTests extends NaiveIncrementalTests {
     public void invokeTestQueryBase(String query, BaseSQLTests.InputOutputPair... streams) {
         super.testQueryBase(query, true, true, streams);
-    }
-
-    @Override
-    public void overTest() {
-        super.overTest();
-    }
-
-    //@Test
-    public void correlatedAggregate() {
-        // TODO
-        // From: Efficient Incrementialization of Correlated Nested Aggregate
-        // Queries using Relative Partial Aggregate Indexes (RPAI)
-        // Supun Abeysinghe, Qiyang He, Tiark Rompf, SIGMOD 22
-        String query = "SELECT Sum(r.COL1 * r.COL5) FROM T r\n" +
-                "WHERE\n" +
-                "0.5 * (SELECT Sum(r1.COL5) FROM T r1) =\n" +
-                "(SELECT Sum(r2.COL5) FROM T r2 WHERE r2.COL1 = r.COL1)";
-        Logger.instance.setDebugLevel(PassesVisitor.class, 3);
-        this.testQuery(query, new DBSPZSetLiteral(new DBSPTupleExpression()));
-    }
-
-    public void correlatedAggregate2() {
-        // TODO
-        String query = "SELECT Sum(b.price * b.volume) FROM bids b\n" +
-                "WHERE\n" +
-                "0.75 * (SELECT Sum(b1.volume) FROM bids b1)\n" +
-                "< (SELECT Sum(b2.volume) FROM bids b2\n" +
-                "WHERE b2.price <= b.price)";
-        this.testQuery(query, null);
     }
 }

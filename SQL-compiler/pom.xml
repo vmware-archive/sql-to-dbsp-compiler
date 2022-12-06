@@ -45,11 +45,15 @@
             <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
+        <!-- The following is necessary only if you want to use the JDBC MySQL driver
+             for testing -->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.30</version>
         </dependency>
+        <!-- The following is necessary only if you want to use the JDBC Postgres driver
+             for testing -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

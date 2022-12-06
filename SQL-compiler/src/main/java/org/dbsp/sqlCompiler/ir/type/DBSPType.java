@@ -126,6 +126,16 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
     }
 
     /**
+     * Given a type that is expected to be a reference type,
+     * compute the type that is the dereferenced type.
+     */
+    public DBSPType deref() {
+        if (this.is(DBSPTypeAny.class))
+            return this;
+        return this.to(DBSPTypeRef.class).type;
+    }
+
+    /**
      * This forces a Rust Option type, which is not the same as setting mayBeNull to true.
      * With mayBeNull we can't represent 'Option[Option[T]]'
      */

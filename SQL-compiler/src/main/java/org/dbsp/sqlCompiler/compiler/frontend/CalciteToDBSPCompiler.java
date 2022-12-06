@@ -290,7 +290,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPOperator opInput = this.getInputAs(input, true);
         DBSPType inputRowType = this.convertType(input.getRowType());
         List<AggregateCall> aggregates = aggregate.getAggCallList();
-        DBSPVariablePath t = inputRowType.var("t");
+        DBSPVariablePath t = inputRowType.ref().var("t");
 
         if (!aggregates.isEmpty()) {
             if (aggregate.getGroupType() != Aggregate.Group.SIMPLE)
@@ -309,7 +309,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                     new DBSPRawTupleExpression(
                             keyExpression,
                             DBSPTupleExpression.flatten(t)).closure(
-                    t.asRefParameter());
+                    t.asParameter());
             DBSPIndexOperator index = new DBSPIndexOperator(
                     aggregate, this.declare("index", groupKeys),
                     keyExpression.getNonVoidType(), inputRowType, false, opInput);
@@ -415,16 +415,6 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         return Utilities.getExists(this.nodeOperator, node);
     }
 
-    DBSPExpression compileWindowBound(RexWindowBound bound, IsNumericType numType, ExpressionCompiler eComp) {
-        if (bound.isUnbounded())
-            return numType.getMaxValue();
-        else if (bound.isCurrentRow())
-            return numType.getZero();
-        else {
-            return eComp.compile(Objects.requireNonNull(bound.getOffset()));
-        }
-    }
-
     public void visitProject(LogicalProject project) {
         // LogicalProject is not really SQL project, it is rather map.
         RelNode input = project.getInput();
@@ -432,7 +422,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPType outputType = this.convertType(project.getRowType());
         DBSPTypeTuple tuple = outputType.to(DBSPTypeTuple.class);
         DBSPType inputType = this.convertType(project.getInput().getRowType());
-        DBSPVariablePath row = inputType.var("t");
+        DBSPVariablePath row = inputType.ref().var("t");
         ExpressionCompiler expressionCompiler = new ExpressionCompiler(row, this.calciteCompiler);
 
         List<DBSPExpression> resultColumns = new ArrayList<>();
@@ -452,7 +442,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             }
         }
         DBSPExpression exp = new DBSPTupleExpression(project, resultColumns);
-        DBSPExpression closure = new DBSPClosureExpression(project, exp, row.asRefParameter());
+        DBSPExpression closure = new DBSPClosureExpression(project, exp, row.asParameter());
         DBSPExpression mapFunc = this.declare("map", closure);
         DBSPMapOperator op = new DBSPMapOperator(project, mapFunc, outputType, opInput);
         // No distinct needed - in SQL project may produce a multiset.
@@ -502,11 +492,11 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
 
     public void visitFilter(LogicalFilter filter) {
         DBSPType type = this.convertType(filter.getRowType());
-        DBSPVariablePath t = type.var("t");
+        DBSPVariablePath t = type.ref().var("t");
         ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.calciteCompiler);
         DBSPExpression condition = expressionCompiler.compile(filter.getCondition());
         condition = ExpressionCompiler.wrapBoolIfNeeded(condition);
-        condition = new DBSPClosureExpression(filter.getCondition(), condition, t.asRefParameter());
+        condition = new DBSPClosureExpression(filter.getCondition(), condition, t.asParameter());
         DBSPOperator input = this.getOperator(filter.getInput());
         DBSPFilterOperator fop = new DBSPFilterOperator(
                 filter, this.declare("cond", condition), input);
@@ -575,7 +565,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPVariablePath l = leftElementType.ref().var("l");
         DBSPVariablePath r = rightElementType.ref().var("r");
         DBSPTupleExpression lr = DBSPTupleExpression.flatten(l, r);
-        DBSPVariablePath t = lr.getNonVoidType().var("t");
+        DBSPVariablePath t = lr.getNonVoidType().ref().var("t");
         List<DBSPExpression> leftKeyFields = Linq.map(
                 decomposition.comparisons,
                 c -> ExpressionCompiler.makeCast(l.field(c.leftColumn), c.resultType));
@@ -594,7 +584,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             if (condition.getNonVoidType().mayBeNull) {
                 condition = new DBSPApplyExpression("wrap_bool", condition.getNonVoidType().setMayBeNull(false), condition);
             }
-            condition = new DBSPClosureExpression(join.getCondition(), condition, t.asRefParameter());
+            condition = new DBSPClosureExpression(join.getCondition(), condition, t.asParameter());
             condition = this.declare("cond", condition);
         }
         DBSPVariablePath k = leftKey.getNonVoidType().var("k");
@@ -827,16 +817,26 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         Utilities.putNew(this.nodeOperator, intersect, previous);
     }
 
+    DBSPExpression compileWindowBound(RexWindowBound bound, IsNumericType numType, ExpressionCompiler eComp) {
+        if (bound.isUnbounded())
+            return numType.getMaxValue();
+        else if (bound.isCurrentRow())
+            return numType.getZero();
+        else {
+            return eComp.compile(Objects.requireNonNull(bound.getOffset()));
+        }
+    }
+
     public void visitWindow(LogicalWindow window) {
         DBSPTypeTuple windowResultType = this.convertType(window.getRowType()).to(DBSPTypeTuple.class);
         RelNode inputNode = window.getInput();
         DBSPOperator input = this.getInputAs(window.getInput(0), true);
         DBSPTypeTuple inputRowType = this.convertType(inputNode.getRowType()).to(DBSPTypeTuple.class);
         DBSPVariablePath row = inputRowType.ref().var("t");
-        ExpressionCompiler eComp = new ExpressionCompiler(row, this.calciteCompiler);
+        ExpressionCompiler eComp = new ExpressionCompiler(row, window.constants, this.calciteCompiler);
         int windowFieldIndex = inputRowType.size();
 
-        DBSPType currentTupleType = inputRowType;
+        DBSPTypeTuple currentTupleType = inputRowType;
         DBSPOperator lastOperator = input;
         for (Window.Group group: window.groups) {
             List<RelFieldCollation> orderKeys = group.orderKeys.getFieldCollations();
@@ -884,20 +884,23 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             this.getCircuit().addOperator(mapIndex);
 
             List<AggregateCall> aggregateCalls = group.getAggregateCalls(window);
-            if (aggregateCalls.size() != 1)
-                // TODO: we probably need to iterate over the aggregates.
-                throw new Unimplemented(group);
+            List<DBSPType> types = Linq.map(aggregateCalls, c -> this.convertType(c.type));
+            DBSPTypeTuple tuple = new DBSPTypeTuple(types);
+            FoldingDescription fd = this.createFoldingFunction(aggregateCalls, tuple, inputRowType, 0);
 
-            // Compute aggregate for the window
-            DBSPType aggResultType = windowResultType.getFieldType(windowFieldIndex);
-            AggregateCompiler compiler = new AggregateCompiler(aggregateCalls.get(0), aggResultType, row);
-            AggregateCompiler.AggregateImplementation fold = compiler.compile();
-            DBSPExpression foldVar = this.declare("fold", fold.getFoldConstructor());
+            // Compute aggregates for the window
+            DBSPTypeTuple aggResultType = fd.defaultZero.getNonVoidType().to(DBSPTypeTuple.class);
+            // This operator is always incremental, so create the non-incremental version
+            // of it by adding a D and an I around it.
+            DBSPDifferentialOperator diff = new DBSPDifferentialOperator(window, mapIndex);
+            this.getCircuit().addOperator(diff);
             DBSPWindowAggregateOperator windowAgg = new DBSPWindowAggregateOperator(
-                    group, foldVar,
+                    group, fd.fold,
                     windowExprVar, partition.getNonVoidType(), sortType,
-                    fold.getResultType(), mapIndex);
+                    aggResultType, diff);
             this.getCircuit().addOperator(windowAgg);
+            DBSPIntegralOperator integ = new DBSPIntegralOperator(window, windowAgg);
+            this.getCircuit().addOperator(integ);
 
             // Join the original table with the aggregate
             DBSPExpression partAndOrder = new DBSPRawTupleExpression(partition, orderField);
@@ -910,15 +913,25 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
 
             DBSPVariablePath key = partAndOrder.getNonVoidType().var("k");
             DBSPVariablePath left = currentTupleType.var("l");
-            DBSPVariablePath right = fold.getResultType().ref().var("r");
-            DBSPExpression addExtraFieldBody = DBSPTupleExpression.flatten(left).extend(right.deref());
+            DBSPVariablePath right = aggResultType.ref().var("r");
+            DBSPExpression[] allFields = new DBSPExpression[
+                    currentTupleType.size() + aggResultType.size()];
+            for (int i = 0; i < currentTupleType.size(); i++)
+                allFields[i] = left.field(i);
+            for (int i = 0; i < aggResultType.size(); i++) {
+                // Calcite is very smart and sometimes infers non-nullable result types
+                // for these aggregates.  So we have to cast the results to whatever
+                // Calcite says they will be.
+                allFields[i + currentTupleType.size()] = ExpressionCompiler.makeCast(
+                        right.field(i), windowResultType.getFieldType(windowFieldIndex));
+                windowFieldIndex++;
+            }
+            DBSPTupleExpression addExtraFieldBody = new DBSPTupleExpression(allFields);
             DBSPClosureExpression addExtraField =
                     addExtraFieldBody.closure(key.asRefParameter(), left.asRefParameter(), right.asParameter());
-            DBSPOperator join = new DBSPJoinOperator(window, addExtraFieldBody.getNonVoidType(), this.declare("join", addExtraField),
-                    indexInput.isMultiset || windowAgg.isMultiset, indexInput, windowAgg);
-            lastOperator = join;
-            ++windowFieldIndex;
-            currentTupleType = addExtraFieldBody.getNonVoidType();
+            lastOperator = new DBSPJoinOperator(window, addExtraFieldBody.getNonVoidType(), this.declare("join", addExtraField),
+                    indexInput.isMultiset || windowAgg.isMultiset, indexInput, integ);
+            currentTupleType = addExtraFieldBody.getNonVoidType().to(DBSPTypeTuple.class);
         }
         this.assignOperator(window, lastOperator);
     }

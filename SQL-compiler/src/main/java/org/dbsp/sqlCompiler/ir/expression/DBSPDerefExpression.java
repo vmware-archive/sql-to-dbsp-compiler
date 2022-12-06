@@ -33,7 +33,7 @@ public class DBSPDerefExpression extends DBSPExpression {
     public final DBSPExpression expression;
 
     DBSPDerefExpression(DBSPExpression expression) {
-        super(null, DBSPTypeRef.deref(expression.getNonVoidType()));
+        super(null, expression.getNonVoidType().deref());
         this.expression = expression;
     }
 

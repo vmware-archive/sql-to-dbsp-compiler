@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.util.Logger;
 import org.junit.Assert;
@@ -37,7 +36,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 .replace("STRING", "VARCHAR");
     }
 
-    //@Test
+    @Test
     public void taxiTest() throws SqlParseException {
         String ddl = "CREATE TABLE green_tripdata\n" +
                 "(\n" +
@@ -69,7 +68,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
                         "case when extract (ISODOW from  CAST (lpep_dropoff_datetime AS TIMESTAMP))  > 5 then 1 else 0 end as dropoff_is_weekend\n" +
                         "FROM green_tripdata";
         DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
-        Logger.instance.setDebugLevel(CalciteCompiler.class, 3);
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         ddl = this.fixup(ddl);
@@ -79,6 +77,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
     }
 
     //@Test
+    // Not yet supported because of LAG
     public void fraudDetectionTest() throws SqlParseException {
         Logger.instance.setDebugLevel("CalciteCompiler", 2);
         // fraudDetection-352718.cc_data.demo_

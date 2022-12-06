@@ -29,8 +29,6 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLongLiteral;
-import org.dbsp.sqlCompiler.ir.path.DBSPPath;
-import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -56,7 +54,7 @@ public class AggregateCompiler {
      * Notice that the DBSP `Fold` structure has a slightly different signature
      * for the increment.
      */
-    public class AggregateImplementation {
+    public static class AggregateImplementation {
         public final SqlOperator operator;
         /**
          * Zero of the fold function.
@@ -100,6 +98,10 @@ public class AggregateCompiler {
         }
 
         void validate() {
+            if (true)
+                return;
+            // These validation rules actually don't apply for window-based aggregates.
+            // TODO: check them for standard aggregates.
             if (this.postprocess != null) {
                 if (!this.emptySetResult.getNonVoidType().sameType(this.postprocess.getResultType()))
                     throw new RuntimeException("Postprocess result type " + this.postprocess.getResultType() +
@@ -110,43 +112,6 @@ public class AggregateCompiler {
                             " different from empty set type " + this.emptySetResult.getNonVoidType());
                 }
             }
-        }
-
-        /**
-         * Generates an invocation of a Fold object constructor.
-         * The Fold object is defined in the Rust API for aggregation.
-         */
-        public DBSPExpression getFoldConstructor() {
-            DBSPExpression constructor = DBSPTypeAny.instance.path(
-                    new DBSPPath(
-                            new DBSPSimplePathSegment("Fold",
-                                    DBSPTypeAny.instance,
-                                    new DBSPTypeUser(null, "UnimplementedSemigroup",
-                                            false, this.emptySetResult.getNonVoidType()),
-                                    DBSPTypeAny.instance,
-                                    DBSPTypeAny.instance),
-                            new DBSPSimplePathSegment("with_output")));
-            DBSPType incType = this.increment.getResultType();
-            DBSPExpression identity = new DBSPTypeFunction(incType, incType).path(
-                    new DBSPPath(new DBSPSimplePathSegment("identity", incType)));
-            DBSPExpression post = this.postprocess == null ? identity : this.postprocess;
-            // The 'increment' part we generate has the signature
-            // |accumulator, &tuple, weight| -> accumulator.
-            // However, the Rust Fold constructor expects the signature
-            // |&mut accumulator, &tuple, weight|
-            DBSPType accumulatorType = this.increment.getNonVoidResultType();
-            DBSPVariablePath accumulator = accumulatorType.ref(true).var("a");
-            // TODO: this looks ugly, but hopefully the Rust compiler can inline the closure.
-            DBSPExpression mutIncrement = new DBSPApplyExpression(this.increment,
-                    accumulator.deref(), AggregateCompiler.this.v,
-                    CalciteToDBSPCompiler.weight);
-            DBSPAssignmentExpression accumBody = new DBSPAssignmentExpression(
-                    accumulator.deref(), mutIncrement);
-            DBSPExpression accumFunction = accumBody.closure(
-                    accumulator.asParameter(), AggregateCompiler.this.v.asParameter(),
-                    CalciteToDBSPCompiler.weight.asParameter());
-            // This is Fold(zero, accumulator, postprocessing).
-            return new DBSPApplyExpression(constructor, this.zero, accumFunction, post);
         }
 
         public DBSPType getResultType() {
