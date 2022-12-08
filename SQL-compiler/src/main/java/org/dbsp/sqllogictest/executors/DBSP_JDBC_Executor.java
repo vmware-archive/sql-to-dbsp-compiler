@@ -68,11 +68,14 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
         return result;
     }
 
+    static String regexCreate = "create\\s+table\\s+(\\w+)";
+    static Pattern patCreate = Pattern.compile(regexCreate);
+    static String regexDrop = "drop\\s+table\\s+(\\w+)";
+    static Pattern patDrop = Pattern.compile(regexDrop);
+
     @Nullable
     String rewriteCreateTable(String command) throws SQLException {
-        String regex = "create\\s+table\\s+(\\w+)";
-        Pattern pat = Pattern.compile(regex);
-        Matcher m = pat.matcher(command);
+        Matcher m = patCreate.matcher(command);
         if (!m.find())
             return null;
         String tableName = m.group(1);
@@ -95,8 +98,12 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
         } else if (command.contains("drop table") ||
                 command.contains("create view") ||
                 command.contains("drop view")) {
-            // These should perhaps use a regex too.
             super.statement(statement);
+            Matcher m = patDrop.matcher(command);
+            if (m.find()) {
+                String tableName = m.group(1);
+                this.tablesCreated.remove(tableName);
+            }
         }
         return true;
     }
