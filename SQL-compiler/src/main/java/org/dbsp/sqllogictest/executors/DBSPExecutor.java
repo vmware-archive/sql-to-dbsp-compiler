@@ -51,9 +51,7 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.math.BigDecimal;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Sql test executor that uses DBSP as a SQL runtime.
@@ -131,9 +129,13 @@ public class DBSPExecutor extends SqlTestExecutor {
     DBSPFunction createInputFunction(TableValue[] tables) throws IOException {
         DBSPExpression[] fields = new DBSPExpression[tables.length];
         int totalSize = 0;
+        Set<String> seen = new HashSet<>();
         for (int i = 0; i < tables.length; i++) {
             totalSize += tables[i].contents.size();
             fields[i] = tables[i].contents;
+            if (seen.contains(tables[i].tableName))
+                throw new RuntimeException("Table " + tables[i].tableName + " already in input");
+            seen.add(tables[i].tableName);
         }
 
         // If the data is large write it to a set of CSV files and read it at runtime.
@@ -174,7 +176,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                         new DBSPPath("Vec", "new"))),
                 true);
         statements.add(let);
-        if (this.options.incrementalize) {
+        if (this.options.optimizerOptions.incrementalize) {
             for (int i = 0; i < inputType.tupFields.length; i++) {
                 DBSPExpression field = input.getVarReference().field(i);
                 DBSPExpression elems = new DBSPApplyExpression("to_elements",
@@ -284,7 +286,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         compiler.generateOutputForNextView(true);
         compiler.compileStatement(dbspQuery, testQuery.name);
         DBSPCircuit dbsp = compiler.getResult();
-        CircuitOptimizer optimizer = new CircuitOptimizer(compiler.options);
+        CircuitOptimizer optimizer = new CircuitOptimizer(compiler.options.optimizerOptions);
         dbsp = optimizer.optimize(dbsp);
         //ToDotVisitor.toDot("circuit.jpg", true, dbsp);
         DBSPZSetLiteral expectedOutput = null;

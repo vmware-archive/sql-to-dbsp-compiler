@@ -23,6 +23,7 @@
 
 package org.dbsp.sqllogictest.executors;
 
+import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -49,7 +50,7 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
     public final String db_url;
     public final String user;
     public final String password;
-    public final String dialect;
+    public final Lex dialect;
     @Nullable
     Connection connection;
 
@@ -108,7 +109,7 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
         }
     }
 
-    public JDBCExecutor(String db_url, String dialect, String user, String password) {
+    public JDBCExecutor(String db_url, Lex dialect, String user, String password) {
         this.db_url = db_url;
         this.user = user;
         this.password = password;
@@ -395,27 +396,27 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
 
     List<String> getTableList() throws SQLException {
         switch (this.dialect) {
-            case "mysql":
+            case MYSQL:
                 return this.getStringResults("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
-            case "psql":
+            case ORACLE:
                 return this.getStringResults("SELECT tableName FROM pg_catalog.pg_tables\n" +
                         "    WHERE schemaname != 'information_schema' AND\n" +
                         "    schemaname != 'pg_catalog'");
             default:
-                throw new UnsupportedOperationException(this.dialect);
+                throw new UnsupportedOperationException("Unknown SQL dialect");
         }
     }
 
     List<String> getViewList() throws SQLException {
         switch (this.dialect) {
-            case "mysql":
+            case MYSQL:
                 return this.getStringResults("SHOW FULL TABLES WHERE Table_type = 'VIEW'");
-            case "psql":
+            case ORACLE:
                 return this.getStringResults("SELECT table_name \n" +
                         "FROM information_schema.views \n" +
                         "WHERE table_schema NOT IN ('information_schema', 'pg_catalog') \n");
             default:
-                throw new UnsupportedOperationException(this.dialect);
+                throw new UnsupportedOperationException("Unknown SQL dialect");
         }
     }
 

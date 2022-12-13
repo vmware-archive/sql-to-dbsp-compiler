@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.compiler.frontend;
 
+import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
@@ -61,7 +62,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 /**
- * The compiler is stateful: it compiles a sequence of SQL statements 
+ * The compiler is stateful: it compiles a sequence of SQL statements
  * defining tables and views.  The views must be defined in terms of
  * the previously defined tables and views.  Multiple views can be
  * compiled.  The result is a circuit which has an input for each table
@@ -123,7 +124,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     public void newCircuit(String circuitName) {
         this.circuit = new DBSPCircuit(circuitName);
     }
-    
+
     private DBSPType convertType(RelDataType dt) {
         return this.typeCompiler.convertType(dt);
     }
@@ -135,7 +136,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     public DBSPCircuit getCircuit() {
         return Objects.requireNonNull(this.circuit);
     }
-    
+
     /**
      * This retrieves the operator that is an input.  If the operator may
      * produce multiset results and this is not desired (asMultiset = false),
@@ -401,8 +402,15 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
 
         if (this.generateInputsFromTables)
             throw new RuntimeException("Could not find input for table " + tableName);
+        List<String> comments = new ArrayList<>();
+        if (scan.getTable() instanceof RelOptTableImpl) {
+            RelOptTableImpl impl = (RelOptTableImpl) scan.getTable();
+            CreateRelationStatement.EmulatedTable et = impl.unwrap(CreateRelationStatement.EmulatedTable.class);
+            if (et != null)
+                comments.addAll(Arrays.asList(et.getStatement().split("\n")));
+        }
         DBSPType rowType = this.convertType(scan.getRowType());
-        DBSPSourceOperator result = new DBSPSourceOperator(scan, this.makeZSet(rowType), tableName);
+        DBSPSourceOperator result = new DBSPSourceOperator(scan, this.makeZSet(rowType), comments, tableName);
         this.assignOperator(scan, result);
     }
 
@@ -1095,7 +1103,8 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 String tableName = create.tableName;
                 CreateTableStatement def = this.tableContents.getTableDefinition(tableName);
                 DBSPType rowType = def.getRowType();
-                DBSPSourceOperator result = new DBSPSourceOperator(create, this.makeZSet(rowType), tableName);
+                DBSPSourceOperator result = new DBSPSourceOperator(
+                        create, this.makeZSet(rowType), Linq.list(def.statement), tableName);
                 this.getCircuit().addOperator(result);
             }
             return null;

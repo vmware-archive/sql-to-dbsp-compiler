@@ -78,10 +78,14 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
     // base classes
     public boolean preorder(DBSPOperator node) { return true; }
 
-    public boolean preorder(DBSPCircuit circuit) {
+    public void setCircuit(DBSPCircuit circuit) {
         if (this.circuit != null)
             throw new RuntimeException("Circuit is already set");
         this.circuit = circuit;
+    }
+
+    public boolean preorder(DBSPCircuit circuit) {
+        this.setCircuit(circuit);
         return true;
     }
 
