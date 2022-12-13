@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.Main;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
@@ -102,7 +103,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 "       cast(1 as int64) as id, cast(\"a1\" as string) as a UNION ALL\n" +
                 "  SELECT 2, 2, \"a2\"";
         CompilerOptions options = new CompilerOptions();
-        options.dialect = Lex.BIG_QUERY;
+        options.ioOptions.dialect = Lex.BIG_QUERY;
         DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.compileStatement(query, null);
         DBSPCircuit circuit = compiler.getResult();
@@ -129,7 +130,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 "  SELECT 9,  false, 2,    3,    1.5,   \"B\"  UNION ALL\n" +
                 "  SELECT 10, true,  3,    1,    2.5,   \"B\"\n";
         CompilerOptions options = new CompilerOptions();
-        options.dialect = Lex.BIG_QUERY;
+        options.ioOptions.dialect = Lex.BIG_QUERY;
         DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.compileStatement(query, null);
         compiler.compileStatement("CREATE VIEW V AS SELECT int64_val, COUNT(*) OVER " +
@@ -230,6 +231,26 @@ public class OtherTests extends BaseSQLTests implements IModule {
         rustWriter.close();
 
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
+        boolean success = file.delete();
+        Assert.assertTrue(success);
+    }
+
+    @Test
+    public void testCompiler() throws IOException, SqlParseException, InterruptedException {
+        String[] statements = new String[]{
+                "CREATE TABLE T (\n" +
+                        "COL1 INT NOT NULL" +
+                        ", COL2 DOUBLE NOT NULL" +
+                        ")",
+                "CREATE VIEW V AS SELECT COL1 FROM T"
+        };
+        String inputScript = rustDirectory + "/script.sql";
+        PrintWriter script = new PrintWriter(inputScript, "UTF-8");
+        script.println(String.join(";\n", statements));
+        script.close();
+        Main.execute("-o", BaseSQLTests.testFilePath, inputScript);
+        Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
+        File file = new File(inputScript);
         boolean success = file.delete();
         Assert.assertTrue(success);
     }

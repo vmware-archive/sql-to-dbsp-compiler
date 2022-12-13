@@ -10,6 +10,7 @@ if [ ! -d ../../sqllogictest ]; then
     exit 1
 fi
 
+mvn -DskipTests package
 mvn test
 echo "Running sqllogictest tests"
 mvn compile exec:java -Dexec.mainClass="org.dbsp.sqllogictest.Main" -Dexec.args="-i -s -e hybrid -u user -p password -d psql -b psqlsltbugs.txt ."

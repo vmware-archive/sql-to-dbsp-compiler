@@ -21,30 +21,32 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.circuit.operator;
+package org.dbsp.util;
 
-import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import com.beust.jcommander.IStringConverter;
+import com.beust.jcommander.ParameterException;
+import org.apache.calcite.config.Lex;
 
-import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
-public class DBSPSourceOperator extends DBSPOperator {
-    public DBSPSourceOperator(@Nullable Object node, DBSPType outputType, @Nullable String comment, String name) {
-        super(node, "", null, outputType, false, comment, name);
+public class SqlDialectConverter implements IStringConverter<Lex> {
+    static final private List<String> legalDialects = new ArrayList<>();
+
+    static {
+        legalDialects.add("mysql");
+        legalDialects.add("psql");
     }
 
     @Override
-    public void accept(CircuitVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        visitor.postorder(this);
-    }
-
-    @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
-        if (force || this.inputsDiffer(newInputs))
-            return new DBSPSourceOperator(
-                    this.getNode(), this.outputType, this.comment, this.outputName);
-        return this;
+    public Lex convert(String s) {
+        switch (s) {
+            case "mysql":
+                return Lex.MYSQL;
+            case "psql":
+                return Lex.ORACLE;
+            default:
+                throw new ParameterException("Illegal value for dialect; legal values are: " + legalDialects);
+        }
     }
 }

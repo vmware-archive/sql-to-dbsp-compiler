@@ -58,7 +58,7 @@ public abstract class CreateRelationStatement extends FrontEndStatement {
         this.columns = columns;
     }
 
-    class EmulatedTable extends AbstractTable implements ScannableTable {
+    public class EmulatedTable extends AbstractTable implements ScannableTable {
         @Override
         public Enumerable<Object[]> scan(DataContext root) {
             // We don't plan to use this method, but the optimizer requires this API
@@ -71,6 +71,10 @@ public abstract class CreateRelationStatement extends FrontEndStatement {
             for (RelDataTypeField ci: CreateRelationStatement.this.columns)
                 builder.add(ci);
             return builder.build();
+        }
+
+        public String getStatement() {
+            return CreateRelationStatement.this.statement;
         }
     }
 

@@ -106,9 +106,8 @@ public class Main {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         String benchDir = "../../sqllogictest/test";
         List<String> files = Linq.list(
-                /*
-                 */
                 "random/groupby",
+                /*
                 "random/select",
                 "random/expr",
                 "random/aggregates", 
@@ -125,6 +124,7 @@ public class Main {
                 "index/commute", 
                 "index/orderby_nosort", 
                 "index/random",  
+                 */
                 "evidence"
         );
 
@@ -154,9 +154,9 @@ public class Main {
         Logger.instance.setDebugLevel(RemoveOperatorsVisitor.class, 3);
         Logger.instance.setDebugLevel(CalciteCompiler.class, 2);
          */
-        ExecutionOptions options = new ExecutionOptions(args);
+        ExecutionOptions options = new ExecutionOptions();
+        options.parse(args);
         SqlTestExecutor executor = options.getExecutor();
-
         System.out.println(options);
         AcceptancePolicy policy = options.getAcceptancePolicy();
         TestLoader loader = new TestLoader(executor, policy);

@@ -38,7 +38,7 @@ public class DBSPNoopOperator extends DBSPUnaryOperator {
     }
 
     public DBSPNoopOperator(@Nullable Object node, DBSPOperator source,
-                            List<String> comment, String outputName) {
+                            @Nullable String comment, String outputName) {
         super(node, "map", getClosure(),
                 source.getNonVoidType(), source.isMultiset, source, comment, outputName);
     }

@@ -206,11 +206,11 @@ are detailed below.
 | select3              |     3,320/0 |           |     3,320/0   |
 | select4              |     2,832/0 |           |     2,832/0   |
 | select5              |       732/0 |           |       732/0   |
-| index/delete         |         N/A |  40,525/0 |               |
+| index/delete         |         N/A |  40,525/0 |    40,525/0   |
 | index/in             |         N/A | 130,065/0 |   130,065/0   |
-| index/commute        |         N/A | 507,514/0 |               |
+| index/commute        |         N/A | 507,514/0 |   507,514/0   |
 | index/between        |         N/A | 121,811/0 |   121,811/0   |
-| index/orderby_nosort |         N/A | 490,986/0 |               |
+| index/orderby_nosort |         N/A | 490,986/0 |   490,986/0   |
 | index/view           |         N/A |  53,490/0 |    53,490/0   |
 | index/random         |         N/A | 188,449/0 |   188,449/0   |
 | index/orderby        |         N/A | 310,630/0 |   310,630/0   |

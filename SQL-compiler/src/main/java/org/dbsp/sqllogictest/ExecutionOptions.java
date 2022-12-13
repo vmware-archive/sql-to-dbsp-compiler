@@ -23,28 +23,58 @@
 
 package org.dbsp.sqllogictest;
 
+import com.beust.jcommander.IParameterValidator;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqllogictest.executors.*;
-import org.dbsp.util.IndentStream;
-import org.dbsp.util.Logger;
+import org.dbsp.util.SqlDialectConverter;
 import org.dbsp.util.UnsupportedException;
-import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 import java.io.*;
 import java.util.*;
 
 public class ExecutionOptions {
-    final List<String> directories;
+    public static class ExecutorValidator implements IParameterValidator {
+        final private Set<String> legalExecutors;
+
+        public ExecutorValidator() {
+            this.legalExecutors = new HashSet<>();
+            this.legalExecutors.add("DBSP");
+            this.legalExecutors.add("JDBC");
+            this.legalExecutors.add("hybrid");
+            this.legalExecutors.add("none");
+        }
+
+        @Override
+        public void validate(String name, String value) throws ParameterException {
+            if (this.legalExecutors.contains(value))
+                return;
+            throw new ParameterException("Illegal executor name " + value + "\n"
+                + "Legal values are: " + this.legalExecutors);
+        }
+    }
+
+    @Parameter(description = "Files or directories with test data")
+    List<String> directories = new ArrayList<>();
+    @Parameter(names = "-i", description = "Incremental testing")
     boolean incremental;
-    boolean execute;
-    String executor;
-    String dialect;
-    String progName;
-    String user;
-    String password;
+    @Parameter(names = "-n", description = "Do not execute, just parse")
+    boolean doNotExecute;
+    @Parameter(names = "-e", validateWith = ExecutorValidator.class)
+    String executor = "none";
+    @Parameter(names = "-d", converter = SqlDialectConverter.class)
+    Lex dialect = Lex.ORACLE;
+    @Parameter(names = "-u", description = "Name of user to use for database")
+    String user = "user";
+    @Parameter(names = "-p", description = "Password of user for the database")
+    String password = "password";
+    @Parameter(names = "-s", description = "Ignore the status of SQL commands executed")
     boolean validateStatus;
+    @Parameter(names = "-b", description = "Load a list of buggy commands to skip from this file")
     @Nullable
     String bugsFile = null;
 
@@ -70,133 +100,6 @@ public class ExecutionOptions {
         }
     }
 
-    final private List<String> legalDialects;
-    final private Set<String> legalExecutors;
-
-    void usage() {
-        IndentStream stream = new IndentStream(System.out);
-        stream.append("Run SqlLogicTests using DBSP")
-                .newline()
-                .append("Usage:")
-                .newline()
-                .append(this.progName)
-                .append(" options directories")
-                .newline()
-                .append("where")
-                .increase()
-                .append("-e executor: Use the specified executor.  Legal executors are")
-                .increase()
-                .intercalate("\n", this.legalExecutors)
-                .decrease()
-                .append("[-i]: Incremental testing.")
-                .newline()
-                .append("[-d dialect]: SQL dialect to use.  One of:")
-                .increase()
-                .intercalate("\n", this.legalDialects)
-                .decrease()
-                .append("[-n]: Do not execute, just parse.")
-                .newline()
-                .append("[-T module]: Increase debug level for specified module.")
-                .newline()
-                .append("[-u user]: Name of user to use for database; default is ")
-                .append(Utilities.singleQuote(this.user))
-                .newline()
-                .append("[-p module]: Password for database user; default is ")
-                .append(Utilities.singleQuote(this.password))
-                .newline()
-                .append("[-b bugsFile]: Load a list of buggy commands to skip from this file.")
-                .newline()
-                .append("`directories` is a list of directories or files under ../sqllogictest/test which will be executed")
-                .newline()
-                .append("[-s]: Ignore the status of SQL commands executed")
-                .newline()
-                .decrease();
-        System.exit(1);
-    }
-
-    void parseArguments(String... argv) {
-        for (int i = 0; i < argv.length; i++) {
-            String arg = argv[i];
-            if (arg.startsWith("-")) {
-                switch (arg) {
-                    case "-s":
-                        this.validateStatus = false;
-                        break;
-                    case "-e":
-                        String exec = argv[++i];
-                        if (!this.legalExecutors.contains(exec))
-                            this.usage();
-                        this.executor = exec;
-                        break;
-                    case "-i":
-                        this.incremental = true;
-                        break;
-                    case "-n":
-                        this.execute = false;
-                        break;
-                    case "-b":
-                        this.bugsFile = argv[++i];
-                        break;
-                    case "-T": {
-                        String module = argv[++i];
-                        int level = Logger.instance.getDebugLevel(module);
-                        Logger.instance.setDebugLevel(module, level + 1);
-                        break;
-                    }
-                    case "-d": {
-                        this.dialect = argv[++i];
-                        if (!this.legalDialects.contains(this.dialect))
-                            this.usage();
-                        break;
-                    }
-                    case "-u": {
-                        this.user = argv[++i];
-                        break;
-                    }
-                    case "-p": {
-                        this.password = argv[++i];
-                        break;
-                    }
-                    default:
-                        System.err.println("Unknown option " + arg);
-                        this.usage();
-                        break;
-                }
-            } else {
-                this.directories.add(arg);
-            }
-        }
-    }
-
-    public ExecutionOptions(String... argv) {
-        this.progName = "";
-        this.executor = "";
-        this.user = "user0";
-        this.password = "password";
-        this.legalExecutors = new HashSet<>();
-        this.legalExecutors.add("DBSP");
-        this.legalExecutors.add("JDBC");
-        this.legalExecutors.add("hybrid");
-        this.legalExecutors.add("none");
-        this.legalDialects = new ArrayList<>();
-        this.legalDialects.add("mysql");
-        this.legalDialects.add("psql");
-        this.dialect = "mysql";
-        this.execute = true;
-
-        if (argv.length <= 0)
-            this.usage();
-        this.progName = argv[0];
-        this.directories = new ArrayList<>();
-        this.incremental = false;
-        try {
-            this.parseArguments(argv);
-        } catch (Exception ex) {
-            System.err.println(ex.getMessage());
-            this.usage();
-        }
-    }
-
     HashSet<String> readBugsFile(String fileName) throws IOException {
         HashSet<String> bugs = new HashSet<>();
         File file = new File(fileName);
@@ -214,24 +117,22 @@ public class ExecutionOptions {
 
     String jdbcConnectionString() {
         switch (this.dialect) {
-            case "mysql":
+            case MYSQL:
                 return "jdbc:mysql://localhost/slt";
-            case "psql":
+            case ORACLE:
                 return "jdbc:postgresql://localhost/slt";
             default:
-                this.usage();
-                return "";
+                throw new RuntimeException();
         }
     }
 
     AcceptancePolicy getAcceptancePolicy() {
         switch (this.dialect) {
-            case "mysql":
+            case MYSQL:
                 return new MySqlPolicy();
-            case "psql":
+            case ORACLE:
                 return new PostgresPolicy();
             default:
-                this.usage();
                 throw new RuntimeException();
         }
     }
@@ -251,23 +152,14 @@ public class ExecutionOptions {
         }
 
         CompilerOptions options = new CompilerOptions();
-        switch (this.dialect) {
-            case "mysql":
-                options.dialect = Lex.MYSQL;
-                break;
-            case "psql":
-                options.dialect = Lex.ORACLE;
-                break;
-            default:
-                this.usage();
-        }
-        options.incrementalize = this.incremental;
+        options.ioOptions.dialect = this.dialect;
+        options.optimizerOptions.incrementalize = this.incremental;
 
         switch (this.executor) {
             case "none":
                 return new NoExecutor();
             case "DBSP":
-                DBSPExecutor dExec = new DBSPExecutor(this.execute, options);
+                DBSPExecutor dExec = new DBSPExecutor(!this.doNotExecute, options);
                 dExec.avoid(sltBugs);
                 dExec.setValidateStatus(this.validateStatus);
                 return dExec;
@@ -276,13 +168,10 @@ public class ExecutionOptions {
             }
             case "hybrid": {
                 JDBCExecutor jdbc = this.jdbcExecutor(sltBugs);
-                DBSP_JDBC_Executor result = new DBSP_JDBC_Executor(jdbc, this.execute, options);
+                DBSP_JDBC_Executor result = new DBSP_JDBC_Executor(jdbc, !this.doNotExecute, options);
                 result.avoid(sltBugs);
                 result.setValidateStatus(this.validateStatus);
                 return result;
-            }
-            default: {
-                this.usage();
             }
         }
         throw new UnsupportedException(this.executor);  // unreachable
@@ -292,12 +181,19 @@ public class ExecutionOptions {
         return this.directories;
     }
 
+    public void parse(String... argv) {
+        JCommander.newBuilder()
+                .addObject(this)
+                .build()
+                .parse(argv);
+    }
+
     @Override
     public String toString() {
         return "ExecutionOptions{" +
                 "directories=" + this.directories +
                 ", incremental=" + this.incremental +
-                ", execute=" + this.execute +
+                ", execute=" + !this.doNotExecute +
                 ", executor=" + this.executor +
                 ", dialect=" + this.dialect +
                 '}';

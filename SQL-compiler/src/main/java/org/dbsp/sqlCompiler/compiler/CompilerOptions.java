@@ -23,7 +23,10 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParametersDelegate;
 import org.apache.calcite.config.Lex;
+import org.dbsp.util.SqlDialectConverter;
 
 import javax.annotation.Nullable;
 
@@ -32,28 +35,44 @@ import javax.annotation.Nullable;
  */
 public class CompilerOptions {
     /**
-     * Rust file where the output circuit is emitted.
+     * Options for the optimizer.
      */
-    @Nullable
-    public final String outputFile;
-    /**
-     * SQL input script which contains table declarations and view definitions.
-     */
-    @Nullable
-    public final String inputFile;
-    /**
-     * If true the compiler should generate an incremental streaming circuit.
-     */
-    public boolean incrementalize;
-    /**
-     * SQL dialect compiled.
-     */
-    public Lex dialect;
-
-    public CompilerOptions() {
-        this.outputFile = null;
-        this.inputFile = null;
-        this.incrementalize = false;
-        this.dialect = Lex.ORACLE;
+    public static class Optimizer {
+        /**
+         * If true the compiler should generate an incremental streaming circuit.
+         */
+        @Parameter(names = "-i", description = "Generate an incremental circuit")
+        public boolean incrementalize = false;
     }
+
+    /**
+     * Options related to input and output.
+     */
+    public static class IO {
+        @Parameter(names="-o", description = "Output file; stdout if null")
+        @Nullable
+        public String outputFile = null;
+        /**
+         * SQL input script which contains table and view declarations.
+         * We expect that declarations are terminated by semicolons.
+         */
+        @Parameter(description = "Input file to compile", required = true)
+        @Nullable
+        public String inputFile = null;
+        @Parameter(names = "-f", description = "Name of function to generate")
+        public String functionName = "circuit";
+        @Parameter(names = "-d", converter = SqlDialectConverter.class)
+        public Lex dialect;
+
+        IO() {
+            this.dialect = Lex.ORACLE;
+        }
+    }
+
+    @Parameter(names = {"-h", "--help"}, help=true)
+    private boolean help;
+    @ParametersDelegate
+    public IO ioOptions = new IO();
+    @ParametersDelegate
+    public Optimizer optimizerOptions = new Optimizer();
 }

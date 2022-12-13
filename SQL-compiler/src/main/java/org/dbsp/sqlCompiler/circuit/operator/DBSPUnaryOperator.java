@@ -40,7 +40,7 @@ public abstract class DBSPUnaryOperator extends DBSPOperator {
     protected DBSPUnaryOperator(@Nullable Object node, String operation,
                                 @Nullable DBSPExpression function, DBSPType outputType,
                                 boolean isMultiset, DBSPOperator source,
-                                List<String> comment, String outputName) {
+                                @Nullable String comment, String outputName) {
         super(node, operation, function, outputType, isMultiset, comment, outputName);
         this.addInput(source);
     }

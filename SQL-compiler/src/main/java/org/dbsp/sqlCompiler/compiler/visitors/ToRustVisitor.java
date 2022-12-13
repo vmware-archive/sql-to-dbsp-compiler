@@ -30,13 +30,13 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.util.*;
 
-import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * This visitor generate a Rust implementation of the program.
  */
 public class ToRustVisitor extends CircuitVisitor {
-    private final IndentStream builder;
+    protected final IndentStream builder;
     public final InnerVisitor innerVisitor;
 
     @SuppressWarnings("SpellCheckingInspection")
@@ -61,7 +61,10 @@ public class ToRustVisitor extends CircuitVisitor {
                     "    zset,\n" +
                     "    DBWeight,\n" +
                     "    DBData,\n" +
+                    "    DBSPHandle,\n" +
+                    "    Runtime,\n" +
                     "};\n" +
+                    "use dbsp_adapters::Catalog;\n" +
                     "use rust_decimal_macros::dec;\n" +
                     "use rust_decimal::prelude::*;\n" +
                     "use genlib::*;\n" +
@@ -85,7 +88,7 @@ public class ToRustVisitor extends CircuitVisitor {
                     "use sqlvalue::*;\n" +
                     "use hashing::*;\n" +
                     "use readers::*;\n" +
-                    "type Weight = isize;\n";
+                    "type Weight = i64;\n";
 
 
     public ToRustVisitor(IndentStream builder) {
@@ -145,35 +148,7 @@ public class ToRustVisitor extends CircuitVisitor {
         }
     }
 
-    @Override
-    public boolean preorder(DBSPCircuit circuit) {
-        // function prototype:
-        // fn name() -> impl FnMut(T0, T1) -> (O0, O1) {
-        super.preorder(circuit);
-        this.builder.append("fn ")
-                .append(circuit.name)
-                .append("() -> impl FnMut(");
-
-        boolean first = true;
-        for (
-                DBSPOperator i : circuit.inputOperators) {
-            if (!first)
-                this.builder.append(",");
-            first = false;
-            i.getNonVoidType().accept(this.innerVisitor);
-        }
-        this.builder.append(") -> ");
-        DBSPTypeTuple tuple = new DBSPTypeRawTuple(null, Linq.map(circuit.outputOperators, DBSPOperator::getNonVoidType));
-        tuple.accept(this.innerVisitor);
-        this.builder.append(" {").increase();
-        // For each input and output operator a corresponding Rc cell
-        for (DBSPOperator i : circuit.inputOperators)
-            this.genRcCell(i);
-
-        for (DBSPOperator o : circuit.outputOperators)
-            this.genRcCell(o);
-
-        // Circuit body
+    public void generateBody(DBSPCircuit circuit) {
         this.builder.append("let root = Circuit::build(|circuit| {")
                 .increase();
         for (IDBSPInnerDeclaration decl : circuit.declarations.values()) {
@@ -197,6 +172,37 @@ public class ToRustVisitor extends CircuitVisitor {
                 .append("})")
                 .append(".unwrap();")
                 .newline();
+    }
+
+    @Override
+    public boolean preorder(DBSPCircuit circuit) {
+        // function prototype:
+        // fn name() -> impl FnMut(T0, T1) -> (O0, O1) {
+        super.preorder(circuit);
+        this.builder.append("fn ")
+                .append(circuit.name)
+                .append("() -> impl FnMut(");
+
+        boolean first = true;
+        for (DBSPOperator i : circuit.inputOperators) {
+            if (!first)
+                this.builder.append(",");
+            first = false;
+            i.getNonVoidType().accept(this.innerVisitor);
+        }
+        this.builder.append(") -> ");
+        DBSPTypeTuple tuple = new DBSPTypeRawTuple(null, Linq.map(circuit.outputOperators, DBSPOperator::getNonVoidType));
+        tuple.accept(this.innerVisitor);
+        this.builder.append(" {").increase();
+        // For each input and output operator a corresponding Rc cell
+        for (DBSPOperator i : circuit.inputOperators)
+            this.genRcCell(i);
+
+        for (DBSPOperator o : circuit.outputOperators)
+            this.genRcCell(o);
+
+        // Circuit body
+        this.generateBody(circuit);
 
         // Create the closure and return it.
         this.builder.append("return move |")
@@ -243,7 +249,7 @@ public class ToRustVisitor extends CircuitVisitor {
 
     @Override
     public boolean preorder(DBSPSinkOperator operator) {
-        this.writeComments(Linq.list(operator.query.split("\n")));
+        this.writeComments(operator.query);
         this.writeComments(operator)
                 .append(operator.input().getName())
                 .append(".")
@@ -352,8 +358,12 @@ public class ToRustVisitor extends CircuitVisitor {
         return false;
     }
 
-    IIndentStream writeComments(List<String> strings) {
-        return this.builder.intercalate("\n", Linq.map(strings, c -> "// " + c));
+    IIndentStream writeComments(@Nullable String comment) {
+        if (comment == null)
+            return this.builder;
+        String[] parts = comment.split("\n");
+        parts = Linq.map(parts, p -> "// " + p, String.class);
+        return this.builder.intercalate("\n", parts);
     }
 
      IIndentStream writeComments(DBSPOperator operator) {

@@ -32,10 +32,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CircuitOptimizer {
-    public final CompilerOptions options;
+    public final CompilerOptions.Optimizer options;
     public final CircuitVisitor optimizer;
 
-    public CircuitOptimizer(CompilerOptions options) {
+    public CircuitOptimizer(CompilerOptions.Optimizer options) {
         this.options = options;
         this.optimizer = this.getOptimizer();
     }

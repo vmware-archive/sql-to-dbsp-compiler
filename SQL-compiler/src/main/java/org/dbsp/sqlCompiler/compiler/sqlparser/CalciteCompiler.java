@@ -131,7 +131,7 @@ public class CalciteCompiler implements IModule {
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
         SqlConformance conformance = connectionConfig.conformance();
         this.parserConfig = SqlParser.config()
-                .withLex(options.dialect)
+                .withLex(options.ioOptions.dialect)
                 // Add support for DDL language
                 .withParserFactory(SqlDdlParserImpl.FACTORY)
                 .withConformance(conformance);
@@ -349,6 +349,14 @@ public class CalciteCompiler implements IModule {
             System.err.println("Exception while parsing " + sql);
             throw parse;
         }
+    }
+
+    /**
+     * Given a list of statements separated by semicolons, parse all of them.
+     */
+    public SqlNodeList parseStatements(String statements) throws SqlParseException {
+        SqlParser sqlParser = SqlParser.create(statements, this.parserConfig);
+        return sqlParser.parseStmtList();
     }
 
     RelNode optimize(RelNode rel) {
