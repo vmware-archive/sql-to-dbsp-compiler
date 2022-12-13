@@ -30,7 +30,7 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.util.*;
 
-import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * This visitor generate a Rust implementation of the program.
@@ -249,7 +249,7 @@ public class ToRustVisitor extends CircuitVisitor {
 
     @Override
     public boolean preorder(DBSPSinkOperator operator) {
-        this.writeComments(Linq.list(operator.query.split("\n")));
+        this.writeComments(operator.query);
         this.writeComments(operator)
                 .append(operator.input().getName())
                 .append(".")
@@ -358,8 +358,12 @@ public class ToRustVisitor extends CircuitVisitor {
         return false;
     }
 
-    IIndentStream writeComments(List<String> strings) {
-        return this.builder.intercalate("\n", Linq.map(strings, c -> "// " + c));
+    IIndentStream writeComments(@Nullable String comment) {
+        if (comment == null)
+            return this.builder;
+        String[] parts = comment.split("\n");
+        parts = Linq.map(parts, p -> "// " + p, String.class);
+        return this.builder.intercalate("\n", parts);
     }
 
      IIndentStream writeComments(DBSPOperator operator) {

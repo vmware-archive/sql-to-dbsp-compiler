@@ -31,7 +31,6 @@ import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSourceOperator;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeZSet;
 import org.dbsp.util.IndentStream;
-import org.dbsp.util.Linq;
 import org.dbsp.util.Utilities;
 
 /**
@@ -39,14 +38,13 @@ import org.dbsp.util.Utilities;
  * Output generated has this structure:
  * pub fn test_circuit(workers: usize) -> (DBSPHandle, Catalog) {
  *     let mut catalog = Catalog::new();
- *     let (circuit, ()) = Runtime::init_circuit(workers, |circuit| {
- *         let (input, handle) = circuit.add_input_zset::<TestStruct, i32>();
- *         catalog.register_input_zset_handle("test_input1", handle);
- *         let handle = input.output();
- *         catalog.register_output_batch_handle("test_output1", handle);
- *         ()
- *     })
- *     .unwrap();
+ *     let (circuit, handles) = Runtime::init_circuit(workers, |circuit| {
+ *         let (input, handle0) = circuit.add_input_zset::<TestStruct, i32>();
+ *         let handle1 = input.output();
+ *         (handle0, handle1)
+ *     }).unwrap();
+ *     catalog.register_input_zset_handle("test_input1", handles.0);
+ *     catalog.register_output_batch_handle("test_output1", handles.1);
  *     (circuit, catalog)
  * }
  */
@@ -77,7 +75,7 @@ public class ToRustHandleVisitor extends ToRustVisitor {
 
     @Override
     public boolean preorder(DBSPSinkOperator operator) {
-        this.writeComments(Linq.list(operator.query.split("\n")));
+        this.writeComments(operator.query);
         this.writeComments(operator)
                 .append("let handle")
                 .append(this.handleCount++)

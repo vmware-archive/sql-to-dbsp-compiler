@@ -1,0 +1,3 @@
+#!/bin/sh
+
+java -jar target/sql-to-dbsp-jar-with-dependencies.jar $*

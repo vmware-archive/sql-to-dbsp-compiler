@@ -56,7 +56,7 @@ public class CompilerOptions {
          * SQL input script which contains table and view declarations.
          * We expect that declarations are terminated by semicolons.
          */
-        @Parameter(description = "Input file to compile")
+        @Parameter(description = "Input file to compile", required = true)
         @Nullable
         public String inputFile = null;
         @Parameter(names = "-f", description = "Name of function to generate")

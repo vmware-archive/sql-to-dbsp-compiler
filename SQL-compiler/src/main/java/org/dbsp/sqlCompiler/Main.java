@@ -30,7 +30,6 @@ import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustHandleVisitor;
-import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 
 import javax.annotation.Nullable;
 import java.io.*;

@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public class DBSPSourceOperator extends DBSPOperator {
-    public DBSPSourceOperator(@Nullable Object node, DBSPType outputType, List<String> comment, String name) {
+    public DBSPSourceOperator(@Nullable Object node, DBSPType outputType, @Nullable String comment, String name) {
         super(node, "", null, outputType, false, comment, name);
     }
 

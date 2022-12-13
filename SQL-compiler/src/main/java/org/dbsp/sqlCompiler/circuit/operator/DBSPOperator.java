@@ -62,11 +62,12 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
      * True if the output of the operator is a multiset.
      */
     public final boolean isMultiset;
-    public final List<String> comment;
+    @Nullable
+    public final String comment;
 
     protected DBSPOperator(@Nullable Object node, String operation,
                            @Nullable DBSPExpression function, DBSPType outputType,
-                           boolean isMultiset, List<String> comment, String outputName) {
+                           boolean isMultiset, @Nullable String comment, String outputName) {
         super(node);
         this.inputs = new ArrayList<>();
         this.operation = operation;
@@ -80,7 +81,7 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
     public DBSPOperator(@Nullable Object node, String operation,
                         @Nullable DBSPExpression function,
                         DBSPType outputType, boolean isMultiset) {
-        this(node, operation, function, outputType, isMultiset, Linq.list(),
+        this(node, operation, function, outputType, isMultiset, null,
                 new NameGen("stream").toString());
     }
 
