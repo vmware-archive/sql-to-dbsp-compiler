@@ -250,7 +250,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         // Write the code to Rust files on the filesystem.
         List<String> filesGenerated = this.writeCodeToFiles(
                 Linq.list(inputFunction, streamInputFunction), codeGenerated);
-        Utilities.writeRustMain(rustDirectory + "/main.rs", filesGenerated);
+        Utilities.writeRustLib(rustDirectory + "/lib.rs", filesGenerated);
         this.startTest();
         if (this.execute) {
             Utilities.compileAndTestRust(rustDirectory, true);
