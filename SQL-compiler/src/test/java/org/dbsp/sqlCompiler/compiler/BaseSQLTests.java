@@ -51,7 +51,7 @@ import java.util.List;
  */
 public class BaseSQLTests {
     public static final String rustDirectory = "../temp/src";
-    public static final String testFilePath = rustDirectory + "/test.rs";
+    public static final String testFilePath = rustDirectory + "/lib.rs";
 
     static class InputOutputPair {
         public final DBSPZSetLiteral[] inputs;
@@ -75,8 +75,6 @@ public class BaseSQLTests {
     @BeforeClass
     public static void generateLib() throws IOException {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
-        Utilities.writeRustMain(rustDirectory + "/main.rs",
-                Linq.list("test"));
     }
 
     void createTester(PrintWriter writer, DBSPCircuit circuit,

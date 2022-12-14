@@ -60,13 +60,12 @@ public class Utilities {
      * @param file     File to write to.
      * @param modules  List of modules to include.
      */
-    public static void writeRustMain(String file, List<String> modules) throws FileNotFoundException {
+    public static void writeRustLib(String file, List<String> modules) throws FileNotFoundException {
         PrintWriter writer = new PrintWriter(file);
         writer.println("// automatically-generated file");
         for (String module: modules) {
             writer.println("mod " + module + ";");
         }
-        writer.println("fn main(){}");
         writer.close();
     }
 
