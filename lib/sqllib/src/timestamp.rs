@@ -5,9 +5,12 @@
 
 use std::ops::Add;
 use size_of::SizeOf;
+use chrono::*;
+use serde::*;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, SizeOf)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, SizeOf, Serialize, Deserialize)]
 pub struct Timestamp {
+    // since unix epoch
     milliseconds: i64,
 }
 
@@ -18,6 +21,10 @@ impl Timestamp {
 
     pub fn milliseconds(&self) -> i64 {
         self.milliseconds
+    }
+
+    pub fn toDateTime(&self) -> DateTime<Utc> {
+        Utc.timestamp_opt(self.milliseconds / 1000, (self.milliseconds % 1000) as u32).single().unwrap()
     }
 }
 
@@ -39,6 +46,7 @@ impl Add<i64> for Timestamp {
 
 ////////////////////////////
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, SizeOf, Serialize, Deserialize)]
 pub struct Date {
     // since unix epoch
     days: i32,
@@ -61,4 +69,11 @@ where
     fn from(value: T) -> Self {
         Self { days: i32::from(value) }
     }
+}
+
+pub fn extract_ISODOW(t: Timestamp) -> i64 {
+    let date = t.toDateTime();
+    let weekday = date.weekday();
+    let day = weekday.number_from_sunday();
+    (if day == 0 {7} else {day}) as i64
 }

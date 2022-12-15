@@ -6,5 +6,6 @@ edition = "2021"
 [dependencies]
 md5 = { version = "0.7.0" }
 sqlvalue = { path = "../sqlvalue" }
+#dbsp = { path = "../../../database-stream-processor.git" }
 dbsp = { git = "https://github.com/vmware/database-stream-processor.git" }
 size-of = { version = "0.1.1" }
