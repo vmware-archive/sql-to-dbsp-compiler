@@ -131,7 +131,6 @@ produced will look like this:
 
 ```
 $ cat ../temp/src/lib.rs
-```
 // Automatically-generated file
 [...boring stuff removed...]
 
