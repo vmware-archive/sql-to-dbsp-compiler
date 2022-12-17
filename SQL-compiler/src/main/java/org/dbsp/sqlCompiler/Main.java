@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler;
 
 import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
@@ -45,10 +46,20 @@ public class Main {
     }
 
     void parseOptions(String[] argv) {
-        JCommander.newBuilder()
+        JCommander commander = JCommander.newBuilder()
                 .addObject(this.options)
-                .build()
-                .parse(argv);
+                .build();
+        commander.setProgramName("sql-to-dbsp");
+        try {
+            commander.parse(argv);
+        } catch (ParameterException ex) {
+            commander.usage();
+            System.exit(1);
+        }
+        if (this.options.help) {
+            commander.usage();
+            System.exit(1);
+        }
     }
 
     void writeToOutput(String program, @Nullable String outputFile) throws FileNotFoundException {

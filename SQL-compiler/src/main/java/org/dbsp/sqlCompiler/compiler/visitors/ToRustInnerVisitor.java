@@ -375,10 +375,9 @@ public class ToRustInnerVisitor extends InnerVisitor {
     public boolean preorder(DBSPAsExpression expression) {
         this.builder.append("(");
         expression.source.accept(this);
-        this.builder.append(" as ")
-                // TODO: remove getRustString?
-                .append(expression.getNonVoidType().to(IsNumericType.class).getRustString())
-                .append(")");
+        this.builder.append(" as ");
+        expression.getNonVoidType().accept(this);
+        this.builder.append(")");
         return false;
     }
 

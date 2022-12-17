@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+#dbsp = { path = "../../../database-stream-processor.git" }
 dbsp = { git = "https://github.com/vmware/database-stream-processor.git" }
 rust_decimal = { version = "1.26" }
 rust_decimal_macros = { version = "1.26" }

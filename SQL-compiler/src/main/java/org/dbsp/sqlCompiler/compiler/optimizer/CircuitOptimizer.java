@@ -50,7 +50,8 @@ public class CircuitOptimizer {
         DeadCodeVisitor dead = new DeadCodeVisitor();
         passes.add(dead);
         passes.add(new RemoveOperatorsVisitor(dead.reachable));
-        passes.add(new NoIntegralVisitor());
+        if (this.options.incrementalize)
+            passes.add(new NoIntegralVisitor());
         return new PassesVisitor(passes);
     }
 

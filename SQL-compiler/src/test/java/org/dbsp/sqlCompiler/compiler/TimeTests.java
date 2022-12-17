@@ -29,10 +29,7 @@ import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDateLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPTimestampLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.util.Utilities;
 import org.junit.Test;
 
@@ -78,6 +75,15 @@ public class TimeTests extends BaseSQLTests {
     public void timestampTableTest() {
         String query = "SELECT COL1 FROM T";
         this.testQuery(query, new DBSPTimestampLiteral(100));
+    }
+
+    @Test
+    public void dowTest() {
+        String query = "SELECT extract (ISODOW from COL1) FROM T";
+        this.testQuery(query, new DBSPLongLiteral(5));
+        // We know that the next date was a Thursday
+        query = "SELECT extract (ISODOW from TIMESTAMP '2022-12-15')";
+        this.testQuery(query, new DBSPLongLiteral(5));
     }
 
     @Test

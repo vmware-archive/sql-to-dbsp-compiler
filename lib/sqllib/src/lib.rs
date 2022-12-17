@@ -183,7 +183,7 @@ where
 {
     match (left, right) {
         (None, _) => Some(right),
-        (Some(x), y) => Some(x + y)
+        (Some(x), y) => Some(x + y),
     }
 }
 
@@ -193,7 +193,7 @@ where
 {
     match (left, right) {
         (_, None) => Some(left),
-        (x, Some(y)) => Some(x + y)
+        (x, Some(y)) => Some(x + y),
     }
 }
 
@@ -643,8 +643,8 @@ pub fn minus_Timestamp_Timestamp_ShortInterval(left: Timestamp, right: Timestamp
 }
 
 pub fn minus_Timestamp_Timestamp_LongInterval(left: Timestamp, right: Timestamp) -> LongInterval {
-    let ldate = Utc.timestamp_opt(left.milliseconds() / 1000, (left.milliseconds() % 1000) as u32).single().unwrap();
-    let rdate = Utc.timestamp_opt(right.milliseconds() / 1000, (right.milliseconds() % 1000) as u32).single().unwrap();
+    let ldate = left.toDateTime();
+    let rdate = right.toDateTime();
     let ly = ldate.year();
     let lm = ldate.month() as i32;
     let ld = ldate.day() as i32;

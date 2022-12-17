@@ -69,8 +69,8 @@ public class CompilerOptions {
         }
     }
 
-    @Parameter(names = {"-h", "--help"}, help=true)
-    private boolean help;
+    @Parameter(names = {"-h", "--help", "-"}, help=true, description = "Show this message and exit")
+    public boolean help;
     @ParametersDelegate
     public IO ioOptions = new IO();
     @ParametersDelegate
