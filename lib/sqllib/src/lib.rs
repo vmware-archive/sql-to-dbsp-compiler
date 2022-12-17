@@ -183,7 +183,7 @@ where
 {
     match (left, right) {
         (None, _) => Some(right),
-        (Some(x), y) => Some(x + y)
+        (Some(x), y) => Some(x + y),
     }
 }
 
@@ -193,7 +193,7 @@ where
 {
     match (left, right) {
         (_, None) => Some(left),
-        (x, Some(y)) => Some(x + y)
+        (x, Some(y)) => Some(x + y),
     }
 }
 

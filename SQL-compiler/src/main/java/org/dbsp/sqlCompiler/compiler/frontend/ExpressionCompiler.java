@@ -186,7 +186,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         }
         SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
                 op, type, commonBase.setMayBeNull(leftType.mayBeNull), commonBase.setMayBeNull(rightType.mayBeNull), true);
-        return new DBSPApplyExpression("agg_" + function.function, function.returnType, left, right);
+        DBSPExpression apply = new DBSPApplyExpression("agg_" + function.function, function.returnType, left, right);
+        return ExpressionCompiler.makeCast(apply, type);
     }
 
     // Like makeBinaryExpression, but accepts multiple operands.

@@ -24,20 +24,21 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.util.Logger;
+import org.dbsp.util.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+
 @SuppressWarnings("SpellCheckingInspection")
 public class ComplexQueriesTest extends BaseSQLTests {
-    public String fixup(String query) {
-        return query.replace("FLOAT64", "DOUBLE")
-                .replace("STRING", "VARCHAR");
-    }
-
     @Test
-    public void taxiTest() throws SqlParseException {
+    public void taxiTest() throws SqlParseException, IOException, InterruptedException {
         String ddl = "CREATE TABLE green_tripdata\n" +
                 "(\n" +
                 "        lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
@@ -70,10 +71,15 @@ public class ComplexQueriesTest extends BaseSQLTests {
         DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
-        ddl = this.fixup(ddl);
         compiler.compileStatement(ddl, null);
         compiler.compileStatement(query, null);
-        Assert.assertNotNull(compiler.getResult());
+        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
+        writer.println(ToRustVisitor.generatePreamble());
+        DBSPCircuit circuit = compiler.getResult();
+        Assert.assertNotNull(circuit);
+        writer.println(ToRustVisitor.toRustString(circuit));
+        writer.close();
+        Utilities.compileAndTestRust(rustDirectory, false);
     }
 
     //@Test
@@ -150,8 +156,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
         DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
-        ddl0 = this.fixup(ddl0);
-        ddl1 = this.fixup(ddl1);
         compiler.compileStatement(ddl0, null);
         compiler.compileStatement(ddl1, null);
         compiler.compileStatement(query, null);

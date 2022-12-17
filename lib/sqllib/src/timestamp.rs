@@ -77,3 +77,7 @@ pub fn extract_ISODOW(t: Timestamp) -> i64 {
     let day = weekday.number_from_sunday();
     (if day == 0 {7} else {day}) as i64
 }
+
+pub fn extract_EPOCH(t: Timestamp) -> i64 {
+    t.milliseconds() / 1000
+}

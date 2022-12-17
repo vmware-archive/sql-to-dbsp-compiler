@@ -248,9 +248,9 @@ public class DBSPExecutor extends SqlTestExecutor {
         }
 
         // Write the code to Rust files on the filesystem.
-        List<String> filesGenerated = this.writeCodeToFiles(
+        String fileGenerated = this.writeCodeToFile(
                 Linq.list(inputFunction, streamInputFunction), codeGenerated);
-        Utilities.writeRustLib(rustDirectory + "/lib.rs", filesGenerated);
+        Utilities.writeRustLib(rustDirectory + "/lib.rs", Linq.list(fileGenerated));
         this.startTest();
         if (this.execute) {
             Utilities.compileAndTestRust(rustDirectory, true);
@@ -522,7 +522,9 @@ public class DBSPExecutor extends SqlTestExecutor {
             }
             list.add(new DBSPExpressionStatement(
                     new DBSPApplyExpression("assert_eq!", null,
-                            count, new DBSPISizeLiteral(description.getExpectedOutputSize()))));
+                            count, new DBSPAsExpression(
+                                    new DBSPIntegerLiteral(description.getExpectedOutputSize()),
+                            DBSPTypeZSet.defaultWeightType))));
         }if (output != null) {
             if (description.columnTypes != null) {
                 DBSPExpression columnTypes = new DBSPStringLiteral(description.columnTypes);
@@ -606,7 +608,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         this.queriesToRun.clear();
     }
 
-    public List<String> writeCodeToFiles(
+    public String writeCodeToFile(
             List<DBSPFunction> inputFunctions,
             List<ProgramAndTester> functions
     ) throws FileNotFoundException, UnsupportedEncodingException {
@@ -622,6 +624,6 @@ public class DBSPExecutor extends SqlTestExecutor {
             writer.println(ToRustVisitor.toRustString(pt.tester));
         }
         writer.close();
-        return Linq.list(testFileName);
+        return testFileName;
     }
 }

@@ -825,13 +825,15 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         Utilities.putNew(this.nodeOperator, intersect, previous);
     }
 
-    DBSPExpression compileWindowBound(RexWindowBound bound, IsNumericType numType, ExpressionCompiler eComp) {
+    DBSPExpression compileWindowBound(RexWindowBound bound, DBSPType boundType, ExpressionCompiler eComp) {
+        IsNumericType numType = boundType.to(IsNumericType.class);
         if (bound.isUnbounded())
             return numType.getMaxValue();
         else if (bound.isCurrentRow())
             return numType.getZero();
         else {
-            return eComp.compile(Objects.requireNonNull(bound.getOffset()));
+            DBSPExpression value = eComp.compile(Objects.requireNonNull(bound.getOffset()));
+            return ExpressionCompiler.makeCast(value, boundType);
         }
     }
 
@@ -840,13 +842,16 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         RelNode inputNode = window.getInput();
         DBSPOperator input = this.getInputAs(window.getInput(0), true);
         DBSPTypeTuple inputRowType = this.convertType(inputNode.getRowType()).to(DBSPTypeTuple.class);
-        DBSPVariablePath row = inputRowType.ref().var("t");
-        ExpressionCompiler eComp = new ExpressionCompiler(row, window.constants, this.calciteCompiler);
+        DBSPVariablePath inputRowRefVar = inputRowType.ref().var("t");
+        ExpressionCompiler eComp = new ExpressionCompiler(inputRowRefVar, window.constants, this.calciteCompiler);
         int windowFieldIndex = inputRowType.size();
+        DBSPVariablePath previousRowRefVar = inputRowRefVar;
 
         DBSPTypeTuple currentTupleType = inputRowType;
         DBSPOperator lastOperator = input;
         for (Window.Group group: window.groups) {
+            if (lastOperator != input)
+                this.getCircuit().addOperator(lastOperator);
             List<RelFieldCollation> orderKeys = group.orderKeys.getFieldCollations();
             // Sanity checks
             if (orderKeys.size() > 1)
@@ -855,18 +860,17 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             if (collation.getDirection() != RelFieldCollation.Direction.ASCENDING)
                 throw new Unimplemented("OVER only supports ascending sorting", window);
             int orderColumnIndex = collation.getFieldIndex();
-            DBSPExpression orderField = row.field(orderColumnIndex);
+            DBSPExpression orderField = inputRowRefVar.field(orderColumnIndex);
             DBSPType sortType = inputRowType.tupFields[orderColumnIndex];
             if (!sortType.is(DBSPTypeInteger.class) &&
                     !sortType.is(DBSPTypeTimestamp.class))
                 throw new Unimplemented("OVER currently requires an integer type for ordering ", window);
             if (sortType.mayBeNull)
                 throw new Unimplemented("OVER currently does not support sorting on nullable column ", window);
-            IsNumericType numType = sortType.to(IsNumericType.class);
 
             // Create window description
-            DBSPExpression lowerBound = this.compileWindowBound(group.lowerBound, numType, eComp);
-            DBSPExpression upperBound = this.compileWindowBound(group.upperBound, numType, eComp);
+            DBSPExpression lowerBound = this.compileWindowBound(group.lowerBound, sortType, eComp);
+            DBSPExpression upperBound = this.compileWindowBound(group.upperBound, sortType, eComp);
             DBSPExpression lb = new DBSPStructExpression(DBSPTypeAny.instance.path(
                     new DBSPPath("RelOffset", "Before")),
                     DBSPTypeAny.instance, lowerBound);
@@ -881,11 +885,11 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
 
             // Map each row to an expression of the form: |t| (partition, (order, t.clone()))
             Iterable<Integer> partitionKeys = group.keys;
-            Iterable<DBSPExpression> exprs = Linq.map(partitionKeys, row::field);
+            Iterable<DBSPExpression> exprs = Linq.map(partitionKeys, inputRowRefVar::field);
             DBSPTupleExpression partition = new DBSPTupleExpression(exprs);
-            DBSPExpression orderAndRow = new DBSPRawTupleExpression(orderField, row.applyClone());
+            DBSPExpression orderAndRow = new DBSPRawTupleExpression(orderField, inputRowRefVar.applyClone());
             DBSPExpression mapExpr = new DBSPRawTupleExpression(partition, orderAndRow);
-            DBSPClosureExpression mapClo = mapExpr.closure(row.asParameter());
+            DBSPClosureExpression mapClo = mapExpr.closure(inputRowRefVar.asParameter());
             DBSPExpression mapCloVar = this.declare("map", mapClo);
             DBSPOperator mapIndex = new DBSPMapIndexOperator(window, mapCloVar,
                     partition.getNonVoidType(), orderAndRow.getNonVoidType(), input);
@@ -910,13 +914,15 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             DBSPIntegralOperator integ = new DBSPIntegralOperator(window, windowAgg);
             this.getCircuit().addOperator(integ);
 
-            // Join the original table with the aggregate
+            // Join the previous result with the aggregate
+            // First index the aggregate.
             DBSPExpression partAndOrder = new DBSPRawTupleExpression(partition, orderField);
-            DBSPExpression indexedInput = new DBSPRawTupleExpression(partAndOrder, row.applyClone());
-            DBSPExpression partAndOrderClo = indexedInput.closure(row.asParameter());
+            DBSPExpression indexedInput = new DBSPRawTupleExpression(partAndOrder, previousRowRefVar.applyClone());
+            DBSPExpression partAndOrderClo = indexedInput.closure(previousRowRefVar.asParameter());
             DBSPOperator indexInput = new DBSPIndexOperator(window,
                     this.declare("index", partAndOrderClo),
-                    partAndOrder.getNonVoidType(), inputRowType, input.isMultiset, input);
+                    partAndOrder.getNonVoidType(), previousRowRefVar.getNonVoidType().deref(),
+                    lastOperator.isMultiset, lastOperator);
             this.getCircuit().addOperator(indexInput);
 
             DBSPVariablePath key = partAndOrder.getNonVoidType().var("k");
@@ -940,6 +946,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             lastOperator = new DBSPJoinOperator(window, addExtraFieldBody.getNonVoidType(), this.declare("join", addExtraField),
                     indexInput.isMultiset || windowAgg.isMultiset, indexInput, integ);
             currentTupleType = addExtraFieldBody.getNonVoidType().to(DBSPTypeTuple.class);
+            previousRowRefVar = currentTupleType.ref().var("t");
         }
         this.assignOperator(window, lastOperator);
     }

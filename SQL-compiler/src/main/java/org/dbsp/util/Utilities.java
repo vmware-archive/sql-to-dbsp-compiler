@@ -56,7 +56,7 @@ import java.util.*;
 
 public class Utilities {
     /**
-     * Generate a rust "main" file which does nothing but includes the specified modules.
+     * Generate a rust file which does nothing but includes the specified modules.
      * @param file     File to write to.
      * @param modules  List of modules to include.
      */

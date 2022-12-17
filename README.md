@@ -23,10 +23,10 @@ working installation of Rust (we recommend using rustup to install:
 DBSP library (<https://github.com/vmware/database-stream-processor>),
 which is expected to be in a parallel directory.
 
-The testing programs use sqllogictest -- see the (section on testing)[#testing]
+The testing programs use sqllogictest -- see the [section on testing](#testing)
 
 Some tests use MySQL or Postgres.  To run these tests you need to
-create a database named 'slt' and a user account in the database.  In
+create a database named `slt` and a user account in the database.  In
 the `run-tests.sh` script you should replace the `-u user` with the
 user name you have created, and `-p password` with the user's
 password.
@@ -35,11 +35,12 @@ password.
 
 To run the tests:
 
-$> cd SQL-compiler
-$> ./run-tests.sh
+>$ cd SQL-compiler
+>$ ./run-tests.sh
 
 Beware that the full sql logic tests can run for a few weeks, there
-are more than 7 million of them!
+are more than 7 million of them!  Most of the time is spent compiling Rust,
+hopefully we'll be able to speed that up at some point.
 
 ## Incremental view maintenance
 
@@ -82,23 +83,104 @@ table `T`:
 tables -----> SQL-to-DBSP compiler ------> DBSP circuit
 views                                           V
                                            view changes
+``
+
+## Command-line compiler
+
+A compiler from SQL to DBSP is produced by the build system usign `mvn
+-DskipTests package`.  A one-line Linux shell script, called
+`sql-to-dbsp`, residing in the directory `SQL-compiler` directory,
+invokes the compiler.  Here is an example:
+
 ```
+$ ./sql-to-dbsp
+Usage: sql-to-dbsp [options] Input file to compile
+  Options:
+    -h, --help, -
+      Show this message and exit
+    -d
+      Options: [BIG_QUERY, ORACLE, MYSQL, MYSQL_ANSI, SQL_SERVER, JAVA]
+      Default: ORACLE
+    -f
+      Name of function to generate
+      Default: circuit
+    -i
+      Generate an incremental circuit
+      Default: false
+    -o
+      Output file; stdout if null
+$ ./sql-to-dbsp x.sql -o ../temp/src/lib.rs
+```
+
+The last command-line compiles a script called `x.sql` and writes the
+result in a file `lib.rs`.  Let's assume we are compiling the
+following input file:
+
+```
+$ cat x.sql
+-- example input file
+CREATE TABLE T(COL0 INTEGER, COL1 INTEGER);
+CREATE VIEW V AS SELECT T.COL1 FROM T;
+```
+
+The input file can contain comments, and only two kinds of SQL
+statements, separated by semicolons: `CREATE TABLE` and `CREATE VIEW`.
+In the generated DBSP circuit every `CREATE TABLE` is translated to an
+input, and every `CREATE VIEW` is translated to an output.  The result
+produced will look like this:
+
+```
+$ cat ../temp/src/lib.rs
+```
+// Automatically-generated file
+[...boring stuff removed...]
+
+pub fn circuit(workers: usize) -> (DBSPHandle, Catalog) {
+    let mut catalog = Catalog::new();
+    let (circuit, handles) = Runtime::init_circuit(workers, |circuit| {
+        let map34: _ = move |t: &Tuple2<Option<i32>, Option<i32>>, | -> Tuple1<Option<i32>> {
+            Tuple1::new(t.1)
+        };
+        // CREATE TABLE `T` (`COL0` INTEGER, `COL1` INTEGER)
+        let (T, handle0) = circuit.add_input_zset::<Tuple2<Option<i32>, Option<i32>>, Weight>();
+        let stream38: Stream<_, OrdZSet<Tuple1<Option<i32>>, Weight>> = T.map(map34);
+        // CREATE VIEW `V` AS
+        // SELECT `T`.`COL1`
+        // FROM `T`
+        let handle1 = stream38.output();
+        (handle0,handle1,)
+    }).unwrap();
+    catalog.register_input_zset_handle("T", handles.0);
+    catalog.register_output_batch_handle("V", handles.1);
+    (circuit, catalog)
+}
+```
+
+You can compile the generated Rust code:
+
+```
+$ cd ../temp
+$ cargo build
+```
+
+The generated file contains a Rust function called `circuit` (you can
+change its name using the compiler option `-f`).  Calling `circuit`
+will return an executable DBSP circuit handle, and a DBSP catalog.
+These APIs can be used to execute the circuit.  See the DBSP
+documentation for more information.
+
+TODO: add here an example invoking the circuit.
 
 ## Compiler architecture
 
 Compilation proceeds in several stages:
 
-- SQL statements are parsed using the calcite SQL parser (function `CalciteCompiler.compile`),
+- SQL statements are parsed using the calcite SQL parser
   generating an IR representation using the Calcite `SqlNode` data types
-  We handle the following kinds of statements:
-  - DDL statements such as `CREATE TABLE` which define inputs of the computation
-  - DDL statements such as `CREATE VIEW` which define outputs of the computation
-  - DML statements such as `INSERT INTO TABLE` which define insertions or deletions from inputs
 - the SQL IR tree is validated, optimized, and converted to the Calcite `RelNode` representation
-  (function CaciteCompiler.compile)
 - The result of this stage is a `CalciteProgram` data structure, which packages together all the
   views that are being compiled (multiple views can be maintained simultaneously)
-- The `CalciteToDBSPCompiler.compile` converts a `CalciteProgram` data structure into a `DBSPCircuit`
+- `CalciteToDBSPCompiler` converts a `CalciteProgram` data structure into a `DBSPCircuit`
   data structure.
 - The `CircuitOptimizer` class can optimize the generated circuit, optionally converting
   it into an incremental circuit, which is expected to compute only on changes.
@@ -216,7 +298,12 @@ are detailed below.
 | index/orderby        |         N/A | 310,630/0 |   310,630/0   |
 | evidence             |         N/A |    153/25 |               |
 
+We have 2 failing tests; these tests depend on unspecified features of
+the SQL semantics (numeric overflow), so we can argue that they are
+broken by design.
+
 The "index" tests cannot be executed with the `DBSPExecutor` since it
 does not support the "unique index" SQL statement.
 
-The JDBC executor used Postgres as a backing databse.
+The results in this table were produced using the JDBC executor with
+Postgres as a backing database.

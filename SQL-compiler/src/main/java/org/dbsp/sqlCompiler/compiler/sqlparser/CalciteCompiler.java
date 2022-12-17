@@ -141,6 +141,8 @@ public class CalciteCompiler implements IModule {
         rootSchema.add(catalog.schemaName, this.catalog);
         // Register new types
         rootSchema.add("INT64", factory -> factory.createSqlType(SqlTypeName.INTEGER));
+        rootSchema.add("FLOAT64", factory -> factory.createSqlType(SqlTypeName.DOUBLE));
+        rootSchema.add("FLOAT32", factory -> factory.createSqlType(SqlTypeName.FLOAT));
         rootSchema.add("STRING", factory -> factory.createSqlType(SqlTypeName.VARCHAR));
         rootSchema.add("BOOL", factory -> factory.createSqlType(SqlTypeName.BOOLEAN));
         // TODO: not entirely correct

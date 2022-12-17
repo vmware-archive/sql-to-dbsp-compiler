@@ -44,6 +44,40 @@ public class EndToEndTests extends BaseSQLTests {
     }
 
     @Test
+    public void overTwiceTest() {
+        DBSPExpression t = new DBSPTupleExpression(
+                new DBSPIntegerLiteral(10),
+                new DBSPDoubleLiteral(13.0),
+                new DBSPLongLiteral(2));
+        String query = "SELECT T.COL1, " +
+                "SUM(T.COL2) OVER (ORDER BY T.COL1 RANGE UNBOUNDED PRECEDING), " +
+                "COUNT(*) OVER (ORDER BY T.COL1 RANGE UNBOUNDED PRECEDING) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(t, t));
+    }
+
+    @Test
+    public void overConstantWindowTest() {
+        DBSPExpression t = new DBSPTupleExpression(
+                new DBSPIntegerLiteral(10),
+                new DBSPLongLiteral(2));
+        String query = "SELECT T.COL1, " +
+                "COUNT(*) OVER (ORDER BY T.COL1 RANGE BETWEEN 2 PRECEDING AND 1 PRECEDING) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(t, t));
+    }
+
+    @Test
+    public void overTwiceDifferentTest() {
+        DBSPExpression t = new DBSPTupleExpression(
+                new DBSPIntegerLiteral(10),
+                new DBSPDoubleLiteral(13.0),
+                new DBSPLongLiteral(2));
+        String query = "SELECT T.COL1, " +
+                "SUM(T.COL2) OVER (ORDER BY T.COL1 RANGE UNBOUNDED PRECEDING), " +
+                "COUNT(*) OVER (ORDER BY T.COL1 RANGE BETWEEN 2 PRECEDING AND 1 PRECEDING) FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(t, t));
+    }
+
+    @Test
     public void correlatedAggregate() {
         // From: Efficient Incrementialization of Correlated Nested Aggregate
         // Queries using Relative Partial Aggregate Indexes (RPAI)
@@ -253,6 +287,14 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT COL1, COUNT(col2) FROM T GROUP BY COL1, COL3";
         DBSPExpression row =  new DBSPTupleExpression(new DBSPIntegerLiteral(10), new DBSPLongLiteral(1));
         this.testQuery(query, new DBSPZSetLiteral( row, row));
+    }
+
+    @Test
+    public void groupBySumTest() {
+        String query = "SELECT COL1, SUM(col2) FROM T GROUP BY COL1, COL3";
+        this.testQuery(query, new DBSPZSetLiteral(
+                new DBSPTupleExpression(new DBSPIntegerLiteral(10), new DBSPDoubleLiteral(1)),
+                new DBSPTupleExpression(new DBSPIntegerLiteral(10), new DBSPDoubleLiteral(12))));
     }
 
     @Test
