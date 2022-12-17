@@ -79,9 +79,10 @@ public class TimeTests extends BaseSQLTests {
 
     @Test
     public void dowTest() {
-        //String query = "SELECT extract (ISODOW from COL1) FROM T";
-        //this.testQuery(query, new DBSPLongLiteral(4));
-        String query = "SELECT extract (ISODOW from TIMESTAMP '2022-12-15')";
+        String query = "SELECT extract (ISODOW from COL1) FROM T";
+        this.testQuery(query, new DBSPLongLiteral(5));
+        // We know that the next date was a Thursday
+        query = "SELECT extract (ISODOW from TIMESTAMP '2022-12-15')";
         this.testQuery(query, new DBSPLongLiteral(5));
     }
 
