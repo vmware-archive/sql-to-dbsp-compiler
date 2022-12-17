@@ -83,7 +83,7 @@ table `T`:
 tables -----> SQL-to-DBSP compiler ------> DBSP circuit
 views                                           V
                                            view changes
-``
+```
 
 ## Command-line compiler
 
