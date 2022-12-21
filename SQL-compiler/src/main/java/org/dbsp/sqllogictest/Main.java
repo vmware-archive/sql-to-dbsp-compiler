@@ -106,7 +106,7 @@ public class Main {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         String benchDir = "../../sqllogictest/test";
         List<String> files = Linq.list(
-                "random/expr/slt_good_24.test",
+                "random/expr/slt_good_34.test",
                 /*
                 "random/aggregates",
                 "random/select",

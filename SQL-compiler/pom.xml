@@ -47,6 +47,14 @@
     </build>
 
     <dependencies>
+        <!-- TODO: Calcite uses Janino, but the current release uses a broken version,
+             so we force a newer one here.  This should be removed once Calcite
+             has a new release. -->
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
+            <version>3.1.9</version>
+        </dependency>
         <!-- Seemingly needed by calcite -->
         <dependency>
             <groupId>org.slf4j</groupId>
