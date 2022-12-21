@@ -35,8 +35,10 @@ password.
 
 To run the tests:
 
->$ cd SQL-compiler
->$ ./run-tests.sh
+```
+$ cd SQL-compiler
+$ ./run-tests.sh
+```
 
 Beware that the full sql logic tests can run for a few weeks, there
 are more than 7 million of them!  Most of the time is spent compiling Rust,
