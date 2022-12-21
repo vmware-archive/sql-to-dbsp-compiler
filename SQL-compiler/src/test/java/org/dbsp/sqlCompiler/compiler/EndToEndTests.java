@@ -22,6 +22,9 @@ public class EndToEndTests extends BaseSQLTests {
      * | 10 | 12.0 | true  | Hi | NULL    | NULL |
      * | 10 |  1.0 | false | Hi | Some[1] |  0.0 |
      * -------------------------------------------
+     *
+     * INSERT INTO T VALUES (10, 12, true, 'Hi'. NULL, NULL);
+     * INSERT INTO T VALUES (10, 1.0, false, 'Hi', 1, 0.0);
      */
 
     void testQuery(String query, DBSPZSetLiteral expectedOutput) {
@@ -86,7 +89,8 @@ public class EndToEndTests extends BaseSQLTests {
                 "WHERE\n" +
                 "0.5 * (SELECT Sum(r1.COL5) FROM T r1) =\n" +
                 "(SELECT Sum(r2.COL5) FROM T r2 WHERE r2.COL1 = r.COL1)";
-        this.testQuery(query, new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPIntegerLiteral(10, true))));
+        this.testQuery(query, new DBSPZSetLiteral(new DBSPTupleExpression(
+                DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
 
         // TODO
         query = "SELECT Sum(b.price * b.volume) FROM bids b\n" +
@@ -276,6 +280,12 @@ public class EndToEndTests extends BaseSQLTests {
     }
 
     @Test
+    public void constantFoldTest() {
+        String query = "SELECT 1 + 2";
+        this.testQuery(query, new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPIntegerLiteral(3))));
+    }
+
+    @Test
     public void groupByTest() {
         String query = "SELECT COL1 FROM T GROUP BY COL1";
         this.testQuery(query, new DBSPZSetLiteral(
@@ -315,8 +325,6 @@ public class EndToEndTests extends BaseSQLTests {
                 new DBSPTupleExpression(new DBSPIntegerLiteral(1, true))));
     }
 
-    // Calcite seems to handle this query incorrectly, since
-    // it claims that 1 / 0 is an integer instead of NULL
     @Test
     public void divZeroTest() {
         String query = "SELECT 1 / 0";

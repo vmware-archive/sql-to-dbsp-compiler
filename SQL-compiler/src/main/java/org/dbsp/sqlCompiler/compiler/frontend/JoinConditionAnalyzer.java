@@ -74,6 +74,7 @@ public class JoinConditionAnalyzer extends RexVisitorImpl<Void> implements IModu
 
         ConditionDecomposition() {
             this.comparisons = new ArrayList<>();
+            this.leftOver = null;
         }
 
         void setLeftOver(RexNode leftOver) {
@@ -88,12 +89,18 @@ public class JoinConditionAnalyzer extends RexVisitorImpl<Void> implements IModu
             this.comparisons.add(new EqualityTest(l, r, resultType));
         }
 
+        void validate() {
+            if (this.leftOver == null && this.comparisons.isEmpty())
+                throw new RuntimeException("Unexpected empty join condition");
+        }
+
         /**
          * Part of the join condition that is not an equality test.
          * @return Null if the entire condition is an equality test.
          */
         @Nullable
         public RexNode getLeftOver() {
+            this.validate();
             return this.leftOver;
         }
     }
@@ -149,11 +156,15 @@ public class JoinConditionAnalyzer extends RexVisitorImpl<Void> implements IModu
                 Boolean leftIsLeft = this.isLeftTableColumnReference(left);
                 @Nullable
                 Boolean rightIsLeft = this.isLeftTableColumnReference(right);
-                if (leftIsLeft == null || rightIsLeft == null)
+                if (leftIsLeft == null || rightIsLeft == null) {
+                    this.result.setLeftOver(call);
                     return null;
-                if (leftIsLeft == rightIsLeft)
+                }
+                if (leftIsLeft == rightIsLeft) {
                     // Both columns refer to the same table.
+                    this.result.setLeftOver(call);
                     return null;
+                }
                 DBSPType leftType = this.typeCompiler.convertType(left.getType());
                 DBSPType rightType = this.typeCompiler.convertType(right.getType());
                 DBSPType resultType = ExpressionCompiler.reduceType(leftType, rightType).setMayBeNull(false);

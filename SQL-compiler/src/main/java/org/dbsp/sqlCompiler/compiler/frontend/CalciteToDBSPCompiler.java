@@ -587,6 +587,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         RexNode leftOver = decomposition.getLeftOver();
         DBSPExpression condition = null;
         if (leftOver != null) {
+            t = resultType.ref().var("t");
             ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.calciteCompiler);
             condition = expressionCompiler.compile(leftOver);
             if (condition.getNonVoidType().mayBeNull) {

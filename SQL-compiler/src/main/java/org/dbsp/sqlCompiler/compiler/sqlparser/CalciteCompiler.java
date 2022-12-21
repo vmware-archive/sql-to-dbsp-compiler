@@ -40,6 +40,7 @@ import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.rules.*;
 import org.apache.calcite.rel.type.*;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.ddl.SqlColumnDeclaration;
 import org.apache.calcite.sql.ddl.SqlCreateTable;
@@ -121,6 +122,47 @@ public class CalciteCompiler implements IModule {
         }
     }
 
+    static class SqlDivideFunction extends SqlFunction {
+        // Custom implementation of type inference DIVISION for our division operator.
+        static SqlReturnTypeInference divResultInference = new SqlReturnTypeInference() {
+            @Override
+            public @org.checkerframework.checker.nullness.qual.Nullable
+            RelDataType inferReturnType(SqlOperatorBinding opBinding) {
+                // Default policy for division.
+                RelDataType result = ReturnTypes.QUOTIENT_NULLABLE.inferReturnType(opBinding);
+                List<RelDataType> opTypes = opBinding.collectOperandTypes();
+                // If all operands are integer or decimal, result is nullable
+                // otherwise it's not.
+                boolean nullable = true;
+                for (RelDataType type: opTypes) {
+                    if (type.getSqlTypeName() == SqlTypeName.FLOAT) {
+                        nullable = false;
+                        break;
+                    }
+                }
+                if (nullable)
+                    result = opBinding.getTypeFactory().createTypeWithNullability(result, true);
+                return result;
+            }
+        };
+
+        public SqlDivideFunction() {
+            super("DIVISION",
+                    SqlKind.OTHER_FUNCTION,
+                    divResultInference,
+                    null,
+                    OperandTypes.NUMERIC_NUMERIC,
+                    SqlFunctionCategory.NUMERIC);
+        }
+
+        @Override
+        public boolean isDeterministic() {
+            // TODO: change this when we learn how to constant-fold in the RexToLixTranslator
+            // https://issues.apache.org/jira/browse/CALCITE-3394 may give a solution
+            return false;
+        }
+    }
+
     // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
     public CalciteCompiler(CompilerOptions options) {
         this.astRewriter = new RewriteDivision();
@@ -150,34 +192,7 @@ public class CalciteCompiler implements IModule {
         Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
                 rootSchema, Collections.singletonList(catalog.schemaName), this.typeFactory, connectionConfig);
 
-        // Custom implementation of type inference DIVISION for our division operator.
-        SqlReturnTypeInference divResultInference = new SqlReturnTypeInference() {
-            @Override
-            public @org.checkerframework.checker.nullness.qual.Nullable
-            RelDataType inferReturnType(SqlOperatorBinding opBinding) {
-                // Default policy for division.
-                RelDataType result = ReturnTypes.QUOTIENT_NULLABLE.inferReturnType(opBinding);
-                List<RelDataType> opTypes = opBinding.collectOperandTypes();
-                // If all operands are integer or decimal, result is nullable
-                // otherwise it's not.
-                boolean nullable = true;
-                for (RelDataType type: opTypes) {
-                    if (type.getSqlTypeName() == SqlTypeName.FLOAT) {
-                        nullable = false;
-                        break;
-                    }
-                }
-                if (nullable)
-                    result = opBinding.getTypeFactory().createTypeWithNullability(result, true);
-                return result;
-            }
-        };
-        SqlFunction division = new SqlFunction("DIVISION",
-                SqlKind.OTHER_FUNCTION,
-                divResultInference,
-                null,
-                OperandTypes.NUMERIC_NUMERIC,
-                SqlFunctionCategory.NUMERIC);
+        SqlFunction division = new SqlDivideFunction();
         SqlOperatorTable operatorTable = SqlOperatorTables.chain(
                 // Libraries of user-defined functions supported.
                 SqlLibraryOperatorTableFactory.INSTANCE.getOperatorTable(
@@ -205,6 +220,7 @@ public class CalciteCompiler implements IModule {
         // This planner does not do anything.
         // We use a series of planner stages later to perform the real optimizations.
         RelOptPlanner planner = new HepPlanner(new HepProgramBuilder().build());
+        planner.setExecutor(RexUtil.EXECUTOR);
         this.cluster = RelOptCluster.create(planner, new RexBuilder(this.typeFactory));
         this.converterConfig = SqlToRelConverter.config()
                 .withExpand(true);
@@ -270,7 +286,8 @@ public class CalciteCompiler implements IModule {
                 CoreRules.PROJECT_REDUCE_EXPRESSIONS,
                 CoreRules.JOIN_REDUCE_EXPRESSIONS,
                 CoreRules.WINDOW_REDUCE_EXPRESSIONS,
-                CoreRules.CALC_REDUCE_EXPRESSIONS);
+                CoreRules.CALC_REDUCE_EXPRESSIONS
+        );
         // Remove empty collections
         HepProgram removeEmpty = createProgram(
                 PruneEmptyRules.UNION_INSTANCE,
@@ -362,6 +379,7 @@ public class CalciteCompiler implements IModule {
     }
 
     RelNode optimize(RelNode rel) {
+        // Without the following some optimization rules do nothing.
         Logger.instance.from(this, 2)
                 .append("Before optimizer")
                 .increase()
