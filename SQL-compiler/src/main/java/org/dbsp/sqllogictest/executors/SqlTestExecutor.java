@@ -36,7 +36,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Interface implemented by a class that knows how to execute a test.
+ * Base class for classes that can run SqlLogicTest tests.
  */
 public abstract class SqlTestExecutor implements ICastable, IModule {
     static final DecimalFormat df = new DecimalFormat("#,###");

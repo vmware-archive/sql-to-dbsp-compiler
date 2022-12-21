@@ -83,7 +83,7 @@ public class TimeTests extends BaseSQLTests {
         this.testQuery(query, new DBSPLongLiteral(5));
         // We know that the next date was a Thursday
         query = "SELECT extract (ISODOW from TIMESTAMP '2022-12-15')";
-        this.testQuery(query, new DBSPLongLiteral(5));
+        this.testQuery(query, new DBSPLongLiteral(4));
     }
 
     @Test

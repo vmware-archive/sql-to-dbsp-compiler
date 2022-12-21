@@ -23,5 +23,8 @@ geo = { version = "0.23" }
 geo-types = { version = "0.7" }
 
 [lib]
-
 path = "src/lib.rs"
+
+# Incremental builds sometimes crash the compiler
+[profile.test]
+incremental = false

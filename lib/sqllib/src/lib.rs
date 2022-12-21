@@ -9,6 +9,7 @@ use std::ops::Add;
 use chrono::{Utc, TimeZone, Datelike};
 use dbsp::algebra::{F32, F64, ZRingValue};
 use geopoint::GeoPoint;
+use rust_decimal::prelude::*;
 use crate::interval::{
     ShortInterval,
     LongInterval,
@@ -690,5 +691,337 @@ pub fn minus_dateN_dateN_LongInterval(left: Option<Date>, right: Option<Date>) -
         (None, _) => None,
         (_, None) => None,
         (Some(x), Some(y)) => Some(LongInterval::new(x.days() - y.days())),
+    }
+}
+
+/***** decimals ******/
+
+#[inline(always)]
+pub fn times_decimal_decimal(left: Decimal, right: Decimal) -> Decimal
+{
+    left * right
+}
+
+#[inline(always)]
+pub fn times_decimalN_decimal(left: Option<Decimal>, right: Decimal) -> Option<Decimal>
+{
+    match left {
+        Some(l) => Some(l * right),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn times_decimal_decimalN(left: Decimal, right: Option<Decimal>) -> Option<Decimal>
+{
+    match right {
+        Some(r) => Some(left * r),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn times_decimalN_decimalN(left: Option<Decimal>, right: Option<Decimal>) -> Option<Decimal>
+{
+    match (left, right) {
+        (Some(l), Some(r)) => Some(l * r),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn plus_decimal_decimal(left: Decimal, right: Decimal) -> Decimal
+{
+    left + right
+}
+
+#[inline(always)]
+pub fn plus_decimalN_decimal(left: Option<Decimal>, right: Decimal) -> Option<Decimal>
+{
+    match left {
+        Some(l) => Some(l + right),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn plus_decimal_decimalN(left: Decimal, right: Option<Decimal>) -> Option<Decimal>
+{
+    match right {
+        Some(r) => Some(left + r),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn plus_decimalN_decimalN(left: Option<Decimal>, right: Option<Decimal>) -> Option<Decimal>
+{
+    match (left, right) {
+        (Some(l), Some(r)) => Some(l + r),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn minus_decimal_decimal(left: Decimal, right: Decimal) -> Decimal
+{
+    left - right
+}
+
+#[inline(always)]
+pub fn minus_decimalN_decimal(left: Option<Decimal>, right: Decimal) -> Option<Decimal>
+{
+    match left {
+        Some(l) => Some(l - right),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn minus_decimal_decimalN(left: Decimal, right: Option<Decimal>) -> Option<Decimal>
+{
+    match right {
+        Some(r) => Some(left - r),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn minus_decimalN_decimalN(left: Option<Decimal>, right: Option<Decimal>) -> Option<Decimal>
+{
+    match (left, right) {
+        (Some(l), Some(r)) => Some(l - r),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn mod_decimal_decimal(left: Decimal, right: Decimal) -> Decimal
+{
+    left % right
+}
+
+#[inline(always)]
+pub fn mod_decimalN_decimal(left: Option<Decimal>, right: Decimal) -> Option<Decimal>
+{
+    match left {
+        Some(l) => Some(l % right),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn mod_decimal_decimalN(left: Decimal, right: Option<Decimal>) -> Option<Decimal>
+{
+    match right {
+        Some(r) => Some(left % r),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn mod_decimalN_decimalN(left: Option<Decimal>, right: Option<Decimal>) -> Option<Decimal>
+{
+    match (left, right) {
+        (Some(l), Some(r)) => Some(l % r),
+        _ => None::<Decimal>,
+    }
+}
+
+#[inline(always)]
+pub fn lt_decimal_decimal(left: Decimal, right: Decimal) -> bool
+{
+    left < right
+}
+
+#[inline(always)]
+pub fn lt_decimalN_decimal(left: Option<Decimal>, right: Decimal) -> Option<bool>
+{
+    match left {
+        Some(l) => Some(l < right),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn lt_decimal_decimalN(left: Decimal, right: Option<Decimal>) -> Option<bool>
+{
+    match right {
+        Some(r) => Some(left < r),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn lt_decimalN_decimalN(left: Option<Decimal>, right: Option<Decimal>) -> Option<bool>
+{
+    match (left, right) {
+        (Some(l), Some(r)) => Some(l < r),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn eq_decimal_decimal(left: Decimal, right: Decimal) -> bool
+{
+    left == right
+}
+
+#[inline(always)]
+pub fn eq_decimalN_decimal(left: Option<Decimal>, right: Decimal) -> Option<bool>
+{
+    match left {
+        Some(l) => Some(l == right),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn eq_decimal_decimalN(left: Decimal, right: Option<Decimal>) -> Option<bool>
+{
+    match right {
+        Some(r) => Some(left == r),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn eq_decimalN_decimalN(left: Option<Decimal>, right: Option<Decimal>) -> Option<bool>
+{
+    match (left, right) {
+        (Some(l), Some(r)) => Some(l == r),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn gt_decimal_decimal(left: Decimal, right: Decimal) -> bool
+{
+    left > right
+}
+
+#[inline(always)]
+pub fn gt_decimalN_decimal(left: Option<Decimal>, right: Decimal) -> Option<bool>
+{
+    match left {
+        Some(l) => Some(l > right),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn gt_decimal_decimalN(left: Decimal, right: Option<Decimal>) -> Option<bool>
+{
+    match right {
+        Some(r) => Some(left > r),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn gt_decimalN_decimalN(left: Option<Decimal>, right: Option<Decimal>) -> Option<bool>
+{
+    match (left, right) {
+        (Some(l), Some(r)) => Some(l > r),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn gte_decimal_decimal(left: Decimal, right: Decimal) -> bool
+{
+    left >= right
+}
+
+#[inline(always)]
+pub fn gte_decimalN_decimal(left: Option<Decimal>, right: Decimal) -> Option<bool>
+{
+    match left {
+        Some(l) => Some(l >= right),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn gte_decimal_decimalN(left: Decimal, right: Option<Decimal>) -> Option<bool>
+{
+    match right {
+        Some(r) => Some(left >= r),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn gte_decimalN_decimalN(left: Option<Decimal>, right: Option<Decimal>) -> Option<bool>
+{
+    match (left, right) {
+        (Some(l), Some(r)) => Some(l >= r),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn neq_decimal_decimal(left: Decimal, right: Decimal) -> bool
+{
+    left != right
+}
+
+#[inline(always)]
+pub fn neq_decimalN_decimal(left: Option<Decimal>, right: Decimal) -> Option<bool>
+{
+    match left {
+        Some(l) => Some(l != right),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn neq_decimal_decimalN(left: Decimal, right: Option<Decimal>) -> Option<bool>
+{
+    match right {
+        Some(r) => Some(left != r),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn neq_decimalN_decimalN(left: Option<Decimal>, right: Option<Decimal>) -> Option<bool>
+{
+    match (left, right) {
+        (Some(l), Some(r)) => Some(l != r),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn lte_decimal_decimal(left: Decimal, right: Decimal) -> bool
+{
+    left <= right
+}
+
+#[inline(always)]
+pub fn lte_decimalN_decimal(left: Option<Decimal>, right: Decimal) -> Option<bool>
+{
+    match left {
+        Some(l) => Some(l <= right),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn lte_decimal_decimalN(left: Decimal, right: Option<Decimal>) -> Option<bool>
+{
+    match right {
+        Some(r) => Some(left <= r),
+        _ => None::<bool>,
+    }
+}
+
+#[inline(always)]
+pub fn lte_decimalN_decimalN(left: Option<Decimal>, right: Option<Decimal>) -> Option<bool>
+{
+    match (left, right) {
+        (Some(l), Some(r)) => Some(l <= r),
+        _ => None::<bool>,
     }
 }

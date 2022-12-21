@@ -34,6 +34,9 @@ import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.*;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.Point;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
@@ -127,6 +130,12 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                     Objects.requireNonNull(literal.getValueAs(TimestampString.class)));
         } else if (type.is(DBSPTypeDate.class)) {
             return new DBSPDateLiteral(literal, type, Objects.requireNonNull(literal.getValueAs(DateString.class)));
+        } else if (type.is(DBSPTypeGeoPoint.class)) {
+            Point point = literal.getValueAs(Point.class);
+            Coordinate c = Objects.requireNonNull(point).getCoordinate();
+            return new DBSPGeoPointLiteral(literal,
+                    new DBSPDoubleLiteral(c.getOrdinate(0)),
+                    new DBSPDoubleLiteral(c.getOrdinate(1)));
         }
         throw new Unimplemented(literal);
     }
