@@ -1,3 +1,5 @@
-#!/bin/sh
+#!/bin/bash
 
-java -jar target/sql-to-dbsp-jar-with-dependencies.jar $*
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+java -jar ${THIS_DIR}/target/sql-to-dbsp-jar-with-dependencies.jar $*
