@@ -27,8 +27,10 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -106,7 +108,7 @@ public class Main {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         String benchDir = "../../sqllogictest/test";
         List<String> files = Linq.list(
-                "random/expr/slt_good_34.test",
+                "random/expr/slt_good_7.test"
                 /*
                 "random/aggregates",
                 "random/select",
@@ -124,8 +126,8 @@ public class Main {
                 "index/commute", 
                 "index/orderby_nosort", 
                 "index/random",  
-                 */
                 "evidence"
+                 */
         );
 
         String[] args = {
@@ -152,7 +154,7 @@ public class Main {
         Logger.instance.setDebugLevel(SLTTestFile.class, 3);
         Logger.instance.setDebugLevel(PassesVisitor.class, 3);
         Logger.instance.setDebugLevel(RemoveOperatorsVisitor.class, 3);
-        Logger.instance.setDebugLevel(CalciteCompiler.class, 2);
+        Logger.instance.setDebugLevel(CalciteCompiler.class, 3);
          */
         ExecutionOptions options = new ExecutionOptions();
         options.parse(args);

@@ -334,6 +334,14 @@ public class EndToEndTests extends BaseSQLTests {
     }
 
     @Test
+    public void nestedDivTest() {
+        String query = "SELECT 2 / (1 / 0)";
+        this.testQuery(query, new DBSPZSetLiteral(
+                new DBSPTupleExpression(DBSPLiteral.none(
+                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test
     public void customDivisionTest() {
         // Use a custom division operator.
         String query = "SELECT DIVISION(1, 0)";

@@ -105,7 +105,10 @@ public class CalciteCompiler implements IModule {
     public static class RewriteDivision extends SqlShuttle {
         @Override
         public SqlNode visit(SqlCall call) {
-            if (call.getKind() == SqlKind.DIVIDE) {
+            SqlNode node = Objects.requireNonNull(super.visit(call));
+            if (node instanceof SqlCall &&
+                    node.getKind() == SqlKind.DIVIDE) {
+                SqlCall rewrittenCall = (SqlCall)node;
                 return new SqlBasicCall(
                         new SqlUnresolvedFunction(
                                 new SqlIdentifier("DIVISION", SqlParserPos.ZERO),
@@ -114,11 +117,11 @@ public class CalciteCompiler implements IModule {
                                 null,
                                 null,
                                 SqlFunctionCategory.USER_DEFINED_FUNCTION),
-                        call.getOperandList(),
-                        call.getParserPosition()
+                        rewrittenCall.getOperandList(),
+                        rewrittenCall.getParserPosition()
                 );
             }
-            return Objects.requireNonNull(super.visit(call));
+            return node;
         }
     }
 

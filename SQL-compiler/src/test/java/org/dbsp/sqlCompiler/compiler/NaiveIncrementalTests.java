@@ -127,9 +127,17 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
     }
 
-    @Test
+    @Test @Override
     public void divZeroTest() {
         String query = "SELECT 1 / 0";
+        this.testConstantOutput(query, new DBSPZSetLiteral(
+                new DBSPTupleExpression(DBSPLiteral.none(
+                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+    }
+
+    @Test @Override
+    public void nestedDivTest() {
+        String query = "SELECT 2 / (1 / 0)";
         this.testConstantOutput(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
                         DBSPTypeInteger.signed32.setMayBeNull(true)))));
