@@ -28,3 +28,4 @@ path = "src/lib.rs"
 # Incremental builds sometimes crash the compiler
 [profile.test]
 incremental = false
+overflow-checks = false
