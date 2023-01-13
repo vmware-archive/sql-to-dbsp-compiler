@@ -77,7 +77,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
         writer.println(ToRustVisitor.generatePreamble());
         DBSPCircuit circuit = compiler.getResult();
         Assert.assertNotNull(circuit);
-        writer.println(ToRustVisitor.toRustString(circuit));
+        writer.println(ToRustVisitor.circuitToRustString(circuit));
         writer.close();
         Utilities.compileAndTestRust(rustDirectory, false);
     }

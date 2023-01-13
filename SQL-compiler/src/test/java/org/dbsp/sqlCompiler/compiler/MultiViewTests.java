@@ -68,7 +68,7 @@ public class MultiViewTests extends BaseSQLTests {
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
         writer.println(ToRustVisitor.generatePreamble());
         DBSPCircuit circuit = compiler.getResult();
-        writer.println(ToRustVisitor.toRustString(circuit));
+        writer.println(ToRustVisitor.circuitToRustString(circuit));
         InputOutputPair stream = new InputOutputPair(
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {
@@ -102,7 +102,7 @@ public class MultiViewTests extends BaseSQLTests {
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
         writer.println(ToRustVisitor.generatePreamble());
         DBSPCircuit circuit = compiler.getResult();
-        writer.println(ToRustVisitor.toRustString(circuit));
+        writer.println(ToRustVisitor.circuitToRustString(circuit));
         InputOutputPair stream = new InputOutputPair(
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {
@@ -136,7 +136,7 @@ public class MultiViewTests extends BaseSQLTests {
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
         writer.println(ToRustVisitor.generatePreamble());
         DBSPCircuit circuit = compiler.getResult();
-        writer.println(ToRustVisitor.toRustString(circuit));
+        writer.println(ToRustVisitor.circuitToRustString(circuit));
         InputOutputPair stream = new InputOutputPair(
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {

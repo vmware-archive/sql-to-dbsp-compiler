@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * This visitor generate a Rust implementation of the program.
@@ -49,7 +50,7 @@ public class ToRustVisitor extends CircuitVisitor {
                     "#![allow(unused_variables)]\n" +
                     "\n" +
                     "use dbsp::{\n" +
-                    "    algebra::{ZSet, MulByRef, F32, F64, UnimplementedSemigroup},\n" +
+                    "    algebra::{ZSet, MulByRef, F32, F64, Semigroup, UnimplementedSemigroup},\n" +
                     "    circuit::{Circuit, Stream},\n" +
                     "    operator::{\n" +
                     "        Generator,\n" +
@@ -148,26 +149,29 @@ public class ToRustVisitor extends CircuitVisitor {
         }
     }
 
+    void processNode(IDBSPNode node) {
+        DBSPOperator op = node.as(DBSPOperator.class);
+        if (op != null)
+            this.generateOperator(op);
+        IDBSPInnerNode inner = node.as(IDBSPInnerNode.class);
+        if (inner != null)
+            inner.accept(this.innerVisitor);
+    }
+
+    void generateOperator(DBSPOperator operator) {
+        if (operator.getNode() != null) {
+            String str = operator.getNode().toString();
+            this.writeComments(str);
+        }
+        operator.accept(this);
+        this.builder.newline();
+    }
+
     public void generateBody(DBSPCircuit circuit) {
         this.builder.append("let root = Circuit::build(|circuit| {")
                 .increase();
-        for (IDBSPInnerDeclaration decl : circuit.declarations.values()) {
-            decl.accept(this.innerVisitor);
-            this.builder.newline();
-        }
-        for (DBSPOperator i : circuit.inputOperators) {
-            i.accept(this);
-            this.builder.newline();
-        }
-        for (DBSPOperator op : circuit.operators) {
-            op.accept(this);
-            this.builder.newline();
-        }
-        for (DBSPOperator o : circuit.outputOperators) {
-            o.accept(this);
-            this.builder.newline();
-        }
-
+        for (IDBSPNode node : circuit.code)
+            this.processNode(node);
         this.builder.decrease()
                 .append("})")
                 .append(".unwrap();")
@@ -403,7 +407,7 @@ public class ToRustVisitor extends CircuitVisitor {
         return false;
     }
 
-    public static String toRustString(IDBSPOuterNode node) {
+    public static String circuitToRustString(IDBSPOuterNode node) {
         StringBuilder builder = new StringBuilder();
         IndentStream stream = new IndentStream(builder);
         ToRustVisitor visitor = new ToRustVisitor(stream);
@@ -411,7 +415,7 @@ public class ToRustVisitor extends CircuitVisitor {
         return builder.toString();
     }
 
-    public static String toRustString(IDBSPInnerNode node) {
+    public static String irToRustString(IDBSPInnerNode node) {
         StringBuilder builder = new StringBuilder();
         IndentStream stream = new IndentStream(builder);
         ToRustVisitor visitor = new ToRustVisitor(stream);

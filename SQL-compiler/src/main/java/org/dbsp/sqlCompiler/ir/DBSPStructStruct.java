@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,26 +25,45 @@ package org.dbsp.sqlCompiler.ir;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
-import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeParameter;
 
 import java.util.List;
 
 /**
- * Abstraction for a (Rust) file containing a series of DBSP declarations.
+ * A simplified representation of Rust StructStruct.
  */
-public class DBSPFile extends DBSPNode implements IDBSPInnerNode {
-    public final List<IDBSPDeclaration> declarations;
+public class DBSPStructStruct extends DBSPNode implements IDBSPInnerNode {
+    public static class Field extends DBSPNode implements IDBSPInnerNode {
+        public final String name;
+        public final DBSPType type;
 
-    public DBSPFile(List<IDBSPDeclaration> declarations) {
+        Field(String name, DBSPType type) {
+            super(null);
+            this.name = name;
+            this.type = type;
+        }
+
+        @Override
+        public void accept(InnerVisitor visitor) {
+            this.type.accept(visitor);
+        }
+    }
+
+    public final String name;
+    public final List<DBSPTypeParameter> typeParameters;
+    public final Field[] fields;
+
+    public DBSPStructStruct(String name, List<DBSPTypeParameter> typeParameters, Field... fields) {
         super(null);
-        this.declarations = declarations;
+        this.name = name;
+        this.typeParameters = typeParameters;
+        this.fields = fields;
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        for (IDBSPDeclaration decl: this.declarations)
-            decl.accept(visitor);
-        visitor.postorder(this);
+        for (Field f : this.fields)
+            f.accept(visitor);
     }
 }

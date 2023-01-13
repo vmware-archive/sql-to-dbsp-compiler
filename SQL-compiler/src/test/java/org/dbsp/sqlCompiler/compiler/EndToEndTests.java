@@ -16,7 +16,7 @@ import org.junit.Test;
  * from the declared views.
  */
 public class EndToEndTests extends BaseSQLTests {
-    /**
+    /*
      * T is
      * -------------------------------------------
      * | 10 | 12.0 | true  | Hi | NULL    | NULL |

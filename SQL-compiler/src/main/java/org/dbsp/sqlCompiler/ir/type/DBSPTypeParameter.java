@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,37 +21,25 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.circuit;
+package org.dbsp.sqlCompiler.ir.type;
 
-import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
-import org.dbsp.util.IdGen;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
-import javax.annotation.Nullable;
+public class DBSPTypeParameter extends DBSPType implements IDBSPInnerNode {
+    public final String name;
 
-/**
- * Base interface for all DBSP nodes.
- */
-public abstract class DBSPNode
-        extends IdGen
-        implements IDBSPNode {
-
-    /**
-     * Original query Sql node that produced this node.
-     */
-    private final @Nullable
-    Object node;
-
-    protected DBSPNode(@Nullable Object node) {
-        this.node = node;
+    public DBSPTypeParameter(String name) {
+        super(false);
+        this.name = name;
     }
 
-    @Nullable
-    public Object getNode() { return this.node; }
+    @Override
+    public void accept(InnerVisitor visitor) {
+    }
 
     @Override
-    public String toString() {
-        if (this.is(IDBSPInnerNode.class))
-            return ToRustVisitor.irToRustString(this.to(IDBSPInnerNode.class));
-        return ToRustVisitor.circuitToRustString(this.to(IDBSPOuterNode.class));
+    public DBSPType setMayBeNull(boolean mayBeNull) {
+        throw new UnsupportedOperationException();
     }
 }

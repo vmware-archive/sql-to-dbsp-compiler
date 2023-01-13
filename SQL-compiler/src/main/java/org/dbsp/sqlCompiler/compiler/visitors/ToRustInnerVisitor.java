@@ -23,10 +23,8 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
-import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
-import org.dbsp.sqlCompiler.ir.DBSPFile;
-import org.dbsp.sqlCompiler.ir.DBSPFunction;
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.ir.*;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
@@ -60,7 +58,29 @@ public class ToRustInnerVisitor extends InnerVisitor {
             this.builder.append(literal.noneString());
             return false;
         }
-        return true;
+        return true; // intentionally true
+    }
+
+    @Override
+    public boolean preorder(DBSPStructStruct.Field field) {
+        this.builder.append(field.name)
+                .append(": ");
+        field.type.accept(this);
+        this.builder.append(",").newline();
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPStructStruct struct) {
+        this.builder.append("struct ")
+                .append(struct.name)
+                .append("{")
+                .increase();
+        for (DBSPStructStruct.Field field : struct.fields) {
+            field.accept(this);
+        }
+        this.builder.decrease().append("}").newline();
+        return false;
     }
 
     @Override
@@ -295,7 +315,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPFile file) {
-        for (IDBSPInnerDeclaration decl: file.declarations) {
+        for (IDBSPDeclaration decl: file.declarations) {
             decl.accept(this);
             this.builder.append("\n\n");
         }
@@ -303,10 +323,46 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
-    public boolean preorder(DBSPFunction.Argument argument) {
-        this.builder.append(argument.name)
-                .append(": ");
-        argument.type.accept(this);
+    public boolean preorder(DBSPTypeParameter param) {
+        this.builder.append(param.name);
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPTraitImplementation impl) {
+        this.builder.append("impl");
+        if (!impl.typeParameters.isEmpty()) {
+             this.builder.append("<");
+             boolean first = true;
+             for (DBSPTypeParameter param : impl.typeParameters) {
+                 if (!first)
+                     this.builder.append(", ");
+                 first = false;
+                 param.accept(this);
+             }
+             this.builder.append(">");
+        }
+        this.builder.append(" ");
+        impl.path.accept(this);
+        this.builder.append(" for ");
+        impl.type.accept(this);
+        if (!impl.typeConstraints.isEmpty()) {
+            this.builder.newline();
+            this.builder.append("where").increase();
+            for (DBSPTypeConstraint constraint: impl.typeConstraints) {
+                constraint.accept(this);
+                this.builder.newline();
+            }
+            this.builder.decrease();
+        } else {
+            this.builder.append(" ");
+        }
+        this.builder.append("{").increase();
+        for (DBSPFunction function : impl.functions) {
+            function.accept(this);
+            this.builder.newline();
+        }
+        this.builder.decrease().append("}").newline();
         return false;
     }
 
@@ -317,11 +373,11 @@ public class ToRustInnerVisitor extends InnerVisitor {
                 .append(function.name)
                 .append("(");
         boolean first = true;
-        for (DBSPFunction.Argument arg: function.arguments) {
+        for (DBSPParameter param: function.parameters) {
             if (!first)
                 this.builder.append(", ");
             first = false;
-            arg.accept(this);
+            param.accept(this);
         }
         this.builder.append(") ");
         if (function.returnType != null) {
@@ -414,7 +470,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
-    public boolean preorder(DBSPClosureExpression.Parameter parameter) {
+    public boolean preorder(DBSPParameter parameter) {
         parameter.pattern.accept(this);
         if (parameter.type != null) {
             this.builder.append(": ");
@@ -426,7 +482,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPClosureExpression expression) {
         this.builder.append("move |");
-        for (DBSPClosureExpression.Parameter param: expression.parameters) {
+        for (DBSPParameter param: expression.parameters) {
             param.accept(this);
             this.builder.append(", ");
         }

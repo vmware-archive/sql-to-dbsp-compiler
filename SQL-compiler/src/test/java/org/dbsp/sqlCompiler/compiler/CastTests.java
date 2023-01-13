@@ -72,7 +72,7 @@ public class CastTests extends BaseSQLTests {
             PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
             writer.println(ToRustVisitor.generatePreamble());
             DBSPCircuit circuit = compiler.getResult();
-            writer.println(ToRustVisitor.toRustString(circuit));
+            writer.println(ToRustVisitor.circuitToRustString(circuit));
             InputOutputPair streams = new InputOutputPair(this.createInput(), expectedOutput);
             this.createTester(writer, circuit, streams);
             writer.close();

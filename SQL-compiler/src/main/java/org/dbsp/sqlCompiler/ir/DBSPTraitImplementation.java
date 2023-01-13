@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,26 +25,39 @@ package org.dbsp.sqlCompiler.ir;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
-import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.ir.path.DBSPPath;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeParameter;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
- * Abstraction for a (Rust) file containing a series of DBSP declarations.
+ * Represents a simplified form of Rust trait impl.
  */
-public class DBSPFile extends DBSPNode implements IDBSPInnerNode {
-    public final List<IDBSPDeclaration> declarations;
+public class DBSPTraitImplementation extends DBSPNode implements IDBSPInnerNode {
+    public final DBSPPath path;
+    public final List<DBSPTypeParameter> typeParameters;
+    public final DBSPPath type;
+    public final List<DBSPTypeConstraint> typeConstraints;
+    public final DBSPFunction[] functions;
 
-    public DBSPFile(List<IDBSPDeclaration> declarations) {
-        super(null);
-        this.declarations = declarations;
+    public DBSPTraitImplementation(@Nullable Object node, DBSPPath path, List<DBSPTypeParameter> typeParameters,
+                                   DBSPPath type, List<DBSPTypeConstraint> typeConstraints, DBSPFunction... functions) {
+        super(node);
+        this.path = path;
+        this.typeParameters = typeParameters;
+        this.type = type;
+        this.typeConstraints = typeConstraints;
+        this.functions = functions;
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        for (IDBSPDeclaration decl: this.declarations)
-            decl.accept(visitor);
-        visitor.postorder(this);
+        this.path.accept(visitor);
+        for (DBSPTypeParameter param : this.typeParameters)
+            param.accept(visitor);
+        this.type.accept(visitor);
+        for (DBSPFunction function : this.functions)
+            function.accept(visitor);
     }
 }

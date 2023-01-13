@@ -55,7 +55,7 @@ public class TimeTests extends BaseSQLTests {
             PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
             writer.println(ToRustVisitor.generatePreamble());
             DBSPCircuit circuit = compiler.getResult();
-            writer.println(ToRustVisitor.toRustString(circuit));
+            writer.println(ToRustVisitor.circuitToRustString(circuit));
             DBSPZSetLiteral expectedOutput = new DBSPZSetLiteral(new DBSPTupleExpression(fields));
             InputOutputPair streams = new InputOutputPair(this.createInput(), expectedOutput);
             this.createTester(writer, circuit, streams);

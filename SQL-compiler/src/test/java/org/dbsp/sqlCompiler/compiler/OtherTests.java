@@ -82,7 +82,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         try {
             query = "CREATE VIEW V AS " + query;
             DBSPCircuit circuit = this.queryToCircuit(query);
-            String rust = ToRustVisitor.toRustString(circuit);
+            String rust = ToRustVisitor.circuitToRustString(circuit);
             Assert.assertNotNull(rust);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -107,7 +107,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.compileStatement(query, null);
         DBSPCircuit circuit = compiler.getResult();
-        String rust = ToRustVisitor.toRustString(circuit);
+        String rust = ToRustVisitor.circuitToRustString(circuit);
         Assert.assertNotNull(rust);
     }
 
@@ -139,7 +139,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         DBSPCircuit circuit = compiler.getResult();
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
         writer.println(ToRustVisitor.generatePreamble());
-        writer.println(ToRustVisitor.toRustString(circuit));
+        writer.println(ToRustVisitor.circuitToRustString(circuit));
         writer.close();
         Utilities.compileAndTestRust(rustDirectory, false);
     }
@@ -196,7 +196,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
 
         PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
         rustWriter.println(ToRustVisitor.generatePreamble());
-        rustWriter.println(ToRustVisitor.toRustString(tester));
+        rustWriter.println(ToRustVisitor.circuitToRustString(tester));
         rustWriter.close();
 
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
@@ -227,7 +227,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
 
         PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
         rustWriter.println(ToRustVisitor.generatePreamble());
-        rustWriter.println(ToRustVisitor.toRustString(tester));
+        rustWriter.println(ToRustVisitor.circuitToRustString(tester));
         rustWriter.close();
 
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);

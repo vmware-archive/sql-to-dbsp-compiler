@@ -24,7 +24,7 @@
 package org.dbsp.sqlCompiler.compiler.visitors;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
+import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.util.IModule;
@@ -92,9 +92,17 @@ public class CircuitCloneVisitor extends CircuitVisitor
     }
 
     @Override
-    public void postorder(DBSPCircuit circuit) {
-        for (IDBSPInnerDeclaration decl: circuit.declarations.values())
-            this.getResult().declare(decl);
+    public boolean preorder(DBSPCircuit circuit) {
+        super.preorder(circuit);
+        for (IDBSPNode node : circuit.code) {
+            DBSPOperator op = node.as(DBSPOperator.class);
+            if (op != null)
+                op.accept(this);
+            else {
+                this.getResult().code.add(node);
+            }
+        }
+        return false;
     }
 
     public void replace(DBSPOperator operator) {

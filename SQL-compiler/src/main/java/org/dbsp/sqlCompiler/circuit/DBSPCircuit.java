@@ -40,10 +40,11 @@ import java.util.*;
 public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
     public final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
     public final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
-    public final List<DBSPOperator> operators = new ArrayList<>();
-    public final Map<String, IDBSPInnerDeclaration> declarations = new LinkedHashMap<>();
+    // This is the structure that is visited.
+    public final List<IDBSPNode> code = new ArrayList<>();
     public final Map<String, DBSPOperator> operatorDeclarations = new HashMap<>();
     public final String name;
+    public boolean sealed = false;
 
     public DBSPCircuit(String name) {
         super(null);
@@ -70,7 +71,13 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
         return new DBSPTypeRawTuple(null, Linq.map(this.outputOperators, IHasType::getNonVoidType));
     }
 
+    void checkSealed() {
+        if (this.sealed)
+            throw new RuntimeException("Circuit already sealed " + this);
+    }
+
     public void addOperator(DBSPOperator operator) {
+        this.checkSealed();
         Logger.instance.from(this, 1)
                 .append("Adding ")
                 .append(operator.toString())
@@ -80,12 +87,12 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
             this.inputOperators.add(operator.to(DBSPSourceOperator.class));
         else if (operator.is(DBSPSinkOperator.class))
             this.outputOperators.add(operator.to(DBSPSinkOperator.class));
-        else
-            this.operators.add(operator);
+        this.code.add(operator);
     }
 
-    public void declare(IDBSPInnerDeclaration declaration) {
-        Utilities.putNew(this.declarations, declaration.getName(), declaration);
+    public void declare(IDBSPDeclaration declaration) {
+        this.checkSealed();
+        this.code.add(declaration);
     }
 
     public DBSPLetStatement declareLocal(String prefix, DBSPExpression init) {
@@ -103,21 +110,25 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
     @Override
     public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        for (DBSPSourceOperator source: this.inputOperators)
-            source.accept(visitor);
-        for (DBSPOperator op: this.operators)
-            op.accept(visitor);
-        for (DBSPSinkOperator sink: this.outputOperators)
-            sink.accept(visitor);
+        for (IDBSPNode op: this.code) {
+            IDBSPOuterNode outer = op.as(IDBSPOuterNode.class);
+            if (outer != null)
+                outer.accept(visitor);
+        }
         visitor.postorder(this);
     }
 
     public boolean sameCircuit(DBSPCircuit other) {
         if (this == other)
             return true;
-        return Linq.same(this.inputOperators, other.inputOperators) &&
-                Linq.same(this.operators, other.operators) &&
-                Linq.same(this.outputOperators, other.outputOperators) &&
-                Linq.same(this.declarations.values(), other.declarations.values());
+        return Linq.same(this.code, other.code);
+    }
+
+    /**
+     * No more changes are expected to the circuit.
+     */
+    public void seal() {
+        this.checkSealed();
+        this.sealed = true;
     }
 }

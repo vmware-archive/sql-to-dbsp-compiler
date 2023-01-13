@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,37 +21,29 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.circuit;
+package org.dbsp.sqlCompiler.ir;
 
-import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
-import org.dbsp.util.IdGen;
-
-import javax.annotation.Nullable;
+import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.ir.path.DBSPPath;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 /**
- * Base interface for all DBSP nodes.
+ * Simplified representation of a Rust type constraint.
  */
-public abstract class DBSPNode
-        extends IdGen
-        implements IDBSPNode {
+public class DBSPTypeConstraint extends DBSPNode implements IDBSPInnerNode {
+    public final DBSPType left;
+    public final DBSPPath path;
 
-    /**
-     * Original query Sql node that produced this node.
-     */
-    private final @Nullable
-    Object node;
-
-    protected DBSPNode(@Nullable Object node) {
-        this.node = node;
+    protected DBSPTypeConstraint(DBSPType left, DBSPPath path) {
+        super(null);
+        this.left = left;
+        this.path = path;
     }
 
-    @Nullable
-    public Object getNode() { return this.node; }
-
     @Override
-    public String toString() {
-        if (this.is(IDBSPInnerNode.class))
-            return ToRustVisitor.irToRustString(this.to(IDBSPInnerNode.class));
-        return ToRustVisitor.circuitToRustString(this.to(IDBSPOuterNode.class));
+    public void accept(InnerVisitor visitor) {
+        this.left.accept(visitor);
+        this.path.accept(visitor);
     }
 }

@@ -73,6 +73,10 @@ public class AggregateCompiler {
          * Result produced for an empty set (DBSP produces no result in this case).
          */
         public final DBSPExpression emptySetResult;
+        /**
+         * Name of the Type that implements the semigroup for this operation.
+         */
+        public final String semigroup;
 
         public AggregateImplementation(
                 SqlOperator operator,
@@ -80,12 +84,14 @@ public class AggregateCompiler {
                 DBSPClosureExpression increment,
                 @Nullable
                 DBSPClosureExpression postprocess,
-                DBSPExpression emptySetResult) {
+                DBSPExpression emptySetResult,
+                String semigroup) {
             this.operator = operator;
             this.zero = zero;
             this.increment = increment;
             this.postprocess = postprocess;
             this.emptySetResult = emptySetResult;
+            this.semigroup = semigroup;
             this.validate();
         }
 
@@ -93,8 +99,9 @@ public class AggregateCompiler {
                 SqlOperator operator,
                 DBSPExpression zero,
                 DBSPClosureExpression increment,
-                DBSPExpression emptySetResult) {
-            this(operator, zero, increment, null, emptySetResult);
+                DBSPExpression emptySetResult,
+                String semigroup) {
+            this(operator, zero, increment, null, emptySetResult, semigroup);
         }
 
         void validate() {
@@ -112,12 +119,6 @@ public class AggregateCompiler {
                             " different from empty set type " + this.emptySetResult.getNonVoidType());
                 }
             }
-        }
-
-        public DBSPType getResultType() {
-            if (this.postprocess != null)
-                return this.postprocess.getNonVoidResultType();
-            return this.zero.getNonVoidType();
         }
     }
 
@@ -215,7 +216,7 @@ public class AggregateCompiler {
                             new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
         }
         this.foldingFunction = new AggregateImplementation(
-                function, zero, this.makeRowClosure(increment, accum), zero);
+                function, zero, this.makeRowClosure(increment, accum), zero, "DefaultSemigroup");
     }
 
     private DBSPExpression getAggregatedValue() {
@@ -229,12 +230,15 @@ public class AggregateCompiler {
     void processMinMax(SqlMinMaxAggFunction function) {
         DBSPExpression zero = DBSPLiteral.none(this.nullableResultType);
         String call;
+        String semigroup;
         switch (function.getKind()) {
             case MIN:
                 call = "min";
+                semigroup = "MinSemigroup";
                 break;
             case MAX:
                 call = "max";
+                semigroup = "MaxSemigroup";
                 break;
             default:
                 throw new Unimplemented(this.call);
@@ -244,7 +248,7 @@ public class AggregateCompiler {
         DBSPExpression increment = ExpressionCompiler.aggregateOperation(
                 call, this.nullableResultType, accum, aggregatedValue);
         this.foldingFunction = new AggregateImplementation(
-                function, zero, this.makeRowClosure(increment, accum), zero);
+                function, zero, this.makeRowClosure(increment, accum), zero, semigroup);
     }
 
     void processSum(SqlSumAggFunction function) {
@@ -265,7 +269,7 @@ public class AggregateCompiler {
                             new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
         }
         this.foldingFunction = new AggregateImplementation(
-                function, zero, this.makeRowClosure(increment, accum), zero);
+                function, zero, this.makeRowClosure(increment, accum), zero, "DefaultSemigroup");
     }
 
     void processSumZero(SqlSumEmptyIsZeroAggFunction function) {
@@ -286,7 +290,7 @@ public class AggregateCompiler {
                             new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
         }
         this.foldingFunction = new AggregateImplementation(
-                function, zero, this.makeRowClosure(increment, accum), zero);
+                function, zero, this.makeRowClosure(increment, accum), zero, "DefaultSemigroup");
     }
 
     void processAvg(SqlAvgAggFunction function) {
@@ -335,7 +339,7 @@ public class AggregateCompiler {
                 null, divide, a.asParameter());
         DBSPExpression postZero = DBSPLiteral.none(this.nullableResultType);
         this.foldingFunction = new AggregateImplementation(
-                function, zero, this.makeRowClosure(increment, accum), post, postZero);
+                function, zero, this.makeRowClosure(increment, accum), post, postZero, "PairSemigroup");
     }
 
     public AggregateImplementation compile() {
