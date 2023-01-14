@@ -143,11 +143,6 @@ public abstract class InnerVisitor {
         else return true;
     }
 
-    public boolean preorder(DBSPTypeParameter node) {
-        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
-        else return false;
-    }
-
     // Statements
     
     public boolean preorder(DBSPExpressionStatement node) {
@@ -579,10 +574,6 @@ public abstract class InnerVisitor {
     }
 
     public void postorder(DBSPParameter node) {
-        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
-    }
-
-    public void postorder(DBSPTypeParameter node) {
         if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 

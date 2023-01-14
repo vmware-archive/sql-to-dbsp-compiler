@@ -301,12 +301,6 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
-    public boolean preorder(DBSPTypeParameter param) {
-        this.builder.append(param.name);
-        return false;
-    }
-
-    @Override
     public boolean preorder(DBSPFunction function) {
         this.builder.intercalateS("\n", function.annotations)
                 .append("pub fn ")

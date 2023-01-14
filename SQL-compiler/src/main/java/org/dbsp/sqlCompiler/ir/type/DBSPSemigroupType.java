@@ -32,8 +32,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 /**
- * Represents the type Semigroup[tuple], where tuple
- * is an arbitrary Rust (raw) tuple type
+ * Represents a Semigroup trait implementation.
  */
 public class DBSPSemigroupType extends DBSPTypeUser {
     /**
