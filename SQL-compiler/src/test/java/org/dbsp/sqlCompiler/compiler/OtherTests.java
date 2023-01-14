@@ -49,6 +49,10 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -205,11 +209,22 @@ public class OtherTests extends BaseSQLTests implements IModule {
     }
 
     @Test
-    public void rustSqlTest() throws IOException, InterruptedException {
+    public void rustSqlTest() throws IOException, InterruptedException, SQLException {
+        String filepath = BaseSQLTests.rustDirectory + "/" + "test.db";
+        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + filepath);
+        Statement statement = connection.createStatement();
+        statement.executeUpdate("drop table if exists t1");
+        statement.executeUpdate("create table t1(c1 integer not null, c2 bool not null, " +
+                                "c3 varcharnot null , c4 integer)");
+        statement.executeUpdate("insert into t1 values(10, true, 'Hi', null)"); // e0NoDouble
+        statement.executeUpdate("insert into t1 values(10, false, 'Hi', 1)"); // e1NoDouble
+        connection.close();
+
         DBSPZSetLiteral data = new DBSPZSetLiteral(BaseSQLTests.e0NoDouble, BaseSQLTests.e1NoDouble);
-        String connectionString = "sqlite://" + BaseSQLTests.rustDirectory + "/" + "test.db";
         List<DBSPStatement> list = new ArrayList<>();
-        // Generates a read_table(<conn>, <mapper from |AnyRow| -> Tuple type>) invocation
+
+        String connectionString = "sqlite://" + filepath;
+        // Generates a read_table(<conn>, <table_name>, <mapper from |AnyRow| -> Tuple type>) invocation
         DBSPTypeUser sqliteRowType = new DBSPTypeUser(null, "AnyRow", false);
         DBSPIdentifierPattern row = new DBSPIdentifierPattern("row");
         DBSPVariablePath rowVariable = new DBSPVariablePath("row", sqliteRowType);
@@ -226,7 +241,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         DBSPClosureExpression mapClosure = new DBSPClosureExpression(null, tuple,
                 new DBSPClosureExpression.Parameter(row, sqliteRowType.ref()));
         DBSPApplyExpression readDb = new DBSPApplyExpression("read_db", data.getNonVoidType(),
-                new DBSPStrLiteral(connectionString), mapClosure);
+                new DBSPStrLiteral(connectionString), new DBSPStrLiteral("t1"), mapClosure);
 
         DBSPLetStatement src = new DBSPLetStatement("src", readDb);
         list.add(src);
@@ -243,8 +258,8 @@ public class OtherTests extends BaseSQLTests implements IModule {
         rustWriter.close();
 
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
-//        boolean success = file.delete();
-//        Assert.assertTrue(success);
+        boolean success = new File(filepath).delete();
+        Assert.assertTrue(success);
     }
 
     @Test

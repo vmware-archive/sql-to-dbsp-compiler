@@ -72,15 +72,16 @@ where
     OrdZSet::<T, Weight>::from_keys((), vec)
 }
 
-pub fn read_db<T, Weight>(conn_str: &str, mapper: impl Fn(&AnyRow) -> T) -> OrdZSet<T, Weight>
+pub fn read_db<T, Weight>(conn_str: &str, table_name: &str, mapper: impl Fn(&AnyRow) -> T) -> OrdZSet<T, Weight>
 where
     T: DBData + for<'de> serde::Deserialize<'de>,
     Weight: DBWeight + HasOne,
 {
     let rows = task::block_on(async move {
         let mut conn = AnyConnection::connect(conn_str).await.unwrap();
-        // let mut conn = SqliteConnection::connect(conn_str).await.unwrap();
-        return sqlx::query("SELECT * FROM t1").fetch_all(&mut conn).await.unwrap();
+        let mut query = "SELECT * FROM ".to_owned();
+        query.push_str(table_name);
+        return sqlx::query(query.as_str()).fetch_all(&mut conn).await.unwrap();
     });
     let vec = rows.iter().map(|row| (mapper(row), Weight::one())).collect();
     OrdZSet::from_keys((), vec)
@@ -118,7 +119,7 @@ async fn sql_test() {
         conn.execute("insert into t1 values(73, 'name1', true)").await.unwrap();
         conn.close();
     }
-    let zset = read_db::<Tuple3<i32, String, bool>, isize>(conn_str, |row: &AnyRow| Tuple3::new(row.get(0), row.get(1), row.get(2)));
+    let zset = read_db::<Tuple3<i32, String, bool>, isize>(conn_str, "t1", |row: &AnyRow| Tuple3::new(row.get(0), row.get(1), row.get(2)));
     assert_eq!(zset!(
         Tuple3::new(73, String::from("name1"), true) => 1isize,
     ), zset);
