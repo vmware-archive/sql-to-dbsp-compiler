@@ -62,28 +62,6 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
-    public boolean preorder(DBSPStructStruct.Field field) {
-        this.builder.append(field.name)
-                .append(": ");
-        field.type.accept(this);
-        this.builder.append(",").newline();
-        return false;
-    }
-
-    @Override
-    public boolean preorder(DBSPStructStruct struct) {
-        this.builder.append("struct ")
-                .append(struct.name)
-                .append("{")
-                .increase();
-        for (DBSPStructStruct.Field field : struct.fields) {
-            field.accept(this);
-        }
-        this.builder.decrease().append("}").newline();
-        return false;
-    }
-
-    @Override
     public boolean preorder(DBSPTimestampLiteral literal) {
         assert literal.value != null;
         this.builder.append("Timestamp::new(");
@@ -325,44 +303,6 @@ public class ToRustInnerVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPTypeParameter param) {
         this.builder.append(param.name);
-        return false;
-    }
-
-    @Override
-    public boolean preorder(DBSPTraitImplementation impl) {
-        this.builder.append("impl");
-        if (!impl.typeParameters.isEmpty()) {
-             this.builder.append("<");
-             boolean first = true;
-             for (DBSPTypeParameter param : impl.typeParameters) {
-                 if (!first)
-                     this.builder.append(", ");
-                 first = false;
-                 param.accept(this);
-             }
-             this.builder.append(">");
-        }
-        this.builder.append(" ");
-        impl.path.accept(this);
-        this.builder.append(" for ");
-        impl.type.accept(this);
-        if (!impl.typeConstraints.isEmpty()) {
-            this.builder.newline();
-            this.builder.append("where").increase();
-            for (DBSPTypeConstraint constraint: impl.typeConstraints) {
-                constraint.accept(this);
-                this.builder.newline();
-            }
-            this.builder.decrease();
-        } else {
-            this.builder.append(" ");
-        }
-        this.builder.append("{").increase();
-        for (DBSPFunction function : impl.functions) {
-            function.accept(this);
-            this.builder.newline();
-        }
-        this.builder.decrease().append("}").newline();
         return false;
     }
 

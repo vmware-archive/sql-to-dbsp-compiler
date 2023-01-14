@@ -93,16 +93,6 @@ public abstract class InnerVisitor {
         else return true;
     }
 
-    public boolean preorder(DBSPStructStruct.Field node) {
-        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPStructStruct node) {
-        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
-        else return true;
-    }
-
     public boolean preorder(DBSPTypeBaseType node) {
         if (this.visitSuper) return this.preorder((DBSPType) node);
         else return true;
@@ -138,11 +128,6 @@ public abstract class InnerVisitor {
         else return true;
     }
 
-    public boolean preorder(DBSPTraitImplementation node) {
-        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
-        else return true;
-    }
-
     public boolean preorder(DBSPPath node) {
         if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
@@ -159,11 +144,6 @@ public abstract class InnerVisitor {
     }
 
     public boolean preorder(DBSPTypeParameter node) {
-        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
-        else return false;
-    }
-
-    public boolean preorder(DBSPTypeConstraint node) {
         if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return false;
     }
@@ -566,14 +546,6 @@ public abstract class InnerVisitor {
         if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
-    public void postorder(DBSPStructStruct.Field node) {
-        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
-    }
-
-    public void postorder(DBSPStructStruct node) {
-        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
-    }
-
     public void postorder(DBSPTypeBaseType node) {
         if (this.visitSuper) this.postorder((DBSPType) node);
     }
@@ -598,10 +570,6 @@ public abstract class InnerVisitor {
         if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
-    public void postorder(DBSPTraitImplementation node) {
-        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
-    }
-
     public void postorder(DBSPPath node) {
         if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
@@ -618,9 +586,6 @@ public abstract class InnerVisitor {
         if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
-    public void postorder(DBSPTypeConstraint node) {
-        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
-    }
     // Statements
 
     public void postorder(DBSPExpressionStatement node) {

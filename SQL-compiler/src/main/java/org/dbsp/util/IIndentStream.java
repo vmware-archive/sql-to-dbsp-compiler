@@ -24,6 +24,8 @@
 package org.dbsp.util;
 
 import java.util.Collection;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 public interface IIndentStream extends Appendable {
     IIndentStream appendChar(char c);
@@ -33,6 +35,9 @@ public interface IIndentStream extends Appendable {
     IIndentStream append(long value);
     IIndentStream joinS(String separator, Collection<String> data);
     IIndentStream join(String separator, String[] data);
+    IIndentStream join(String separator, Stream<String> data);
+    <T> IIndentStream join(String separator, T[] data, Function<T, String> generator);
+    <T> IIndentStream intercalate(String separator, T[] data, Function<T, String> generator);
     <T extends ToIndentableString> IIndentStream join(String separator, T[] data);
     IIndentStream join(String separator, Collection<String> data);
     IIndentStream intercalate(String separator, Collection<String> data);

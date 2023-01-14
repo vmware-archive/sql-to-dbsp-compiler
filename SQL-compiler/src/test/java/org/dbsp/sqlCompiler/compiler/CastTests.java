@@ -70,8 +70,8 @@ public class CastTests extends BaseSQLTests {
             query = "CREATE VIEW V AS " + query;
             DBSPCompiler compiler = this.compileQuery(query);
             PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-            writer.println(ToRustVisitor.generatePreamble());
             DBSPCircuit circuit = compiler.getResult();
+            writer.println(ToRustVisitor.generatePreamble());
             writer.println(ToRustVisitor.circuitToRustString(circuit));
             InputOutputPair streams = new InputOutputPair(this.createInput(), expectedOutput);
             this.createTester(writer, circuit, streams);

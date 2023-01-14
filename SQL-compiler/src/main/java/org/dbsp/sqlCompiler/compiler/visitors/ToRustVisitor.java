@@ -31,7 +31,6 @@ import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 /**
  * This visitor generate a Rust implementation of the program.
@@ -50,13 +49,15 @@ public class ToRustVisitor extends CircuitVisitor {
                     "#![allow(unused_variables)]\n" +
                     "\n" +
                     "use dbsp::{\n" +
-                    "    algebra::{ZSet, MulByRef, F32, F64, Semigroup, UnimplementedSemigroup},\n" +
+                    "    algebra::{ZSet, MulByRef, F32, F64, Semigroup, SemigroupValue,\n" +
+                    "    UnimplementedSemigroup, DefaultSemigroup},\n" +
                     "    circuit::{Circuit, Stream},\n" +
                     "    operator::{\n" +
                     "        Generator,\n" +
                     "        FilterMap,\n" +
                     "        Fold,\n" +
                     "        time_series::{RelRange, RelOffset, OrdPartitionedIndexedZSet},\n" +
+                    "        aggregate::{MaxSemigroup, MinSemigroup},\n" +
                     "    },\n" +
                     "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
                     "    zset,\n" +
@@ -77,9 +78,10 @@ public class ToRustVisitor extends CircuitVisitor {
                     "    fmt::{Debug, Formatter, Result as FmtResult},\n" +
                     "    cell::RefCell,\n" +
                     "    rc::Rc,\n" +
+                    "    marker::PhantomData,\n" +
                     "};\n" +
                     "use tuple::declare_tuples;\n" +
-                    "use sqllib::{" +
+                    "use sqllib::{\n" +
                     "    casts::*,\n" +
                     "    geopoint::*,\n" +
                     "    timestamp::*,\n" +
@@ -102,26 +104,9 @@ public class ToRustVisitor extends CircuitVisitor {
         IndentStream stream = new IndentStream(new StringBuilder());
         stream.append(rustPreamble)
                 .newline();
-
-        stream.append("declare_tuples! {").increase();
-        for (int i: DBSPTypeTuple.tupleSizesUsed) {
-            if (i == 0)
-                continue;
-            stream.append("Tuple")
-                    .append(i)
-                    .append("<");
-            for (int j = 0; j < i; j++) {
-                if (j > 0)
-                    stream.append(", ");
-                stream.append("T")
-                        .append(j);
-            }
-            stream.append(">,\n");
-        }
-        DBSPTypeTuple.clearSizesUsed();
-        return stream.decrease()
-                .append("}\n\n")
-                .toString();
+        DBSPTypeTuple.preamble(stream);
+        DBSPSemigroupType.preamble(stream);
+        return stream.toString();
     }
 
     //////////////// Operators
@@ -154,8 +139,10 @@ public class ToRustVisitor extends CircuitVisitor {
         if (op != null)
             this.generateOperator(op);
         IDBSPInnerNode inner = node.as(IDBSPInnerNode.class);
-        if (inner != null)
+        if (inner != null) {
             inner.accept(this.innerVisitor);
+            this.builder.newline();
+        }
     }
 
     void generateOperator(DBSPOperator operator) {

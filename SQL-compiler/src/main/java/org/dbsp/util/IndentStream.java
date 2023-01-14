@@ -27,6 +27,8 @@ package org.dbsp.util;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class IndentStream implements IIndentStream {
     private Appendable stream;
@@ -123,6 +125,27 @@ public class IndentStream implements IIndentStream {
     }
 
     @Override
+    public <T> IIndentStream join(String separator, T[] data, Function<T, String> generator) {
+        boolean first = true;
+        for (T d: data) {
+            if (!first)
+                this.append(separator);
+            first = false;
+            this.append(generator.apply(d));
+        }
+        return this;
+    }
+
+    @Override
+    public <T> IIndentStream intercalate(String separator, T[] data, Function<T, String> generator) {
+        for (T d: data) {
+            this.append(generator.apply(d));
+            this.append(separator);
+        }
+        return this;
+    }
+
+    @Override
     public IIndentStream join(String separator, String[] data) {
         boolean first = true;
         for (String d: data) {
@@ -131,6 +154,18 @@ public class IndentStream implements IIndentStream {
             first = false;
             this.append(d);
         }
+        return this;
+    }
+
+    @Override
+    public IIndentStream join(String separator, Stream<String> data) {
+        final boolean[] first = {true};
+        data.forEach(d -> {
+            if (!first[0])
+                this.append(separator);
+            first[0] = false;
+            this.append(d);
+        });
         return this;
     }
 

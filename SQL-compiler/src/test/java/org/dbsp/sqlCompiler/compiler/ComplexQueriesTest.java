@@ -74,8 +74,8 @@ public class ComplexQueriesTest extends BaseSQLTests {
         compiler.compileStatement(ddl, null);
         compiler.compileStatement(query, null);
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        writer.println(ToRustVisitor.generatePreamble());
         DBSPCircuit circuit = compiler.getResult();
+        writer.println(ToRustVisitor.generatePreamble());
         Assert.assertNotNull(circuit);
         writer.println(ToRustVisitor.circuitToRustString(circuit));
         writer.close();

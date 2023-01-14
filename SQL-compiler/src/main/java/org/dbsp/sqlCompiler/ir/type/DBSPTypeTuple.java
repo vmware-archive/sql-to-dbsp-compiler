@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.ir.type;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
+import org.dbsp.util.IIndentStream;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
@@ -39,11 +40,7 @@ public class DBSPTypeTuple extends DBSPType {
      * Keep track of the tuple sizes that appear in the program to properly generate
      * Rust macros to instantiate them.
      */
-    public static final Set<Integer> tupleSizesUsed = new HashSet<>();
-
-    public static void clearSizesUsed() {
-        tupleSizesUsed.clear();
-    }
+    static final Set<Integer> sizesUsed = new HashSet<>();
 
     public final DBSPType[] tupFields;
 
@@ -53,7 +50,28 @@ public class DBSPTypeTuple extends DBSPType {
     protected DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
         super(node, mayBeNull);
         this.tupFields = tupFields;
-        tupleSizesUsed.add(this.tupFields.length);
+        sizesUsed.add(this.tupFields.length);
+    }
+
+    public static IIndentStream preamble(IIndentStream stream) {
+        stream.append("declare_tuples! {").increase();
+        for (int i: DBSPTypeTuple.sizesUsed) {
+            if (i == 0)
+                continue;
+            stream.append("Tuple")
+                    .append(i)
+                    .append("<");
+            for (int j = 0; j < i; j++) {
+                if (j > 0)
+                    stream.append(", ");
+                stream.append("T")
+                        .append(j);
+            }
+            stream.append(">,\n");
+        }
+        sizesUsed.clear();
+        return stream.decrease()
+                .append("}\n\n");
     }
 
     public DBSPTypeTuple(@Nullable Object node, DBSPType... tupFields) {

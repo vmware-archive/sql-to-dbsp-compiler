@@ -217,6 +217,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPExpression[] defaultZeros = new DBSPExpression[parts];
 
         DBSPType[] accumulatorTypes = new DBSPType[parts];
+        DBSPType[] semigroups = new DBSPType[parts];
         for (AggregateCall call: aggregates) {
             DBSPType resultFieldType = resultType.getFieldType(aggIndex + groupCount);
             AggregateCompiler compiler = new AggregateCompiler(call, resultFieldType, rowVar);
@@ -227,6 +228,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             increments[aggIndex] = increment;
             DBSPType incType = folder.increment.getResultType();
             accumulatorTypes[aggIndex] = incType;
+            semigroups[aggIndex] = folder.semigroup;
             DBSPExpression identity = new DBSPTypeFunction(incType, incType).path(
                         new DBSPPath(new DBSPSimplePathSegment("identity", incType)));
             DBSPExpression post = this.declare("post",
@@ -237,7 +239,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         }
 
         DBSPExpression zero = this.declare("zero", new DBSPRawTupleExpression(zeros));
-        DBSPType accumulatorType = new DBSPTypeRawTuple(accumulatorTypes);
+        DBSPTypeRawTuple accumulatorType = new DBSPTypeRawTuple(accumulatorTypes);
         DBSPVariablePath accumulator = accumulatorType.ref(true).var("a");
         DBSPVariablePath postAccum = accumulatorType.var("a");
         for (int i = 0; i < increments.length; i++) {
@@ -254,13 +256,11 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPExpression increment = this.declare("increment", accumFunction);
         DBSPClosureExpression postClosure = new DBSPTupleExpression(posts).closure(postAccum.asParameter());
         DBSPExpression post = this.declare("post", postClosure);
-        DBSPType aggregationResultType = postClosure.getResultType();
         DBSPExpression constructor = DBSPTypeAny.instance.path(
                 new DBSPPath(
                         new DBSPSimplePathSegment("Fold",
                                 DBSPTypeAny.instance,
-                                new DBSPTypeUser(null, "UnimplementedSemigroup",
-                                        false, aggregationResultType),
+                                new DBSPSemigroupType(semigroups, accumulatorTypes),
                                 DBSPTypeAny.instance,
                                 DBSPTypeAny.instance),
                         new DBSPSimplePathSegment("with_output")));

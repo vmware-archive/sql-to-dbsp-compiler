@@ -25,6 +25,9 @@ package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
+/**
+ * Represents the type of a Rust Vec as a TypeUser.
+ */
 public class DBSPTypeVec extends DBSPTypeUser {
     public DBSPTypeVec(DBSPType typeArg) {
         super(null, "Vec", false, typeArg);
