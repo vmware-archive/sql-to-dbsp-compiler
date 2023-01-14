@@ -9,6 +9,7 @@ use std::{
     io::BufReader,
     path::Path,
 };
+use async_std::task;
 use size_of::*;
 use dbsp::{
     zset,
@@ -36,6 +37,16 @@ use std::fmt::{
     Debug,
     Result as FmtResult,
 };
+use sqlx::{
+    Connection,
+    AnyConnection,
+    sqlite::SqliteConnection,
+    migrate::MigrateDatabase,
+    Executor,
+    Row,
+    any::AnyRow,
+    sqlite::SqliteRow
+};
 
 pub fn read_csv<T, Weight>(source_file_path: &str) -> OrdZSet<T, Weight>
 where
@@ -61,6 +72,20 @@ where
     OrdZSet::<T, Weight>::from_keys((), vec)
 }
 
+pub fn read_db<T, Weight>(conn_str: &str, mapper: impl Fn(&AnyRow) -> T) -> OrdZSet<T, Weight>
+where
+    T: DBData + for<'de> serde::Deserialize<'de>,
+    Weight: DBWeight + HasOne,
+{
+    let rows = task::block_on(async move {
+        let mut conn = AnyConnection::connect(conn_str).await.unwrap();
+        // let mut conn = SqliteConnection::connect(conn_str).await.unwrap();
+        return sqlx::query("SELECT * FROM t1").fetch_all(&mut conn).await.unwrap();
+    });
+    let vec = rows.iter().map(|row| (mapper(row), Weight::one())).collect();
+    OrdZSet::from_keys((), vec)
+}
+
 #[cfg(test)]
 use tuple::declare_tuples;
 
@@ -81,4 +106,20 @@ fn csv_test() {
         Tuple3::new(false, Some(String::from("Nina")),None) => 1,
         Tuple3::new(true, None, Some(6)) => 1,
     ), src);
+}
+
+#[async_std::test]
+async fn sql_test() {
+    let conn_str = "sqlite:///tmp/test.db";
+    if !sqlx::Sqlite::database_exists(conn_str).await.unwrap() {
+        sqlx::Sqlite::create_database(conn_str).await.unwrap();
+        let mut conn = SqliteConnection::connect(conn_str).await.unwrap();
+        conn.execute("create table t1(id integer, name varchar, flag bool)").await.unwrap();
+        conn.execute("insert into t1 values(73, 'name1', true)").await.unwrap();
+        conn.close();
+    }
+    let zset = read_db::<Tuple3<i32, String, bool>, isize>(conn_str, |row: &AnyRow| Tuple3::new(row.get(0), row.get(1), row.get(2)));
+    assert_eq!(zset!(
+        Tuple3::new(73, String::from("name1"), true) => 1isize,
+    ), zset);
 }
