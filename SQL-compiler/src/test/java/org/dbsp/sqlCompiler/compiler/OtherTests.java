@@ -26,29 +26,33 @@ package org.dbsp.sqlCompiler.compiler;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.Main;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
-import org.dbsp.sqlCompiler.ir.expression.DBSPApplyExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPBlockExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPStrLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.ir.expression.*;
+import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeUser;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeString;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -201,6 +205,60 @@ public class OtherTests extends BaseSQLTests implements IModule {
 
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
         boolean success = file.delete();
+        Assert.assertTrue(success);
+    }
+
+    @Test
+    public void rustSqlTest() throws IOException, InterruptedException, SQLException {
+        String filepath = BaseSQLTests.rustDirectory + "/" + "test.db";
+        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + filepath);
+        Statement statement = connection.createStatement();
+        statement.executeUpdate("drop table if exists t1");
+        statement.executeUpdate("create table t1(c1 integer not null, c2 bool not null, " +
+                                "c3 varcharnot null , c4 integer)");
+        statement.executeUpdate("insert into t1 values(10, true, 'Hi', null)"); // e0NoDouble
+        statement.executeUpdate("insert into t1 values(10, false, 'Hi', 1)"); // e1NoDouble
+        connection.close();
+
+        DBSPZSetLiteral data = new DBSPZSetLiteral(BaseSQLTests.e0NoDouble, BaseSQLTests.e1NoDouble);
+        List<DBSPStatement> list = new ArrayList<>();
+
+        String connectionString = "sqlite://" + filepath;
+        // Generates a read_table(<conn>, <table_name>, <mapper from |AnyRow| -> Tuple type>) invocation
+        DBSPTypeUser sqliteRowType = new DBSPTypeUser(null, "AnyRow", false);
+        DBSPIdentifierPattern row = new DBSPIdentifierPattern("row");
+        DBSPVariablePath rowVariable = new DBSPVariablePath("row", sqliteRowType);
+        DBSPExpression[] fields = BaseSQLTests.e0NoDouble.fields;// Should be the same for e1NoDouble too
+        final List<DBSPExpression> rowGets = new ArrayList<>(fields.length);
+        for (int i = 0; i < fields.length; i++) {
+            DBSPApplyMethodExpression rowGet =
+                    new DBSPApplyMethodExpression("get",
+                            fields[i].getNonVoidType(),
+                            rowVariable, new DBSPUSizeLiteral(i));
+            rowGets.add(rowGet);
+        }
+        DBSPTupleExpression tuple = new DBSPTupleExpression(rowGets);
+        DBSPClosureExpression mapClosure = new DBSPClosureExpression(null, tuple,
+                new DBSPClosureExpression.Parameter(row, sqliteRowType.ref()));
+        DBSPApplyExpression readDb = new DBSPApplyExpression("read_db", data.getNonVoidType(),
+                new DBSPStrLiteral(connectionString), new DBSPStrLiteral("t1"), mapClosure);
+
+        DBSPLetStatement src = new DBSPLetStatement("src", readDb);
+        list.add(src);
+        list.add(new DBSPExpressionStatement(new DBSPApplyExpression(
+                "assert_eq!", null, src.getVarReference(),
+                data)));
+        DBSPExpression body = new DBSPBlockExpression(list, null);
+        DBSPFunction tester = new DBSPFunction("test", new ArrayList<>(), null, body)
+                .addAnnotation("#[test]");
+
+        PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
+        rustWriter.println(ToRustVisitor.generatePreamble());
+        rustWriter.println(ToRustVisitor.toRustString(tester));
+        rustWriter.close();
+
+        Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
+        boolean success = new File(filepath).delete();
         Assert.assertTrue(success);
     }
 

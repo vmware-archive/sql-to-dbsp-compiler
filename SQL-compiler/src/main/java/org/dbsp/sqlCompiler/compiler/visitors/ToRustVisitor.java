@@ -91,6 +91,7 @@ public class ToRustVisitor extends CircuitVisitor {
                     "use sqlvalue::*;\n" +
                     "use hashing::*;\n" +
                     "use readers::*;\n" +
+                    "use sqlx::{AnyConnection, any::AnyRow, Row};\n" +
                     "type Weight = i64;\n";
 
 

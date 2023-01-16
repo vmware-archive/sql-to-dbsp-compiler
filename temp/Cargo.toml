@@ -21,6 +21,7 @@ rust_decimal = { version = "1.26" }
 rust_decimal_macros = { version = "1.26" }
 geo = { version = "0.23" }
 geo-types = { version = "0.7" }
+sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls", "sqlite", "any" ] }
 
 [lib]
 path = "src/lib.rs"

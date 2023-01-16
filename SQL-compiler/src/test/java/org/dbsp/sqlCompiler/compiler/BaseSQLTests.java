@@ -149,6 +149,19 @@ public class BaseSQLTests {
             new DBSPIntegerLiteral(1, true),
             new DBSPDoubleLiteral(0.0, true)
     );
+
+    public static final DBSPTupleExpression e0NoDouble = new DBSPTupleExpression(
+            new DBSPIntegerLiteral(10),
+            DBSPBoolLiteral.True,
+            new DBSPStringLiteral("Hi"),
+            DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true))
+    );
+    public static final DBSPTupleExpression e1NoDouble = new DBSPTupleExpression(
+            new DBSPIntegerLiteral(10),
+            DBSPBoolLiteral.False,
+            new DBSPStringLiteral("Hi"),
+            new DBSPIntegerLiteral(1, true)
+    );
     static final DBSPZSetLiteral z0 = new DBSPZSetLiteral(e0);
     static final DBSPZSetLiteral z1 = new DBSPZSetLiteral(e1);
     static final DBSPZSetLiteral empty = new DBSPZSetLiteral(z0.getNonVoidType());
