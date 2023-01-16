@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
+import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPIdentifierPattern;
@@ -226,7 +227,6 @@ public class OtherTests extends BaseSQLTests implements IModule {
         String connectionString = "sqlite://" + filepath;
         // Generates a read_table(<conn>, <table_name>, <mapper from |AnyRow| -> Tuple type>) invocation
         DBSPTypeUser sqliteRowType = new DBSPTypeUser(null, "AnyRow", false);
-        DBSPIdentifierPattern row = new DBSPIdentifierPattern("row");
         DBSPVariablePath rowVariable = new DBSPVariablePath("row", sqliteRowType);
         DBSPExpression[] fields = BaseSQLTests.e0NoDouble.fields;// Should be the same for e1NoDouble too
         final List<DBSPExpression> rowGets = new ArrayList<>(fields.length);
@@ -239,7 +239,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         }
         DBSPTupleExpression tuple = new DBSPTupleExpression(rowGets);
         DBSPClosureExpression mapClosure = new DBSPClosureExpression(null, tuple,
-                new DBSPClosureExpression.Parameter(row, sqliteRowType.ref()));
+               rowVariable.asRefParameter());
         DBSPApplyExpression readDb = new DBSPApplyExpression("read_db", data.getNonVoidType(),
                 new DBSPStrLiteral(connectionString), new DBSPStrLiteral("t1"), mapClosure);
 
@@ -254,7 +254,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
 
         PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
         rustWriter.println(ToRustVisitor.generatePreamble());
-        rustWriter.println(ToRustVisitor.toRustString(tester));
+        rustWriter.println(ToRustVisitor.circuitToRustString(tester));
         rustWriter.close();
 
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);

@@ -58,7 +58,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
             this.builder.append(literal.noneString());
             return false;
         }
-        return true; // intentionally true
+        return true; // intentionally true; superclasses will do most of the processing
     }
 
     @Override

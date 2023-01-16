@@ -57,7 +57,8 @@ public class ToRustVisitor extends CircuitVisitor {
                     "        FilterMap,\n" +
                     "        Fold,\n" +
                     "        time_series::{RelRange, RelOffset, OrdPartitionedIndexedZSet},\n" +
-                    "        aggregate::{MaxSemigroup, MinSemigroup},\n" +
+                    "        MaxSemigroup,\n" +
+                    "        MinSemigroup,\n" +
                     "    },\n" +
                     "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
                     "    zset,\n" +
