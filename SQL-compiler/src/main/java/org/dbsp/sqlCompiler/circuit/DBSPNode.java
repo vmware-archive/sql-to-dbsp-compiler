@@ -51,7 +51,7 @@ public abstract class DBSPNode
     @Override
     public String toString() {
         if (this.is(IDBSPInnerNode.class))
-            return ToRustVisitor.toRustString(this.to(IDBSPInnerNode.class));
-        return ToRustVisitor.toRustString(this.to(IDBSPOuterNode.class));
+            return ToRustVisitor.irToRustString(this.to(IDBSPInnerNode.class));
+        return ToRustVisitor.circuitToRustString(this.to(IDBSPOuterNode.class));
     }
 }

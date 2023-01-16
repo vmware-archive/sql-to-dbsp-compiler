@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -62,6 +63,11 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
         if (o == null || getClass() != o.getClass()) return false;
         DBSPTypeRawTuple that = (DBSPTypeRawTuple) o;
         return Arrays.equals(tupFields, that.tupFields);
+    }
+
+    public DBSPTypeRawTuple concat(DBSPTypeRawTuple with) {
+        DBSPType[] args = Linq.concat(this.tupFields, with.tupFields);
+        return new DBSPTypeRawTuple(args);
     }
 
     @Override

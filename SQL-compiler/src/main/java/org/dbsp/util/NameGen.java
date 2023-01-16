@@ -25,11 +25,16 @@
 
 package org.dbsp.util;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Every time one of these is instantiated it will generate a unique name.
  */
-public class NameGen extends IdGen {
+public class NameGen {
     private final String prefix;
+
+    static final Map<String, Integer> nextId = new HashMap<>();
 
     @SuppressWarnings("unused")
     public NameGen() {
@@ -38,10 +43,22 @@ public class NameGen extends IdGen {
 
     public NameGen(String prefix) {
         this.prefix = prefix;
+        if (!nextId.containsKey(this.prefix))
+            nextId.put(this.prefix, 0);
     }
 
     @Override
     public String toString() {
-        return this.prefix + this.id;
+        int id = nextId.get(this.prefix);
+        nextId.put(this.prefix, id+1);
+        return this.prefix + id;
+    }
+
+    public static void reset() {
+        nextId.clear();
+    }
+
+    public static void reset(String prefix) {
+        nextId.put(prefix, 0);
     }
 }

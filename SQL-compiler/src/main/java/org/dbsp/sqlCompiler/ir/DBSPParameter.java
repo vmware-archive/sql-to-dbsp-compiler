@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,65 +21,57 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.statement;
+package org.dbsp.sqlCompiler.ir;
 
-import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPVariablePath;
+import org.dbsp.sqlCompiler.ir.pattern.DBSPIdentifierPattern;
+import org.dbsp.sqlCompiler.ir.pattern.DBSPPattern;
+import org.dbsp.sqlCompiler.ir.pattern.DBSPTuplePattern;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeRawTuple;
+import org.dbsp.sqlCompiler.ir.type.IHasType;
+import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
 
-public class DBSPLetStatement extends DBSPStatement implements IDBSPDeclaration {
-    public final String variable;
-    public final DBSPType type;
+public class DBSPParameter extends DBSPNode implements IHasType, IDBSPInnerNode {
+    public final DBSPPattern pattern;
     @Nullable
-    public final DBSPExpression initializer;
-    public final boolean mutable;
+    public final DBSPType type;
 
-    public DBSPLetStatement(String variable, DBSPExpression initializer, boolean mutable) {
+    public DBSPParameter(DBSPPattern pattern, @Nullable DBSPType type) {
         super(null);
-        this.variable = variable;
-        this.initializer = initializer;
-        this.type = initializer.getNonVoidType();
-        this.mutable = mutable;
-    }
-
-    public DBSPLetStatement(String variable, DBSPType type, boolean mutable) {
-        super(null);
-        this.variable = variable;
-        this.initializer = null;
+        this.pattern = pattern;
         this.type = type;
-        this.mutable = mutable;
     }
 
-    public DBSPLetStatement(String variable, DBSPExpression initializer) {
-        this(variable, initializer, false);
+    public DBSPParameter(String name, DBSPType type) {
+        super(null);
+        this.pattern = new DBSPIdentifierPattern(name);
+        this.type = type;
     }
 
+    public DBSPParameter(DBSPVariablePath... variables) {
+        super(null);
+        this.pattern = new DBSPTuplePattern(Linq.map(variables, DBSPVariablePath::asPattern, DBSPPattern.class));
+        this.type = new DBSPTypeRawTuple(Linq.map(variables, DBSPExpression::getType, DBSPType.class));
+    }
+
+    @Nullable
     @Override
-    public String getName() {
-        return this.variable;
-    }
-
-    public DBSPVariablePath getVarReference() {
-        return this.type.var(this.variable);
+    public DBSPType getType() {
+        return this.type;
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        this.type.accept(visitor);
-        if (this.initializer != null)
-            this.initializer.accept(visitor);
-        visitor.postorder(this);
-    }
-
-    @Override
-    public void accept(CircuitVisitor visitor) {
-        if (!visitor.preorder(this)) return;
+        if (this.type != null)
+            this.type.accept(visitor);
+        this.pattern.accept(visitor);
         visitor.postorder(this);
     }
 }

@@ -25,7 +25,7 @@ package org.dbsp.sqlCompiler.ir;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
-import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
+import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
 
 import java.util.List;
 
@@ -33,9 +33,9 @@ import java.util.List;
  * Abstraction for a (Rust) file containing a series of DBSP declarations.
  */
 public class DBSPFile extends DBSPNode implements IDBSPInnerNode {
-    public final List<IDBSPInnerDeclaration> declarations;
+    public final List<IDBSPDeclaration> declarations;
 
-    public DBSPFile(List<IDBSPInnerDeclaration> declarations) {
+    public DBSPFile(List<IDBSPDeclaration> declarations) {
         super(null);
         this.declarations = declarations;
     }
@@ -43,7 +43,7 @@ public class DBSPFile extends DBSPNode implements IDBSPInnerNode {
     @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        for (IDBSPInnerDeclaration decl: this.declarations)
+        for (IDBSPDeclaration decl: this.declarations)
             decl.accept(visitor);
         visitor.postorder(this);
     }

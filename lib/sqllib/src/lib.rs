@@ -7,7 +7,7 @@ pub mod timestamp;
 
 use std::ops::Add;
 use chrono::{Utc, TimeZone, Datelike};
-use dbsp::algebra::{F32, F64, ZRingValue};
+use dbsp::algebra::{F32, F64, ZRingValue, Semigroup, SemigroupValue};
 use geopoint::GeoPoint;
 use rust_decimal::prelude::*;
 use crate::interval::{
@@ -18,6 +18,39 @@ use crate::timestamp::{
     Timestamp,
     Date,
 };
+use std::marker::PhantomData;
+
+#[derive(Clone)]
+pub struct DefaultOptSemigroup<T>(PhantomData<T>);
+
+impl<T> Semigroup<Option<T>> for DefaultOptSemigroup<T>
+where
+    T: SemigroupValue,
+{
+    fn combine(left: &Option<T>, right: &Option<T>) -> Option<T> {
+        match (left, right) {
+            (None, _) => None,
+            (_, None) => None,
+            (Some(x), Some(y)) => Some(x.add_by_ref(y)),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct PairSemigroup<T, R, TS, RS>(PhantomData<(T, R, TS, RS)>);
+
+impl<T, R, TS, RS> Semigroup<(T, R)> for PairSemigroup<T, R, TS, RS>
+where
+    TS: Semigroup<T>,
+    RS: Semigroup<R>,
+{
+    fn combine(left: &(T, R), right: &(T, R)) -> (T, R) {
+        (
+            TS::combine(&left.0, &right.0),
+            RS::combine(&left.1, &right.1),
+        )
+    }
+}
 
 #[inline(always)]
 pub fn or_b_b(left: bool, right: bool) -> bool

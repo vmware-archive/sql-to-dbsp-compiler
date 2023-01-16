@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.ir;
 
+import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
@@ -87,6 +89,13 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
     public boolean preorder(DBSPCircuit circuit) {
         this.setCircuit(circuit);
         return true;
+    }
+
+    public boolean preorder(IDBSPOuterNode node) { return true; }
+
+    public boolean preorder(IDBSPDeclaration node) {
+        if (this.visitSuper) return this.preorder((IDBSPOuterNode) node);
+        else return true;
     }
 
     public boolean preorder(DBSPUnaryOperator node) {
@@ -201,11 +210,15 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
 
     ////////////////////////////////////
 
-    public void postorder(DBSPOperator ignored) {}
-
     public void postorder(DBSPCircuit circuit) {
         this.circuit = null;
     }
+
+    public void postorder(DBSPOperator ignored) {}
+
+    public void postorder(IDBSPOuterNode ignored) {}
+
+    public void postorder(IDBSPDeclaration node) { if (this.visitSuper) this.postorder((IDBSPOuterNode)node); }
 
     public void postorder(DBSPUnaryOperator node) {
         if (this.visitSuper) this.postorder((DBSPOperator) node);

@@ -49,13 +49,15 @@ public class ToRustVisitor extends CircuitVisitor {
                     "#![allow(unused_variables)]\n" +
                     "\n" +
                     "use dbsp::{\n" +
-                    "    algebra::{ZSet, MulByRef, F32, F64, UnimplementedSemigroup},\n" +
+                    "    algebra::{ZSet, MulByRef, F32, F64, Semigroup, SemigroupValue,\n" +
+                    "    UnimplementedSemigroup, DefaultSemigroup},\n" +
                     "    circuit::{Circuit, Stream},\n" +
                     "    operator::{\n" +
                     "        Generator,\n" +
                     "        FilterMap,\n" +
                     "        Fold,\n" +
                     "        time_series::{RelRange, RelOffset, OrdPartitionedIndexedZSet},\n" +
+                    "        aggregate::{MaxSemigroup, MinSemigroup},\n" +
                     "    },\n" +
                     "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
                     "    zset,\n" +
@@ -76,9 +78,10 @@ public class ToRustVisitor extends CircuitVisitor {
                     "    fmt::{Debug, Formatter, Result as FmtResult},\n" +
                     "    cell::RefCell,\n" +
                     "    rc::Rc,\n" +
+                    "    marker::PhantomData,\n" +
                     "};\n" +
                     "use tuple::declare_tuples;\n" +
-                    "use sqllib::{" +
+                    "use sqllib::{\n" +
                     "    casts::*,\n" +
                     "    geopoint::*,\n" +
                     "    timestamp::*,\n" +
@@ -101,26 +104,9 @@ public class ToRustVisitor extends CircuitVisitor {
         IndentStream stream = new IndentStream(new StringBuilder());
         stream.append(rustPreamble)
                 .newline();
-
-        stream.append("declare_tuples! {").increase();
-        for (int i: DBSPTypeTuple.tupleSizesUsed) {
-            if (i == 0)
-                continue;
-            stream.append("Tuple")
-                    .append(i)
-                    .append("<");
-            for (int j = 0; j < i; j++) {
-                if (j > 0)
-                    stream.append(", ");
-                stream.append("T")
-                        .append(j);
-            }
-            stream.append(">,\n");
-        }
-        DBSPTypeTuple.clearSizesUsed();
-        return stream.decrease()
-                .append("}\n\n")
-                .toString();
+        DBSPTypeTuple.preamble(stream);
+        DBSPSemigroupType.preamble(stream);
+        return stream.toString();
     }
 
     //////////////// Operators
@@ -148,26 +134,31 @@ public class ToRustVisitor extends CircuitVisitor {
         }
     }
 
+    void processNode(IDBSPNode node) {
+        DBSPOperator op = node.as(DBSPOperator.class);
+        if (op != null)
+            this.generateOperator(op);
+        IDBSPInnerNode inner = node.as(IDBSPInnerNode.class);
+        if (inner != null) {
+            inner.accept(this.innerVisitor);
+            this.builder.newline();
+        }
+    }
+
+    void generateOperator(DBSPOperator operator) {
+        if (operator.getNode() != null) {
+            String str = operator.getNode().toString();
+            this.writeComments(str);
+        }
+        operator.accept(this);
+        this.builder.newline();
+    }
+
     public void generateBody(DBSPCircuit circuit) {
         this.builder.append("let root = Circuit::build(|circuit| {")
                 .increase();
-        for (IDBSPInnerDeclaration decl : circuit.declarations.values()) {
-            decl.accept(this.innerVisitor);
-            this.builder.newline();
-        }
-        for (DBSPOperator i : circuit.inputOperators) {
-            i.accept(this);
-            this.builder.newline();
-        }
-        for (DBSPOperator op : circuit.operators) {
-            op.accept(this);
-            this.builder.newline();
-        }
-        for (DBSPOperator o : circuit.outputOperators) {
-            o.accept(this);
-            this.builder.newline();
-        }
-
+        for (IDBSPNode node : circuit.code)
+            this.processNode(node);
         this.builder.decrease()
                 .append("})")
                 .append(".unwrap();")
@@ -403,7 +394,7 @@ public class ToRustVisitor extends CircuitVisitor {
         return false;
     }
 
-    public static String toRustString(IDBSPOuterNode node) {
+    public static String circuitToRustString(IDBSPOuterNode node) {
         StringBuilder builder = new StringBuilder();
         IndentStream stream = new IndentStream(builder);
         ToRustVisitor visitor = new ToRustVisitor(stream);
@@ -411,7 +402,7 @@ public class ToRustVisitor extends CircuitVisitor {
         return builder.toString();
     }
 
-    public static String toRustString(IDBSPInnerNode node) {
+    public static String irToRustString(IDBSPInnerNode node) {
         StringBuilder builder = new StringBuilder();
         IndentStream stream = new IndentStream(builder);
         ToRustVisitor visitor = new ToRustVisitor(stream);

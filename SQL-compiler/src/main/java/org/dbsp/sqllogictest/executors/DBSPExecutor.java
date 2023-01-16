@@ -349,7 +349,7 @@ public class DBSPExecutor extends SqlTestExecutor {
                 throw new RuntimeException("No hash or outputs specified");
         }
 
-        String rust = ToRustVisitor.toRustString(dbsp);
+        String rust = ToRustVisitor.circuitToRustString(dbsp);
         DBSPFunction func = createTesterCode(
                 "tester" + suffix, dbsp,
                 inputGeneratingFunction,
@@ -618,10 +618,10 @@ public class DBSPExecutor extends SqlTestExecutor {
         writer.println(ToRustVisitor.generatePreamble());
 
         for (DBSPFunction function: inputFunctions)
-            writer.println(ToRustVisitor.toRustString(function));
+            writer.println(ToRustVisitor.irToRustString(function));
         for (ProgramAndTester pt: functions) {
             writer.println(pt.program);
-            writer.println(ToRustVisitor.toRustString(pt.tester));
+            writer.println(ToRustVisitor.irToRustString(pt.tester));
         }
         writer.close();
         return testFileName;

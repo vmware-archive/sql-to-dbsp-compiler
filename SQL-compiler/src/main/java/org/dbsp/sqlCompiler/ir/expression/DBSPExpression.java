@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.ir.expression;
 
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.type.IHasType;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
@@ -70,7 +71,7 @@ public abstract class DBSPExpression
         return new DBSPFieldExpression(this, index);
     }
 
-    public DBSPClosureExpression closure(DBSPClosureExpression.Parameter... parameters) {
+    public DBSPClosureExpression closure(DBSPParameter... parameters) {
         return new DBSPClosureExpression(this, parameters);
     }
 }

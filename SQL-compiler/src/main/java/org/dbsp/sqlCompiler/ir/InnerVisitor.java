@@ -138,16 +138,11 @@ public abstract class InnerVisitor {
         else return true;
     }
 
-    public boolean preorder(DBSPFunction.Argument node) {
+    public boolean preorder(DBSPParameter node) {
         if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
-    
-    public boolean preorder(DBSPClosureExpression.Parameter node) {
-        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
-        else return true;
-    }
-    
+
     // Statements
     
     public boolean preorder(DBSPExpressionStatement node) {
@@ -578,11 +573,7 @@ public abstract class InnerVisitor {
         if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
-    public void postorder(DBSPFunction.Argument node) {
-        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
-    }
-
-    public void postorder(DBSPClosureExpression.Parameter node) {
+    public void postorder(DBSPParameter node) {
         if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 

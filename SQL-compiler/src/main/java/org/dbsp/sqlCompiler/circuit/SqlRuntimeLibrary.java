@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.circuit;
 
 import org.dbsp.sqlCompiler.ir.DBSPFile;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
+import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
@@ -233,8 +234,8 @@ public class SqlRuntimeLibrary {
     }
 
     void generateProgram() {
-        List<IDBSPInnerDeclaration> declarations = new ArrayList<>();
-        DBSPFunction.Argument arg = new DBSPFunction.Argument(
+        List<IDBSPDeclaration> declarations = new ArrayList<>();
+        DBSPParameter arg = new DBSPParameter(
                 "b", DBSPTypeBool.instance.setMayBeNull(true));
         declarations.add(
                 new DBSPFunction("wrap_bool",
@@ -320,8 +321,8 @@ public class SqlRuntimeLibrary {
 
                         // The general rule is: if any operand is NULL, the result is NULL.
                         FunctionDescription function = this.getFunction(op, null, leftType, rightType, false);
-                        DBSPFunction.Argument left = new DBSPFunction.Argument("left", leftType);
-                        DBSPFunction.Argument right = new DBSPFunction.Argument("right", rightType);
+                        DBSPParameter left = new DBSPParameter("left", leftType);
+                        DBSPParameter right = new DBSPParameter("right", rightType);
                         DBSPType type = function.returnType;
                         DBSPExpression def;
                         if (i == 0) {
@@ -372,7 +373,7 @@ public class SqlRuntimeLibrary {
         writer.append("#![allow(non_snake_case)]\n");
         writer.append("use dbsp::algebra::{F32, F64};\n");
         writer.append("\n");
-        writer.append(ToRustVisitor.toRustString(this.program));
+        writer.append(ToRustVisitor.irToRustString(this.program));
         writer.close();
     }
 }

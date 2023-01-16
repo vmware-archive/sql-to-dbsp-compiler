@@ -24,7 +24,7 @@
 package org.dbsp.sqlCompiler.compiler.visitors;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.circuit.IDBSPInnerDeclaration;
+import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
@@ -97,22 +97,8 @@ public class ToRustHandleVisitor extends ToRustVisitor {
                 .append("let (circuit, handles) = Runtime::init_circuit(workers, |circuit| {")
                 .increase();
 
-        for (IDBSPInnerDeclaration decl : circuit.declarations.values()) {
-            decl.accept(this.innerVisitor);
-            this.builder.newline();
-        }
-        for (DBSPOperator i : circuit.inputOperators) {
-            i.accept(this);
-            this.builder.newline();
-        }
-        for (DBSPOperator op : circuit.operators) {
-            op.accept(this);
-            this.builder.newline();
-        }
-        for (DBSPOperator o : circuit.outputOperators) {
-            o.accept(this);
-            this.builder.newline();
-        }
+        for (IDBSPNode node : circuit.code)
+            super.processNode(node);
         this.builder.append("(");
         for (int i = 0; i < this.handleCount; i++)
             this.builder.append("handle")

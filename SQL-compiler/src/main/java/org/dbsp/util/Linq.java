@@ -91,6 +91,12 @@ public class Linq {
         return result;
     }
 
+    public static <T> T[] concat(T[] array1, T[] array2) {
+        T[] result = Arrays.copyOf(array1, array1.length + array2.length);
+        System.arraycopy(array2, 0, result, array1.length, array2.length);
+        return result;
+    }
+
     public static <T, S> List<S> as(List<T> data, Class<S> sc) {
         return Linq.map(data, sc::cast);
     }

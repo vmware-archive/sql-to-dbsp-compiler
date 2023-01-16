@@ -79,7 +79,7 @@ public class BaseSQLTests {
     void createTester(PrintWriter writer, DBSPCircuit circuit,
                       InputOutputPair... streams) {
         DBSPFunction tester = createTesterCode(circuit, streams);
-        writer.println(ToRustVisitor.toRustString(tester));
+        writer.println(ToRustVisitor.irToRustString(tester));
     }
 
     CircuitVisitor getOptimizer() {
@@ -106,7 +106,7 @@ public class BaseSQLTests {
                 CircuitVisitor optimizer = this.getOptimizer();
                 circuit = optimizer.apply(circuit);
             }
-            writer.println(ToRustVisitor.toRustString(circuit));
+            writer.println(ToRustVisitor.circuitToRustString(circuit));
             this.createTester(writer, circuit, streams);
             writer.close();
             Utilities.compileAndTestRust(rustDirectory, false);

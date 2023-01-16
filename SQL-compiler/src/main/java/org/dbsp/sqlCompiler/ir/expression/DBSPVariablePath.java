@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
+import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPPattern;
@@ -48,21 +49,21 @@ public class DBSPVariablePath extends DBSPExpression {
         return this.asPattern(false);
     }
 
-    public DBSPClosureExpression.Parameter asParameter(boolean mutable) {
-        return new DBSPClosureExpression.Parameter(this.asPattern(mutable), this.getNonVoidType());
+    public DBSPParameter asParameter(boolean mutable) {
+        return new DBSPParameter(this.asPattern(mutable), this.getNonVoidType());
     }
 
-    public DBSPClosureExpression.Parameter asParameter() {
+    public DBSPParameter asParameter() {
         return this.asParameter(false);
     }
 
-    public DBSPClosureExpression.Parameter asRefParameter(boolean mutable) {
-        return new DBSPClosureExpression.Parameter(
+    public DBSPParameter asRefParameter(boolean mutable) {
+        return new DBSPParameter(
                 this.asPattern(),
                 this.getNonVoidType().ref(mutable));
     }
 
-    public DBSPClosureExpression.Parameter asRefParameter() {
+    public DBSPParameter asRefParameter() {
         return this.asRefParameter(false);
     }
 

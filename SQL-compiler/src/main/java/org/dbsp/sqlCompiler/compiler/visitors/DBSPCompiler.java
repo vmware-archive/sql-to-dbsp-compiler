@@ -96,7 +96,9 @@ public class DBSPCompiler implements IModule {
     }
 
     public DBSPCircuit getResult() {
-        return this.midend.getCircuit();
+        DBSPCircuit circuit = this.midend.getCircuit();
+        circuit.seal();
+        return circuit;
     }
 
     /**
