@@ -1,4 +1,4 @@
-lexer grammar zetalexer;
+lexer grammar Zetalexer;
 
 LINE_COMMENT: '#' .*? '\n' -> skip;
 NEWLINE : [\r]? [\n];

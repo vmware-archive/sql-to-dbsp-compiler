@@ -23,11 +23,11 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import Zetatest.zetatest;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.Zetatest;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
@@ -35,11 +35,12 @@ import org.dbsp.util.IModule;
 import org.dbsp.util.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
+import org.dbsp.Zetalexer;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class zsetasqlTests extends BaseSQLTests implements IModule {
+public class ZsetasqlTests extends BaseSQLTests implements IModule {
     @Test
     public void simpleParseTest() {
         String test = "[name=current_date_1]\n" +
@@ -62,9 +63,9 @@ public class zsetasqlTests extends BaseSQLTests implements IModule {
                 "ARRAY<STRUCT<DATE, DATE, DATE, DATE, DATE>>[\n" +
                 "  {0001-01-01, 1969-01-01, 1970-01-01, 2014-01-01, 9999-12-31}\n" +
                 "]";
-        Zetatest.zetalexer lexer = new Zetatest.zetalexer(CharStreams.fromString(test));
-        Zetatest.zetatest parser = new Zetatest.zetatest(new CommonTokenStream(lexer));
-        zetatest.TestsContext tests = parser.tests();
+        Zetalexer lexer = new Zetalexer(CharStreams.fromString(test));
+        Zetatest parser = new Zetatest(new CommonTokenStream(lexer));
+        Zetatest.TestsContext tests = parser.tests();
         Assert.assertEquals(4, tests.getChildCount());
         for (int i = 0; i < tests.getChildCount(); i++) {
             System.out.println(i + " " + tests.getChild(i));

@@ -1,4 +1,4 @@
-parser grammar zetatest;
+parser grammar Zetatest;
 
 options { tokenVocab = zetalexer; }
 
