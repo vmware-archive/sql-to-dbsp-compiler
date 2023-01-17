@@ -1,5 +1,5 @@
 // Generated from java-escape by ANTLR 4.11.1
-package zetatest;
+package Zetatest;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -17,109 +17,109 @@ public class zetatestBaseListener implements zetatestListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTests(zetatestParser.TestsContext ctx) { }
+	@Override public void enterTests(zetatest.TestsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTests(zetatestParser.TestsContext ctx) { }
+	@Override public void exitTests(zetatest.TestsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterNonEmptyTests(zetatestParser.NonEmptyTestsContext ctx) { }
+	@Override public void enterTest(zetatest.TestContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitNonEmptyTests(zetatestParser.NonEmptyTestsContext ctx) { }
+	@Override public void exitTest(zetatest.TestContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTest(zetatestParser.TestContext ctx) { }
+	@Override public void enterLines(zetatest.LinesContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTest(zetatestParser.TestContext ctx) { }
+	@Override public void exitLines(zetatest.LinesContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDashes(zetatestParser.DashesContext ctx) { }
+	@Override public void enterMacros(zetatest.MacrosContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDashes(zetatestParser.DashesContext ctx) { }
+	@Override public void exitMacros(zetatest.MacrosContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterEquals(zetatestParser.EqualsContext ctx) { }
+	@Override public void enterMacro(zetatest.MacroContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitEquals(zetatestParser.EqualsContext ctx) { }
+	@Override public void exitMacro(zetatest.MacroContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLines(zetatestParser.LinesContext ctx) { }
+	@Override public void enterQuery(zetatest.QueryContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLines(zetatestParser.LinesContext ctx) { }
+	@Override public void exitQuery(zetatest.QueryContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLine(zetatestParser.LineContext ctx) { }
+	@Override public void enterResult(zetatest.ResultContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLine(zetatestParser.LineContext ctx) { }
+	@Override public void exitResult(zetatest.ResultContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterResult(zetatestParser.ResultContext ctx) { }
+	@Override public void enterTypedvalue(zetatest.TypedvalueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitResult(zetatestParser.ResultContext ctx) { }
+	@Override public void exitTypedvalue(zetatest.TypedvalueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterQuery(zetatestParser.QueryContext ctx) { }
+	@Override public void enterLine(zetatest.LineContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitQuery(zetatestParser.QueryContext ctx) { }
+	@Override public void exitLine(zetatest.LineContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

@@ -1,5 +1,5 @@
 // Generated from java-escape by ANTLR 4.11.1
-package zetatest;
+package Zetatest;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
 /**
@@ -18,61 +18,61 @@ public class zetatestBaseVisitor<T> extends AbstractParseTreeVisitor<T> implemen
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTests(zetatestParser.TestsContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTests(zetatest.TestsContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNonEmptyTests(zetatestParser.NonEmptyTestsContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTest(zetatest.TestContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTest(zetatestParser.TestContext ctx) { return visitChildren(ctx); }
+	@Override public T visitLines(zetatest.LinesContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDashes(zetatestParser.DashesContext ctx) { return visitChildren(ctx); }
+	@Override public T visitMacros(zetatest.MacrosContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitEquals(zetatestParser.EqualsContext ctx) { return visitChildren(ctx); }
+	@Override public T visitMacro(zetatest.MacroContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitLines(zetatestParser.LinesContext ctx) { return visitChildren(ctx); }
+	@Override public T visitQuery(zetatest.QueryContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitLine(zetatestParser.LineContext ctx) { return visitChildren(ctx); }
+	@Override public T visitResult(zetatest.ResultContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitResult(zetatestParser.ResultContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTypedvalue(zetatest.TypedvalueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitQuery(zetatestParser.QueryContext ctx) { return visitChildren(ctx); }
+	@Override public T visitLine(zetatest.LineContext ctx) { return visitChildren(ctx); }
 }

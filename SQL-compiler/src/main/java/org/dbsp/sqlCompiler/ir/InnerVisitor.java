@@ -98,6 +98,11 @@ public abstract class InnerVisitor {
         else return true;
     }
 
+    public boolean preorder(DBSPTypeDate node) {
+        if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
+        else return true;
+    }
+
     public boolean preorder(DBSPTypeMillisInterval node) {
         if (this.visitSuper) return this.preorder((DBSPTypeBaseType) node);
         else return true;
@@ -543,6 +548,10 @@ public abstract class InnerVisitor {
 
     public void postorder(DBSPTypeBaseType node) {
         if (this.visitSuper) this.postorder((DBSPType) node);
+    }
+
+    public void postorder(DBSPTypeDate node)  {
+        if (this.visitSuper) this.postorder((DBSPTypeBaseType) node);
     }
 
     public void postorder(DBSPTypeMillisInterval node) {
