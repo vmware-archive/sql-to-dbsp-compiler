@@ -522,7 +522,7 @@ public class DBSPExecutor extends SqlTestExecutor {
             }
             list.add(new DBSPExpressionStatement(
                     new DBSPApplyExpression("assert_eq!", null,
-                            count, new DBSPAsExpression(
+                            new DBSPAsExpression(count, DBSPTypeZSet.defaultWeightType), new DBSPAsExpression(
                                     new DBSPIntegerLiteral(description.getExpectedOutputSize()),
                             DBSPTypeZSet.defaultWeightType))));
         }if (output != null) {
