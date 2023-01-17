@@ -108,7 +108,7 @@ public class Main {
         SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         String benchDir = "../../sqllogictest/test";
         List<String> files = Linq.list(
-                "x.test"
+                "random/expr/slt_good_7.test"
                 /*
                 "random/aggregates",
                 "random/select",
@@ -147,11 +147,11 @@ public class Main {
             a.addAll(files);
             args = a.toArray(new String[0]);
         }
+        /*
         Logger.instance.setDebugLevel(JDBCExecutor.class, 3);
         Logger.instance.setDebugLevel(DBSPExecutor.class, 3);
         Logger.instance.setDebugLevel(DBSP_JDBC_Executor.class, 3);
         Logger.instance.setDebugLevel(SLTTestFile.class, 3);
-        /*
         Logger.instance.setDebugLevel(PassesVisitor.class, 3);
         Logger.instance.setDebugLevel(RemoveOperatorsVisitor.class, 3);
         Logger.instance.setDebugLevel(CalciteCompiler.class, 3);
