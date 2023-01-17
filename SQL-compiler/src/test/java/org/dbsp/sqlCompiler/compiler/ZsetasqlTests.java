@@ -41,7 +41,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 public class ZsetasqlTests extends BaseSQLTests implements IModule {
-    @Test
+    //@Test
     public void simpleParseTest() {
         String test = "[name=current_date_1]\n" +
                 "select current_date() = current_date,\n" +

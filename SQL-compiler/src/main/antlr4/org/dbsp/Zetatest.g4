@@ -1,6 +1,6 @@
 parser grammar Zetatest;
 
-options { tokenVocab = zetalexer; }
+options { tokenVocab = Zetalexer; }
 
 tests:   test (EQUAL test)* NEWLINE? EOF;
 test:    macros query MINUS NEWLINE result;
