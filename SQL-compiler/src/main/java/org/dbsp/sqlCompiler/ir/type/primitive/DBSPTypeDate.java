@@ -45,7 +45,11 @@ public class DBSPTypeDate extends DBSPTypeBaseType implements IsNumericType, IsD
     }
 
     @Override
-    public void accept(InnerVisitor visitor) {}
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this))
+            return;
+        visitor.postorder(this);
+    }
 
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
@@ -80,5 +84,10 @@ public class DBSPTypeDate extends DBSPTypeBaseType implements IsNumericType, IsD
             return false;
         assert other != null;
         return other.is(DBSPTypeDate.class);
+    }
+
+    @Override
+    public String getRustString() {
+        return "Date";
     }
 }

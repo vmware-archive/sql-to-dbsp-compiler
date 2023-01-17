@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.Main;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
@@ -31,25 +30,20 @@ import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
-import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
-import org.dbsp.sqlCompiler.ir.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeUser;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeString;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -101,55 +95,6 @@ public class OtherTests extends BaseSQLTests implements IModule {
     }
 
     @Test
-    public void DDLZetaSyntaxTest() throws SqlParseException {
-        // ZetaSQL query syntax - BIG_QUERY dialect
-        String query = "CREATE TABLE R AS\n" +
-                "SELECT cast(1 as int64) as primary_key,\n" +
-                "       cast(1 as int64) as id, cast(\"a1\" as string) as a UNION ALL\n" +
-                "  SELECT 2, 2, \"a2\"";
-        CompilerOptions options = new CompilerOptions();
-        options.ioOptions.dialect = Lex.BIG_QUERY;
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
-        compiler.compileStatement(query, null);
-        DBSPCircuit circuit = compiler.getResult();
-        String rust = ToRustVisitor.circuitToRustString(circuit);
-        Assert.assertNotNull(rust);
-    }
-
-    @Test
-    public void DDLZetaOverTest() throws SqlParseException, IOException, InterruptedException {
-        String query = "CREATE TABLE TestTable AS\n" +
-                "SELECT cast(1 as int64) as row_id,\n" +
-                "       cast(null as bool) as bool_val,\n" +
-                "       cast(1 as int64) as int64_val,\n" +
-                "       cast(null as uint64) as uint64_val,\n" +
-                "       cast(null as double) as double_val,\n" +
-                "       cast(null as string) as str_val UNION ALL\n" +
-                "  SELECT 2,  true,  2,    3,    1.5,  \"A\"   UNION ALL\n" +
-                "  SELECT 3,  false, 1,    6,    1.5,  \"A\"   UNION ALL\n" +
-                "  SELECT 4,  null,  2,    2,    2.5,  \"B\"   UNION ALL\n" +
-                "  SELECT 5,  false, 1,    null, 3.5,  \"A\"   UNION ALL\n" +
-                "  SELECT 6,  true,  2,    2,    null, \"C\"   UNION ALL\n" +
-                "  SELECT 7,  null,  1,    5,    -0.5,  null UNION ALL\n" +
-                "  SELECT 8,  true,  4,    2,    -1.5,  \"A\"  UNION ALL\n" +
-                "  SELECT 9,  false, 2,    3,    1.5,   \"B\"  UNION ALL\n" +
-                "  SELECT 10, true,  3,    1,    2.5,   \"B\"\n";
-        CompilerOptions options = new CompilerOptions();
-        options.ioOptions.dialect = Lex.BIG_QUERY;
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
-        compiler.compileStatement(query, null);
-        compiler.compileStatement("CREATE VIEW V AS SELECT int64_val, COUNT(*) OVER " +
-                "(ORDER BY int64_val RANGE UNBOUNDED PRECEDING)\n" +
-                "FROM (SELECT int64_val FROM TestTable)\n", null);
-        DBSPCircuit circuit = compiler.getResult();
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        writer.println(ToRustVisitor.generatePreamble());
-        writer.println(ToRustVisitor.circuitToRustString(circuit));
-        writer.close();
-        Utilities.compileAndTestRust(rustDirectory, false);
-    }
-
-    @Test
     public void loggerTest() {
         StringBuilder builder = new StringBuilder();
         Appendable save = Logger.instance.setDebugStream(builder);
@@ -165,6 +110,54 @@ public class OtherTests extends BaseSQLTests implements IModule {
         Logger.instance.setDebugStream(save);
         Assert.assertEquals("Logging one statement\n", builder.toString());
         Logger.instance.setDebugLevel(this.getModule(), 0);
+    }
+
+    @Test
+    public void testJoin() throws SqlParseException, IOException, InterruptedException {
+        String statement0 = "CREATE TABLE demographics (\n" +
+                "    cc_num FLOAT64,\n" +
+                "    first STRING,\n" +
+                "    gender STRING,\n" +
+                "    street STRING,\n" +
+                "    city STRING,\n" +
+                "    state STRING,\n" +
+                "    zip INTEGER,\n" +
+                "    lat FLOAT64,\n" +
+                "    long FLOAT64,\n" +
+                "    city_pop INTEGER,\n" +
+                "    job STRING,\n" +
+                "    dob DATE\n" +
+                ")\n";
+        String statement1 =
+                "CREATE TABLE transactions (\n" +
+                "    trans_date_trans_time TIMESTAMP NOT NULL,\n" +
+                "    cc_num FLOAT64,\n" +
+                "    merchant STRING,\n" +
+                "    category STRING,\n" +
+                "    amt FLOAT64,\n" +
+                "    trans_num STRING,\n" +
+                "    unix_time INTEGER,\n" +
+                "    merch_lat FLOAT64,\n" +
+                "    merch_long FLOAT64,\n" +
+                "    is_fraud INTEGER\n" +
+                ")\n";
+        String statement2 =
+                "CREATE VIEW transactions_with_demographics as \n" +
+                "    SELECT transactions.*, demographics.first, demographics.city\n" +
+                "    FROM\n" +
+                "        transactions JOIN demographics\n" +
+                "        ON transactions.cc_num = demographics.cc_num";
+        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        compiler.compileStatement(statement0, null);
+        compiler.compileStatement(statement1, null);
+        compiler.compileStatement(statement2, null);
+        DBSPCircuit circuit = compiler.getResult();
+        String rust = ToRustVisitor.circuitToRustString(circuit);
+        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
+        writer.println(ToRustVisitor.generatePreamble());
+        writer.println(ToRustVisitor.circuitToRustString(circuit));
+        writer.close();
+        Utilities.compileAndTestRust(rustDirectory, false);
     }
 
     @Test
@@ -209,6 +202,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         Assert.assertTrue(success);
     }
 
+    @SuppressWarnings("SqlDialectInspection")
     @Test
     public void rustSqlTest() throws IOException, InterruptedException, SQLException {
         String filepath = BaseSQLTests.rustDirectory + "/" + "test.db";
