@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import Zetatest.zetatest;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.calcite.config.Lex;
@@ -35,6 +34,8 @@ import org.dbsp.util.IModule;
 import org.dbsp.util.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
+import org.dbsp.zetalexer;
+import org.dbsp.zetatest;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -62,8 +63,8 @@ public class zsetasqlTests extends BaseSQLTests implements IModule {
                 "ARRAY<STRUCT<DATE, DATE, DATE, DATE, DATE>>[\n" +
                 "  {0001-01-01, 1969-01-01, 1970-01-01, 2014-01-01, 9999-12-31}\n" +
                 "]";
-        Zetatest.zetalexer lexer = new Zetatest.zetalexer(CharStreams.fromString(test));
-        Zetatest.zetatest parser = new Zetatest.zetatest(new CommonTokenStream(lexer));
+        zetalexer lexer = new zetalexer(CharStreams.fromString(test));
+        zetatest parser = new zetatest(new CommonTokenStream(lexer));
         zetatest.TestsContext tests = parser.tests();
         Assert.assertEquals(4, tests.getChildCount());
         for (int i = 0; i < tests.getChildCount(); i++) {
