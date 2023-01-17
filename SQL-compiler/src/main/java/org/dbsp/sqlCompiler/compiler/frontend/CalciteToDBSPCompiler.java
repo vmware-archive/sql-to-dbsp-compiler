@@ -885,9 +885,9 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             DBSPExpression windowExprVar = this.declare("window", windowExpr);
 
             // Map each row to an expression of the form: |t| (partition, (order, t.clone()))
-            Iterable<Integer> partitionKeys = group.keys;
-            Iterable<DBSPExpression> exprs = Linq.map(partitionKeys, inputRowRefVar::field);
-            DBSPTupleExpression partition = new DBSPTupleExpression(exprs);
+            List<Integer> partitionKeys = group.keys.toList();
+            List<DBSPExpression> exprs = Linq.map(partitionKeys, inputRowRefVar::field);
+            DBSPTupleExpression partition = new DBSPTupleExpression(window, exprs);
             DBSPExpression orderAndRow = new DBSPRawTupleExpression(orderField, inputRowRefVar.applyClone());
             DBSPExpression mapExpr = new DBSPRawTupleExpression(partition, orderAndRow);
             DBSPClosureExpression mapClo = mapExpr.closure(inputRowRefVar.asParameter());
