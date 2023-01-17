@@ -1,37 +1,43 @@
-grammar zetatest;
+parser grammar zetatest;
 
-tests
-   : // EMPTY
-   | nonEmptyTests
-   ;
+options { tokenVocab = zetalexer; }
 
-nonEmptyTests
-   : test
-   | test equals nonEmptyTests
-   ;
+tests:   test (EQUAL test)* NEWLINE? EOF;
+test:    macros query MINUS NEWLINE result;
 
-test: query dashes result
-    ;
+lines: line (NEWLINE line)*;
 
-dashes
-   : '--' '\n'
-   ;
+macros: macro*;
+macro: OPEN_BRACKET line CLOSED_BRACKET;
+query: lines NEWLINE;
+result:     typedvalue;
+typedvalue: lines;
 
-equals
-   : '==' '\n'
-   ;
+line: CHAR* ;
 
-lines: // EMPTY
-   | line lines
-   ;
+/*
+//typedvalue: sqltype sqlvalue;
+sqltype: arraytype
+       | structtype
+       | datetype
+       | inttype
+       ;
 
-line: .*? '\n'
-   ;
+inttype: 'INT64' ;
+structtype: 'STRUCT' '<' typeArguments '>' ;
+typeArguments: sqltype (',' sqltype)* ;
+arraytype: 'ARRAY' '<' sqltype '>' ;
+datetype: 'DATE' ;
 
-result
-   : lines
-   ;
+sqlvalue: //intvalue
+     //| datevalue
+     | arrayvalue
+     | structvalue
+     ;
 
-query
-   : lines
-   ;
+arrayvalue: '[' sqlvalue (',' sqlvalue)* ']' ;
+structvalue: '{' sqlvalue (',' sqlvalue)* '}' ;
+//datevalue: intvalue '-' intvalue '-' intvalue ;
+*/
+
+
