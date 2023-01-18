@@ -25,7 +25,9 @@ use rust_decimal_macros::dec;
 use crate::{
     interval::*,
     geopoint::*,
+    timestamp::*,
 };
+use chrono::{Datelike,Timelike,NaiveDateTime};
 
 /////////// cast to b
 
@@ -1080,6 +1082,19 @@ pub fn cast_to_s_sN(value: Option<String>) -> String
 }
 
 #[inline]
+pub fn cast_to_s_Timestamp(value: Timestamp) -> String
+{
+    let dt = value.toDateTime();
+    let month = dt.month();
+    let day = dt.day();
+    let year = dt.year();
+    let hr = dt.hour();
+    let min = dt.minute();
+    let sec = dt.second();
+    format!("{}-{:02}-{:02} {:02}:{:02}:{:02}", year, month, day, hr, min, sec)
+}
+
+#[inline]
 pub fn cast_to_s_i(value: isize) -> String
 {
     value.to_string()
@@ -1984,4 +1999,16 @@ pub fn cast_to_i64N_u(value: usize) -> Option<i64>
 pub fn cast_to_ShortInterval_i64(value: i64) -> ShortInterval
 {
     ShortInterval::from(value)
+}
+
+//////// casts to Timestamp
+
+#[inline]
+pub fn cast_to_Timestamp_s(value: String) -> Timestamp
+{
+    let r = NaiveDateTime::parse_from_str(&value, "%Y %m %d %H:%M:%S");
+    match r {
+        Ok(v) => Timestamp::new(v.timestamp()),
+        _     => Timestamp::new(0),  // TODO: what else?
+    }
 }
