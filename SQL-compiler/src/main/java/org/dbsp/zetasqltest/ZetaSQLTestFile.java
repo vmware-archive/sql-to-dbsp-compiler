@@ -31,8 +31,19 @@ import java.util.List;
  */
 public class ZetaSQLTestFile {
     public final List<ZetaSQLTest> tests;
-
     public ZetaSQLTestFile() {
         this.tests = new ArrayList<>();
+    }
+
+    public void add(ZetaSQLTest test) {
+        this.tests.add(test);
+    }
+
+    public int size() {
+        return this.tests.size();
+    }
+
+    public ZetaSQLTest get(int i) {
+        return this.tests.get(i);
     }
 }

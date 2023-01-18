@@ -31,45 +31,75 @@ import org.dbsp.Zetatest;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeZSet;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDate;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Utilities;
+import org.dbsp.zetasqltest.ZetaSQLTest;
+import org.dbsp.zetasqltest.ZetatestVisitor;
 import org.junit.Assert;
 import org.junit.Test;
 import org.dbsp.Zetalexer;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Objects;
 
 public class ZsetasqlTests extends BaseSQLTests implements IModule {
-    //@Test
+    static String sample = "[name=current_date_1]\n" +
+            "select current_date() = current_date,\n" +
+            "       current_date() >= '2015-03-17',\n" +
+            "       current_date() >= date_from_unix_date(0),\n" +
+            "       current_date() >= date_from_unix_date(-719162),\n" +
+            "       current_date() <= date_from_unix_date(2932896)\n" +
+            "--\n" +
+            "ARRAY<STRUCT<BOOL, BOOL, BOOL, BOOL, BOOL>>[{true, true, true, true, true}]\n" +
+            "==\n" +
+            "\n" +
+            "[name=date_from_unix_date_1]\n" +
+            "select date_from_unix_date(-719162),\n" +
+            "       date_from_unix_date(-365),\n" +
+            "       date_from_unix_date(0),\n" +
+            "       date_from_unix_date(16071),\n" +
+            "       date_from_unix_date(2932896)\n" +
+            "--\n" +
+            "ARRAY<STRUCT<DATE, DATE, DATE, DATE, DATE>>[\n" +
+            "  {0001-01-01, 1969-01-01, 1970-01-01, 2014-01-01, 9999-12-31}\n" +
+            "]";
+
+    @Test
     public void simpleParseTest() {
-        String test = "[name=current_date_1]\n" +
+        Zetalexer lexer = new Zetalexer(CharStreams.fromString(sample));
+        Zetatest parser = new Zetatest(new CommonTokenStream(lexer));
+        Zetatest.TestsContext tests = parser.tests();
+        Assert.assertEquals(4, tests.getChildCount());
+    }
+
+    @Test
+    public void visitorParseTest() {
+        Zetalexer lexer = new Zetalexer(CharStreams.fromString(sample));
+        Zetatest parser = new Zetatest(new CommonTokenStream(lexer));
+        ZetatestVisitor visitor = new ZetatestVisitor();
+        parser.tests().accept(visitor);
+        Assert.assertEquals(2, visitor.tests.size());
+        ZetaSQLTest test = visitor.tests.get(0);
+        Assert.assertEquals("[name=current_date_1]\n" +
                 "select current_date() = current_date,\n" +
                 "       current_date() >= '2015-03-17',\n" +
                 "       current_date() >= date_from_unix_date(0),\n" +
                 "       current_date() >= date_from_unix_date(-719162),\n" +
-                "       current_date() <= date_from_unix_date(2932896)\n" +
-                "--\n" +
-                "ARRAY<STRUCT<BOOL, BOOL, BOOL, BOOL, BOOL>>[{true, true, true, true, true}]\n" +
-                "==\n" +
-                "\n" +
-                "[name=date_from_unix_date_1]\n" +
-                "select date_from_unix_date(-719162),\n" +
-                "       date_from_unix_date(-365),\n" +
-                "       date_from_unix_date(0),\n" +
-                "       date_from_unix_date(16071),\n" +
-                "       date_from_unix_date(2932896)\n" +
-                "--\n" +
-                "ARRAY<STRUCT<DATE, DATE, DATE, DATE, DATE>>[\n" +
-                "  {0001-01-01, 1969-01-01, 1970-01-01, 2014-01-01, 9999-12-31}\n" +
-                "]";
-        Zetalexer lexer = new Zetalexer(CharStreams.fromString(test));
-        Zetatest parser = new Zetatest(new CommonTokenStream(lexer));
-        Zetatest.TestsContext tests = parser.tests();
-        Assert.assertEquals(4, tests.getChildCount());
-        for (int i = 0; i < tests.getChildCount(); i++) {
-            System.out.println(i + " " + tests.getChild(i));
-        }
+                "       current_date() <= date_from_unix_date(2932896)\n", test.statement);
+        Assert.assertTrue(test.type.is(DBSPTypeZSet.class));
+        DBSPTypeZSet zset = test.type.to(DBSPTypeZSet.class);
+        Assert.assertTrue(zset.elementType.is(DBSPTypeTuple.class));
+        DBSPTypeTuple tuple = zset.elementType.to(DBSPTypeTuple.class);
+        Assert.assertEquals(5, tuple.size());
+        for (int i = 0; i < 5; i++)
+            Assert.assertTrue(tuple.getFieldType(i).is(DBSPTypeBool.class));
+        Assert.assertEquals("{ Tuple5::new(true, true, true, true, true) => 1}",
+                Objects.requireNonNull(test.result).toString());
     }
 
     @Test
