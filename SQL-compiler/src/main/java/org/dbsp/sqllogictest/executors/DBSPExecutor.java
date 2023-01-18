@@ -167,7 +167,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         // Generates a read_table(<conn>, <table_name>, <mapper from |AnyRow| -> Tuple type>) invocation
         DBSPTypeUser sqliteRowType = new DBSPTypeUser(null, "AnyRow", false);
         DBSPVariablePath rowVariable = new DBSPVariablePath("row", sqliteRowType);
-        DBSPTypeTuple tupleType = (DBSPTypeTuple) tableValue.contents.zsetType.elementType;
+        DBSPTypeTuple tupleType = tableValue.contents.zsetType.elementType.to(DBSPTypeTuple.class);
         final List<DBSPExpression> rowGets = new ArrayList<>(tupleType.tupFields.length);
         for (int i = 0; i <  tupleType.tupFields.length; i++) {
             DBSPApplyMethodExpression rowGet =
