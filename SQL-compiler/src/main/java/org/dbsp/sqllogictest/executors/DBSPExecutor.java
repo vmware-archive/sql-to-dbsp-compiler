@@ -78,6 +78,8 @@ public class DBSPExecutor extends SqlTestExecutor {
     private int batchSize;  // Number of queries to execute together
     private int skip;       // Number of queries to skip in each test file.
     public final CompilerOptions options;
+
+    private final String connectionString; // either csv or a valid sqlx connection string
     final SqlTestPrepareInput inputPreparation;
     final SqlTestPrepareTables tablePreparation;
     final SqlTestPrepareViews viewPreparation;
@@ -94,7 +96,7 @@ public class DBSPExecutor extends SqlTestExecutor {
      * @param execute  If true the tests are executed, otherwise they are only compiled to Rust.
      * @param options  Options to use for compilation.
      */
-    public DBSPExecutor(boolean execute, CompilerOptions options) {
+    public DBSPExecutor(boolean execute, CompilerOptions options, String connectionString) {
         this.execute = execute;
         this.inputPreparation = new SqlTestPrepareInput();
         this.tablePreparation = new SqlTestPrepareTables();
@@ -102,6 +104,7 @@ public class DBSPExecutor extends SqlTestExecutor {
         this.batchSize = 10;
         this.options = options;
         this.queriesToRun = new ArrayList<>();
+        this.connectionString = connectionString;
     }
 
     public static class TableValue {
@@ -140,18 +143,46 @@ public class DBSPExecutor extends SqlTestExecutor {
 
         // If the data is large write it to a set of CSV files and read it at runtime.
         if (totalSize > 10) {
-            for (int i = 0; i < tables.length; i++) {
-                String fileName = (rustDirectory + tables[i].tableName) + ".csv";
-                Solutions.toCsv(fileName, tables[i].contents);
-                fields[i] = new DBSPApplyExpression("read_csv",
-                        tables[i].contents.getNonVoidType(),
-                        new DBSPStrLiteral(fileName));
+            if (connectionString.equals("csv")) {
+                for (int i = 0; i < tables.length; i++) {
+                    String fileName = (rustDirectory + tables[i].tableName) + ".csv";
+                    Solutions.toCsv(fileName, tables[i].contents);
+                    fields[i] = new DBSPApplyExpression("read_csv",
+                            tables[i].contents.getNonVoidType(),
+                            new DBSPStrLiteral(fileName));
+                }
+            } else {
+                // read from DB
+                for (int i = 0; i < tables.length; i++) {
+                    fields[i] = generateReadDbCall(tables[i]);
+                }
             }
         }
-
         DBSPRawTupleExpression result = new DBSPRawTupleExpression(fields);
         return new DBSPFunction("input", new ArrayList<>(),
                 result.getType(), result);
+    }
+
+    private DBSPExpression generateReadDbCall(TableValue tableValue) {
+        // Generates a read_table(<conn>, <table_name>, <mapper from |AnyRow| -> Tuple type>) invocation
+        DBSPTypeUser sqliteRowType = new DBSPTypeUser(null, "AnyRow", false);
+        DBSPVariablePath rowVariable = new DBSPVariablePath("row", sqliteRowType);
+        DBSPTypeTuple tupleType = (DBSPTypeTuple) tableValue.contents.zsetType.elementType;
+        final List<DBSPExpression> rowGets = new ArrayList<>(tupleType.tupFields.length);
+        for (int i = 0; i <  tupleType.tupFields.length; i++) {
+            DBSPApplyMethodExpression rowGet =
+                    new DBSPApplyMethodExpression("get",
+                            tupleType.tupFields[i],
+                            rowVariable, new DBSPUSizeLiteral(i));
+            rowGets.add(rowGet);
+        }
+        DBSPTupleExpression tuple = new DBSPTupleExpression(rowGets);
+        DBSPClosureExpression mapClosure = new DBSPClosureExpression(null, tuple,
+                rowVariable.asRefParameter());
+        DBSPApplyExpression readDb = new DBSPApplyExpression("read_db", tableValue.contents.zsetType,
+                new DBSPStrLiteral(connectionString), new DBSPStrLiteral(tableValue.tableName),
+                mapClosure);
+        return readDb;
     }
 
     /**

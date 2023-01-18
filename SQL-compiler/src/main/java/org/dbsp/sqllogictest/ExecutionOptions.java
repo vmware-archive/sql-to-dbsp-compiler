@@ -31,6 +31,7 @@ import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.SqlDialectConverter;
+import org.dbsp.util.Unimplemented;
 import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
@@ -77,6 +78,9 @@ public class ExecutionOptions {
     @Parameter(names = "-b", description = "Load a list of buggy commands to skip from this file")
     @Nullable
     String bugsFile = null;
+    @Parameter(names = "-l", description = "Input source for DBSP program (choices: csv, db)")
+    @Nullable
+    String inputSource = "csv";
 
     static class PostgresPolicy implements AcceptancePolicy {
         @Override
@@ -126,6 +130,23 @@ public class ExecutionOptions {
         }
     }
 
+    String connectionString() {
+        if (this.inputSource.equals("csv")) {
+            return "csv";
+        } else if (this.inputSource.equals("db")) {
+            switch (this.dialect) {
+                case ORACLE:
+                    return String.format("postgresql://localhost?dbname=slt&user=%s&password=%s", this.user,
+                                         this.password);
+                case MYSQL:
+                default:
+                    throw new Unimplemented();
+            }
+        }
+        throw new Unimplemented(String.format("Unsupported input source or DB dialect: inputSource=%s dialect=%s",
+                                              this.inputSource, this.dialect));
+    }
+
     AcceptancePolicy getAcceptancePolicy() {
         switch (this.dialect) {
             case MYSQL:
@@ -159,7 +180,7 @@ public class ExecutionOptions {
             case "none":
                 return new NoExecutor();
             case "DBSP":
-                DBSPExecutor dExec = new DBSPExecutor(!this.doNotExecute, options);
+                DBSPExecutor dExec = new DBSPExecutor(!this.doNotExecute, options, connectionString());
                 dExec.avoid(sltBugs);
                 dExec.setValidateStatus(this.validateStatus);
                 return dExec;
@@ -168,7 +189,8 @@ public class ExecutionOptions {
             }
             case "hybrid": {
                 JDBCExecutor jdbc = this.jdbcExecutor(sltBugs);
-                DBSP_JDBC_Executor result = new DBSP_JDBC_Executor(jdbc, !this.doNotExecute, options);
+                DBSP_JDBC_Executor result = new DBSP_JDBC_Executor(jdbc, !this.doNotExecute, options,
+                                                                   connectionString());
                 result.avoid(sltBugs);
                 result.setValidateStatus(this.validateStatus);
                 return result;

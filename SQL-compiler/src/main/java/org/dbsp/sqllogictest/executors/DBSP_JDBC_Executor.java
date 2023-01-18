@@ -51,8 +51,9 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
      * @param execute If true the tests are executed, otherwise they are only compiled to Rust.
      * @param options Compilation options.
      */
-    public DBSP_JDBC_Executor(JDBCExecutor executor, boolean execute, CompilerOptions options) {
-        super(execute, options);
+    public DBSP_JDBC_Executor(JDBCExecutor executor, boolean execute, CompilerOptions options,
+                              String connectionString) {
+        super(execute, options, connectionString);
         this.statementExecutor = executor;
         this.tablesCreated = new ArrayList<>();
     }

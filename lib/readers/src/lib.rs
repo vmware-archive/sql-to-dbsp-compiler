@@ -110,7 +110,7 @@ fn csv_test() {
 }
 
 #[async_std::test]
-async fn sql_test() {
+async fn sql_test_sqlite() {
     let conn_str = "sqlite:///tmp/test.db";
     if !sqlx::Sqlite::database_exists(conn_str).await.unwrap() {
         sqlx::Sqlite::create_database(conn_str).await.unwrap();
