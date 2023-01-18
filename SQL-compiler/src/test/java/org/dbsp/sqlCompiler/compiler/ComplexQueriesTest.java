@@ -27,7 +27,6 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
-import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
@@ -116,13 +115,12 @@ public class ComplexQueriesTest extends BaseSQLTests {
         Utilities.compileAndTestRust(rustDirectory, false);
     }
 
-    //@Test
+    @Test
     // Not yet supported because of LAG
-    public void fraudDetectionTest() throws SqlParseException {
-        Logger.instance.setDebugLevel("CalciteCompiler", 2);
+    public void fraudDetectionTest() throws SqlParseException, IOException, InterruptedException {
         // fraudDetection-352718.cc_data.demo_
         String ddl0 = "CREATE TABLE demographics (\n" +
-                " cc_num FLOAT64,\n" +
+                " cc_num FLOAT64 NOT NULL,\n" +
                 " first STRING,\n" +
                 " gender STRING,\n" +
                 " street STRING,\n" +
@@ -142,17 +140,16 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 " category STRING,\n" +
                 " amt FLOAT64,\n" +
                 " trans_num STRING,\n" +
-                " unix_time INTEGER,\n" +
+                " unix_time INTEGER NOT NULL,\n" +
                 " merch_lat FLOAT64,\n" +
                 " merch_long FLOAT64,\n" +
                 " is_fraud INTEGER\n" +
                 ")";
         String query = "SELECT\n" +
-                "    DAYOFWEEK(trans_date_trans_time) AS d,\n" +
-                "    TIMESTAMPDIFF(YEAR, trans_date_trans_time, CAST(dob as TIMESTAMP)) AS age,\n" +
+                "    -- DAYOFWEEK(trans_date_trans_time) AS d,\n" +
+                "    -- TIMESTAMPDIFF(YEAR, trans_date_trans_time, CAST(dob as TIMESTAMP)) AS age,\n" +
                 "    ST_DISTANCE(ST_POINT(long,lat), ST_POINT(merch_long,merch_lat)) AS distance,\n" +
-                "    TIMESTAMPDIFF(MINUTE, trans_date_trans_time, last_txn_date) AS trans_diff,\n" +
-                /*
+                "    -- TIMESTAMPDIFF(MINUTE, trans_date_trans_time, last_txn_date) AS trans_diff,\n" +
                 "    AVG(amt) OVER(\n" +
                 "                PARTITION BY   CAST(cc_num AS NUMERIC)\n" +
                 "                ORDER BY unix_time\n" +
@@ -171,7 +168,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "                -- 1 day is 86400  seconds\n" +
                 "                RANGE BETWEEN 86400  PRECEDING AND 1 PRECEDING ) AS\n" +
                 "trans_freq_24,\n" +
-                 */
                 "  category,\n" +
                 "    amt,\n" +
                 "    state,\n" +
@@ -181,18 +177,24 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "    merchant,\n" +
                 "    is_fraud\n" +
                 "  FROM (\n" +
-                "          SELECT t1.*, t2.*,\n" +
-                "              LAG(trans_date_trans_time, 1) OVER (PARTITION BY t1.cc_num\n" +
-                "ORDER BY trans_date_trans_time ASC) AS last_txn_date\n" +
+                "          SELECT t1.*, t2.*\n" +
+                "          --,    LAG(trans_date_trans_time, 1) OVER (PARTITION BY t1.cc_num\n" +
+                "          -- ORDER BY trans_date_trans_time ASC) AS last_txn_date\n" +
                 "          FROM  transactions AS t1\n" +
                 "          LEFT JOIN  demographics AS t2\n" +
-                "ON t1.cc_num =t2.cc_num)";
+                "          ON t1.cc_num =t2.cc_num)";
         DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl0, null);
         compiler.compileStatement(ddl1, null);
         compiler.compileStatement(query, null);
-        Assert.assertNotNull(compiler.getResult());
+        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
+        DBSPCircuit circuit = compiler.getResult();
+        writer.println(ToRustVisitor.generatePreamble());
+        Assert.assertNotNull(circuit);
+        writer.println(ToRustVisitor.circuitToRustString(circuit));
+        writer.close();
+        Utilities.compileAndTestRust(rustDirectory, false);
     }
 }
