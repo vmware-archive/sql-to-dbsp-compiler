@@ -136,8 +136,9 @@ public class Main {
                 "-b", "psqlsltbugs.txt",// list of tests to exclude
                 "-i",                   // incremental (streaming) testing
                 "-d", "psql",           // SQL dialect to use
-                "-u", "user",           // database user name
-                "-p", "password"        // database password
+                "-u", "postgres",       // database user name
+                "-p", "password",       // database password
+                "-l", "db"              // can be csv or db
         };
         if (argv.length > 0) {
             args = argv;
