@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,31 +21,25 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.expression.literal;
+package org.dbsp.zetasqltest;
 
-import org.apache.calcite.util.DateString;
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDate;
+import org.dbsp.util.SqlTestExecutor;
+import org.dbsp.util.TestStatistics;
 
-import javax.annotation.Nullable;
+/**
+ * This class essentially counts the number of tests in a ZetaSQLTestFile.
+ * If the code got so far it means that the tests were parsed successfully.
+ */
+public class NoExecutor extends SqlTestExecutor {
+    public NoExecutor() {}
 
-public class DBSPDateLiteral extends DBSPLiteral {
-    public DBSPDateLiteral(@Nullable Object node, DBSPType type, DateString value) {
-        super(node, type, value.getDaysSinceEpoch());
-    }
-
-    public DBSPDateLiteral(String value, boolean mayBeNull) {
-        super(null, DBSPTypeDate.instance.setMayBeNull(mayBeNull), new DateString(value).getDaysSinceEpoch());
-    }
-
-    public DBSPDateLiteral(String value) {
-        this(value, false);
-    }
-
-    @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        visitor.postorder(this);
+    TestStatistics execute(ZetaSQLTestFile file) {
+        this.startTest();
+        TestStatistics result = new TestStatistics();
+        for (ZetaSQLTest ignored : file.tests) {
+            result.passed++;
+        }
+        this.reportTime(result.passed);
+        return result;
     }
 }

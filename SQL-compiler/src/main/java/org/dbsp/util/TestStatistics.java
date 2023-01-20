@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,31 +21,28 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.expression.literal;
+package org.dbsp.util;
 
-import org.apache.calcite.util.DateString;
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDate;
+import java.text.DecimalFormat;
 
-import javax.annotation.Nullable;
+public class TestStatistics {
+    static final DecimalFormat df = new DecimalFormat("#,###");
 
-public class DBSPDateLiteral extends DBSPLiteral {
-    public DBSPDateLiteral(@Nullable Object node, DBSPType type, DateString value) {
-        super(node, type, value.getDaysSinceEpoch());
-    }
+    public int failed;
+    public int passed;
+    public int ignored;
 
-    public DBSPDateLiteral(String value, boolean mayBeNull) {
-        super(null, DBSPTypeDate.instance.setMayBeNull(mayBeNull), new DateString(value).getDaysSinceEpoch());
-    }
-
-    public DBSPDateLiteral(String value) {
-        this(value, false);
+    public void add(TestStatistics stats) {
+        this.failed += stats.failed;
+        this.passed += stats.passed;
+        this.ignored += stats.ignored;
     }
 
     @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        visitor.postorder(this);
+    public String toString() {
+        return "Passed: " + TestStatistics.df.format(this.passed) +
+                "\nFailed: " + TestStatistics.df.format(this.failed) +
+                "\nIgnored: " + TestStatistics.df.format(this.ignored) +
+                "\n";
     }
 }

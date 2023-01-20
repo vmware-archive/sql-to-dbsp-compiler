@@ -83,6 +83,7 @@
     </build>
 
     <dependencies>
+        <!-- used by other dependencies -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
@@ -92,6 +93,11 @@
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
             <version>3.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.10.0</version>
         </dependency>
 
         <!-- TODO: Calcite uses Janino, but the current release uses a broken version,

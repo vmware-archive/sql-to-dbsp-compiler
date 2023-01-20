@@ -23,6 +23,12 @@
 
 package org.dbsp.zetasqltest;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.dbsp.Zetalexer;
+import org.dbsp.Zetatest;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,8 +37,17 @@ import java.util.List;
  */
 public class ZetaSQLTestFile {
     public final List<ZetaSQLTest> tests;
+
     public ZetaSQLTestFile() {
         this.tests = new ArrayList<>();
+    }
+
+    public static ZetaSQLTestFile parse(String file) throws IOException {
+        Zetalexer lexer = new Zetalexer(CharStreams.fromFileName(file));
+        Zetatest parser = new Zetatest(new CommonTokenStream(lexer));
+        ZetatestVisitor visitor = new ZetatestVisitor();
+        parser.tests().accept(visitor);
+        return visitor.tests;
     }
 
     public void add(ZetaSQLTest test) {

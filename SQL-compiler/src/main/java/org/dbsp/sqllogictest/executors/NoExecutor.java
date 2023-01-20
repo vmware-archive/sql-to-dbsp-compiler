@@ -24,12 +24,14 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.dbsp.sqllogictest.SLTTestFile;
+import org.dbsp.util.SqlTestExecutor;
+import org.dbsp.util.TestStatistics;
 
 /**
  * This executor does not execute the tests at all.
  * It is still useful to validate that the test parsing works.
  */
-public class NoExecutor extends SqlTestExecutor {
+public class NoExecutor extends SqlSLTTestExecutor {
     @Override
     public TestStatistics execute(SLTTestFile testFile) {
         TestStatistics result = new TestStatistics();

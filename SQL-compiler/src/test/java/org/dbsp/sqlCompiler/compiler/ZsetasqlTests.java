@@ -34,7 +34,6 @@ import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeZSet;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDate;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Utilities;
 import org.dbsp.zetasqltest.ZetaSQLTest;

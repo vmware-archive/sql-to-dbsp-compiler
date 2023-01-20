@@ -23,8 +23,58 @@
 
 package org.dbsp.zetasqltest;
 
-public class Main {
-    public static void main(String[] args) {
+import org.dbsp.util.TestStatistics;
+import org.dbsp.util.Utilities;
 
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+
+/**
+ * Execute the tests in the Zetasql test suite.
+ */
+public class Main {
+    static String zetaRepo = "../../zetasql/zetasql/compliance/testdata";
+
+    static class TestLoader extends SimpleFileVisitor<Path> {
+        int errors = 0;
+        final TestStatistics statistics;
+
+        TestLoader() {
+            this.statistics = new TestStatistics();
+        }
+
+        @SuppressWarnings("ConstantConditions")
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            String extension = Utilities.getFileExtension(file.toString());
+            NoExecutor executor = new NoExecutor();
+            if (attrs.isRegularFile() && extension != null && extension.equals("test")) {
+                // validates the test
+                ZetaSQLTestFile test = null;
+                try {
+                    System.out.println(file);
+                    test = ZetaSQLTestFile.parse(file.toString());
+                } catch (Exception ex) {
+                    System.out.println(ex);
+                    this.errors++;
+                    throw ex;
+                }
+                if (test != null) {
+                    TestStatistics stats = executor.execute(test);
+                    this.statistics.add(stats);
+                }
+            }
+            return FileVisitResult.CONTINUE;
+        }
+    }
+
+
+    public static void main(String[] args) throws IOException {
+        Path path = Paths.get(zetaRepo + "/pivot.test");
+        TestLoader loader = new TestLoader();
+        Files.walkFileTree(path, loader);
+        System.out.println("Files that could not be not parsed: " + loader.errors);
+        System.out.println(loader.statistics);
     }
 }

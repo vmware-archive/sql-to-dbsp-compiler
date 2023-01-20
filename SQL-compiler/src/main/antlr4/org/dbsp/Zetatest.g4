@@ -19,24 +19,41 @@ sqltype: arraytype
        | datetype
        | inttype
        | booltype
+       | doubletype
+       | stringtype
+       | bytestype
        ;
 
+bytestype: BYTES ;
+doubletype: DOUBLE ;
 booltype: BOOL ;
 inttype: INT64 ;
-structtype: STRUCT LESS typeArguments GREATER ;
-typeArguments: sqltype (COMMA sqltype)* ;
-arraytype: ARRAY LESS sqltype GREATER ;
+stringtype: STRING ;
+structtype: STRUCT LESS fields GREATER ;
+fields: optNamedSqlType (COMMA optNamedSqlType)* ;
+arraytype: ARRAY LESS sqltype? GREATER ;
 datetype: DATE ;
 
 sqlvalue: intvalue
+     | floatvalue
      | datevalue
      | arrayvalue
      | structvalue
      | boolvalue
+     | nullvalue
+     | stringvalue
+     | bytesvalue
      ;
 
-arrayvalue: L_BRACKET sqlvalue (COMMA sqlvalue)* R_BRACKET ;
+optNamedSqlType: (ID|NULL)? sqltype ;
+arrayvalue: arraytype? L_BRACKET sqlvalue (COMMA sqlvalue)* R_BRACKET
+          | arraytype L_PARENS NULL R_PARENS
+          ;
 structvalue: L_BRACE sqlvalue (COMMA sqlvalue)* R_BRACE ;
 datevalue: DATEVALUE ;
 intvalue: DASH? INT;
 boolvalue: FALSE | TRUE ;
+stringvalue: StringLiteral ;
+nullvalue: NULL ;
+floatvalue: FloatingPointLiteral ;
+bytesvalue: BytesLiteral ;
