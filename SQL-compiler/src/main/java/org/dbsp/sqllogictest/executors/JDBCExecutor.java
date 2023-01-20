@@ -32,10 +32,7 @@ import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeString;
 import org.dbsp.sqllogictest.*;
-import org.dbsp.util.IModule;
-import org.dbsp.util.Linq;
-import org.dbsp.util.Logger;
-import org.dbsp.util.Utilities;
+import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
 import java.security.MessageDigest;
@@ -46,7 +43,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-public class JDBCExecutor extends SqlTestExecutor implements IModule {
+public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
     public final String db_url;
     public final String user;
     public final String password;
@@ -419,8 +416,6 @@ public class JDBCExecutor extends SqlTestExecutor implements IModule {
                 throw new UnsupportedOperationException("Unknown SQL dialect");
         }
     }
-
-
 
     void dropAllTables() throws SQLException {
         assert this.connection != null;

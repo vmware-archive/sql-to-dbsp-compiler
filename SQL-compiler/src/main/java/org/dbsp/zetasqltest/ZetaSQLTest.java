@@ -23,12 +23,14 @@
 
 package org.dbsp.zetasqltest;
 
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
 public class ZetaSQLTest {
-    String statement = "";
+    public String statement = "";
     @Nullable
-    DBSPZSetLiteral result;
+    public DBSPExpression result;
+    public DBSPType type;
 }

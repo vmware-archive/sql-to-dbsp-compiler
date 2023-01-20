@@ -43,9 +43,7 @@ import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.sqllogictest.*;
-import org.dbsp.util.Linq;
-import org.dbsp.util.Logger;
-import org.dbsp.util.Utilities;
+import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -57,7 +55,7 @@ import java.util.*;
  * Sql test executor that uses DBSP as a SQL runtime.
  * Does not support arbitrary tests: only tests that can be recast as a standing query will work.
  */
-public class DBSPExecutor extends SqlTestExecutor {
+public class DBSPExecutor extends SqlSLTTestExecutor {
     /**
      * A pair of a Rust circuit representation and a tester function that can
      * exercise it.

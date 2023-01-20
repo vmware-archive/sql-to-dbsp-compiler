@@ -27,10 +27,10 @@ package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
-import org.dbsp.util.Logger;
+import org.dbsp.util.SqlTestExecutor;
+import org.dbsp.util.TestStatistics;
 import org.dbsp.util.Utilities;
 
 import java.io.IOException;
@@ -47,8 +47,8 @@ import java.util.List;
 public class Main {
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
-        private final SqlTestExecutor executor;
-        final SqlTestExecutor.TestStatistics statistics;
+        private final SqlSLTTestExecutor executor;
+        final TestStatistics statistics;
         private final AcceptancePolicy policy;
 
         /**
@@ -56,10 +56,10 @@ public class Main {
          * @param executor Program that knows how to generate and run the tests.
          * @param policy   Policy that dictates which operations can be executed.
          */
-        TestLoader(SqlTestExecutor executor,
+        TestLoader(SqlSLTTestExecutor executor,
                    AcceptancePolicy policy) {
             this.executor = executor;
-            this.statistics = new SqlTestExecutor.TestStatistics();
+            this.statistics = new TestStatistics();
             this.policy = policy;
         }
 
@@ -91,7 +91,7 @@ public class Main {
                 }
                 if (test != null) {
                     try {
-                        SqlTestExecutor.TestStatistics stats = this.executor.execute(test);
+                        TestStatistics stats = this.executor.execute(test);
                         this.statistics.add(stats);
                     } catch (SqlParseException | IOException | InterruptedException |
                             SQLException | NoSuchAlgorithmException ex) {
@@ -159,7 +159,7 @@ public class Main {
          */
         ExecutionOptions options = new ExecutionOptions();
         options.parse(args);
-        SqlTestExecutor executor = options.getExecutor();
+        SqlSLTTestExecutor executor = options.getExecutor();
         System.out.println(options);
         AcceptancePolicy policy = options.getAcceptancePolicy();
         TestLoader loader = new TestLoader(executor, policy);

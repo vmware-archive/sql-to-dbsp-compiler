@@ -1,43 +1,59 @@
 parser grammar Zetatest;
 
+/* Grammar for parsing a ZetaSQL test */
+
 options { tokenVocab = Zetalexer; }
 
 tests:   test (EQUAL test)* NEWLINE? EOF;
-test:    macros query MINUS NEWLINE result;
+test:    query MINUS result;
 
-lines: line (NEWLINE line)*;
-
-macros: macro*;
-macro: OPEN_BRACKET line CLOSED_BRACKET;
-query: lines NEWLINE;
-result:     typedvalue;
-typedvalue: lines;
-
+/* Query part: parse whole lines */
+query: line (NEWLINE line)*;
 line: CHAR* ;
 
-/*
-//typedvalue: sqltype sqlvalue;
+/* Result part: parse in detail */
+result:     typedvalue;
+typedvalue: sqltype sqlvalue;
 sqltype: arraytype
        | structtype
        | datetype
        | inttype
+       | booltype
+       | doubletype
+       | stringtype
+       | bytestype
        ;
 
-inttype: 'INT64' ;
-structtype: 'STRUCT' '<' typeArguments '>' ;
-typeArguments: sqltype (',' sqltype)* ;
-arraytype: 'ARRAY' '<' sqltype '>' ;
-datetype: 'DATE' ;
+bytestype: BYTES ;
+doubletype: DOUBLE ;
+booltype: BOOL ;
+inttype: INT64 ;
+stringtype: STRING ;
+structtype: STRUCT LESS fields GREATER ;
+fields: optNamedSqlType (COMMA optNamedSqlType)* ;
+arraytype: ARRAY LESS sqltype? GREATER ;
+datetype: DATE ;
 
-sqlvalue: //intvalue
-     //| datevalue
+sqlvalue: intvalue
+     | floatvalue
+     | datevalue
      | arrayvalue
      | structvalue
+     | boolvalue
+     | nullvalue
+     | stringvalue
+     | bytesvalue
      ;
 
-arrayvalue: '[' sqlvalue (',' sqlvalue)* ']' ;
-structvalue: '{' sqlvalue (',' sqlvalue)* '}' ;
-//datevalue: intvalue '-' intvalue '-' intvalue ;
-*/
-
-
+optNamedSqlType: (ID|NULL)? sqltype ;
+arrayvalue: arraytype? L_BRACKET sqlvalue (COMMA sqlvalue)* R_BRACKET
+          | arraytype L_PARENS NULL R_PARENS
+          ;
+structvalue: L_BRACE sqlvalue (COMMA sqlvalue)* R_BRACE ;
+datevalue: DATEVALUE ;
+intvalue: DASH? INT;
+boolvalue: FALSE | TRUE ;
+stringvalue: StringLiteral ;
+nullvalue: NULL ;
+floatvalue: FloatingPointLiteral ;
+bytesvalue: BytesLiteral ;

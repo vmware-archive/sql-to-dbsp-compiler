@@ -30,6 +30,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqllogictest.SqlStatement;
 import org.dbsp.sqllogictest.SLTTestFile;
 import org.dbsp.util.Logger;
+import org.dbsp.util.TestStatistics;
 
 import javax.annotation.Nullable;
 import java.io.IOException;

@@ -166,7 +166,7 @@ public class ExecutionOptions {
         return jdbc;
     }
 
-    SqlTestExecutor getExecutor() throws IOException {
+    SqlSLTTestExecutor getExecutor() throws IOException {
         HashSet<String> sltBugs = new HashSet<>();
         if (this.bugsFile != null) {
             sltBugs = this.readBugsFile(this.bugsFile);
