@@ -23,8 +23,7 @@
 
 package org.dbsp.zetasqltest;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.*;
 import org.dbsp.Zetalexer;
 import org.dbsp.Zetatest;
 
@@ -42,9 +41,18 @@ public class ZetaSQLTestFile {
         this.tests = new ArrayList<>();
     }
 
+    static class StopOnError extends BaseErrorListener {
+        @Override
+        public void syntaxError(Recognizer<?, ?> recognizer, Object o, int i, int i1, String s, RecognitionException e) {
+            // ANTLR seems to catch all exceptions
+            System.exit(1);
+        }
+    }
+
     public static ZetaSQLTestFile parse(String file) throws IOException {
         Zetalexer lexer = new Zetalexer(CharStreams.fromFileName(file));
         Zetatest parser = new Zetatest(new CommonTokenStream(lexer));
+        parser.addErrorListener(new StopOnError());
         ZetatestVisitor visitor = new ZetatestVisitor();
         parser.tests().accept(visitor);
         return visitor.tests;

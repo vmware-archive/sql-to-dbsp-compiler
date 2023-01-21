@@ -23,43 +23,25 @@
 
 package org.dbsp.sqlCompiler.ir.expression.literal;
 
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeKeyword;
-import org.dbsp.util.Unimplemented;
+import org.apache.calcite.util.TimeString;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeTime;
 
 import javax.annotation.Nullable;
 
-/**
- * SQL contains a large number of keywords that appear in various places.
- */
-@SuppressWarnings("SpellCheckingInspection")
-public class DBSPKeywordLiteral extends DBSPLiteral {
-    enum Keyword {
-        DOW,    // Day of week
-        EPOCH,
-        ISODOW,
+public class DBSPTimeLiteral extends DBSPLiteral {
+    public DBSPTimeLiteral(@Nullable Object node, DBSPType type, TimeString value) {
+        super(node, type, value);
     }
 
-    public final Keyword keyword;
-
-    public DBSPKeywordLiteral(@Nullable Object node, String keyword) {
-        super(node, DBSPTypeKeyword.instance, keyword);
-        switch (keyword.toLowerCase()) {
-            case "dow":
-                this.keyword = Keyword.DOW;
-                break;
-            case "epoch":
-                this.keyword = Keyword.EPOCH;
-                break;
-            case "isodow":
-                this.keyword = Keyword.ISODOW;
-                break;
-            default:
-                throw new Unimplemented(node != null ? node : keyword);
-        }
+    public DBSPTimeLiteral(String value, boolean mayBeNull) {
+        super(null, DBSPTypeTime.instance.setMayBeNull(mayBeNull), new TimeString(value));
     }
 
     @Override
-    public String toString() {
-        return this.keyword.toString();
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
     }
 }

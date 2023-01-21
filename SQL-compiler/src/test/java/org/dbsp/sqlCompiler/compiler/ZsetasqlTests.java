@@ -90,15 +90,18 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
                 "       current_date() >= date_from_unix_date(0),\n" +
                 "       current_date() >= date_from_unix_date(-719162),\n" +
                 "       current_date() <= date_from_unix_date(2932896)\n", test.statement);
-        Assert.assertTrue(test.type.is(DBSPTypeZSet.class));
-        DBSPTypeZSet zset = test.type.to(DBSPTypeZSet.class);
+        Assert.assertEquals(1, test.results.size());
+        ZetaSQLTest.TestResult result = test.results.get(0);
+        Assert.assertNotNull(result.type);
+        Assert.assertTrue(result.type.is(DBSPTypeZSet.class));
+        DBSPTypeZSet zset = result.type.to(DBSPTypeZSet.class);
         Assert.assertTrue(zset.elementType.is(DBSPTypeTuple.class));
         DBSPTypeTuple tuple = zset.elementType.to(DBSPTypeTuple.class);
         Assert.assertEquals(5, tuple.size());
         for (int i = 0; i < 5; i++)
             Assert.assertTrue(tuple.getFieldType(i).is(DBSPTypeBool.class));
         Assert.assertEquals("{ Tuple5::new(true, true, true, true, true) => 1}",
-                Objects.requireNonNull(test.result).toString());
+                Objects.requireNonNull(result.result).toString());
     }
 
     @Test

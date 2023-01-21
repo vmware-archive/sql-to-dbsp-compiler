@@ -284,11 +284,11 @@ are detailed below.
 | random/groupby       |   118,757/0 |  118,757/0|   118,757/0   |
 | random/expr          | 1,317,682/0 |1,198,926/0| 1,198,926/0   |
 | random/aggregates    | 1,172,825/2 |1,172,825/2| 1,172,825/2   |
-| select1              |     1,000/0 |           |     1,000/0   |
-| select2              |     1,000/0 |           |     1,000/0   |
-| select3              |     3,320/0 |           |     3,320/0   |
-| select4              |     2,832/0 |           |     2,832/0   |
-| select5              |       732/0 |           |       732/0   |
+| select1              |     1,000/0 |    1,000/0|     1,000/0   |
+| select2              |     1,000/0 |    1,000/0|     1,000/0   |
+| select3              |     3,320/0 |    3,320/0|     3,320/0   |
+| select4              |     2,832/0 |    2,832/0|     2,832/0   |
+| select5              |       732/0 |      732/0|       732/0   |
 | index/delete         |         N/A |  40,525/0 |    40,525/0   |
 | index/in             |         N/A | 130,065/0 |   130,065/0   |
 | index/commute        |         N/A | 507,514/0 |   507,514/0   |
@@ -317,7 +317,7 @@ We are working for adding support for the tests from ZetaSQL
 We assume that the Zetasql source tree is installed in ../zetaszl
 with respect to the root directory of the compiler project
 (we only need the .test files).  One way the source tree can be obtained
-is from the git mirror: <https://github.com/google/zetasql.git>
+is from the git repository: <https://github.com/google/zetasql.git>
 
 We have implemented a general-purpose parser (based on ANTLR) and
 testing framework for running SqlLogicTest programs, in the

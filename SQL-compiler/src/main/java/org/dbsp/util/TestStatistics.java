@@ -45,4 +45,8 @@ public class TestStatistics {
                 "\nIgnored: " + TestStatistics.df.format(this.ignored) +
                 "\n";
     }
+
+    public int totalTests() {
+        return this.failed + this.passed + this.ignored;
+    }
 }

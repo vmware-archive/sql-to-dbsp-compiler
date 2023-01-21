@@ -47,7 +47,7 @@ public class DBSPTypeTuple extends DBSPType {
     @SuppressWarnings("unused")
     public static final DBSPTypeTuple emptyTupleType = new DBSPTypeTuple();
 
-    protected DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
+    public DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
         super(node, mayBeNull);
         this.tupFields = tupFields;
         sizesUsed.add(this.tupFields.length);

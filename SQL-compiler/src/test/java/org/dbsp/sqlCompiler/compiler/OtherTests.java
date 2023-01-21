@@ -231,7 +231,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
                             rowVariable, new DBSPUSizeLiteral(i));
             rowGets.add(rowGet);
         }
-        DBSPTupleExpression tuple = new DBSPTupleExpression(rowGets);
+        DBSPTupleExpression tuple = new DBSPTupleExpression(rowGets, false);
         DBSPClosureExpression mapClosure = new DBSPClosureExpression(null, tuple,
                rowVariable.asRefParameter());
         DBSPApplyExpression readDb = new DBSPApplyExpression("read_db", data.getNonVoidType(),

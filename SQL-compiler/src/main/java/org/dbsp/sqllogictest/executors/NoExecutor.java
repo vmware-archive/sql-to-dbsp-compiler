@@ -24,7 +24,6 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.dbsp.sqllogictest.SLTTestFile;
-import org.dbsp.util.SqlTestExecutor;
 import org.dbsp.util.TestStatistics;
 
 /**

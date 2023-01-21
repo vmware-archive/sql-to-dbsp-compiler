@@ -31,8 +31,11 @@ import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.*;
+import org.dbsp.util.IModule;
+import org.dbsp.util.Logger;
 
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,16 +45,16 @@ import java.util.Objects;
  * This visitor converts a parse tree produced by ANTLR into
  * a ZetaSQLTestFile object.
  */
-public class ZetatestVisitor extends ZetatestBaseVisitor<Void> {
+public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModule {
     /**
      * Result generated.
      */
     public final ZetaSQLTestFile tests;
     /**
-     * The test that is currently being converted.
+     * The test result that is currently being converted.
      */
     @Nullable
-    private ZetaSQLTest currentTest;
+    private ZetaSQLTest.TestResult currentResult;
     /**
      * The type of the result of the test that is currently being converted.
      */
@@ -67,74 +70,207 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> {
      */
     @Nullable
     private DBSPExpression currentValue;
+    int structNestingLevel;
 
     public ZetatestVisitor() {
         this.tests = new ZetaSQLTestFile();
-        this.currentTest = null;
         this.currentValue = null;
         this.currentExpressionType = null;
         this.resultType = null;
+        this.structNestingLevel = 0;
     }
 
     @Override
     public Void visitTest(Zetatest.TestContext ctx) {
-        this.currentTest = new ZetaSQLTest();
-        this.visitQuery(ctx.query());
-        this.visitResult(ctx.result());
-        this.tests.add(this.currentTest);
-        this.currentTest = null;
+        Logger.instance.from(this, 2)
+                .append("Visiting test ")
+                .append(ctx.getText()).newline();
+        ZetaSQLTest test = new ZetaSQLTest();
+        test.statement = ctx.query().getText();
+        for (Zetatest.ResultContext result : ctx.result()) {
+            this.currentResult = new ZetaSQLTest.TestResult();
+            for (Zetatest.FeatureContext feature: result.feature()) {
+                this.currentResult.features.add(feature.FeatureDescription().getText());
+            }
+            this.visitResult(result);
+        }
+        this.currentResult = null;
+        this.tests.add(test);
         return null;
-    }
-
-    @Override
-    public Void visitQuery(Zetatest.QueryContext ctx) {
-        Objects.requireNonNull(this.currentTest).statement = ctx.getText();
-        return super.visitQuery(ctx);
     }
 
     @Override
     public Void visitTypedvalue(Zetatest.TypedvalueContext ctx) {
-        this.visitSqltype(ctx.sqltype());
-        Objects.requireNonNull(this.currentTest).type = Objects.requireNonNull(this.resultType);
-        this.currentExpressionType = this.resultType;
-        this.visitSqlvalue(ctx.sqlvalue());
-        this.currentTest.result = this.currentValue;
+       Logger.instance.from(this, 2)
+               .append("Visiting typedvalue ")
+               .append(ctx.getText()).newline();
+       Objects.requireNonNull(this.currentResult);
+       if (ctx.error() != null) {
+            this.currentResult.error = ctx.error().getText();
+        } else {
+            this.visitSqltype(ctx.sqltype());
+            this.currentResult.type = Objects.requireNonNull(this.resultType);
+            this.currentExpressionType = this.resultType;
+            this.visitSqlvalue(ctx.sqlvalue());
+            this.currentResult.result = this.currentValue;
+        }
         this.currentValue = null;
         return null;
     }
 
+    //////////////////// Types
+
+
     @Override
-    public Void visitInttype(Zetatest.InttypeContext ctx) {
+    public Void visitBytestype(Zetatest.BytestypeContext ctx) {
+        // TODO: add support for byte arrays
+        Logger.instance.from(this, 1)
+                .append("Visiting bytes ")
+                .append(ctx.getText()).newline();
+        this.resultType = DBSPTypeString.instance.setMayBeNull(true);
+        return super.visitBytestype(ctx);
+    }
+
+    @Override
+    public Void visitInt64type(Zetatest.Int64typeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting int64 ")
+                .append(ctx.getText()).newline();
         this.resultType = DBSPTypeInteger.signed64.setMayBeNull(true);
-        return super.visitInttype(ctx);
+        return super.visitInt64type(ctx);
+    }
+
+    @Override
+    public Void visitInt32type(Zetatest.Int32typeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting int32 ")
+                .append(ctx.getText()).newline();
+        this.resultType = DBSPTypeInteger.signed32.setMayBeNull(true);
+        return super.visitInt32type(ctx);
+    }
+
+    @Override
+    public Void visitUint32type(Zetatest.Uint32typeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting uint32 ")
+                .append(ctx.getText()).newline();
+        this.resultType = DBSPTypeInteger.unsigned32.setMayBeNull(true);
+        return super.visitUint32type(ctx);
+    }
+
+    @Override
+    public Void visitUint64type(Zetatest.Uint64typeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting uint64 ")
+                .append(ctx.getText()).newline();
+        this.resultType = DBSPTypeInteger.unsigned64.setMayBeNull(true);
+        return super.visitUint64type(ctx);
     }
 
     @Override
     public Void visitBooltype(Zetatest.BooltypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting bool ")
+                .append(ctx.getText()).newline();
         this.resultType = DBSPTypeBool.instance.setMayBeNull(true);
         return super.visitBooltype(ctx);
     }
 
     @Override
     public Void visitDatetype(Zetatest.DatetypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting date ")
+                .append(ctx.getText()).newline();
         this.resultType = DBSPTypeDate.instance.setMayBeNull(true);
         return super.visitDatetype(ctx);
     }
 
     @Override
+    public Void visitTimestamptype(Zetatest.TimestamptypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting timestamp ")
+                .append(ctx.getText()).newline();
+        this.resultType = DBSPTypeTimestamp.instance.setMayBeNull(true);
+        return super.visitTimestamptype(ctx);
+    }
+
+    @Override
+    public Void visitTimetype(Zetatest.TimetypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting time ")
+                .append(ctx.getText()).newline();
+        this.resultType = DBSPTypeTime.instance.setMayBeNull(true);
+        return super.visitTimetype(ctx);
+    }
+
+    @Override
+    public Void visitDatetimetype(Zetatest.DatetimetypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting datetime ")
+                .append(ctx.getText()).newline();
+        this.resultType = DBSPTypeTimestamp.instance.setMayBeNull(true);
+        return super.visitDatetimetype(ctx);
+    }
+
+    @Override
+    public Void visitGeographytype(Zetatest.GeographytypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting geography ")
+                .append(ctx.getText()).newline();
+        this.resultType = DBSPTypeGeoPoint.instance.setMayBeNull(true);
+        return super.visitGeographytype(ctx);
+    }
+
+    @Override
     public Void visitDoubletype(Zetatest.DoubletypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting double ")
+                .append(ctx.getText()).newline();
         this.resultType = DBSPTypeDouble.instance.setMayBeNull(true);
         return super.visitDoubletype(ctx);
     }
 
     @Override
+    public Void visitFloattype(Zetatest.FloattypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting float ")
+                .append(ctx.getText()).newline();
+        this.resultType = DBSPTypeFloat.instance.setMayBeNull(true);
+        return super.visitFloattype(ctx);
+    }
+
+    @Override
     public Void visitStringtype(Zetatest.StringtypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting string ")
+                .append(ctx.getText()).newline();
         this.resultType = DBSPTypeString.instance.setMayBeNull(true);
         return super.visitStringtype(ctx);
     }
 
     @Override
+    public Void visitNumerictype(Zetatest.NumerictypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting numeric ")
+                .append(ctx.getText()).newline();
+        this.resultType = new DBSPTypeDecimal(null,128, true);
+        return super.visitNumerictype(ctx);
+    }
+
+    @Override
+    public Void visitBignumerictype(Zetatest.BignumerictypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting bignumeric ")
+                .append(ctx.getText()).newline();
+        this.resultType = new DBSPTypeDecimal(null,256, true);
+        return super.visitBignumerictype(ctx);
+    }
+
+    @Override
     public Void visitArraytype(Zetatest.ArraytypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting array ")
+                .append(ctx.getText()).newline();
         if (ctx.sqltype() != null) {
             this.visitSqltype(ctx.sqltype());
             Objects.requireNonNull(this.resultType);
@@ -149,19 +285,51 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> {
 
     @Override
     public Void visitStructtype(Zetatest.StructtypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting struct ")
+                .append(ctx.getText()).newline();
+        this.structNestingLevel++;
         List<DBSPType> fields = new ArrayList<>();
         for (Zetatest.OptNamedSqlTypeContext context: ctx.fields().optNamedSqlType()) {
             this.visitSqltype(context.sqltype());
             fields.add(this.resultType);
         }
-        this.resultType = new DBSPTypeTuple(fields);
+        // we allow only nested structs to be nullable
+        boolean mayBeNull = this.structNestingLevel > 1;
+        this.resultType = new DBSPTypeTuple(fields).setMayBeNull(mayBeNull);
+        this.structNestingLevel--;
         return null;
+    }
+
+    @Override
+    public Void visitEnumtype(Zetatest.EnumtypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting enum ")
+                .append(ctx.getText()).newline();
+        // TODO: What should this be?
+        this.resultType = DBSPTypeString.instance.setMayBeNull(true);
+        return super.visitEnumtype(ctx);
     }
 
     /////////////////// values
 
     @Override
+    public Void visitBytesvalue(Zetatest.BytesvalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting bytesvalue ")
+                .append(ctx.getText()).newline();
+        Objects.requireNonNull(this.currentExpressionType);
+        if (!this.currentExpressionType.is(DBSPTypeString.class))
+            throw new RuntimeException("Bytes value found, expected type " + this.currentExpressionType);
+        this.currentValue = new DBSPStringLiteral(ctx.getText(), this.currentExpressionType.mayBeNull);
+        return super.visitBytesvalue(ctx);
+    }
+
+    @Override
     public Void visitBoolvalue(Zetatest.BoolvalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting boolvalue ")
+                .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
         if (!this.currentExpressionType.is(DBSPTypeBool.class))
             throw new RuntimeException("Boolean value found, expected type " + this.currentExpressionType);
@@ -177,6 +345,9 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> {
 
     @Override
     public Void visitStringvalue(Zetatest.StringvalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting stringvalue ")
+                .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
         if (!this.currentExpressionType.is(DBSPTypeString.class))
             throw new RuntimeException("String value found, expected type " + this.currentExpressionType);
@@ -187,15 +358,57 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> {
 
     @Override
     public Void visitFloatvalue(Zetatest.FloatvalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting floatvalue ")
+                .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
-        if (!this.currentExpressionType.is(DBSPTypeDouble.class))
-            throw new RuntimeException("Double value found, expected type " + this.currentExpressionType);
-        this.currentValue = new DBSPDoubleLiteral(Double.parseDouble(ctx.getText()), this.currentExpressionType.mayBeNull);
+        String text = ctx.getText();
+        boolean mayBeNull = this.currentExpressionType.mayBeNull;
+        if (this.currentExpressionType.is(DBSPTypeDouble.class)) {
+            switch (text) {
+                case "inf":
+                    this.currentValue = new DBSPDoubleLiteral(Double.POSITIVE_INFINITY, mayBeNull);
+                    break;
+                case "-inf":
+                    this.currentValue = new DBSPDoubleLiteral(Double.NEGATIVE_INFINITY, mayBeNull);
+                    break;
+                case "nan":
+                    this.currentValue = new DBSPDoubleLiteral(Double.NaN, mayBeNull);
+                    break;
+                default:
+                    this.currentValue = new DBSPDoubleLiteral(Double.parseDouble(ctx.getText()), mayBeNull);
+                    break;
+            }
+        } else if (this.currentExpressionType.is(DBSPTypeFloat.class)) {
+            switch (text) {
+                case "inf":
+                    this.currentValue = new DBSPFloatLiteral(Float.POSITIVE_INFINITY, mayBeNull);
+                    break;
+                case "-inf":
+                    this.currentValue = new DBSPFloatLiteral(Float.NEGATIVE_INFINITY, mayBeNull);
+                    break;
+                case "nan":
+                    this.currentValue = new DBSPFloatLiteral(Float.NaN, mayBeNull);
+                    break;
+                default:
+                    this.currentValue = new DBSPFloatLiteral(Float.parseFloat(ctx.getText()), mayBeNull);
+                    break;
+            }
+        } else if (this.currentExpressionType.is(DBSPTypeDecimal.class)) {
+            BigDecimal decimal = new BigDecimal(text);
+            this.currentValue = new DBSPDecimalLiteral(null, this.currentExpressionType, decimal);
+        } else {
+            throw new RuntimeException("Double value '" + text
+                    + "' found, expected type " + this.currentExpressionType);
+        }
         return super.visitFloatvalue(ctx);
     }
 
     @Override
     public Void visitNullvalue(Zetatest.NullvalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting nullvalue ")
+                .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
         this.currentValue = DBSPLiteral.none(this.currentExpressionType);
         return super.visitNullvalue(ctx);
@@ -203,6 +416,9 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> {
 
     @Override
     public Void visitArrayvalue(Zetatest.ArrayvalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting arrayvalue ")
+                .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
         if (this.currentExpressionType.is(DBSPTypeZSet.class)) {
             List<DBSPExpression> values = new ArrayList<>();
@@ -213,7 +429,11 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> {
                 Objects.requireNonNull(this.currentValue);
                 values.add(this.currentValue);
             }
-            this.currentValue = new DBSPZSetLiteral(values.toArray(new DBSPExpression[0]));
+            if (values.isEmpty()) {
+                this.currentValue = new DBSPZSetLiteral(this.currentExpressionType);
+            } else {
+                this.currentValue = new DBSPZSetLiteral(values.toArray(new DBSPExpression[0]));
+            }
             return null;
         } else if (this.currentExpressionType.is(DBSPTypeVec.class)) {
             if (ctx.arraytype() == null)
@@ -236,6 +456,10 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> {
 
     @Override
     public Void visitStructvalue(Zetatest.StructvalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting structvalue ")
+                .append(ctx.getText()).newline();
+        DBSPType saveExpressionType = this.currentExpressionType;
         Objects.requireNonNull(this.currentExpressionType);
         if (!this.currentExpressionType.is(DBSPTypeTuple.class))
             throw new RuntimeException("Struct value found " + ctx.getText() +
@@ -250,40 +474,130 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> {
             Objects.requireNonNull(this.currentValue);
             fields.add(this.currentValue);
         }
-        this.currentValue = new DBSPTupleExpression(fields);
+        this.currentValue = new DBSPTupleExpression(fields, saveExpressionType.mayBeNull);
         return null;
+    }
+
+    @Override
+    public Void visitDatetimevalue(Zetatest.DatetimevalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting datetime ")
+                .append(ctx.getText()).newline();
+        Objects.requireNonNull(this.currentExpressionType);
+        if (!this.currentExpressionType.is(DBSPTypeTimestamp.class))
+            throw new RuntimeException("Datetime value found " + ctx.getText() +
+                    " expected type " + this.currentExpressionType);
+        this.currentValue = new DBSPTimestampLiteral(
+                ctx.DATEVALUE().getText() + " " + ctx.TIMEVALUE().getText(),
+                this.currentExpressionType.mayBeNull);
+        return super.visitDatetimevalue(ctx);
+    }
+
+    @Override
+    public Void visitTimevalue(Zetatest.TimevalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting timevalue ")
+                .append(ctx.getText()).newline();
+        Objects.requireNonNull(this.currentExpressionType);
+        if (!this.currentExpressionType.is(DBSPTypeTime.class))
+            throw new RuntimeException("Time value found " + ctx.getText() +
+                    " expected type " + this.currentExpressionType);
+        this.currentValue = new DBSPTimeLiteral(ctx.getText(), this.currentExpressionType.mayBeNull);
+        return super.visitTimevalue(ctx);
+    }
+
+    @Override
+    public Void visitEnumvalue(Zetatest.EnumvalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting enumvalue ")
+                .append(ctx.getText()).newline();
+        Objects.requireNonNull(this.currentExpressionType);
+        if (!this.currentExpressionType.is(DBSPTypeString.class))
+            throw new RuntimeException("Enum value found " + ctx.getText() +
+                    " expected type " + this.currentExpressionType);
+        this.currentValue = new DBSPStringLiteral(ctx.getText(), this.currentExpressionType.mayBeNull);
+        return super.visitEnumvalue(ctx);
     }
 
     @Override
     public Void visitDatevalue(Zetatest.DatevalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting datevalue ")
+                .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
         if (!this.currentExpressionType.is(DBSPTypeDate.class))
             throw new RuntimeException("Date value found, expected type " + this.currentExpressionType);
-        this.currentValue = new DBSPDateLiteral(ctx.getText());
+        this.currentValue = new DBSPDateLiteral(ctx.getText(), this.currentExpressionType.mayBeNull);
         return null;
     }
 
     @Override
+    public Void visitTimestampvalue(Zetatest.TimestampvalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting timestampvalue ")
+                .append(ctx.getText()).newline();
+        Objects.requireNonNull(this.currentExpressionType);
+        if (!this.currentExpressionType.is(DBSPTypeTimestamp.class))
+            throw new RuntimeException("Timestamp value found, expected type " + this.currentExpressionType);
+        // Drop timezone for now
+        // TODO: add support for timezones
+        String text = ctx.getText();
+        text = text.substring(0, text.length() - 3);
+        this.currentValue = new DBSPTimestampLiteral(text, this.currentExpressionType.mayBeNull);
+        return super.visitTimestampvalue(ctx);
+    }
+
+    @Override
     public Void visitIntvalue(Zetatest.IntvalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting intvalue ")
+                .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
         BigInteger value = new BigInteger(ctx.getText());
         if (this.currentExpressionType.is(DBSPTypeInteger.class)) {
             DBSPTypeInteger intType = this.currentExpressionType.to(DBSPTypeInteger.class);
-            switch (intType.getWidth()) {
-                case 32:
+            switch (intType.getRustString()) {
+                case "i32":
                     this.currentValue = new DBSPIntegerLiteral(value.intValue(), this.currentExpressionType.mayBeNull);
                     break;
-                case 64:
+                case "u32":
+                    this.currentValue = new DBSPUIntegerLiteral(value.intValue(), this.currentExpressionType.mayBeNull);
+                    break;
+                case "i64":
                     this.currentValue = new DBSPLongLiteral(value.longValue(), this.currentExpressionType.mayBeNull);
+                    break;
+                case "u64":
+                    this.currentValue = new DBSPULongLiteral(value.longValue(), this.currentExpressionType.mayBeNull);
                     break;
                 default:
                     throw new RuntimeException("Unexpected type " + intType);
             }
         } else if (this.currentExpressionType.is(DBSPTypeDouble.class)) {
             this.currentValue = new DBSPDoubleLiteral((double)value.longValue(), this.currentExpressionType.mayBeNull);
+        } else if (this.currentExpressionType.is(DBSPTypeFloat.class)) {
+            this.currentValue = new DBSPFloatLiteral((float)value.longValue(), this.currentExpressionType.mayBeNull);
+        } else if (this.currentExpressionType.is(DBSPTypeDecimal.class)) {
+            BigDecimal decimal = new BigDecimal(value);
+            this.currentValue = new DBSPDecimalLiteral(null, this.currentExpressionType, decimal);
         } else {
-            throw new RuntimeException("Integer value found, expected type " + this.currentExpressionType);
+            throw new RuntimeException("Integer value '" + ctx.getText() +
+                    "' found, expected type " + this.currentExpressionType);
         }
         return super.visitIntvalue(ctx);
+    }
+
+    @Override
+    public Void visitSt_pointvalue(Zetatest.St_pointvalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting pointvalue ")
+                .append(ctx.getText()).newline();
+        Objects.requireNonNull(this.currentExpressionType);
+        if (!this.currentExpressionType.is(DBSPTypeGeoPoint.class))
+            throw new RuntimeException("st_point value " + ctx.getText() +
+                    " found, expected type is " + this.currentExpressionType);
+        DBSPExpression left = new DBSPDoubleLiteral(Double.parseDouble(ctx.number(0).getText()));
+        DBSPExpression right = new DBSPDoubleLiteral(Double.parseDouble(ctx.number(1).getText()));
+        this.currentValue = new DBSPGeoPointLiteral(null, left, right);
+        return null;
     }
 }
