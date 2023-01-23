@@ -30,7 +30,7 @@ import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDoubleLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPI32Literal;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.util.Utilities;
 import org.junit.Test;
@@ -144,7 +144,7 @@ public class MultiViewTests extends BaseSQLTests {
                                 new DBSPTupleExpression(DBSPBoolLiteral.True),
                                 new DBSPTupleExpression(DBSPBoolLiteral.False)),
                         new DBSPZSetLiteral(
-                                new DBSPTupleExpression(new DBSPIntegerLiteral(10)))
+                                new DBSPTupleExpression(new DBSPI32Literal(10)))
                 }
         );
         this.createTester(writer, circuit, stream);

@@ -93,6 +93,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
                 this.currentResult.features.add(feature.FeatureDescription().getText());
             }
             this.visitResult(result);
+            test.results.add(this.currentResult);
         }
         this.currentResult = null;
         this.tests.add(test);
@@ -558,16 +559,16 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
             DBSPTypeInteger intType = this.currentExpressionType.to(DBSPTypeInteger.class);
             switch (intType.getRustString()) {
                 case "i32":
-                    this.currentValue = new DBSPIntegerLiteral(value.intValue(), this.currentExpressionType.mayBeNull);
+                    this.currentValue = new DBSPI32Literal(value.intValue(), this.currentExpressionType.mayBeNull);
                     break;
                 case "u32":
-                    this.currentValue = new DBSPUIntegerLiteral(value.intValue(), this.currentExpressionType.mayBeNull);
+                    this.currentValue = new DBSPU32Literal(value.intValue(), this.currentExpressionType.mayBeNull);
                     break;
                 case "i64":
-                    this.currentValue = new DBSPLongLiteral(value.longValue(), this.currentExpressionType.mayBeNull);
+                    this.currentValue = new DBSPI64Literal(value.longValue(), this.currentExpressionType.mayBeNull);
                     break;
                 case "u64":
-                    this.currentValue = new DBSPULongLiteral(value.longValue(), this.currentExpressionType.mayBeNull);
+                    this.currentValue = new DBSPU64Literal(value.longValue(), this.currentExpressionType.mayBeNull);
                     break;
                 default:
                     throw new RuntimeException("Unexpected type " + intType);

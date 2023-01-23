@@ -345,7 +345,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 if (s.equalsIgnoreCase("null"))
                     field = DBSPLiteral.none(colType);
                 else if (colType.is(DBSPTypeInteger.class))
-                    field = new DBSPIntegerLiteral(Integer.parseInt(s));
+                    field = new DBSPI32Literal(Integer.parseInt(s));
                 else if (colType.is(DBSPTypeDouble.class))
                     field = new DBSPDoubleLiteral(Double.parseDouble(s));
                 else if (colType.is(DBSPTypeFloat.class))
@@ -552,7 +552,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             list.add(new DBSPExpressionStatement(
                     new DBSPApplyExpression("assert_eq!", null,
                             new DBSPAsExpression(count, DBSPTypeZSet.defaultWeightType), new DBSPAsExpression(
-                                    new DBSPIntegerLiteral(description.getExpectedOutputSize()),
+                                    new DBSPI32Literal(description.getExpectedOutputSize()),
                             DBSPTypeZSet.defaultWeightType))));
         }if (output != null) {
             if (description.columnTypes != null) {

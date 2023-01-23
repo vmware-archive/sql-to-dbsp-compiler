@@ -28,7 +28,7 @@ import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLongLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPI64Literal;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -313,7 +313,7 @@ public class AggregateCompiler {
         DBSPExpression countAccumulator = accum.field(countIndex);
         DBSPExpression sumAccumulator = accum.field(sumIndex);
         DBSPExpression aggregatedValue = ExpressionCompiler.makeCast(this.getAggregatedValue(), i64);
-        DBSPExpression plusOne = new DBSPLongLiteral(1L);
+        DBSPExpression plusOne = new DBSPI64Literal(1L);
         if (aggregatedValueType.mayBeNull)
             plusOne = new DBSPApplyExpression("indicator", DBSPTypeInteger.signed64, aggregatedValue);
         if (this.isDistinct) {

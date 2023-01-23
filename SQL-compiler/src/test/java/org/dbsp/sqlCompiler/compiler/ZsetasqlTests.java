@@ -100,7 +100,7 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
         Assert.assertEquals(5, tuple.size());
         for (int i = 0; i < 5; i++)
             Assert.assertTrue(tuple.getFieldType(i).is(DBSPTypeBool.class));
-        Assert.assertEquals("{ Tuple5::new(true, true, true, true, true) => 1}",
+        Assert.assertEquals("{ Tuple5::new(Some(true), Some(true), Some(true), Some(true), Some(true)) => 1}",
                 Objects.requireNonNull(result.result).toString());
     }
 

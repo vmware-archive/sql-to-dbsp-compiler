@@ -259,9 +259,9 @@ public class OtherTests extends BaseSQLTests implements IModule {
     @Test
     public void rustCsvTest2() throws IOException, InterruptedException {
         DBSPZSetLiteral data = new DBSPZSetLiteral(
-                new DBSPTupleExpression(new DBSPIntegerLiteral(1, true)),
-                new DBSPTupleExpression(new DBSPIntegerLiteral(2, true)),
-                new DBSPTupleExpression(DBSPIntegerLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))
+                new DBSPTupleExpression(new DBSPI32Literal(1, true)),
+                new DBSPTupleExpression(new DBSPI32Literal(2, true)),
+                new DBSPTupleExpression(DBSPI32Literal.none(DBSPTypeInteger.signed32.setMayBeNull(true)))
         );
         String fileName = BaseSQLTests.rustDirectory + "/" + "test.csv";
         File file = Solutions.toCsv(fileName, data);

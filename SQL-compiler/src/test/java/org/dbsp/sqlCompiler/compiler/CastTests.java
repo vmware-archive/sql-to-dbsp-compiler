@@ -58,7 +58,7 @@ public class CastTests extends BaseSQLTests {
     @Override
     DBSPZSetLiteral createInput() {
         return new DBSPZSetLiteral(new DBSPTupleExpression(
-                new DBSPIntegerLiteral(10),
+                new DBSPI32Literal(10),
                 new DBSPDoubleLiteral(12.0),
                 new DBSPStringLiteral("100100"),
                 DBSPLiteral.none(tenTwo),
@@ -86,14 +86,14 @@ public class CastTests extends BaseSQLTests {
     public void intAndString() {
         String query = "SELECT '1' + 2";
         this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(new DBSPIntegerLiteral(3))));
+                new DBSPTupleExpression(new DBSPI32Literal(3))));
     }
 
     @Test
     public void intAndStringTable() {
         String query = "SELECT T.COL1 + T.COL3 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(new DBSPIntegerLiteral(100110))));
+                new DBSPTupleExpression(new DBSPI32Literal(100110))));
     }
 
     @Test

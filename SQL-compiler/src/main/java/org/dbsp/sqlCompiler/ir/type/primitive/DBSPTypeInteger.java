@@ -24,9 +24,9 @@
 package org.dbsp.sqlCompiler.ir.type.primitive;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIntegerLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPI32Literal;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLongLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPI64Literal;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 import org.dbsp.util.UnsupportedException;
@@ -65,18 +65,18 @@ public class DBSPTypeInteger extends DBSPTypeBaseType
     @Override
     public DBSPLiteral getZero() {
         if (this.width <= 32) {
-            return new DBSPIntegerLiteral(0, this.mayBeNull);
+            return new DBSPI32Literal(0, this.mayBeNull);
         } else {
-            return new DBSPLongLiteral(0L, this.mayBeNull);
+            return new DBSPI64Literal(0L, this.mayBeNull);
         }
     }
 
     @Override
     public DBSPLiteral getOne() {
         if (this.width <= 32) {
-            return new DBSPIntegerLiteral(1, this.mayBeNull);
+            return new DBSPI32Literal(1, this.mayBeNull);
         } else {
-            return new DBSPLongLiteral(1L, this.mayBeNull);
+            return new DBSPI64Literal(1L, this.mayBeNull);
         }
     }
 
@@ -84,11 +84,11 @@ public class DBSPTypeInteger extends DBSPTypeBaseType
     public DBSPLiteral getMaxValue() {
         switch (this.width) {
             case 16:
-                return new DBSPIntegerLiteral((int)Short.MAX_VALUE, this.mayBeNull);
+                return new DBSPI32Literal((int)Short.MAX_VALUE, this.mayBeNull);
             case 32:
-                return new DBSPIntegerLiteral(Integer.MAX_VALUE, this.mayBeNull);
+                return new DBSPI32Literal(Integer.MAX_VALUE, this.mayBeNull);
             case 64:
-                return new DBSPLongLiteral(Long.MAX_VALUE, this.mayBeNull);
+                return new DBSPI64Literal(Long.MAX_VALUE, this.mayBeNull);
             default:
                 throw new UnsupportedException(this);
         }
@@ -98,11 +98,11 @@ public class DBSPTypeInteger extends DBSPTypeBaseType
     public DBSPLiteral getMinValue() {
         switch (this.width) {
             case 16:
-                return new DBSPIntegerLiteral((int)Short.MIN_VALUE, this.mayBeNull);
+                return new DBSPI32Literal((int)Short.MIN_VALUE, this.mayBeNull);
             case 32:
-                return new DBSPIntegerLiteral(Integer.MIN_VALUE, this.mayBeNull);
+                return new DBSPI32Literal(Integer.MIN_VALUE, this.mayBeNull);
             case 64:
-                return new DBSPLongLiteral(Long.MIN_VALUE, this.mayBeNull);
+                return new DBSPI64Literal(Long.MIN_VALUE, this.mayBeNull);
             default:
                 throw new UnsupportedException(this);
         }

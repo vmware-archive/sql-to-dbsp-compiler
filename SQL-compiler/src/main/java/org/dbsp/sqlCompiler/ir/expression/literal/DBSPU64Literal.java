@@ -28,26 +28,26 @@ import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 
 import javax.annotation.Nullable;
 
-public class DBSPLongLiteral extends DBSPLiteral {
+public class DBSPU64Literal extends DBSPLiteral {
     @Nullable
     public final Long value;
 
-    public DBSPLongLiteral() {
+    public DBSPU64Literal() {
         this(null, true);
     }
 
-    public DBSPLongLiteral(long value) {
+    public DBSPU64Literal(long value) {
         this(value, false);
     }
 
-    public DBSPLongLiteral(@Nullable Object node, @Nullable Long value, boolean nullable) {
-        super(node, DBSPTypeInteger.signed64.setMayBeNull(nullable), value);
+    public DBSPU64Literal(@Nullable Object node, @Nullable Long value, boolean nullable) {
+        super(node, DBSPTypeInteger.unsigned64.setMayBeNull(nullable), value);
         if (value == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = value;
     }
 
-    public DBSPLongLiteral(@Nullable Long value, boolean nullable) {
+    public DBSPU64Literal(@Nullable Long value, boolean nullable) {
         this(null, value, nullable);
     }
 

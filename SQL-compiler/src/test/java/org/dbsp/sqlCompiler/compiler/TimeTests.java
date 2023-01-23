@@ -92,10 +92,10 @@ public class TimeTests extends BaseSQLTests {
     @Test
     public void dowTest() {
         String query = "SELECT extract (ISODOW from COL1) FROM T";
-        this.testQuery(query, new DBSPLongLiteral(5));
+        this.testQuery(query, new DBSPI64Literal(5));
         // We know that the next date was a Thursday
         query = "SELECT extract (ISODOW from TIMESTAMP '2022-12-15')";
-        this.testQuery(query, new DBSPLongLiteral(4));
+        this.testQuery(query, new DBSPI64Literal(4));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class TimeTests extends BaseSQLTests {
                 "timestampdiff(MONTH, TIMESTAMP'2021-02-28 12:00:00', TIMESTAMP'2021-03-28 12:00:00'), " +
                 "timestampdiff(YEAR, DATE'2021-01-01', DATE'1900-03-28')";
         this.testQuery(query,
-                new DBSPIntegerLiteral(0), new DBSPIntegerLiteral(1), new DBSPIntegerLiteral(-120)
+                new DBSPI32Literal(0), new DBSPI32Literal(1), new DBSPI32Literal(-120)
                 );
     }
 }

@@ -28,19 +28,19 @@ import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 
 import javax.annotation.Nullable;
 
-public class DBSPUIntegerLiteral extends DBSPLiteral {
+public class DBSPU32Literal extends DBSPLiteral {
     @Nullable
     public final Integer value;
 
-    public DBSPUIntegerLiteral() {
+    public DBSPU32Literal() {
         this(null, true);
     }
 
-    public DBSPUIntegerLiteral(int value) {
+    public DBSPU32Literal(int value) {
         this(value, false);
     }
 
-    public DBSPUIntegerLiteral(@Nullable Integer value, boolean nullable) {
+    public DBSPU32Literal(@Nullable Integer value, boolean nullable) {
         super(null, DBSPTypeInteger.unsigned32.setMayBeNull(nullable), value);
         if (value == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");

@@ -35,7 +35,6 @@ import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.*;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Point;
 
 import javax.annotation.Nullable;
@@ -108,7 +107,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         if (literal.isNull())
             return DBSPLiteral.none(type);
         if (type.is(DBSPTypeInteger.class))
-            return new DBSPLongLiteral(Objects.requireNonNull(literal.getValueAs(Integer.class)));
+            return new DBSPI64Literal(Objects.requireNonNull(literal.getValueAs(Integer.class)));
         else if (type.is(DBSPTypeDouble.class))
             return new DBSPDoubleLiteral(Objects.requireNonNull(literal.getValueAs(Double.class)));
         else if (type.is(DBSPTypeFloat.class))
