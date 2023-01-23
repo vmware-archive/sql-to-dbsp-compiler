@@ -1,3 +1,5 @@
+![Tests](https://github.com/vmware/sql-to-dbsp-compiler/actions/workflows/ci.yml/badge.svg)
+
 # SQL to DBSP compiler
 
 This repository holds the source code for a compiler translating SQL
