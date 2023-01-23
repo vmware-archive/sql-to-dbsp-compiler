@@ -49,7 +49,7 @@ public class ToCsvVisitor extends InnerVisitor {
     }
 
     @Override
-    public boolean preorder(DBSPIntegerLiteral literal) {
+    public boolean preorder(DBSPI32Literal literal) {
         try {
             if (literal.value != null)
                 this.appendable.append(Integer.toString(literal.value));
@@ -62,7 +62,7 @@ public class ToCsvVisitor extends InnerVisitor {
     }
 
     @Override
-    public boolean preorder(DBSPLongLiteral literal) {
+    public boolean preorder(DBSPI64Literal literal) {
         try {
             if (literal.value != null)
                 this.appendable.append(Long.toString(literal.value));

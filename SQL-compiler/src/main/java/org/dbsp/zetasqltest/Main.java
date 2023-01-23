@@ -23,6 +23,8 @@
 
 package org.dbsp.zetasqltest;
 
+import org.dbsp.ZetatestVisitor;
+import org.dbsp.util.Logger;
 import org.dbsp.util.TestStatistics;
 import org.dbsp.util.Utilities;
 
@@ -71,7 +73,8 @@ public class Main {
 
 
     public static void main(String[] args) throws IOException {
-        Path path = Paths.get(zetaRepo + "/pivot.test");
+        //Logger.instance.setDebugLevel(ZetatestVisitor.class, 1);
+        Path path = Paths.get(zetaRepo);
         TestLoader loader = new TestLoader();
         Files.walkFileTree(path, loader);
         System.out.println("Files that could not be not parsed: " + loader.errors);

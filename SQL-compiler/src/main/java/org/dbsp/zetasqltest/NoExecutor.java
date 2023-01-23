@@ -37,9 +37,9 @@ public class NoExecutor extends SqlTestExecutor {
         this.startTest();
         TestStatistics result = new TestStatistics();
         for (ZetaSQLTest ignored : file.tests) {
-            result.passed++;
+            result.ignored++;
         }
-        this.reportTime(result.passed);
+        this.reportTime(result.totalTests());
         return result;
     }
 }

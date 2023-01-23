@@ -352,7 +352,7 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
                     if (rs.wasNull())
                         exp = DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true));
                     else
-                        exp = new DBSPIntegerLiteral(value, type.mayBeNull);
+                        exp = new DBSPI32Literal(value, type.mayBeNull);
                 } else if (type.is(DBSPTypeDouble.class)) {
                     double value = rs.getDouble(i + 1);
                     if (rs.wasNull())

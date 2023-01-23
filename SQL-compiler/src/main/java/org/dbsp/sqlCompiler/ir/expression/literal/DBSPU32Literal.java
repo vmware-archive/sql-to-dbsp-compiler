@@ -23,43 +23,40 @@
 
 package org.dbsp.sqlCompiler.ir.expression.literal;
 
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeKeyword;
-import org.dbsp.util.Unimplemented;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 
 import javax.annotation.Nullable;
 
-/**
- * SQL contains a large number of keywords that appear in various places.
- */
-@SuppressWarnings("SpellCheckingInspection")
-public class DBSPKeywordLiteral extends DBSPLiteral {
-    enum Keyword {
-        DOW,    // Day of week
-        EPOCH,
-        ISODOW,
+public class DBSPU32Literal extends DBSPLiteral {
+    @Nullable
+    public final Integer value;
+
+    public DBSPU32Literal() {
+        this(null, true);
     }
 
-    public final Keyword keyword;
+    public DBSPU32Literal(int value) {
+        this(value, false);
+    }
 
-    public DBSPKeywordLiteral(@Nullable Object node, String keyword) {
-        super(node, DBSPTypeKeyword.instance, keyword);
-        switch (keyword.toLowerCase()) {
-            case "dow":
-                this.keyword = Keyword.DOW;
-                break;
-            case "epoch":
-                this.keyword = Keyword.EPOCH;
-                break;
-            case "isodow":
-                this.keyword = Keyword.ISODOW;
-                break;
-            default:
-                throw new Unimplemented(node != null ? node : keyword);
-        }
+    public DBSPU32Literal(@Nullable Integer value, boolean nullable) {
+        super(null, DBSPTypeInteger.unsigned32.setMayBeNull(nullable), value);
+        if (value == null && !nullable)
+            throw new RuntimeException("Null value with non-nullable type");
+        if (value != null && value < 0)
+            throw new RuntimeException("Negative value for unsigned literal");
+        this.value = value;
     }
 
     @Override
-    public String toString() {
-        return this.keyword.toString();
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
+    }
+
+    public DBSPTypeInteger getIntegerType() {
+        assert this.type != null;
+        return this.type.to(DBSPTypeInteger.class);
     }
 }

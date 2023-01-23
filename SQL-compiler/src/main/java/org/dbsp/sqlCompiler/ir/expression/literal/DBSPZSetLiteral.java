@@ -56,7 +56,8 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         this.data = new HashMap<>();
         for (DBSPExpression e: data) {
             if (!e.getNonVoidType().sameType(data[0].getNonVoidType()))
-                throw new RuntimeException("Not all values of set have the same type:" +
+                throw new RuntimeException("Cannot add value " + e +
+                        "\nNot all values of set have the same type:" +
                     e.getType() + " vs " + data[0].getType());
             this.add(e);
         }

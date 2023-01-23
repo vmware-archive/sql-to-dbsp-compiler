@@ -28,37 +28,33 @@ import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 
 import javax.annotation.Nullable;
 
-public class DBSPLongLiteral extends DBSPLiteral {
+public class DBSPI32Literal extends DBSPLiteral {
     @Nullable
-    public final Long value;
+    public final Integer value;
 
-    public DBSPLongLiteral() {
+    public DBSPI32Literal() {
         this(null, true);
     }
 
-    public DBSPLongLiteral(long value) {
+    public DBSPI32Literal(int value) {
         this(value, false);
     }
 
-    public DBSPLongLiteral(@Nullable Object node, @Nullable Long value, boolean nullable) {
-        super(node, DBSPTypeInteger.signed64.setMayBeNull(nullable), value);
+    public DBSPI32Literal(@Nullable Integer value, boolean nullable) {
+        super(null, DBSPTypeInteger.signed32.setMayBeNull(nullable), value);
         if (value == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = value;
-    }
-
-    public DBSPLongLiteral(@Nullable Long value, boolean nullable) {
-        this(null, value, nullable);
-    }
-
-    public DBSPTypeInteger getIntegerType() {
-        assert this.type != null;
-        return this.type.to(DBSPTypeInteger.class);
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);
+    }
+
+    public DBSPTypeInteger getIntegerType() {
+        assert this.type != null;
+        return this.type.to(DBSPTypeInteger.class);
     }
 }

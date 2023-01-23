@@ -39,13 +39,14 @@ public class DBSPTupleExpression extends DBSPBaseTupleExpression {
 
     public int size() { return this.fields.length; }
 
-    public DBSPTupleExpression(@Nullable Object object, DBSPExpression... expressions) {
-        super(object, new DBSPTypeTuple(Linq.map(expressions, DBSPExpression::getType, DBSPType.class)));
+    public DBSPTupleExpression(@Nullable Object object, boolean mayBeNull, DBSPExpression... expressions) {
+        super(object,
+                new DBSPTypeTuple(null, mayBeNull, Linq.map(expressions, DBSPExpression::getType, DBSPType.class)));
         this.fields = expressions;
     }
 
     public DBSPTupleExpression(DBSPExpression... expressions) {
-        this(null, expressions);
+        this(null, false, expressions);
     }
 
     /**
@@ -58,12 +59,12 @@ public class DBSPTupleExpression extends DBSPBaseTupleExpression {
         return new DBSPTupleExpression(fields);
     }
 
-    public DBSPTupleExpression(List<DBSPExpression> fields) {
-        this(null, fields.toArray(new DBSPExpression[0]));
+    public DBSPTupleExpression(List<DBSPExpression> fields, boolean mayBeNull) {
+        this(null, mayBeNull, fields.toArray(new DBSPExpression[0]));
     }
 
     public DBSPTupleExpression(@Nullable Object node, List<DBSPExpression> fields) {
-        this(node, fields.toArray(new DBSPExpression[0]));
+        this(node, false, fields.toArray(new DBSPExpression[0]));
     }
 
     /**
@@ -80,7 +81,7 @@ public class DBSPTupleExpression extends DBSPBaseTupleExpression {
                 fields.add(field);
             }
         }
-        return new DBSPTupleExpression(fields);
+        return new DBSPTupleExpression(fields, false);
     }
 
     /**

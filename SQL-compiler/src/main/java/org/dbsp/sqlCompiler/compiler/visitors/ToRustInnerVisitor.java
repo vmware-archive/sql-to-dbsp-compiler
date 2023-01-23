@@ -167,7 +167,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
-    public boolean preorder(DBSPIntegerLiteral literal) {
+    public boolean preorder(DBSPI32Literal literal) {
         assert literal.value != null;
         String val = Integer.toString(literal.value);
         this.builder.append(literal.wrapSome(val + literal.getIntegerType().getRustString()));
@@ -175,7 +175,23 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
-    public boolean preorder(DBSPLongLiteral literal) {
+    public boolean preorder(DBSPU32Literal literal) {
+        assert literal.value != null;
+        String val = Integer.toString(literal.value);
+        this.builder.append(literal.wrapSome(val + literal.getIntegerType().getRustString()));
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPI64Literal literal) {
+        assert literal.value != null;
+        String val = Long.toString(literal.value);
+        this.builder.append(literal.wrapSome(val + literal.getIntegerType().getRustString()));
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPU64Literal literal) {
         assert literal.value != null;
         String val = Long.toString(literal.value);
         this.builder.append(literal.wrapSome(val + literal.getIntegerType().getRustString()));

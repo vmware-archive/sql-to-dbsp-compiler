@@ -27,10 +27,23 @@ import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ZetaSQLTest {
+    public static class TestResult {
+        /**
+         * Optional feature which conditioned this result.
+         */
+        public List<String> features = new ArrayList<>();
+        @Nullable
+        public DBSPExpression result;
+        @Nullable
+        public DBSPType type;
+        @Nullable
+        public String error;
+    }
+
     public String statement = "";
-    @Nullable
-    public DBSPExpression result;
-    public DBSPType type;
+    public List<TestResult> results = new ArrayList<>();
 }
