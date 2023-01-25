@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,25 +21,49 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.circuit.operator;
 
-import org.dbsp.sqlCompiler.circuit.operator.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
+import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
-import java.util.function.Function;
+import javax.annotation.Nullable;
+import java.util.List;
 
-/**
- * This visitor just applies a user-defined function to a circuit.
- */
-public class FunctorVisitor extends CircuitVisitor {
-    private final Function<DBSPCircuit, DBSPCircuit> transformation;
-    public FunctorVisitor(Function<DBSPCircuit, DBSPCircuit> transform) {
-        super(false);
-        this.transformation = transform;
+public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
+    public final DBSPPartialCircuit circuit;
+    public final String name;
+
+    public DBSPCircuit(DBSPPartialCircuit circuit, String name) {
+        super(null);
+        this.circuit = circuit;
+        this.name = name;
+    }
+
+    @Nullable
+    @Override
+    public Object getNode() {
+        return this.circuit.getNode();
     }
 
     @Override
-    public DBSPCircuit apply(DBSPCircuit node) {
-        return this.transformation.apply(node);
+    public void accept(CircuitVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        this.circuit.accept(visitor);
+        visitor.postorder(this);
+    }
+
+    public int getOutputCount() {
+        return this.circuit.getOutputCount();
+    }
+
+    public DBSPType getOutputType(int i) {
+        return this.circuit.getOutputType(i);
+    }
+
+    public List<String> getInputTables() {
+        return this.circuit.getInputTables();
     }
 }

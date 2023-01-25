@@ -24,15 +24,10 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
-import org.dbsp.util.Utilities;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class ComplexQueriesTest extends BaseSQLTests {
@@ -56,18 +51,12 @@ public class ComplexQueriesTest extends BaseSQLTests {
                         "                -- 1 hour is 3600  seconds\n" +
                         "                RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip\n" +
                         "FROM green_tripdata";
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl, null);
         compiler.compileStatement(query, null);
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        DBSPCircuit circuit = compiler.getResult();
-        writer.println(ToRustVisitor.generatePreamble());
-        Assert.assertNotNull(circuit);
-        writer.println(ToRustVisitor.circuitToRustString(circuit));
-        writer.close();
-        Utilities.compileAndTestRust(rustDirectory, false);
+        this.addRustTestCase(getCircuit(compiler));
     }
 
     @Test
@@ -101,18 +90,12 @@ public class ComplexQueriesTest extends BaseSQLTests {
                         "                RANGE BETWEEN 1800  PRECEDING AND 1 PRECEDING ) AS count_trips_window_30m_dropoff_zip,\n" +
                         "case when extract (ISODOW from  CAST (lpep_dropoff_datetime AS TIMESTAMP))  > 5 then 1 else 0 end as dropoff_is_weekend\n" +
                         "FROM green_tripdata";
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl, null);
         compiler.compileStatement(query, null);
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        DBSPCircuit circuit = compiler.getResult();
-        writer.println(ToRustVisitor.generatePreamble());
-        Assert.assertNotNull(circuit);
-        writer.println(ToRustVisitor.circuitToRustString(circuit));
-        writer.close();
-        Utilities.compileAndTestRust(rustDirectory, false);
+        this.addRustTestCase(getCircuit(compiler));
     }
 
     @Test
@@ -183,18 +166,12 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "          FROM  transactions AS t1\n" +
                 "          LEFT JOIN  demographics AS t2\n" +
                 "          ON t1.cc_num =t2.cc_num)";
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl0, null);
         compiler.compileStatement(ddl1, null);
         compiler.compileStatement(query, null);
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        DBSPCircuit circuit = compiler.getResult();
-        writer.println(ToRustVisitor.generatePreamble());
-        Assert.assertNotNull(circuit);
-        writer.println(ToRustVisitor.circuitToRustString(circuit));
-        writer.close();
-        Utilities.compileAndTestRust(rustDirectory, false);
+        this.addRustTestCase(getCircuit(compiler));
     }
 }

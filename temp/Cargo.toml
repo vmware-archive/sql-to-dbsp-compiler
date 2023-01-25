@@ -25,6 +25,7 @@ sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls", "sqlite",
 
 [lib]
 path = "src/lib.rs"
+doctest = false
 
 # Incremental builds sometimes crash the compiler
 [profile.test]

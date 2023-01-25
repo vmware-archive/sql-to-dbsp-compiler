@@ -24,8 +24,8 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.*;
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
@@ -38,6 +38,7 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.Utilities;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.io.IOException;
@@ -70,16 +71,73 @@ public class BaseSQLTests {
         }
     }
 
-    @SuppressWarnings("SpellCheckingInspection")
-    @BeforeClass
-    public static void generateLib() throws IOException {
-        SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
+    static DBSPCircuit getCircuit(DBSPCompiler compiler) {
+        String name = "circuit" + testsToRun.size();
+        return compiler.getFinalCircuit(name);
     }
 
-    void createTester(PrintWriter writer, DBSPCircuit circuit,
-                      InputOutputPair... streams) {
-        DBSPFunction tester = createTesterCode(circuit, streams);
-        writer.println(ToRustVisitor.irToRustString(tester));
+    private static class TestCase {
+        public final DBSPCircuit circuit;
+        public final InputOutputPair[] data;
+        public final int sequenceNo;
+
+        TestCase(DBSPCircuit circuit, InputOutputPair... data) {
+            this.circuit = circuit;
+            this.data = data;
+            this.sequenceNo = testsToRun.size();
+        }
+
+        /**
+         * Generates a Rust function which tests a DBSP circuit.
+         * @return The code for a function that runs the circuit with the specified
+         *         input and tests the produced output.
+         */
+        DBSPFunction createTesterCode() {
+            List<DBSPStatement> list = new ArrayList<>();
+            DBSPLetStatement circ = new DBSPLetStatement("circuit",
+                    new DBSPApplyExpression(this.circuit.name, DBSPTypeAny.instance), true);
+            list.add(circ);
+            for (InputOutputPair pairs: this.data) {
+                DBSPLetStatement out = new DBSPLetStatement("output",
+                        new DBSPApplyExpression(circ.getVarReference(), pairs.inputs));
+                list.add(out);
+                list.add(new DBSPExpressionStatement(new DBSPApplyExpression(
+                        "assert_eq!", null, out.getVarReference(), new DBSPRawTupleExpression(pairs.outputs))));
+            }
+            DBSPExpression body = new DBSPBlockExpression(list, null);
+            return new DBSPFunction("test" + this.sequenceNo, new ArrayList<>(), null, body)
+                    .addAnnotation("#[test]");
+        }
+    }
+
+    // Collect here all the tests to run and execute them using a single Rust compilation
+    static List<TestCase> testsToRun = new ArrayList<>();
+
+    @BeforeClass
+    public static void prepareTests() throws IOException {
+        generateLib();
+        testsToRun.clear();
+    }
+
+    @AfterClass
+    public static void runAllTests() throws IOException, InterruptedException {
+        if (testsToRun.isEmpty())
+            return;
+        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
+        writer.println(ToRustVisitor.generatePreamble());
+        for (TestCase test: testsToRun) {
+            writer.println(ToRustVisitor.circuitToRustString(test.circuit));
+            DBSPFunction tester = test.createTesterCode();
+            writer.println(ToRustVisitor.irToRustString(tester));
+        }
+        writer.close();
+        Utilities.compileAndTestRust(rustDirectory, false);
+        testsToRun.clear();
+    }
+
+    @SuppressWarnings("SpellCheckingInspection")
+    public static void generateLib() throws IOException {
+        SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
     }
 
     CircuitVisitor getOptimizer() {
@@ -96,9 +154,7 @@ public class BaseSQLTests {
         try {
             query = "CREATE VIEW V AS " + query;
             DBSPCompiler compiler = this.compileQuery(query);
-            PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-            writer.println(ToRustVisitor.generatePreamble());
-            DBSPCircuit circuit = compiler.getResult();
+            DBSPCircuit circuit = getCircuit(compiler);
             circuit = new OptimizeDistinctVisitor().apply(circuit);
             if (incremental)
                 circuit = new IncrementalizeVisitor().apply(circuit);
@@ -106,19 +162,21 @@ public class BaseSQLTests {
                 CircuitVisitor optimizer = this.getOptimizer();
                 circuit = optimizer.apply(circuit);
             }
-            writer.println(ToRustVisitor.circuitToRustString(circuit));
-            this.createTester(writer, circuit, streams);
-            writer.close();
-            Utilities.compileAndTestRust(rustDirectory, false);
+            this.addRustTestCase(circuit, streams);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
     }
 
+    void addRustTestCase(DBSPCircuit circuit, InputOutputPair... streams) {
+        TestCase test = new TestCase(circuit, streams);
+        testsToRun.add(test);
+    }
+
     final static CompilerOptions options = new CompilerOptions();
 
     DBSPCompiler compileQuery(String query) throws SqlParseException {
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
@@ -175,31 +233,5 @@ public class BaseSQLTests {
      */
     DBSPZSetLiteral createInput() {
         return new DBSPZSetLiteral(e0, e1);
-    }
-
-    /**
-     * Generates a Rust function which tests a DBSP circuit.
-     * @param circuit       DBSP circuit that will be tested.
-     * @param data          Input/output pairs of data for circuit.
-     * @return              The code for a function that runs the circuit with the specified
-     *                      input and tests the produced output.
-     */
-    static DBSPFunction createTesterCode(
-            DBSPCircuit circuit,
-            InputOutputPair... data) {
-        List<DBSPStatement> list = new ArrayList<>();
-        DBSPLetStatement circ = new DBSPLetStatement("circuit",
-                new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true);
-        list.add(circ);
-        for (InputOutputPair pairs: data) {
-            DBSPLetStatement out = new DBSPLetStatement("output",
-                    new DBSPApplyExpression(circ.getVarReference(), pairs.inputs));
-            list.add(out);
-            list.add(new DBSPExpressionStatement(new DBSPApplyExpression(
-                    "assert_eq!", null, out.getVarReference(), new DBSPRawTupleExpression(pairs.outputs))));
-        }
-        DBSPExpression body = new DBSPBlockExpression(list, null);
-        return new DBSPFunction("test", new ArrayList<>(), null, body)
-                .addAnnotation("#[test]");
     }
 }

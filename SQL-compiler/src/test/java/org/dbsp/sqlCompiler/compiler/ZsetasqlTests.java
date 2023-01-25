@@ -28,14 +28,11 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.Zetatest;
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeZSet;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.util.IModule;
-import org.dbsp.util.Utilities;
 import org.dbsp.zetasqltest.ZetaSQLTest;
 import org.dbsp.zetasqltest.ZetatestVisitor;
 import org.junit.Assert;
@@ -43,7 +40,6 @@ import org.junit.Test;
 import org.dbsp.Zetalexer;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Objects;
 
 public class ZsetasqlTests extends BaseSQLTests implements IModule {
@@ -84,12 +80,12 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
         parser.tests().accept(visitor);
         Assert.assertEquals(2, visitor.tests.size());
         ZetaSQLTest test = visitor.tests.get(0);
-        Assert.assertEquals("[name=current_date_1]\n" +
-                "select current_date() = current_date,\n" +
-                "       current_date() >= '2015-03-17',\n" +
-                "       current_date() >= date_from_unix_date(0),\n" +
-                "       current_date() >= date_from_unix_date(-719162),\n" +
-                "       current_date() <= date_from_unix_date(2932896)\n", test.statement);
+        Assert.assertEquals(
+                "select current_date() = current_date," +
+                "       current_date() >= '2015-03-17'," +
+                "       current_date() >= date_from_unix_date(0)," +
+                "       current_date() >= date_from_unix_date(-719162)," +
+                "       current_date() <= date_from_unix_date(2932896)", test.statement);
         Assert.assertEquals(1, test.results.size());
         ZetaSQLTest.TestResult result = test.results.get(0);
         Assert.assertNotNull(result.type);
@@ -124,17 +120,38 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
                 "  SELECT 10, true,  3,    1,    2.5,   \"B\"\n";
         CompilerOptions options = new CompilerOptions();
         options.ioOptions.dialect = Lex.BIG_QUERY;
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatement(query, null);
         compiler.compileStatement("CREATE VIEW V AS SELECT int64_val, COUNT(*) OVER " +
                 "(ORDER BY int64_val RANGE UNBOUNDED PRECEDING)\n" +
                 "FROM (SELECT int64_val FROM TestTable)\n", null);
-        DBSPCircuit circuit = compiler.getResult();
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        writer.println(ToRustVisitor.generatePreamble());
-        writer.println(ToRustVisitor.circuitToRustString(circuit));
-        writer.close();
-        Utilities.compileAndTestRust(rustDirectory, false);
+        this.addRustTestCase(getCircuit(compiler));
+    }
+
+    //@Test
+    // Calcite does not seem to be able to parse this.
+    // In fact, it does not seem to be defined in standard sql, which cannot mix
+    // intervals of different types.
+    public void testIntervals() throws SqlParseException, IOException, InterruptedException {
+        String query = "CREATE TABLE Intervals AS\n" +
+                //"SELECT 1 id, CAST(NULL AS INTERVAL) value UNION ALL\n" +
+                "SELECT 2, interval 0 year UNION ALL\n" +
+                "SELECT 3, interval '0.000001' second UNION ALL\n" +
+                "SELECT 4, interval -1 second UNION ALL\n" +
+                "SELECT 5, interval 1 month UNION ALL\n" +
+                "SELECT 6, interval 30 day UNION ALL\n" +
+                "SELECT 7, interval 720 hour UNION ALL\n" +
+                "SELECT 8, interval 10000 year UNION ALL\n" +
+                //"SELECT 9, interval '1-2 3 4:5:6.789' year to second UNION ALL\n" +
+                "SELECT 10, interval 2 hour\n"
+                //"SELECT 11, interval '1:59:59.999999' hour to second UNION ALL\n" +
+                //"SELECT 12, interval '1:00:00.000001' hour to second\n"
+                ;
+        CompilerOptions options = new CompilerOptions();
+        options.ioOptions.dialect = Lex.BIG_QUERY;
+        DBSPCompiler compiler = new DBSPCompiler(options);
+        compiler.compileStatement(query, null);
+        this.addRustTestCase(getCircuit(compiler));
     }
 
     @Test
@@ -146,10 +163,8 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
                 "  SELECT 2, 2, \"a2\"";
         CompilerOptions options = new CompilerOptions();
         options.ioOptions.dialect = Lex.BIG_QUERY;
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatement(query, null);
-        DBSPCircuit circuit = compiler.getResult();
-        String rust = ToRustVisitor.circuitToRustString(circuit);
-        Assert.assertNotNull(rust);
+        this.addRustTestCase(getCircuit(compiler));
     }
 }

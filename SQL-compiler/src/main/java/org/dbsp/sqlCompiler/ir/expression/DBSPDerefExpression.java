@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.ir.expression;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeRef;
 
 /**
  * An expression of the form *expression.

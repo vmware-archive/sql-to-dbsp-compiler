@@ -1,15 +1,16 @@
 lexer grammar Zetalexer;
 
-LINE_COMMENT: '#' .*? '\n' -> skip;
+SPACELINE: [ \t\r]* '\n' -> skip;
+LINE_COMMENT: [ \t\r]* '#' ~[\r\n]*? NEWLINE -> skip;
 NEWLINE : [\r]? [\n];
-CHAR    : ~ '\n';
+LEFT_BRACKET: '[';
+RIGHT_BRACKET: ']';
+NB: ~ ('\n'|']');
 DASHDASH   : '--' NEWLINE -> mode(RESULT);
-OPEN_BRACKET : '[' ;
-CLOSED_BRACKET : ']' ;
 
 mode RESULT;
+RLINE_COMMENT: [ \t\r]* '#' ~[\r\n]*? NEWLINE -> skip;
 EQUAL   : '==' '\r'? '\n' -> mode(DEFAULT_MODE);
-INT   : DecimalNumeral;
 RESULT_DASHDASH : '--' NEWLINE;
 WS: [\r\t\n ] -> skip;
 WITH: 'WITH FEATURES:';
@@ -33,11 +34,13 @@ GEOGRAPHY: 'GEOGRAPHY';
 DATETIME: 'DATETIME';
 BIGNUMERIC: 'BIGNUMERIC';
 ENUM: 'ENUM';
+INTERVAL: 'INTERVAL';
 DOT: '.' ;
 LESS: '<';
 GREATER: '>';
 COMMA: ',';
 DASH: '-';
+COLON: ':';
 L_BRACKET: '[';
 R_BRACKET: ']';
 L_BRACE: '{';
@@ -48,11 +51,15 @@ FALSE: 'false';
 TRUE: 'true';
 ERROR: 'ERROR:' -> mode(DEFAULT_MODE);
 POINT: 'POINT';
+PROTO: 'PROTO';
 FeatureDescription: 'WITH FEATURES:' .*? '\n';
 fragment D: [0-9];
 DATEVALUE: D D D D '-' D D '-' D D;
 TIMEVALUE: D D ':' D D ':' D D ('.' D+)?;
+INTERVALTIMEVALUE: '-'? D+ ':' D+ ':' D+ ('.' D+)?;
 TimestampLiteral: DATEVALUE ' ' TIMEVALUE '+' D D;
+INTPAIR: '-'? D+ '-' D+;
+INT   : DecimalNumeral;
 
 // Most of the stuff below is lifted from the Java grammar and lexer at
 // https://github.com/antlr/grammars-v4/blob/master/java/java8/Java8Lexer.g4
@@ -150,4 +157,5 @@ BytesLiteral
     ;
 
 ID : [a-zA-Z_][a-zA-Z0-9_]* ;
+UpdateTheTestOutput: '<update the test output>' ;
 

@@ -26,6 +26,7 @@ package org.dbsp.zetasqltest;
 import org.apache.commons.text.StringEscapeUtils;
 import org.dbsp.Zetatest;
 import org.dbsp.ZetatestBaseVisitor;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -33,6 +34,7 @@ import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Logger;
+import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
@@ -80,40 +82,71 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
         this.structNestingLevel = 0;
     }
 
+    static class ContainsTypeAny extends InnerVisitor {
+        boolean hasAny = false;
+
+        public ContainsTypeAny() {
+            super(true);
+        }
+
+        @Override
+        public boolean preorder(DBSPTypeAny any) {
+            this.hasAny = true;
+            return false;
+        }
+
+        public static boolean hasAnyType(DBSPType type) {
+            ContainsTypeAny cta = new ContainsTypeAny();
+            type.accept(cta);
+            return cta.hasAny;
+        }
+    }
+
     @Override
     public Void visitTest(Zetatest.TestContext ctx) {
-        Logger.instance.from(this, 2)
-                .append("Visiting test ")
-                .append(ctx.getText()).newline();
-        ZetaSQLTest test = new ZetaSQLTest();
-        test.statement = ctx.query().getText();
-        for (Zetatest.ResultContext result : ctx.result()) {
-            this.currentResult = new ZetaSQLTest.TestResult();
-            for (Zetatest.FeatureContext feature: result.feature()) {
-                this.currentResult.features.add(feature.FeatureDescription().getText());
+        try {
+            Logger.instance.from(this, 2)
+                    .append("Visiting test ")
+                    .append(ctx.getText()).newline();
+            ZetaSQLTest test = new ZetaSQLTest();
+            test.statement = ctx.query().getText();
+            for (Zetatest.ResultContext result : ctx.result()) {
+                this.currentResult = new ZetaSQLTest.TestResult();
+                for (Zetatest.FeatureContext feature : result.feature()) {
+                    this.currentResult.features.add(feature.FeatureDescription().getText());
+                }
+                this.visitResult(result);
+                test.results.add(this.currentResult);
             }
-            this.visitResult(result);
-            test.results.add(this.currentResult);
+            this.currentResult = null;
+            this.tests.add(test);
+            return null;
+        } catch (Exception ex) {
+            System.err.println("Error while processing " + ctx.getText());
+            throw ex;
         }
-        this.currentResult = null;
-        this.tests.add(test);
-        return null;
     }
 
     @Override
     public Void visitTypedvalue(Zetatest.TypedvalueContext ctx) {
-       Logger.instance.from(this, 2)
+        Logger.instance.from(this, 2)
                .append("Visiting typedvalue ")
                .append(ctx.getText()).newline();
-       Objects.requireNonNull(this.currentResult);
-       if (ctx.error() != null) {
+        Objects.requireNonNull(this.currentResult);
+        if (ctx.error() != null) {
             this.currentResult.error = ctx.error().getText();
+        } else if (ctx.valueNotSpecified() != null) {
+            this.currentResult.error = ctx.valueNotSpecified().getText();
         } else {
-            this.visitSqltype(ctx.sqltype());
-            this.currentResult.type = Objects.requireNonNull(this.resultType);
-            this.currentExpressionType = this.resultType;
-            this.visitSqlvalue(ctx.sqlvalue());
-            this.currentResult.result = this.currentValue;
+            try {
+                this.visitSqltype(ctx.sqltype());
+                this.currentResult.type = Objects.requireNonNull(this.resultType);
+                this.currentExpressionType = this.resultType;
+                this.visitSqlvalue(ctx.sqlvalue());
+                this.currentResult.result = this.currentValue;
+            } catch (Unimplemented ex) {
+                this.currentResult.error = ex.getMessage();
+            }
         }
         this.currentValue = null;
         return null;
@@ -285,6 +318,20 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
     }
 
     @Override
+    public Void visitIntervaltype(Zetatest.IntervaltypeContext ctx) {
+        throw new Unimplemented("INTERVAL type not yet supported");
+    }
+
+    @Override
+    public Void visitPrototype(Zetatest.PrototypeContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting proto ")
+                .append(ctx.getText()).newline();
+        this.resultType = DBSPTypeAny.instance;
+        throw new Unimplemented("PROTO type not yet supported");
+    }
+
+    @Override
     public Void visitStructtype(Zetatest.StructtypeContext ctx) {
         Logger.instance.from(this, 1)
                 .append("Visiting struct ")
@@ -292,7 +339,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
         this.structNestingLevel++;
         List<DBSPType> fields = new ArrayList<>();
         for (Zetatest.OptNamedSqlTypeContext context: ctx.fields().optNamedSqlType()) {
-            this.visitSqltype(context.sqltype());
+            this.visitSqltype(context.sqltype(context.sqltype().size() - 1));
             fields.add(this.resultType);
         }
         // we allow only nested structs to be nullable
@@ -442,17 +489,46 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
             visitSqltype(ctx.arraytype().sqltype());
             Objects.requireNonNull(this.resultType);
             DBSPTypeVec vecType = new DBSPTypeVec(this.resultType);
-            DBSPVecLiteral result = new DBSPVecLiteral(vecType.getElementType());
+            DBSPVecLiteral result = null;
+            List<DBSPExpression> components = new ArrayList<>();
+            if (!ContainsTypeAny.hasAnyType(vecType))
+                result = new DBSPVecLiteral(vecType.getElementType());
             for (Zetatest.SqlvalueContext value : ctx.sqlvalue()) {
                 this.currentExpressionType = vecType.getElementType();
                 this.visitSqlvalue(value);
                 Objects.requireNonNull(this.currentValue);
-                result.add(this.currentValue);
+                if (result != null)
+                    result.add(this.currentValue);
+                else
+                    components.add(this.currentValue);
             }
-            this.currentValue = result;
+            if (result != null)
+                this.currentValue = result;
+            else
+                this.currentValue = new DBSPVecLiteral(components.toArray(new DBSPExpression[0]));
             return null;
         }
         throw new RuntimeException("Array value found, expected type " + this.currentExpressionType);
+    }
+
+    @Override
+    public Void visitProtovalue(Zetatest.ProtovalueContext ctx) {
+        Logger.instance.from(this, 1)
+                .append("Visiting protovalue ")
+                .append(ctx.getText()).newline();
+        Objects.requireNonNull(this.currentExpressionType);
+        if (!this.currentExpressionType.is(DBSPTypeAny.class))
+            throw new RuntimeException("Proto value found " + ctx.getText() +
+                    " expected type " + this.currentExpressionType);
+        List<DBSPExpression> fields = new ArrayList<>();
+        for (Zetatest.ProtofieldvalueContext sqlvalue: ctx.protofieldvalue()) {
+            this.currentExpressionType = DBSPTypeAny.instance;
+            this.visitSqlvalue(sqlvalue.sqlvalue());
+            Objects.requireNonNull(this.currentValue);
+            fields.add(this.currentValue);
+        }
+        this.currentValue = new DBSPTupleExpression(fields, true);
+        return null;
     }
 
     @Override

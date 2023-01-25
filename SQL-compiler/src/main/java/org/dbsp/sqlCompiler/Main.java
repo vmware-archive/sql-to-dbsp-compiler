@@ -26,7 +26,7 @@ package org.dbsp.sqlCompiler;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
@@ -34,6 +34,8 @@ import org.dbsp.sqlCompiler.compiler.visitors.ToRustHandleVisitor;
 
 import javax.annotation.Nullable;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Main entry point of the SQL compiler.
@@ -62,12 +64,12 @@ public class Main {
         }
     }
 
-    void writeToOutput(String program, @Nullable String outputFile) throws FileNotFoundException {
+    void writeToOutput(String program, @Nullable String outputFile) throws IOException {
         PrintStream outputStream;
         if (outputFile == null) {
             outputStream = System.out;
         } else {
-            outputStream = new PrintStream(new FileOutputStream(outputFile));
+            outputStream = new PrintStream(Files.newOutputStream(Paths.get(outputFile)));
         }
         outputStream.print(program);
         outputStream.close();
@@ -78,7 +80,7 @@ public class Main {
         if (inputFile == null)
             stream = System.in;
         else
-            stream = new FileInputStream(inputFile);
+            stream = Files.newInputStream(Paths.get(inputFile));
         StringBuilder builder = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(stream));
         String line;
@@ -90,10 +92,9 @@ public class Main {
 
     void run() throws SqlParseException, IOException {
         DBSPCompiler compiler = new DBSPCompiler(this.options);
-        compiler.newCircuit(this.options.ioOptions.functionName);
         String file = this.getInputFile(this.options.ioOptions.inputFile);
         compiler.compileStatements(file);
-        DBSPCircuit dbsp = compiler.getResult();
+        DBSPCircuit dbsp = compiler.getFinalCircuit(this.options.ioOptions.functionName);
         CircuitOptimizer optimizer = new CircuitOptimizer(this.options.optimizerOptions);
         dbsp = optimizer.optimize(dbsp);
         StringBuilder builder = new StringBuilder();

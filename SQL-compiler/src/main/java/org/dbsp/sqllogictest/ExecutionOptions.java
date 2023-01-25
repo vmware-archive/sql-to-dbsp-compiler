@@ -131,6 +131,7 @@ public class ExecutionOptions {
     }
 
     String connectionString() {
+        Objects.requireNonNull(this.inputSource);
         if (this.inputSource.equals("csv")) {
             return "csv";
         } else if (this.inputSource.equals("db")) {

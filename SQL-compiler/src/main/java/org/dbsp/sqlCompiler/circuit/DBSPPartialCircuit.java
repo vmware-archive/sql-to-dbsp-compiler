@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.circuit;
 
+import org.dbsp.sqlCompiler.circuit.operator.DBSPCircuit;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
@@ -37,18 +38,19 @@ import org.dbsp.util.*;
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
+/**
+ * A partial circuit is a circuit under construction.
+ * A complete circuit can be obtained by calling the "seal" method.
+ */
+public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
     public final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
     public final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
     // This is the structure that is visited.
     public final List<IDBSPNode> code = new ArrayList<>();
     public final Map<String, DBSPOperator> operatorDeclarations = new HashMap<>();
-    public final String name;
-    public boolean sealed = false;
 
-    public DBSPCircuit(String name) {
+    public DBSPPartialCircuit() {
         super(null);
-        this.name = name;
     }
 
     /**
@@ -71,13 +73,7 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
         return new DBSPTypeRawTuple(null, Linq.map(this.outputOperators, IHasType::getNonVoidType));
     }
 
-    void checkSealed() {
-        if (this.sealed)
-            throw new RuntimeException("Circuit already sealed " + this);
-    }
-
     public void addOperator(DBSPOperator operator) {
-        this.checkSealed();
         Logger.instance.from(this, 1)
                 .append("Adding ")
                 .append(operator.toString())
@@ -91,7 +87,6 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
     }
 
     public void declare(IDBSPDeclaration declaration) {
-        this.checkSealed();
         this.code.add(declaration);
     }
 
@@ -118,7 +113,7 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
         visitor.postorder(this);
     }
 
-    public boolean sameCircuit(DBSPCircuit other) {
+    public boolean sameCircuit(DBSPPartialCircuit other) {
         if (this == other)
             return true;
         return Linq.same(this.code, other.code);
@@ -127,8 +122,7 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
     /**
      * No more changes are expected to the circuit.
      */
-    public void seal() {
-        this.checkSealed();
-        this.sealed = true;
+    public DBSPCircuit seal(String name) {
+        return new DBSPCircuit(this, name);
     }
 }

@@ -24,15 +24,13 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.*;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDecimal;
-import org.dbsp.util.Utilities;
 import org.junit.Test;
 
-import java.io.PrintWriter;
 import java.math.BigDecimal;
 
 public class CastTests extends BaseSQLTests {
@@ -41,7 +39,7 @@ public class CastTests extends BaseSQLTests {
 
     @Override
     DBSPCompiler compileQuery(String query) throws SqlParseException {
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
@@ -69,14 +67,9 @@ public class CastTests extends BaseSQLTests {
         try {
             query = "CREATE VIEW V AS " + query;
             DBSPCompiler compiler = this.compileQuery(query);
-            PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-            DBSPCircuit circuit = compiler.getResult();
-            writer.println(ToRustVisitor.generatePreamble());
-            writer.println(ToRustVisitor.circuitToRustString(circuit));
+            DBSPCircuit circuit = getCircuit(compiler);
             InputOutputPair streams = new InputOutputPair(this.createInput(), expectedOutput);
-            this.createTester(writer, circuit, streams);
-            writer.close();
-            Utilities.compileAndTestRust(rustDirectory, false);
+            this.addRustTestCase(circuit, streams);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

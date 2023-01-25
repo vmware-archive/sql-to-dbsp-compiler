@@ -5,20 +5,24 @@ parser grammar Zetatest;
 options { tokenVocab = Zetalexer; }
 
 tests:   test (EQUAL test)* EQUAL? NEWLINE? EOF;
-test:    query ((DASHDASH|RESULT_DASHDASH) result)+;
+test:    macro* query ((DASHDASH|RESULT_DASHDASH) result)+;
 
 /* Query part: parse whole lines */
+macro: LEFT_BRACKET NB* RIGHT_BRACKET;
 query: line (NEWLINE line)*;
-line: CHAR* ;
-
-error: ERROR line (NEWLINE line)*;
+line: (NB|LEFT_BRACKET|RIGHT_BRACKET)* ;
 
 /* Result part: parse in detail */
 result:     feature* typedvalue;
 feature: FeatureDescription;
 typedvalue: sqltype sqlvalue
           | error
+          | valueNotSpecified
           ;
+
+error: ERROR line (NEWLINE line)*;
+valueNotSpecified : UpdateTheTestOutput ;
+
 sqltype: arraytype
        | structtype
        | datetype
@@ -38,6 +42,8 @@ sqltype: arraytype
        | timetype
        | datetimetype
        | geographytype
+       | prototype
+       | intervaltype
        ;
 
 bytestype: BYTES ;
@@ -52,14 +58,17 @@ stringtype: STRING ;
 numerictype: NUMERIC ;
 timetype: TIME ;
 datetimetype: DATETIME ;
+intervaltype: INTERVAL ;
 geographytype: GEOGRAPHY ;
 bignumerictype: BIGNUMERIC ;
-enumtype: ENUM LESS ID (DOT ID)* GREATER ;
+enumtype: ENUM LESS names GREATER ;
 timestamptype: TIMESTAMP ;
 structtype: STRUCT LESS fields GREATER ;
-fields: optNamedSqlType (COMMA optNamedSqlType)* ;
+prototype: PROTO LESS names GREATER ;
+fields: (optNamedSqlType (COMMA optNamedSqlType)*)? ;
 arraytype: ARRAY LESS sqltype? GREATER ;
 datetype: DATE ;
+names: ID (DOT ID)*;
 
 sqlvalue: intvalue
      | floatvalue
@@ -75,16 +84,23 @@ sqlvalue: intvalue
      | timevalue
      | datetimevalue
      | st_pointvalue
+     | protovalue
+     | intervalvalue
      ;
 
-optNamedSqlType: (ID|NULL)? sqltype ;
+optNamedSqlType: (ID|NULL|sqltype)? sqltype ;
 arrayvalue: arraytype? L_BRACKET sqlvalue? (COMMA sqlvalue)* R_BRACKET
           | arraytype L_PARENS NULL R_PARENS
           ;
 number: intvalue
       | floatvalue
       ;
-structvalue: L_BRACE sqlvalue (COMMA sqlvalue)* R_BRACE ;
+
+protofieldvalue: (ID COLON)? sqlvalue
+               | L_BRACKET names R_BRACKET COLON sqlvalue
+               ;
+protovalue: (L_BRACKET names R_BRACKET)? L_BRACE protofieldvalue* R_BRACE ;
+structvalue: L_BRACE (sqlvalue (COMMA sqlvalue)*)? R_BRACE ;
 datevalue: DATEVALUE ;
 intvalue: DASH? INT;
 boolvalue: FALSE | TRUE ;
@@ -96,4 +112,5 @@ timestampvalue: TimestampLiteral ;
 datetimevalue: DATEVALUE TIMEVALUE;
 timevalue: TIMEVALUE;
 st_pointvalue: POINT L_PARENS number number R_PARENS;
+intervalvalue: INTPAIR '-'? INT (INTERVALTIMEVALUE|TIMEVALUE);
 enumvalue: ID ;

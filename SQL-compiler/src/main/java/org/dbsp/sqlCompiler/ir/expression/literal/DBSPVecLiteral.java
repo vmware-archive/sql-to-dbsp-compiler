@@ -64,8 +64,8 @@ public class DBSPVecLiteral extends DBSPLiteral implements IDBSPContainer {
     public void add(DBSPExpression expression) {
         // We expect the expression to be a constant value (a literal)
         if (!expression.getNonVoidType().sameType(this.getElementType()))
-            throw new RuntimeException("Added element does not match vector type " +
-                    expression.getType() + " vs " + this.getElementType());
+            throw new RuntimeException("Added element " + expression + " type " +
+                    expression.getType() + " does not match vector type " + this.getElementType());
         this.data.add(expression);
     }
 

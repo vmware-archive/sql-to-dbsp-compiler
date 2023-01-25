@@ -23,8 +23,6 @@
 
 package org.dbsp.zetasqltest;
 
-import org.dbsp.ZetatestVisitor;
-import org.dbsp.util.Logger;
 import org.dbsp.util.TestStatistics;
 import org.dbsp.util.Utilities;
 
@@ -52,8 +50,7 @@ public class Main {
             String extension = Utilities.getFileExtension(file.toString());
             NoExecutor executor = new NoExecutor();
             if (attrs.isRegularFile() && extension != null && extension.equals("test")) {
-                // validates the test
-                ZetaSQLTestFile test = null;
+                ZetaSQLTestFile test;
                 try {
                     System.out.println(file);
                     test = ZetaSQLTestFile.parse(file.toString());
@@ -62,10 +59,8 @@ public class Main {
                     this.errors++;
                     throw ex;
                 }
-                if (test != null) {
-                    TestStatistics stats = executor.execute(test);
-                    this.statistics.add(stats);
-                }
+                TestStatistics stats = executor.execute(test);
+                this.statistics.add(stats);
             }
             return FileVisitResult.CONTINUE;
         }

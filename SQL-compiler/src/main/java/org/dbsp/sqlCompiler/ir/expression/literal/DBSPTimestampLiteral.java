@@ -43,8 +43,17 @@ public class DBSPTimestampLiteral extends DBSPLiteral {
         this(null, DBSPTypeTimestamp.instance, value);
     }
 
+    static TimestampString createTimestampString(String timestamp) {
+        // Calcite is too smart: it does not accept a number that ends in 0 if there is a decimal point
+        String[] parts = timestamp.split("[.]");
+        TimestampString result = new TimestampString(parts[0]);
+        if (parts.length == 1)
+            return result;
+        return result.withFraction(parts[1]);
+    }
+
     public DBSPTimestampLiteral(String string, boolean mayBeNull) {
-        this(null, DBSPTypeTimestamp.instance.setMayBeNull(mayBeNull), new TimestampString(string));
+        this(null, DBSPTypeTimestamp.instance.setMayBeNull(mayBeNull), createTimestampString(string));
     }
 
     public DBSPTimestampLiteral(long value, boolean mayBeNull) {

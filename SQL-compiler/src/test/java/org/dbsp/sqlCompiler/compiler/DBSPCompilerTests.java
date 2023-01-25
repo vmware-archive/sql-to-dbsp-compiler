@@ -26,8 +26,8 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.junit.Assert;
@@ -41,7 +41,7 @@ public class DBSPCompilerTests {
 
     @Test
     public void DDLTest() throws SqlParseException {
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +
@@ -50,13 +50,13 @@ public class DBSPCompilerTests {
                 ")";
 
         compiler.compileStatement(ddl, null);
-        DBSPCircuit dbsp = compiler.getResult();
+        DBSPCircuit dbsp = compiler.getFinalCircuit("circuit");
         Assert.assertNotNull(dbsp);
     }
 
     @Test
     public void DDLAndInsertTest() throws SqlParseException {
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +

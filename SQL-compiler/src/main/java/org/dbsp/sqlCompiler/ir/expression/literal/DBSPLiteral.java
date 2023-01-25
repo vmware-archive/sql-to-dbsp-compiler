@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.ir.expression.literal;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
 
 import javax.annotation.Nullable;
 
@@ -42,7 +43,7 @@ public class DBSPLiteral extends DBSPExpression {
         super(node, type);
         this.isNull = value == null;
         this.value = value;
-        if (this.isNull && !type.mayBeNull)
+        if (this.isNull && !type.mayBeNull && !type.is(DBSPTypeAny.class))
             throw new RuntimeException("Type " + type + " cannot represent null");
     }
 

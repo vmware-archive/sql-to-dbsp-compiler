@@ -62,7 +62,7 @@ public class DBSPSemigroupType extends DBSPTypeUser {
          */
         for (int i: DBSPSemigroupType.sizesUsed) {
             Integer[] indexes = new Integer[i];
-            IntStream.range(0, i).forEach(ix -> { indexes[ix] = ix; });
+            IntStream.range(0, i).forEach(ix -> indexes[ix] = ix);
             String[] ts = Linq.map(indexes, ix -> "T" + ix, String.class);
             String[] tts = Linq.map(indexes, ix -> "TS" + ix, String.class);
 

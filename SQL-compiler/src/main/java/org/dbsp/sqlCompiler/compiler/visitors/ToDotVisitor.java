@@ -23,7 +23,8 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.util.IModule;
@@ -66,14 +67,20 @@ public class ToDotVisitor extends CircuitVisitor implements IModule {
     @Override
     public boolean preorder(DBSPCircuit circuit) {
         this.stream.append("digraph ")
-                .append(circuit.name)
-                .append("{")
+                .append(circuit.name);
+        circuit.circuit.accept(this);
+        return true;
+    }
+
+    @Override
+    public boolean preorder(DBSPPartialCircuit circuit) {
+        this.stream.append("{")
                 .increase();
         return true;
     }
 
     @Override
-    public void postorder(DBSPCircuit circuit) {
+    public void postorder(DBSPPartialCircuit circuit) {
         this.stream.decrease()
                 .append("}")
                 .newline();

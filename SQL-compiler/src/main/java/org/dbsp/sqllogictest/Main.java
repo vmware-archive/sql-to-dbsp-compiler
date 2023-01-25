@@ -29,7 +29,6 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
-import org.dbsp.util.SqlTestExecutor;
 import org.dbsp.util.TestStatistics;
 import org.dbsp.util.Utilities;
 
@@ -67,7 +66,7 @@ public class Main {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             String extension = Utilities.getFileExtension(file.toString());
-            int batchSize = 500;
+            int batchSize = 5;
             int skipPerFile = 0;
             String name = file.getFileName().toString();
             if (name.startsWith("select"))
