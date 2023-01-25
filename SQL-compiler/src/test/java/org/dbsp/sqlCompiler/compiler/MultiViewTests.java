@@ -26,17 +26,12 @@ package org.dbsp.sqlCompiler.compiler;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDoubleLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPI32Literal;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
-import org.dbsp.util.Utilities;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.io.PrintWriter;
 
 /**
  * Tests where multiple views are defined in the same circuit.
@@ -55,20 +50,17 @@ public class MultiViewTests extends BaseSQLTests {
      * Two output views.
      */
     @Test
-    public void twoViewTest() throws IOException, SqlParseException, InterruptedException {
+    public void twoViewTest() throws SqlParseException {
         String query1 = "CREATE VIEW V1 AS SELECT T.COL3 FROM T";
         String query2 = "CREATE VIEW V2 as SELECT T.COL2 FROM T";
 
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
-        compiler.compileStatement(ddl, null);
-        compiler.compileStatement(query1, null);
-        compiler.compileStatement(query2, null);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement(query1);
+        compiler.compileStatement(query2);
 
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        DBSPCircuit circuit = compiler.getResult();
-        writer.println(ToRustVisitor.generatePreamble());
-        writer.println(ToRustVisitor.circuitToRustString(circuit));
+        DBSPCircuit circuit = getCircuit(compiler);
         InputOutputPair stream = new InputOutputPair(
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {
@@ -80,29 +72,24 @@ public class MultiViewTests extends BaseSQLTests {
                                 new DBSPTupleExpression(new DBSPDoubleLiteral(1.0)))
                 }
         );
-        this.createTester(writer, circuit, stream);
-        writer.close();
-        Utilities.compileAndTestRust(rustDirectory, false);
+        addRustTestCase(circuit, stream);
     }
 
     /**
      * A view is an input for another view.
      */
     @Test
-    public void nestedViewTest() throws IOException, SqlParseException, InterruptedException {
+    public void nestedViewTest() throws SqlParseException {
         String query1 = "CREATE VIEW V1 AS SELECT T.COL3 FROM T";
         String query2 = "CREATE VIEW V2 as SELECT * FROM V1";
 
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
-        compiler.compileStatement(ddl, null);
-        compiler.compileStatement(query1, null);
-        compiler.compileStatement(query2, null);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement(query1);
+        compiler.compileStatement(query2);
 
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        DBSPCircuit circuit = compiler.getResult();
-        writer.println(ToRustVisitor.generatePreamble());
-        writer.println(ToRustVisitor.circuitToRustString(circuit));
+        DBSPCircuit circuit = getCircuit(compiler);
         InputOutputPair stream = new InputOutputPair(
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {
@@ -114,29 +101,24 @@ public class MultiViewTests extends BaseSQLTests {
                                 new DBSPTupleExpression(DBSPBoolLiteral.False))
                 }
         );
-        this.createTester(writer, circuit, stream);
-        writer.close();
-        Utilities.compileAndTestRust(rustDirectory, false);
+        this.addRustTestCase(circuit, stream);
     }
 
     /**
      * A view is used twice.
      */
     @Test
-    public void multiViewTest() throws IOException, SqlParseException, InterruptedException {
+    public void multiViewTest() throws SqlParseException {
         String query1 = "CREATE VIEW V1 AS SELECT T.COL3 AS COL3 FROM T";
         String query2 = "CREATE VIEW V2 as SELECT DISTINCT COL1 FROM (SELECT * FROM V1 JOIN T ON V1.COL3 = T.COL3)";
 
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
-        compiler.compileStatement(ddl, null);
-        compiler.compileStatement(query1, null);
-        compiler.compileStatement(query2, null);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement(query1);
+        compiler.compileStatement(query2);
 
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        DBSPCircuit circuit = compiler.getResult();
-        writer.println(ToRustVisitor.generatePreamble());
-        writer.println(ToRustVisitor.circuitToRustString(circuit));
+        DBSPCircuit circuit = getCircuit(compiler);
         InputOutputPair stream = new InputOutputPair(
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {
@@ -147,8 +129,6 @@ public class MultiViewTests extends BaseSQLTests {
                                 new DBSPTupleExpression(new DBSPI32Literal(10)))
                 }
         );
-        this.createTester(writer, circuit, stream);
-        writer.close();
-        Utilities.compileAndTestRust(rustDirectory, false);
+        this.addRustTestCase(circuit, stream);
     }
 }

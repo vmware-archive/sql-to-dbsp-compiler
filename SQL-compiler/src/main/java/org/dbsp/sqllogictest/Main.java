@@ -29,7 +29,6 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
-import org.dbsp.util.SqlTestExecutor;
 import org.dbsp.util.TestStatistics;
 import org.dbsp.util.Utilities;
 

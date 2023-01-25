@@ -23,11 +23,11 @@
 
 package org.dbsp.sqlCompiler.ir;
 
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
-import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.util.IdGen;
 
 import javax.annotation.Nullable;
@@ -88,6 +88,10 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
 
     public boolean preorder(DBSPCircuit circuit) {
         this.setCircuit(circuit);
+        return true;
+    }
+
+    public boolean preorder(DBSPPartialCircuit circuit) {
         return true;
     }
 
@@ -210,7 +214,7 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
 
     ////////////////////////////////////
 
-    public void postorder(DBSPCircuit circuit) {
+    public void postorder(DBSPPartialCircuit circuit) {
         this.circuit = null;
     }
 

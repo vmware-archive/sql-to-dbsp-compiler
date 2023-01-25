@@ -47,6 +47,7 @@ public class ToRustVisitor extends CircuitVisitor {
                     "#![allow(unused_imports)]\n" +
                     "#![allow(unused_parens)]\n" +
                     "#![allow(unused_variables)]\n" +
+                    "#![allow(unused_mut)]\n" +
                     "\n" +
                     "use dbsp::{\n" +
                     "    algebra::{ZSet, MulByRef, F32, F64, Semigroup, SemigroupValue,\n" +
@@ -156,7 +157,7 @@ public class ToRustVisitor extends CircuitVisitor {
         this.builder.newline();
     }
 
-    public void generateBody(DBSPCircuit circuit) {
+    public void generateBody(DBSPPartialCircuit circuit) {
         this.builder.append("let root = Circuit::build(|circuit| {")
                 .increase();
         for (IDBSPNode node : circuit.code)
@@ -169,14 +170,18 @@ public class ToRustVisitor extends CircuitVisitor {
 
     @Override
     public boolean preorder(DBSPCircuit circuit) {
+        this.builder.append("fn ")
+                .append(circuit.name);
+        circuit.circuit.accept(this);
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPPartialCircuit circuit) {
         // function prototype:
         // fn name() -> impl FnMut(T0, T1) -> (O0, O1) {
-        super.preorder(circuit);
-        this.builder.append("fn ")
-                .append(circuit.name)
-                .append("() -> impl FnMut(");
-
         boolean first = true;
+        this.builder.append("() -> impl FnMut(");
         for (DBSPOperator i : circuit.inputOperators) {
             if (!first)
                 this.builder.append(",");

@@ -73,28 +73,40 @@ public class ToRustInnerVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPDateLiteral literal) {
         assert literal.value != null;
+        if (literal.mayBeNull())
+            this.builder.append("Some(");
         this.builder.append("Date::new(");
         this.builder.append(Integer.toString((int)literal.value));
         this.builder.append(")");
+        if (literal.mayBeNull())
+            this.builder.append(")");
         return false;
     }
 
     @Override
     public boolean preorder(DBSPIntervalMillisLiteral literal) {
         assert literal.value != null;
+        if (literal.mayBeNull())
+            this.builder.append("Some(");
         this.builder.append("ShortInterval::new(");
         this.builder.append(Long.toString((Long)literal.value));
         this.builder.append(")");
+        if (literal.mayBeNull())
+            this.builder.append(")");
         return false;
     }
 
     @Override
     public boolean preorder(DBSPGeoPointLiteral literal) {
+        if (literal.mayBeNull())
+            this.builder.append("Some(");
         this.builder.append("GeoPoint::new(");
         literal.left.accept(this);
         this.builder.append(", ");
         literal.right.accept(this);
         this.builder.append(")");
+        if (literal.mayBeNull())
+            this.builder.append(")");
         return false;
     }
 

@@ -35,7 +35,6 @@ public abstract class DBSPTypeBaseType extends DBSPType {
     /**
      * Used when generating names for library functions that depend on argument types.
      * Here is a map of the short type names
-     *
      * Bool -> b
      * Date -> date
      * Decimal -> decimal

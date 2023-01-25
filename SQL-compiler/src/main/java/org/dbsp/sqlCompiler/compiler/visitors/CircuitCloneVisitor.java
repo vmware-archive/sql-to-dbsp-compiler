@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.compiler.visitors;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
@@ -46,7 +47,7 @@ import java.util.function.Function;
 public class CircuitCloneVisitor extends CircuitVisitor
         implements Function<DBSPCircuit, DBSPCircuit>, IModule {
     @Nullable
-    DBSPCircuit result;
+    DBSPPartialCircuit result;
     /**
      * For each operator in the original circuit an operator in the
      * result circuit which computes the same result.
@@ -92,7 +93,7 @@ public class CircuitCloneVisitor extends CircuitVisitor
     }
 
     @Override
-    public boolean preorder(DBSPCircuit circuit) {
+    public boolean preorder(DBSPPartialCircuit circuit) {
         super.preorder(circuit);
         for (IDBSPNode node : circuit.code) {
             DBSPOperator op = node.as(DBSPOperator.class);
@@ -229,19 +230,19 @@ public class CircuitCloneVisitor extends CircuitVisitor
         this.replace(operator);
     }
 
-    public DBSPCircuit getResult() {
+    public DBSPPartialCircuit getResult() {
         return Objects.requireNonNull(this.result);
     }
 
     @Override
     public DBSPCircuit apply(DBSPCircuit circuit) {
         this.startVisit(circuit);
-        this.result = new DBSPCircuit(circuit.name);
+        this.result = new DBSPPartialCircuit();
         circuit.accept(this);
         this.endVisit();
-        DBSPCircuit result = this.getResult();
-        if (circuit.sameCircuit(result))
+        DBSPPartialCircuit result = this.getResult();
+        if (circuit.circuit.sameCircuit(result))
             return circuit;
-        return result;
+        return result.seal(circuit.name);
     }
 }

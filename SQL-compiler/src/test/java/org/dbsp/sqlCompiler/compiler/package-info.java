@@ -19,39 +19,20 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ *
  */
-
-package org.dbsp.sqlCompiler.ir.expression;
-
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 /**
- * An expression of the form *expression.
+ * Package that doesn't allow null values as method parameters.
  */
-public class DBSPDerefExpression extends DBSPExpression {
-    public final DBSPExpression expression;
 
-    DBSPDerefExpression(DBSPExpression expression) {
-        super(null, expression.getNonVoidType().deref());
-        this.expression = expression;
-    }
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqlCompiler.compiler;
 
-    @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        if (this.type != null)
-            this.type.accept(visitor);
-        this.expression.accept(visitor);
-        visitor.postorder(this);
-    }
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPDerefExpression de = other.as(DBSPDerefExpression.class);
-        if (de == null)
-            return false;
-        return this.expression == de.expression;
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

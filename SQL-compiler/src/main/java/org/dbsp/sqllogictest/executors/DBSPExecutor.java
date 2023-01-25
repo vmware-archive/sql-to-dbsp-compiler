@@ -24,12 +24,12 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.Solutions;
 import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.ExpressionCompiler;
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -177,10 +177,9 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         DBSPTupleExpression tuple = new DBSPTupleExpression(rowGets, false);
         DBSPClosureExpression mapClosure = new DBSPClosureExpression(null, tuple,
                 rowVariable.asRefParameter());
-        DBSPApplyExpression readDb = new DBSPApplyExpression("read_db", tableValue.contents.zsetType,
+        return new DBSPApplyExpression("read_db", tableValue.contents.zsetType,
                 new DBSPStrLiteral(connectionString), new DBSPStrLiteral(tableValue.tableName),
                 mapClosure);
-        return readDb;
     }
 
     /**
@@ -307,14 +306,13 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 .append(dbspQuery)
                 .append(testQuery.name != null ? " " + testQuery.name : "")
                 .append("\n");
-        compiler.newCircuit("gen" + suffix);
         compiler.generateOutputForNextView(false);
         for (SqlStatement view: viewPreparation.definitions()) {
             compiler.compileStatement(view.statement, view.statement);
         }
         compiler.generateOutputForNextView(true);
         compiler.compileStatement(dbspQuery, testQuery.name);
-        DBSPCircuit dbsp = compiler.getResult();
+        DBSPCircuit dbsp = compiler.getFinalCircuit("gen" + suffix);
         CircuitOptimizer optimizer = new CircuitOptimizer(compiler.options.optimizerOptions);
         dbsp = optimizer.optimize(dbsp);
         //ToDotVisitor.toDot("circuit.jpg", true, dbsp);

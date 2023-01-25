@@ -31,7 +31,6 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeFunction;
 import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 /**
  * An expression of the form |param0, param1, ...| body.

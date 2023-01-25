@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,112 +23,47 @@
 
 package org.dbsp.sqlCompiler.circuit;
 
+import org.dbsp.sqlCompiler.circuit.DBSPNode;
+import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
+import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
-import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
-import org.dbsp.sqlCompiler.circuit.operator.DBSPSourceOperator;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeRawTuple;
-import org.dbsp.sqlCompiler.ir.type.IHasType;
-import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.List;
 
-public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode, IModule {
-    public final List<DBSPSourceOperator> inputOperators = new ArrayList<>();
-    public final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
-    // This is the structure that is visited.
-    public final List<IDBSPNode> code = new ArrayList<>();
-    public final Map<String, DBSPOperator> operatorDeclarations = new HashMap<>();
+public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
+    public final DBSPPartialCircuit circuit;
     public final String name;
-    public boolean sealed = false;
 
-    public DBSPCircuit(String name) {
+    public DBSPCircuit(DBSPPartialCircuit circuit, String name) {
         super(null);
+        this.circuit = circuit;
         this.name = name;
     }
 
-    /**
-     * @return the names of the input tables.
-     * The order of the tables corresponds to the inputs of the generated circuit.
-     */
-    public List<String> getInputTables() {
-        return Linq.map(this.inputOperators, DBSPOperator::getName);
-    }
-
-    public int getOutputCount() {
-        return this.outputOperators.size();
-    }
-
-    public DBSPType getOutputType(int outputNo) {
-        return this.outputOperators.get(outputNo).getNonVoidType();
-    }
-
-    public DBSPTypeRawTuple getOutputType() {
-        return new DBSPTypeRawTuple(null, Linq.map(this.outputOperators, IHasType::getNonVoidType));
-    }
-
-    void checkSealed() {
-        if (this.sealed)
-            throw new RuntimeException("Circuit already sealed " + this);
-    }
-
-    public void addOperator(DBSPOperator operator) {
-        this.checkSealed();
-        Logger.instance.from(this, 1)
-                .append("Adding ")
-                .append(operator.toString())
-                .newline();
-        Utilities.putNew(this.operatorDeclarations, operator.outputName, operator);
-        if (operator.is(DBSPSourceOperator.class))
-            this.inputOperators.add(operator.to(DBSPSourceOperator.class));
-        else if (operator.is(DBSPSinkOperator.class))
-            this.outputOperators.add(operator.to(DBSPSinkOperator.class));
-        this.code.add(operator);
-    }
-
-    public void declare(IDBSPDeclaration declaration) {
-        this.checkSealed();
-        this.code.add(declaration);
-    }
-
-    public DBSPLetStatement declareLocal(String prefix, DBSPExpression init) {
-        String name = new NameGen(prefix).toString();
-        DBSPLetStatement let = new DBSPLetStatement(name, init);
-        this.declare(let);
-        return let;
-    }
-
     @Nullable
-    public DBSPOperator getOperator(String tableName) {
-        return this.operatorDeclarations.get(tableName);
+    @Override
+    public Object getNode() {
+        return this.circuit.getNode();
     }
 
     @Override
     public void accept(CircuitVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        for (IDBSPNode op: this.code) {
-            IDBSPOuterNode outer = op.as(IDBSPOuterNode.class);
-            if (outer != null)
-                outer.accept(visitor);
-        }
+        this.circuit.accept(visitor);
         visitor.postorder(this);
     }
 
-    public boolean sameCircuit(DBSPCircuit other) {
-        if (this == other)
-            return true;
-        return Linq.same(this.code, other.code);
+    public int getOutputCount() {
+        return this.circuit.getOutputCount();
     }
 
-    /**
-     * No more changes are expected to the circuit.
-     */
-    public void seal() {
-        this.checkSealed();
-        this.sealed = true;
+    public DBSPType getOutputType(int i) {
+        return this.circuit.getOutputType(i);
+    }
+
+    public List<String> getInputTables() {
+        return this.circuit.getInputTables();
     }
 }

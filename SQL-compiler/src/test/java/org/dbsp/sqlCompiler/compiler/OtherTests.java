@@ -57,7 +57,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
     static final CompilerOptions options = new CompilerOptions();
 
     private DBSPCompiler compileDef() throws SqlParseException {
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
+        DBSPCompiler compiler = new DBSPCompiler(options);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +
@@ -67,14 +67,14 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 ", COL6 DOUBLE" +
                 ")";
 
-        compiler.compileStatement(ddl, null);
+        compiler.compileStatement(ddl);
         return compiler;
     }
 
     public DBSPCircuit queryToCircuit(String query) throws SqlParseException {
         DBSPCompiler compiler = this.compileDef();
-        compiler.compileStatement(query, null);
-        return compiler.getResult();
+        compiler.compileStatement(query);
+        return getCircuit(compiler);
     }
 
     private void testQuery(String query) {
@@ -147,12 +147,11 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 "    FROM\n" +
                 "        transactions JOIN demographics\n" +
                 "        ON transactions.cc_num = demographics.cc_num";
-        DBSPCompiler compiler = new DBSPCompiler(options).newCircuit("circuit");
-        compiler.compileStatement(statement0, null);
-        compiler.compileStatement(statement1, null);
-        compiler.compileStatement(statement2, null);
-        DBSPCircuit circuit = compiler.getResult();
-        String rust = ToRustVisitor.circuitToRustString(circuit);
+        DBSPCompiler compiler = new DBSPCompiler(options);
+        compiler.compileStatement(statement0);
+        compiler.compileStatement(statement1);
+        compiler.compileStatement(statement2);
+        DBSPCircuit circuit = compiler.getFinalCircuit("circuit");
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
         writer.println(ToRustVisitor.generatePreamble());
         writer.println(ToRustVisitor.circuitToRustString(circuit));

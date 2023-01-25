@@ -91,7 +91,7 @@ impl Add<i64> for Timestamp {
 
 ////////////////////////////
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, SizeOf, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, SizeOf)]
 pub struct Date {
     // since unix epoch
     days: i32,
@@ -113,6 +113,39 @@ where
 {
     fn from(value: T) -> Self {
         Self { days: i32::from(value) }
+    }
+}
+
+/// Serialize date into the `YYYY-MM-DD` format
+impl Serialize for Date {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let millis = (self.days as i64) * 86400 * 1000;
+        let datetime =
+            NaiveDateTime::from_timestamp_millis(millis).ok_or_else(|| {
+                S::Error::custom(format!(
+                    "date value '{}' out of range",
+                    self.days
+                ))
+            })?;
+
+        serializer.serialize_str(&datetime.format("%F").to_string())
+    }
+}
+
+/// Deserialize date from the `YYYY-MM-DD` format.
+impl<'de> Deserialize<'de> for Date {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let str: &'de str = Deserialize::deserialize(deserializer)?;
+        let timestamp = NaiveDateTime::parse_from_str(&str, "%Y-%m-%d").map_err(|e| {
+            D::Error::custom(format!("invalid date string '{str}': {e}"))
+        })?;
+        Ok(Self::new((timestamp.timestamp() / 86400) as i32))
     }
 }
 
