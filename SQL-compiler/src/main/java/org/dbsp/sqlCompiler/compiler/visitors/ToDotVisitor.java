@@ -24,7 +24,7 @@
 package org.dbsp.sqlCompiler.compiler.visitors;
 
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
-import org.dbsp.sqlCompiler.circuit.operator.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.util.IModule;

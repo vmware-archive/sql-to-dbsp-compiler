@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
-import org.dbsp.sqlCompiler.circuit.operator.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 
 import java.util.function.Function;
