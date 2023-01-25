@@ -38,7 +38,7 @@ public class CastTests extends BaseSQLTests {
     final DBSPTypeDecimal tenFour = new DBSPTypeDecimal(null, 4, false);
 
     @Override
-    DBSPCompiler compileQuery(String query) throws SqlParseException {
+    public DBSPCompiler compileQuery(String query) throws SqlParseException {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
@@ -48,8 +48,8 @@ public class CastTests extends BaseSQLTests {
                 ", COL4 DECIMAL(10,2)" +
                 ", COL5 DECIMAL(10, 4) NOT NULL" +
                 ")";
-        compiler.compileStatement(ddl, null);
-        compiler.compileStatement(query, null);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement(query);
         return compiler;
     }
 

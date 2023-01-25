@@ -66,7 +66,7 @@ public class Main {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             String extension = Utilities.getFileExtension(file.toString());
-            int batchSize = 5;
+            int batchSize = 500;
             int skipPerFile = 0;
             String name = file.getFileName().toString();
             if (name.startsWith("select"))

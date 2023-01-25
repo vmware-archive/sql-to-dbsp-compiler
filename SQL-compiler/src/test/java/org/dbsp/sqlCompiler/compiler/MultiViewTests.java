@@ -56,9 +56,9 @@ public class MultiViewTests extends BaseSQLTests {
 
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
-        compiler.compileStatement(ddl, null);
-        compiler.compileStatement(query1, null);
-        compiler.compileStatement(query2, null);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement(query1);
+        compiler.compileStatement(query2);
 
         DBSPCircuit circuit = getCircuit(compiler);
         InputOutputPair stream = new InputOutputPair(
@@ -85,9 +85,9 @@ public class MultiViewTests extends BaseSQLTests {
 
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
-        compiler.compileStatement(ddl, null);
-        compiler.compileStatement(query1, null);
-        compiler.compileStatement(query2, null);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement(query1);
+        compiler.compileStatement(query2);
 
         DBSPCircuit circuit = getCircuit(compiler);
         InputOutputPair stream = new InputOutputPair(
@@ -114,9 +114,9 @@ public class MultiViewTests extends BaseSQLTests {
 
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
-        compiler.compileStatement(ddl, null);
-        compiler.compileStatement(query1, null);
-        compiler.compileStatement(query2, null);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement(query1);
+        compiler.compileStatement(query2);
 
         DBSPCircuit circuit = getCircuit(compiler);
         InputOutputPair stream = new InputOutputPair(

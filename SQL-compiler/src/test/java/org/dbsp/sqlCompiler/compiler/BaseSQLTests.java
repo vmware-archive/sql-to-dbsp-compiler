@@ -53,7 +53,7 @@ public class BaseSQLTests {
     public static final String rustDirectory = "../temp/src";
     public static final String testFilePath = rustDirectory + "/lib.rs";
 
-    static class InputOutputPair {
+    public static class InputOutputPair {
         public final DBSPZSetLiteral[] inputs;
         public final DBSPZSetLiteral[] outputs;
 
@@ -63,7 +63,7 @@ public class BaseSQLTests {
             this.outputs = outputs;
         }
 
-        InputOutputPair(DBSPZSetLiteral input, DBSPZSetLiteral output) {
+        public InputOutputPair(DBSPZSetLiteral input, DBSPZSetLiteral output) {
             this.inputs = new DBSPZSetLiteral[1];
             this.inputs[0] = input;
             this.outputs = new DBSPZSetLiteral[1];
@@ -71,7 +71,7 @@ public class BaseSQLTests {
         }
     }
 
-    static DBSPCircuit getCircuit(DBSPCompiler compiler) {
+    protected static DBSPCircuit getCircuit(DBSPCompiler compiler) {
         String name = "circuit" + testsToRun.size();
         return compiler.getFinalCircuit(name);
     }
@@ -168,14 +168,14 @@ public class BaseSQLTests {
         }
     }
 
-    void addRustTestCase(DBSPCircuit circuit, InputOutputPair... streams) {
+    protected void addRustTestCase(DBSPCircuit circuit, InputOutputPair... streams) {
         TestCase test = new TestCase(circuit, streams);
         testsToRun.add(test);
     }
 
-    final static CompilerOptions options = new CompilerOptions();
+    protected final static CompilerOptions options = new CompilerOptions();
 
-    DBSPCompiler compileQuery(String query) throws SqlParseException {
+    public DBSPCompiler compileQuery(String query) throws SqlParseException {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
@@ -186,8 +186,8 @@ public class BaseSQLTests {
                 ", COL5 INT" +
                 ", COL6 DOUBLE" +
                 ")";
-        compiler.compileStatement(ddl, null);
-        compiler.compileStatement(query, null);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement(query);
         return compiler;
     }
 

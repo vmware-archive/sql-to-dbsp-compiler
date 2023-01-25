@@ -67,13 +67,13 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 ", COL6 DOUBLE" +
                 ")";
 
-        compiler.compileStatement(ddl, null);
+        compiler.compileStatement(ddl);
         return compiler;
     }
 
     public DBSPCircuit queryToCircuit(String query) throws SqlParseException {
         DBSPCompiler compiler = this.compileDef();
-        compiler.compileStatement(query, null);
+        compiler.compileStatement(query);
         return getCircuit(compiler);
     }
 
@@ -148,11 +148,10 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 "        transactions JOIN demographics\n" +
                 "        ON transactions.cc_num = demographics.cc_num";
         DBSPCompiler compiler = new DBSPCompiler(options);
-        compiler.compileStatement(statement0, null);
-        compiler.compileStatement(statement1, null);
-        compiler.compileStatement(statement2, null);
+        compiler.compileStatement(statement0);
+        compiler.compileStatement(statement1);
+        compiler.compileStatement(statement2);
         DBSPCircuit circuit = compiler.getFinalCircuit("circuit");
-        String rust = ToRustVisitor.circuitToRustString(circuit);
         PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
         writer.println(ToRustVisitor.generatePreamble());
         writer.println(ToRustVisitor.circuitToRustString(circuit));

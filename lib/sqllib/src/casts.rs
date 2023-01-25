@@ -27,7 +27,7 @@ use crate::{
     geopoint::*,
     timestamp::*,
 };
-use chrono::{Datelike,Timelike,NaiveDateTime};
+use chrono::{Datelike,Timelike,NaiveDateTime,NaiveDate};
 
 /////////// cast to b
 
@@ -270,7 +270,15 @@ pub fn cast_to_bN_u(value: usize) -> Option<bool>
 
 /////////// cast to dateN
 
-// TODO
+#[inline]
+pub fn cast_to_dateN_s(value: String) -> Option<Date>
+{
+    let dt = NaiveDate::parse_from_str(&value, "%Y-%m-%d");
+    match dt.ok() {
+        None => None,
+        Some(value) => Some(Date::new((value.and_hms_opt(0, 0, 0).unwrap().timestamp() / 86400) as i32)),
+    }
+}
 
 /////////// cast to decimal
 

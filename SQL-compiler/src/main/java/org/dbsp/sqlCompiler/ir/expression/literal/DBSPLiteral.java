@@ -64,6 +64,10 @@ public class DBSPLiteral extends DBSPExpression {
         return value;
     }
 
+    public boolean mayBeNull() {
+        return this.getNonVoidType().mayBeNull;
+    }
+
     @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;

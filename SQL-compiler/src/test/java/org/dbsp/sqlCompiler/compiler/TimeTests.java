@@ -33,14 +33,14 @@ import org.junit.Test;
 
 public class TimeTests extends BaseSQLTests {
     @Override
-    DBSPCompiler compileQuery(String query) throws SqlParseException {
+    public DBSPCompiler compileQuery(String query) throws SqlParseException {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 TIMESTAMP NOT NULL" +
                 ")";
-        compiler.compileStatement(ddl, null);
-        compiler.compileStatement(query, null);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement(query);
         return compiler;
     }
 

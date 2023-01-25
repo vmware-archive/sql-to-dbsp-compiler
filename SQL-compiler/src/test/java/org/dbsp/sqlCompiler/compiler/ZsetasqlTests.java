@@ -121,10 +121,10 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
         CompilerOptions options = new CompilerOptions();
         options.ioOptions.dialect = Lex.BIG_QUERY;
         DBSPCompiler compiler = new DBSPCompiler(options);
-        compiler.compileStatement(query, null);
+        compiler.compileStatement(query);
         compiler.compileStatement("CREATE VIEW V AS SELECT int64_val, COUNT(*) OVER " +
                 "(ORDER BY int64_val RANGE UNBOUNDED PRECEDING)\n" +
-                "FROM (SELECT int64_val FROM TestTable)\n", null);
+                "FROM (SELECT int64_val FROM TestTable)\n");
         this.addRustTestCase(getCircuit(compiler));
     }
 
@@ -150,7 +150,7 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
         CompilerOptions options = new CompilerOptions();
         options.ioOptions.dialect = Lex.BIG_QUERY;
         DBSPCompiler compiler = new DBSPCompiler(options);
-        compiler.compileStatement(query, null);
+        compiler.compileStatement(query);
         this.addRustTestCase(getCircuit(compiler));
     }
 
@@ -164,7 +164,7 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
         CompilerOptions options = new CompilerOptions();
         options.ioOptions.dialect = Lex.BIG_QUERY;
         DBSPCompiler compiler = new DBSPCompiler(options);
-        compiler.compileStatement(query, null);
+        compiler.compileStatement(query);
         this.addRustTestCase(getCircuit(compiler));
     }
 }

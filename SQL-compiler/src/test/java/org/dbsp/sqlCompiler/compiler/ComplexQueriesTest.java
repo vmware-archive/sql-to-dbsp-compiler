@@ -54,8 +54,8 @@ public class ComplexQueriesTest extends BaseSQLTests {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
-        compiler.compileStatement(ddl, null);
-        compiler.compileStatement(query, null);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement(query);
         this.addRustTestCase(getCircuit(compiler));
     }
 
@@ -93,8 +93,8 @@ public class ComplexQueriesTest extends BaseSQLTests {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
-        compiler.compileStatement(ddl, null);
-        compiler.compileStatement(query, null);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement(query);
         this.addRustTestCase(getCircuit(compiler));
     }
 
@@ -169,9 +169,9 @@ public class ComplexQueriesTest extends BaseSQLTests {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
-        compiler.compileStatement(ddl0, null);
-        compiler.compileStatement(ddl1, null);
-        compiler.compileStatement(query, null);
+        compiler.compileStatement(ddl0);
+        compiler.compileStatement(ddl1);
+        compiler.compileStatement(query);
         this.addRustTestCase(getCircuit(compiler));
     }
 }
