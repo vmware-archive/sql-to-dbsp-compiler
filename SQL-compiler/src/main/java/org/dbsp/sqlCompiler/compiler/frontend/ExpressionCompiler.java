@@ -471,7 +471,10 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 if (call.operands.size() != 2)
                     throw new Unimplemented(call);
                 DBSPKeywordLiteral keyword = ops.get(0).to(DBSPKeywordLiteral.class);
-                String functionName = "extract_" + keyword;
+                DBSPType type1 = ops.get(1).getNonVoidType();
+                String functionName = "extract_" + type1.to(IsNumericType.class).getRustString() + "_" + keyword;
+                if (type1.mayBeNull)
+                    functionName += "N";
                 return new DBSPApplyExpression(functionName, type, ops.get(1));
             }
             case FLOOR:

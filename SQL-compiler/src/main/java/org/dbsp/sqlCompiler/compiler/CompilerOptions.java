@@ -43,6 +43,8 @@ public class CompilerOptions {
          */
         @Parameter(names = "-i", description = "Generate an incremental circuit")
         public boolean incrementalize = false;
+        @Parameter(names = "-O0", description = "Do not optimize")
+        public boolean noOptimizations = false;
     }
 
     /**

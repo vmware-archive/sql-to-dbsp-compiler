@@ -6,18 +6,10 @@ pub mod interval;
 pub mod timestamp;
 
 use std::ops::Add;
-use chrono::{Utc, TimeZone, Datelike};
 use dbsp::algebra::{F32, F64, ZRingValue, Semigroup, SemigroupValue};
 use geopoint::GeoPoint;
 use rust_decimal::prelude::*;
-use crate::interval::{
-    ShortInterval,
-    LongInterval,
-};
-use crate::timestamp::{
-    Timestamp,
-    Date,
-};
+use crate::interval::ShortInterval;
 use std::marker::PhantomData;
 
 #[derive(Clone)]
@@ -665,65 +657,6 @@ pub fn times_ShortIntervalN_i64N(left: Option<ShortInterval>, right: Option<i64>
         (None, _) => None,
         (_, None) => None,
         (Some(x), Some(y)) => Some(x * y),
-    }
-}
-
-pub fn plus_Timestamp_ShortInterval(left: Timestamp, right: ShortInterval) -> Timestamp {
-    Timestamp::from(left.add(right.milliseconds()))
-}
-
-pub fn minus_Timestamp_Timestamp_ShortInterval(left: Timestamp, right: Timestamp) -> ShortInterval {
-    ShortInterval::from(left.milliseconds() - right.milliseconds())
-}
-
-pub fn minus_Timestamp_Timestamp_LongInterval(left: Timestamp, right: Timestamp) -> LongInterval {
-    let ldate = left.toDateTime();
-    let rdate = right.toDateTime();
-    let ly = ldate.year();
-    let lm = ldate.month() as i32;
-    let ld = ldate.day() as i32;
-    let lt = ldate.time();
-
-    let ry = rdate.year();
-    let mut rm = rdate.month() as i32;
-    let rd = rdate.day() as i32;
-    let rt = rdate.time();
-    if (ld < rd) || ((ld == rd) && lt < rt) {
-        // the full month is not yet elapsed
-        rm = rm + 1;
-    }
-    LongInterval::from((ly - ry) * 12 + lm - rm)
-}
-
-pub fn minus_date_date_LongInterval(left: Date, right: Date) -> LongInterval {
-    let ld = Utc.timestamp_opt(left.days() as i64 * 86400, 0).single().unwrap();
-    let rd = Utc.timestamp_opt(right.days() as i64 * 86400, 0).single().unwrap();
-    let ly = ld.year();
-    let lm = ld.month() as i32;
-    let ry = rd.year();
-    let rm = rd.month() as i32;
-    LongInterval::from((ly - ry) * 12 + lm - rm)
-}
-
-pub fn minus_dateN_date_LongInterval(left: Option<Date>, right: Date) -> Option<LongInterval> {
-    match left {
-        None => None,
-        Some(x) => Some(LongInterval::new(x.days() - right.days())),
-    }
-}
-
-pub fn minus_date_dateN_LongInterval(left: Date, right: Option<Date>) -> Option<LongInterval> {
-    match right {
-        None => None,
-        Some(x) => Some(LongInterval::new(left.days() - x.days())),
-    }
-}
-
-pub fn minus_dateN_dateN_LongInterval(left: Option<Date>, right: Option<Date>) -> Option<LongInterval> {
-    match (left, right) {
-        (None, _) => None,
-        (_, None) => None,
-        (Some(x), Some(y)) => Some(LongInterval::new(x.days() - y.days())),
     }
 }
 

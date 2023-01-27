@@ -33,11 +33,15 @@ public class DBSPI64Literal extends DBSPLiteral {
     public final Long value;
 
     public DBSPI64Literal() {
-        this(null, true);
+        this((Long)null, true);
     }
 
     public DBSPI64Literal(long value) {
         this(value, false);
+    }
+
+    public DBSPI64Literal(int value) {
+        this((long)value, false);
     }
 
     public DBSPI64Literal(@Nullable Object node, @Nullable Long value, boolean nullable) {
@@ -49,6 +53,10 @@ public class DBSPI64Literal extends DBSPLiteral {
 
     public DBSPI64Literal(@Nullable Long value, boolean nullable) {
         this(null, value, nullable);
+    }
+
+    public DBSPI64Literal(@Nullable Integer value, boolean nullable) {
+        this(null, value == null ? null : value.longValue(), nullable);
     }
 
     public DBSPTypeInteger getIntegerType() {
