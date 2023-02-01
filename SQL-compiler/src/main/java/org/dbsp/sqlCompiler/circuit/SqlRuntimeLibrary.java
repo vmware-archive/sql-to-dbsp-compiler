@@ -125,6 +125,12 @@ public class SqlRuntimeLibrary {
         this.dateFunctions.put("plus", "+");
         this.dateFunctions.put("minus", "-");
         this.dateFunctions.put("times", "*");
+        this.dateFunctions.put("eq", "==");
+        this.dateFunctions.put("neq", "!=");
+        this.dateFunctions.put("lt", "<");
+        this.dateFunctions.put("gt", ">");
+        this.dateFunctions.put("lte", "<=");
+        this.dateFunctions.put("gte", ">=");
 
         //this.stringFunctions.put("s_concat", "+");
         this.stringFunctions.put("eq", "==");

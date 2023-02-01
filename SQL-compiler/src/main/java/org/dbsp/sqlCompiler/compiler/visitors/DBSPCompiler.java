@@ -34,6 +34,7 @@ import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
 import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
 import org.dbsp.util.IModule;
+import org.dbsp.util.Logger;
 
 import javax.annotation.Nullable;
 
@@ -81,6 +82,11 @@ public class DBSPCompiler implements IModule {
 
     public void compileStatement(String statement, @Nullable String comment) throws SqlParseException {
         SqlNode node = this.frontend.parse(statement);
+        Logger.instance.from(this, 2)
+                .append("Parsing result")
+                .newline()
+                .append(node.toString())
+                .newline();
         FrontEndStatement fe = this.frontend.compile(statement, node, comment);
         this.midend.compile(fe);
     }

@@ -56,6 +56,7 @@ import org.apache.calcite.sql.type.*;
 import org.apache.calcite.sql.util.SqlOperatorTables;
 import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.sql.validate.SqlConformance;
+import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.RelDecorrelator;
@@ -87,6 +88,7 @@ import java.util.*;
  * - optimize RelNode
  */
 public class CalciteCompiler implements IModule {
+    private final CompilerOptions options;
     private final SqlParser.Config parserConfig;
     private final SqlValidator validator;
     private final Catalog catalog;
@@ -169,10 +171,12 @@ public class CalciteCompiler implements IModule {
     // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
     public CalciteCompiler(CompilerOptions options) {
         this.astRewriter = new RewriteDivision();
+        this.options = options;
         Properties connConfigProp = new Properties();
         connConfigProp.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
         connConfigProp.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
         connConfigProp.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
+        connConfigProp.put(CalciteConnectionProperty.CONFORMANCE.camelName(), SqlConformanceEnum.LENIENT.toString());
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
         SqlConformance conformance = connectionConfig.conformance();
         this.parserConfig = SqlParser.config()
@@ -201,6 +205,8 @@ public class CalciteCompiler implements IModule {
                 SqlLibraryOperatorTableFactory.INSTANCE.getOperatorTable(
                         // Standard SQL functions
                         EnumSet.of(SqlLibrary.STANDARD,
+                                SqlLibrary.MYSQL,
+                                SqlLibrary.POSTGRESQL,
                                 // Geospatial functions
                                 SqlLibrary.SPATIAL)),
                 // Our custom division operation
@@ -283,7 +289,10 @@ public class CalciteCompiler implements IModule {
      * We do program-dependent optimization, since some optimizations
      * are buggy and don't always work.
      */
-    static List<HepProgram> getOptimizationStages(RelNode rel) {
+    List<HepProgram> getOptimizationStages(RelNode rel) {
+        if (this.options.optimizerOptions.noOptimizations)
+            return Linq.list();
+
         HepProgram constantFold = createProgram(
                 CoreRules.FILTER_REDUCE_EXPRESSIONS,
                 CoreRules.PROJECT_REDUCE_EXPRESSIONS,
@@ -402,7 +411,7 @@ public class CalciteCompiler implements IModule {
                 .newline();
 
         int stage = 0;
-        for (HepProgram program: getOptimizationStages(rel)) {
+        for (HepProgram program: this.getOptimizationStages(rel)) {
             HepPlanner planner = new HepPlanner(program);
             planner.setRoot(rel);
             rel = planner.findBestExp();

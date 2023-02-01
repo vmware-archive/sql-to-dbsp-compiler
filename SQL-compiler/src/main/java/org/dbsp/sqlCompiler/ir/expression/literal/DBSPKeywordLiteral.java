@@ -33,25 +33,28 @@ import javax.annotation.Nullable;
  */
 @SuppressWarnings("SpellCheckingInspection")
 public class DBSPKeywordLiteral extends DBSPLiteral {
-    enum Keyword {
-        DOW,    // Day of week
-        EPOCH,
-        ISODOW,
-    }
-
-    public final Keyword keyword;
+    public final String keyword;
 
     public DBSPKeywordLiteral(@Nullable Object node, String keyword) {
         super(node, DBSPTypeKeyword.instance, keyword);
+        this.keyword = keyword.toLowerCase();
         switch (keyword.toLowerCase()) {
             case "dow":
-                this.keyword = Keyword.DOW;
-                break;
             case "epoch":
-                this.keyword = Keyword.EPOCH;
-                break;
             case "isodow":
-                this.keyword = Keyword.ISODOW;
+            case "year":
+            case "month":
+            case "day":
+            case "decade":
+            case "quarter":
+            case "century":
+            case "millennium":
+            case "isoyear":
+            case "week":
+            case "doy":
+            case "second":
+            case "minute":
+            case "hour":
                 break;
             default:
                 throw new Unimplemented(node != null ? node : keyword);
@@ -60,6 +63,6 @@ public class DBSPKeywordLiteral extends DBSPLiteral {
 
     @Override
     public String toString() {
-        return this.keyword.toString();
+        return this.keyword;
     }
 }

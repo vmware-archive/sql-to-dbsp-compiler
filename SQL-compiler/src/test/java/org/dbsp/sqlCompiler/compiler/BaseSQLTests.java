@@ -177,6 +177,8 @@ public class BaseSQLTests {
 
     public DBSPCompiler compileQuery(String query) throws SqlParseException {
         DBSPCompiler compiler = new DBSPCompiler(options);
+        // This is necessary if we want queries that do not depend on the input
+        // to generate circuits that still have inputs.
         compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
