@@ -119,7 +119,7 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
                 "  SELECT 9,  false, 2,    3,    1.5,   \"B\"  UNION ALL\n" +
                 "  SELECT 10, true,  3,    1,    2.5,   \"B\"\n";
         CompilerOptions options = new CompilerOptions();
-        options.ioOptions.dialect = Lex.BIG_QUERY;
+        options.ioOptions.lexicalRules = Lex.BIG_QUERY;
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatement(query);
         compiler.compileStatement("CREATE VIEW V AS SELECT int64_val, COUNT(*) OVER " +
@@ -148,7 +148,7 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
                 //"SELECT 12, interval '1:00:00.000001' hour to second\n"
                 ;
         CompilerOptions options = new CompilerOptions();
-        options.ioOptions.dialect = Lex.BIG_QUERY;
+        options.ioOptions.lexicalRules = Lex.BIG_QUERY;
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatement(query);
         this.addRustTestCase(getCircuit(compiler));
@@ -162,7 +162,7 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
                 "       cast(1 as int64) as id, cast(\"a1\" as string) as a UNION ALL\n" +
                 "  SELECT 2, 2, \"a2\"";
         CompilerOptions options = new CompilerOptions();
-        options.ioOptions.dialect = Lex.BIG_QUERY;
+        options.ioOptions.lexicalRules = Lex.BIG_QUERY;
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatement(query);
         this.addRustTestCase(getCircuit(compiler));

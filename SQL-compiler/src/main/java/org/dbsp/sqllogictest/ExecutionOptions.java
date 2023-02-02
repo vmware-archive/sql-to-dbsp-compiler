@@ -30,7 +30,7 @@ import com.beust.jcommander.ParameterException;
 import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqllogictest.executors.*;
-import org.dbsp.util.SqlDialectConverter;
+import org.dbsp.util.SqlLexicalRulesConverter;
 import org.dbsp.util.Unimplemented;
 import org.dbsp.util.UnsupportedException;
 
@@ -67,8 +67,8 @@ public class ExecutionOptions {
     boolean doNotExecute;
     @Parameter(names = "-e", validateWith = ExecutorValidator.class)
     String executor = "none";
-    @Parameter(names = "-d", converter = SqlDialectConverter.class)
-    Lex dialect = Lex.ORACLE;
+    @Parameter(names = "-d", converter = SqlLexicalRulesConverter.class)
+    Lex lexicalRules = Lex.ORACLE;
     @Parameter(names = "-u", description = "Name of user to use for database")
     String user = "user";
     @Parameter(names = "-p", description = "Password of user for the database")
@@ -120,7 +120,7 @@ public class ExecutionOptions {
     }
 
     String jdbcConnectionString() {
-        switch (this.dialect) {
+        switch (this.lexicalRules) {
             case MYSQL:
                 return "jdbc:mysql://localhost/slt";
             case ORACLE:
@@ -135,7 +135,7 @@ public class ExecutionOptions {
         if (this.inputSource.equals("csv")) {
             return "csv";
         } else if (this.inputSource.equals("db")) {
-            switch (this.dialect) {
+            switch (this.lexicalRules) {
                 case ORACLE:
                     return String.format("postgresql://localhost?dbname=slt&user=%s&password=%s", this.user,
                                          this.password);
@@ -145,11 +145,11 @@ public class ExecutionOptions {
             }
         }
         throw new Unimplemented(String.format("Unsupported input source or DB dialect: inputSource=%s dialect=%s",
-                                              this.inputSource, this.dialect));
+                                              this.inputSource, this.lexicalRules));
     }
 
     AcceptancePolicy getAcceptancePolicy() {
-        switch (this.dialect) {
+        switch (this.lexicalRules) {
             case MYSQL:
                 return new MySqlPolicy();
             case ORACLE:
@@ -160,7 +160,7 @@ public class ExecutionOptions {
     }
 
     JDBCExecutor jdbcExecutor(HashSet<String> sltBugs) {
-        JDBCExecutor jdbc =  new JDBCExecutor(this.jdbcConnectionString(), this.dialect,
+        JDBCExecutor jdbc =  new JDBCExecutor(this.jdbcConnectionString(), this.lexicalRules,
                 this.user, this.password);
         jdbc.avoid(sltBugs);
         jdbc.setValidateStatus(this.validateStatus);
@@ -174,7 +174,7 @@ public class ExecutionOptions {
         }
 
         CompilerOptions options = new CompilerOptions();
-        options.ioOptions.dialect = this.dialect;
+        options.ioOptions.lexicalRules = this.lexicalRules;
         options.optimizerOptions.incrementalize = this.incremental;
 
         switch (this.executor) {
@@ -218,7 +218,7 @@ public class ExecutionOptions {
                 ", incremental=" + this.incremental +
                 ", execute=" + !this.doNotExecute +
                 ", executor=" + this.executor +
-                ", dialect=" + this.dialect +
+                ", dialect=" + this.lexicalRules +
                 '}';
     }
 }

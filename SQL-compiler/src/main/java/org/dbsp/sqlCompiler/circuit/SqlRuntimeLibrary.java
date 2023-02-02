@@ -200,6 +200,8 @@ public class SqlRuntimeLibrary {
                     assert expectedReturnType != null;
                     returnType = expectedReturnType;
                     suffixReturn = "_" + returnType.to(DBSPTypeBaseType.class).shortName();
+                    if (returnType.mayBeNull)
+                        suffixReturn += "N";
                 }
             }
         } else if (ltype.is(IsNumericType.class)) {

@@ -280,6 +280,12 @@ pub fn cast_to_dateN_s(value: String) -> Option<Date>
     }
 }
 
+#[inline]
+pub fn cast_to_dateN_date(value: Date) -> Option<Date>
+{
+    Some(value)
+}
+
 /////////// cast to decimal
 
 #[inline]
@@ -1092,7 +1098,7 @@ pub fn cast_to_s_sN(value: Option<String>) -> String
 #[inline]
 pub fn cast_to_s_Timestamp(value: Timestamp) -> String
 {
-    let dt = value.toDateTime();
+    let dt = value.to_dateTime();
     let month = dt.month();
     let day = dt.day();
     let year = dt.year();
@@ -2001,6 +2007,18 @@ pub fn cast_to_i64N_u(value: usize) -> Option<i64>
     Some(value as i64)
 }
 
+#[inline]
+pub fn cast_to_i64N_ShortIntervalN(value: Option<ShortInterval>) -> Option<i64>
+{
+    value.map(|x| x.milliseconds())
+}
+
+#[inline]
+pub fn cast_to_i64N_LongIntervalN(value: Option<LongInterval>) -> Option<i64>
+{
+    value.map(|x| x.days() as i64)
+}
+
 //////// casts to Short interval
 
 #[inline]
@@ -2014,9 +2032,56 @@ pub fn cast_to_ShortInterval_i64(value: i64) -> ShortInterval
 #[inline]
 pub fn cast_to_Timestamp_s(value: String) -> Timestamp
 {
-    let r = NaiveDateTime::parse_from_str(&value, "%Y %m %d %H:%M:%S");
+    cast_to_TimestampN_s(value).unwrap_or_default()
+}
+
+#[inline]
+pub fn cast_to_TimestampN_s(value: String) -> Option<Timestamp>
+{
+    let r = NaiveDateTime::parse_from_str(&value, "%Y-%m-%d %H:%M:%S%.f");
     match r {
-        Ok(v) => Timestamp::new(v.timestamp()),
-        _     => Timestamp::new(0),  // TODO: what else?
+        Ok(v) => {
+            // round the number of milliseconds
+            let nanos = v.timestamp_subsec_nanos();
+            let nanos = (nanos + 500000) / 1000000;
+            let result = Timestamp::new(v.timestamp() * 1000 + (nanos as i64));
+            //println!("Parsed successfully {} using {} into {:?} ({})",
+            //         value, "%Y-%m-%d %H:%M:%S%.f", result, result.milliseconds());
+            return Some(result);
+        },
+        _ => (),
     }
+    // Try just a date.
+    // parse_from_str fails to parse a datetime if there is no time in the format!
+    let r = NaiveDate::parse_from_str(&value, "%Y-%m-%d");
+    match r {
+        Ok(v) => {
+            let dt = v.and_hms_opt(0, 0, 0).unwrap();
+            let result = Timestamp::new(dt.timestamp_millis());
+            //println!("Parsed successfully {} using {} into {:?} ({})",
+            //         value, "%Y-%m-%d", result, result.milliseconds());
+            return Some(result);
+        },
+        _ => (),
+    }
+    //println!("Failed to parse {}", value);
+    None
+}
+
+#[inline]
+pub fn cast_to_TimestampN_Timestamp(value: Timestamp) -> Option<Timestamp>
+{
+    Some(value)
+}
+
+#[inline]
+pub fn cast_to_Timestamp_date(value: Date) -> Timestamp
+{
+    value.to_timestamp()
+}
+
+#[inline]
+pub fn cast_to_TimestampN_dateN(value: Option<Date>) -> Option<Timestamp>
+{
+    value.map(|v| cast_to_Timestamp_date(v))
 }

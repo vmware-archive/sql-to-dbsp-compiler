@@ -129,8 +129,8 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 " is_fraud INTEGER\n" +
                 ")";
         String query = "SELECT\n" +
-                "    -- DAYOFWEEK(trans_date_trans_time) AS d,\n" +
-                "    -- TIMESTAMPDIFF(YEAR, trans_date_trans_time, CAST(dob as TIMESTAMP)) AS age,\n" +
+                "    DAYOFWEEK(trans_date_trans_time) AS d,\n" +
+                "    TIMESTAMPDIFF(YEAR, trans_date_trans_time, CAST(dob as TIMESTAMP)) AS age,\n" +
                 "    ST_DISTANCE(ST_POINT(long,lat), ST_POINT(merch_long,merch_lat)) AS distance,\n" +
                 "    -- TIMESTAMPDIFF(MINUTE, trans_date_trans_time, last_txn_date) AS trans_diff,\n" +
                 "    AVG(amt) OVER(\n" +

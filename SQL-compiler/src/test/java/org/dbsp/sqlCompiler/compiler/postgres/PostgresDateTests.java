@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler.postgres;
 
-import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.BaseSQLTests;
@@ -42,6 +41,11 @@ import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeMillisInterval;
 import org.dbsp.util.Linq;
 import org.junit.Test;
 
+/**
+ * Tests manually adapted from
+ * https://github.com/postgres/postgres/blob/master/src/test/regress/expected/date.out
+ */
+@SuppressWarnings("JavadocLinkAsPlainText")
 public class PostgresDateTests extends BaseSQLTests {
     static DBSPType nullableDate = DBSPTypeDate.instance.setMayBeNull(true);
 
@@ -67,7 +71,6 @@ public class PostgresDateTests extends BaseSQLTests {
                 //"INSERT INTO DATE_TBL VALUES ('2040-04-10 BC');";
         CompilerOptions options = new CompilerOptions();
         options.optimizerOptions.noOptimizations = !optimize;
-        options.ioOptions.dialect = Lex.ORACLE;
         DBSPCompiler compiler = new DBSPCompiler(options);
         // So that queries that do not depend on the input still
         // have circuits with inputs.
@@ -372,9 +375,22 @@ public class PostgresDateTests extends BaseSQLTests {
     }
 
     @Test
+    public void testSeconds0() {
+        String query = "SELECT SECOND(DATE '2020-08-11')";
+        this.testQueryTwice(query, 0);
+    }
+
+    @Test
     public void testMinutes() {
         // TODO: This fails in Postgres
-        String query = "SELECT EXTRACT(MINUTE        FROM DATE '2020-08-11')";
+        String query = "SELECT EXTRACT(MINUTE FROM DATE '2020-08-11')";
+        this.testQueryTwice(query, 0);
+    }
+
+    @Test
+    public void testMinutes1() {
+        // TODO: This fails in Postgres
+        String query = "SELECT MINUTE(DATE '2020-08-11')";
         this.testQueryTwice(query, 0);
     }
 
@@ -386,8 +402,20 @@ public class PostgresDateTests extends BaseSQLTests {
     }
 
     @Test
+    public void testHour1() {
+        String query = "SELECT HOUR(DATE '2020-08-11')";
+        this.testQueryTwice(query, 0);
+    }
+
+    @Test
     public void testDay() {
         String query = "SELECT EXTRACT(DAY           FROM DATE '2020-08-11')";
+        this.testQueryTwice(query, 11);
+    }
+
+    @Test
+    public void testDay1() {
+        String query = "SELECT DAYOFMONTH(DATE '2020-08-11')";
         this.testQueryTwice(query, 11);
     }
 
@@ -398,8 +426,20 @@ public class PostgresDateTests extends BaseSQLTests {
     }
 
     @Test
+    public void testMonth1() {
+        String query = "SELECT MONTH(DATE '2020-08-11')";
+        this.testQueryTwice(query, 8);
+    }
+
+    @Test
     public void testYear() {
         String query = "SELECT EXTRACT(YEAR          FROM DATE '2020-08-11')";
+        this.testQueryTwice(query, 2020);
+    }
+
+    @Test
+    public void testYear1() {
+        String query = "SELECT YEAR(DATE '2020-08-11')";
         this.testQueryTwice(query, 2020);
     }
 
@@ -442,6 +482,12 @@ public class PostgresDateTests extends BaseSQLTests {
     @Test
     public void testDow() {
         String query = "SELECT EXTRACT(DOW           FROM DATE '2020-08-11')";
+        this.testQueryTwice(query, dow(2));
+    }
+
+    @Test
+    public void testDow2() {
+        String query = "SELECT DAYOFWEEK(DATE '2020-08-11')";
         this.testQueryTwice(query, dow(2));
     }
 

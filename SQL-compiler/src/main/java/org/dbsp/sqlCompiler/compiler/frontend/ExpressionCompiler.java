@@ -478,8 +478,15 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 return new DBSPApplyExpression(functionName, type, ops.get(1));
             }
             case FLOOR:
-            case CEIL:
-                // fall through
+            case CEIL: {
+                if (call.operands.size() != 2)
+                    throw new Unimplemented(call);
+                DBSPKeywordLiteral keyword = ops.get(1).to(DBSPKeywordLiteral.class);
+                String functionName = call.getKind().toString().toLowerCase() + "_" + type.to(IsNumericType.class).getRustString() + "_" + keyword;
+                if (type.mayBeNull)
+                    functionName += "N";
+                return new DBSPApplyExpression(functionName, type, ops.get(0));
+            }
             default:
                 throw new Unimplemented(call);
         }

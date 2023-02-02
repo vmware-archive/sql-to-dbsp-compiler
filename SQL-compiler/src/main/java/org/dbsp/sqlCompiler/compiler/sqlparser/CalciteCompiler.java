@@ -180,7 +180,7 @@ public class CalciteCompiler implements IModule {
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
         SqlConformance conformance = connectionConfig.conformance();
         this.parserConfig = SqlParser.config()
-                .withLex(options.ioOptions.dialect)
+                .withLex(options.ioOptions.lexicalRules)
                 // Add support for DDL language
                 .withParserFactory(SqlDdlParserImpl.FACTORY)
                 .withConformance(conformance);

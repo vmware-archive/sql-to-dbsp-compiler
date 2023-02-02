@@ -30,23 +30,26 @@ import org.apache.calcite.config.Lex;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SqlDialectConverter implements IStringConverter<Lex> {
+public class SqlLexicalRulesConverter implements IStringConverter<Lex> {
     static final private List<String> legalDialects = new ArrayList<>();
 
     static {
         legalDialects.add("mysql");
-        legalDialects.add("psql");
+        legalDialects.add("oracle");
+        legalDialects.add("big_query");
     }
 
     @Override
     public Lex convert(String s) {
-        switch (s) {
+        switch (s.toLowerCase()) {
             case "mysql":
                 return Lex.MYSQL;
-            case "psql":
+            case "oracle":
                 return Lex.ORACLE;
+            case "big_query":
+                return Lex.BIG_QUERY;
             default:
-                throw new ParameterException("Illegal value for dialect; legal values are: " + legalDialects);
+                throw new ParameterException("Illegal value for SQL lexical rules; legal values are: " + legalDialects);
         }
     }
 }

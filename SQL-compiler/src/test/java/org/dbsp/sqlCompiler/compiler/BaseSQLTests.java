@@ -35,6 +35,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.Utilities;
@@ -101,8 +102,15 @@ public class BaseSQLTests {
                 DBSPLetStatement out = new DBSPLetStatement("output",
                         new DBSPApplyExpression(circ.getVarReference(), pairs.inputs));
                 list.add(out);
-                list.add(new DBSPExpressionStatement(new DBSPApplyExpression(
-                        "assert_eq!", null, out.getVarReference(), new DBSPRawTupleExpression(pairs.outputs))));
+                for (int i = 0; i < pairs.outputs.length; i++) {
+                    list.add(
+                            new DBSPExpressionStatement(
+                                    new DBSPApplyExpression("assert!", null,
+                                            new DBSPApplyExpression("must_equal", DBSPTypeBool.instance,
+                                                    new DBSPBorrowExpression(
+                                                            new DBSPFieldExpression(null, out.getVarReference(), i)),
+                                                    new DBSPBorrowExpression(pairs.outputs[i])))));
+                }
             }
             DBSPExpression body = new DBSPBlockExpression(list, null);
             return new DBSPFunction("test" + this.sequenceNo, new ArrayList<>(), null, body)
