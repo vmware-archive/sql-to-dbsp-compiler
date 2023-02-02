@@ -233,8 +233,7 @@ pub fn extract_Timestamp_dowN(value: Option<Timestamp>) -> Option<i64> {
 }
 
 pub fn extract_Timestamp_isodow(value: Timestamp) -> i64 {
-    let dow = extract_Timestamp_dow(value) - 1;
-    if dow == 0 { 7 } else { dow }
+    extract_Timestamp_dow(value)
 }
 
 pub fn extract_Timestamp_isodowN(value: Option<Timestamp>) -> Option<i64> {
