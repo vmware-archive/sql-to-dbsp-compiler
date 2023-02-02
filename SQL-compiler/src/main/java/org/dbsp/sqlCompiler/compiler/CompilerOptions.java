@@ -26,7 +26,7 @@ package org.dbsp.sqlCompiler.compiler;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParametersDelegate;
 import org.apache.calcite.config.Lex;
-import org.dbsp.util.SqlDialectConverter;
+import org.dbsp.util.SqlLexicalRulesConverter;
 
 import javax.annotation.Nullable;
 
@@ -63,11 +63,12 @@ public class CompilerOptions {
         public String inputFile = null;
         @Parameter(names = "-f", description = "Name of function to generate")
         public String functionName = "circuit";
-        @Parameter(names = "-d", converter = SqlDialectConverter.class)
-        public Lex dialect;
+        @Parameter(names = "-d",
+                   converter = SqlLexicalRulesConverter.class)
+        public Lex lexicalRules;
 
         IO() {
-            this.dialect = Lex.ORACLE;
+            this.lexicalRules = Lex.ORACLE;
         }
     }
 

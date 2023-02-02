@@ -64,9 +64,13 @@ public class ToRustInnerVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPTimestampLiteral literal) {
         assert literal.value != null;
+        if (literal.mayBeNull())
+            this.builder.append("Some(");
         this.builder.append("Timestamp::new(");
         this.builder.append(Long.toString((Long)literal.value));
         this.builder.append(")");
+        if (literal.mayBeNull())
+            this.builder.append(")");
         return false;
     }
 
