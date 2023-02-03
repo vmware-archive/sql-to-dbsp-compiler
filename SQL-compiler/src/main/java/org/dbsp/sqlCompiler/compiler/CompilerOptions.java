@@ -58,6 +58,8 @@ public class CompilerOptions {
          * SQL input script which contains table and view declarations.
          * We expect that declarations are terminated by semicolons.
          */
+        @Parameter(names = "-j", description = "Emit JSON instead of Rust")
+        public boolean emitJson = false;
         @Parameter(description = "Input file to compile", required = true)
         @Nullable
         public String inputFile = null;

@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.Main;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
@@ -303,6 +305,31 @@ public class OtherTests extends BaseSQLTests implements IModule {
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
         File file = new File(inputScript);
         boolean success = file.delete();
+        Assert.assertTrue(success);
+    }
+
+    @Test
+    public void testCompilerToJson() throws IOException, SqlParseException {
+        String[] statements = new String[]{
+                "CREATE TABLE T (\n" +
+                        "COL1 INT NOT NULL" +
+                        ", COL2 DOUBLE NOT NULL" +
+                        ")",
+                "CREATE VIEW V AS SELECT COL1 FROM T WHERE COL1 > 5"
+        };
+        String inputScript = rustDirectory + "/script.sql";
+        PrintWriter script = new PrintWriter(inputScript, "UTF-8");
+        script.println(String.join(";\n", statements));
+        script.close();
+        File json = File.createTempFile("out", ".json", new File("."));
+        Main.execute("-j", "-o", json.getPath(), inputScript);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode parsed = mapper.readTree(json);
+        Assert.assertNotNull(parsed);
+        File file = new File(inputScript);
+        boolean success = file.delete();
+        Assert.assertTrue(success);
+        success = json.delete();
         Assert.assertTrue(success);
     }
 }
