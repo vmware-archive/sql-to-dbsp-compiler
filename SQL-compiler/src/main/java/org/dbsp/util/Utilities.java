@@ -69,7 +69,10 @@ public class Utilities {
         writer.close();
     }
 
-    public static String escapeString(String value) {
+    /**
+     * Add double quotes around string and escape symbols that need it.
+     */
+    public static String doubleQuote(String value) {
          StringBuilder builder = new StringBuilder();
          builder.append("\"");
          for (char c : value.toCharArray()) {
@@ -92,7 +95,10 @@ public class Utilities {
          return builder.toString();
      }
 
-    public static String singleQuote(String other) {
+    /**
+     * Just adds single quotes around a string.  No escaping is performed.
+     */
+     public static String singleQuote(String other) {
          return "'" + other + "'";
      }
 

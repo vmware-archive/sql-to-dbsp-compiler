@@ -29,6 +29,7 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
+import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,31 +39,34 @@ import org.junit.Test;
  */
 public class DBSPCompilerTests {
     static final CompilerOptions options = new CompilerOptions();
+    final String ddl = "CREATE TABLE T (\n" +
+            "COL1 INT NOT NULL" +
+            ", COL2 DOUBLE NOT NULL" +
+            ", COL3 BOOLEAN NOT NULL" +
+            ", COL4 VARCHAR NOT NULL" +
+            ")";
 
     @Test
     public void DDLTest() throws SqlParseException {
         DBSPCompiler compiler = new DBSPCompiler(options);
-        String ddl = "CREATE TABLE T (\n" +
-                "COL1 INT NOT NULL" +
-                ", COL2 DOUBLE NOT NULL" +
-                ", COL3 BOOLEAN NOT NULL" +
-                ", COL4 VARCHAR NOT NULL" +
-                ")";
-
         compiler.compileStatement(ddl);
         DBSPCircuit dbsp = compiler.getFinalCircuit("circuit");
         Assert.assertNotNull(dbsp);
     }
 
     @Test
+    public void circuitToJsonTest() throws SqlParseException {
+        DBSPCompiler compiler = new DBSPCompiler(options);
+        compiler.compileStatement(ddl);
+        compiler.compileStatement("CREATE VIEW V AS SELECT * FROM T WHERE COL1 > 5");
+        DBSPCircuit dbsp = compiler.getFinalCircuit("circuit");
+        String json = ToJSONVisitor.circuitToJSON(dbsp);
+        System.out.println(json);
+    }
+
+    @Test
     public void DDLAndInsertTest() throws SqlParseException {
         DBSPCompiler compiler = new DBSPCompiler(options);
-        String ddl = "CREATE TABLE T (\n" +
-                "COL1 INT NOT NULL" +
-                ", COL2 DOUBLE NOT NULL" +
-                ", COL3 BOOLEAN NOT NULL" +
-                ", COL4 VARCHAR NOT NULL" +
-                ")";
         String insert = "INSERT INTO T VALUES(0, 0.0, true, 'Hi')";
         compiler.compileStatement(ddl);
         compiler.compileStatement(insert);

@@ -120,7 +120,7 @@ public class ToRustHandleVisitor extends ToRustVisitor {
         this.handleCount = 0;
         for (DBSPOperator i : circuit.inputOperators) {
             this.builder.append("catalog.register_input_zset_handle(")
-                    .append(Utilities.escapeString(i.getName()))
+                    .append(Utilities.doubleQuote(i.getName()))
                     .append(", handles.")
                     .append(this.handleCount++)
                     .append(");")
@@ -128,7 +128,7 @@ public class ToRustHandleVisitor extends ToRustVisitor {
         }
         for (DBSPOperator o : circuit.outputOperators) {
             this.builder.append("catalog.register_output_batch_handle(")
-                    .append(Utilities.escapeString(o.getName()))
+                    .append(Utilities.doubleQuote(o.getName()))
                     .append(", handles.")
                     .append(this.handleCount++)
                     .append(");")

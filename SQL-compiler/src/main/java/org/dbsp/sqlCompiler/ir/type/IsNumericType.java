@@ -23,15 +23,21 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 
 /**
  * Interface implemented by numeric types.
  */
 public interface IsNumericType {
+    @JsonIgnore
     default String getRustString() { return this.toString(); }
+    @JsonIgnore
     DBSPLiteral getZero();
+    @JsonIgnore
     DBSPLiteral getOne();
+    @JsonIgnore
     DBSPLiteral getMaxValue();
+    @JsonIgnore
     DBSPLiteral getMinValue();
 }
