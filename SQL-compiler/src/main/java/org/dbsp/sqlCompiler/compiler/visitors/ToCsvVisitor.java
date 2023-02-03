@@ -117,7 +117,7 @@ public class ToCsvVisitor extends InnerVisitor {
     public boolean preorder(DBSPStringLiteral literal) {
         try {
             if (literal.value != null)
-                this.appendable.append(Utilities.escapeString(literal.value));
+                this.appendable.append(Utilities.doubleQuote(literal.value));
             else
                 this.appendable.append(this.nullRepresentation.get());
         } catch (IOException ex) {

@@ -30,6 +30,7 @@ import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustHandleVisitor;
 
 import javax.annotation.Nullable;
@@ -97,11 +98,16 @@ public class Main {
         DBSPCircuit dbsp = compiler.getFinalCircuit(this.options.ioOptions.functionName);
         CircuitOptimizer optimizer = new CircuitOptimizer(this.options.optimizerOptions);
         dbsp = optimizer.optimize(dbsp);
-        StringBuilder builder = new StringBuilder();
-        builder.append(ToRustHandleVisitor.generatePreamble());
-        String circuit = ToRustHandleVisitor.toRustString(dbsp, this.options.ioOptions.functionName);
-        builder.append(circuit);
-        this.writeToOutput(builder.toString(), this.options.ioOptions.outputFile);
+        if (this.options.ioOptions.emitJson) {
+            String circuit = ToJSONVisitor.circuitToJSON(dbsp);
+            this.writeToOutput(circuit, this.options.ioOptions.outputFile);
+        } else {
+            StringBuilder builder = new StringBuilder();
+            builder.append(ToRustHandleVisitor.generatePreamble());
+            String circuit = ToRustHandleVisitor.toRustString(dbsp, this.options.ioOptions.functionName);
+            builder.append(circuit);
+            this.writeToOutput(builder.toString(), this.options.ioOptions.outputFile);
+        }
     }
 
     public static void execute(String... argv) throws IOException, SqlParseException {

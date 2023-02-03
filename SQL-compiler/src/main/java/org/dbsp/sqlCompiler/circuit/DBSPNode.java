@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.circuit;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.util.IdGen;
 
@@ -45,7 +46,7 @@ public abstract class DBSPNode
         this.node = node;
     }
 
-    @Nullable
+    @Nullable @JsonIgnore
     public Object getNode() { return this.node; }
 
     @Override

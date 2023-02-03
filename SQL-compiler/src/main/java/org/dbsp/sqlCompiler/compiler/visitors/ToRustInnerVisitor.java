@@ -218,14 +218,14 @@ public class ToRustInnerVisitor extends InnerVisitor {
     public boolean preorder(DBSPStringLiteral literal) {
         assert literal.value != null;
         this.builder.append(literal.wrapSome(
-                "String::from(" + Utilities.escapeString(literal.value) + ")"));
+                "String::from(" + Utilities.doubleQuote(literal.value) + ")"));
         return false;
     }
 
     @Override
     public boolean preorder(DBSPStrLiteral literal) {
         assert literal.value != null;
-        this.builder.append(literal.wrapSome(Utilities.escapeString(literal.value)));
+        this.builder.append(literal.wrapSome(Utilities.doubleQuote(literal.value)));
         return false;
     }
 

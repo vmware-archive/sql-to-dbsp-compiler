@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
@@ -123,6 +124,7 @@ public class DBSPTypeStruct extends DBSPType {
         return true;
     }
 
+    @JsonIgnore
     public DBSPType getFieldType(String col) {
         for (Field f : this.getFields()) {
             if (f.getName().equals(col))

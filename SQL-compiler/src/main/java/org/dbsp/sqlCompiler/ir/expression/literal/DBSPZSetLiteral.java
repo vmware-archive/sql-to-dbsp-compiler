@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression.literal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.IDBSPContainer;
@@ -85,6 +86,7 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         return new DBSPZSetLiteral(new HashMap<>(this.data), this.zsetType);
     }
 
+    @JsonIgnore
     public DBSPType getElementType() {
         return this.zsetType.elementType;
     }

@@ -23,15 +23,18 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.annotation.Nullable;
 
 /**
  * Interface implemented by all classes that have a type.
  */
 public interface IHasType {
-    @Nullable
+    @Nullable @JsonIgnore
     DBSPType getType();
 
+    @JsonIgnore
     default DBSPType getNonVoidType() {
         // void is represented as Java null.
         DBSPType type = this.getType();
