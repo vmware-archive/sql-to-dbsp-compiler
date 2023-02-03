@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
@@ -37,6 +38,7 @@ public abstract class DBSPBaseTupleExpression extends DBSPExpression {
         this.fields = expressions;
     }
 
+    @JsonIgnore
     public DBSPExpression get(int index) {
         return this.fields[index];
     }

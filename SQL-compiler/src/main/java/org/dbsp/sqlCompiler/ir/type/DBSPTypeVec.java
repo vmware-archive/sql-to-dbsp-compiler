@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 /**
@@ -33,6 +34,7 @@ public class DBSPTypeVec extends DBSPTypeUser {
         super(null, "Vec", false, typeArg);
     }
 
+    @JsonIgnore
     public DBSPType getElementType() {
         return this.getTypeArg(0);
     }

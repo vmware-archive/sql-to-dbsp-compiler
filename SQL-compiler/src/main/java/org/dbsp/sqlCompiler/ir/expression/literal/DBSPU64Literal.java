@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression.literal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 
@@ -51,6 +52,7 @@ public class DBSPU64Literal extends DBSPLiteral {
         this(null, value, nullable);
     }
 
+    @JsonIgnore
     public DBSPTypeInteger getIntegerType() {
         assert this.type != null;
         return this.type.to(DBSPTypeInteger.class);

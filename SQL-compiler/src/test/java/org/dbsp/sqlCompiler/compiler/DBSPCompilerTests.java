@@ -25,11 +25,15 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
 import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
+import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.junit.Assert;
 import org.junit.Test;
@@ -55,13 +59,16 @@ public class DBSPCompilerTests {
     }
 
     @Test
-    public void circuitToJsonTest() throws SqlParseException {
+    public void circuitToJsonTest() throws SqlParseException, JsonProcessingException {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatement(ddl);
         compiler.compileStatement("CREATE VIEW V AS SELECT * FROM T WHERE COL1 > 5");
         DBSPCircuit dbsp = compiler.getFinalCircuit("circuit");
         String json = ToJSONVisitor.circuitToJSON(dbsp);
         System.out.println(json);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(json);
+        Assert.assertNotNull(root);
     }
 
     @Test

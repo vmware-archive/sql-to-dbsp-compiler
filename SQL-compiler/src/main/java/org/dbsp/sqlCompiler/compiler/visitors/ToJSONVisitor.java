@@ -23,107 +23,87 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.circuit.*;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.util.IndentStream;
 import org.dbsp.util.Utilities;
 
+import javax.annotation.Nullable;
+
 public class ToJSONVisitor extends CircuitVisitor {
-    protected final IndentStream builder;
+    protected final ObjectNode root;
+    protected final ObjectMapper topMapper;
+    @Nullable
+    protected ObjectNode currentOperator = null;
 
-    public ToJSONVisitor(IndentStream builder) {
+    public ToJSONVisitor() {
         super(true);
-        this.builder = builder;
+        this.topMapper = new ObjectMapper();
+        this.root = this.topMapper.createObjectNode();
     }
 
-    @Override
-    public boolean preorder(DBSPCircuit circuit) {
-        this.builder.append("{").increase();
-        circuit.circuit.accept(this);
-        this.builder.decrease().append("}").newline();
-        return false;
-    }
-
-    void json(Object object) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.activateDefaultTypingAsProperty(
-                            LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, "class")
-                    .enable(SerializationFeature.INDENT_OUTPUT);
-            String representation = mapper.writeValueAsString(object);
-            this.builder.append(representation);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+    JsonNode json(Object object) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.activateDefaultTypingAsProperty(
+                        LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, "class")
+                .enable(SerializationFeature.INDENT_OUTPUT);
+        return mapper.valueToTree(object);
     }
 
     @Override
     public boolean preorder(DBSPPartialCircuit circuit) {
-        this.builder.append("\"functions\": [").increase();
-        boolean first = true;
+        ArrayNode functions = this.topMapper.createArrayNode();
         for (IDBSPNode node : circuit.code) {
             IDBSPDeclaration decl = node.as(IDBSPDeclaration.class);
             if (decl != null) {
-                if (!first)
-                    this.builder.append(",");
-                this.json(decl);
-                first = false;
+                JsonNode tree = this.json(decl);
+                functions.add(tree);
             }
         }
-        this.builder.decrease().append("],").newline();
-        this.builder.append("\"operators\": [").increase();
-        first = true;
+        this.root.set("functions", functions);
+
+        ArrayNode operators = this.topMapper.createArrayNode();
         for (IDBSPNode node : circuit.code) {
             DBSPOperator op = node.as(DBSPOperator.class);
             if (op != null) {
-                if (!first)
-                    this.builder.append(",").newline();
                 op.accept(this);
-                first = false;
+                if (this.currentOperator == null)
+                    throw new RuntimeException("Could not produce JSON for operator " + op);
+                operators.add(this.currentOperator);
             }
         }
-        this.builder.decrease().append("]").newline();
+        this.root.set("operators", operators);
         return false;
     }
 
     @Override
     public boolean preorder(DBSPOperator operator) {
-        this.builder.append("{").increase()
-                .append("\"operation\": ")
-                .append(Utilities.doubleQuote(operator.operation))
-                .append(",").newline()
-                .append("\"output\" :")
-                .append(Utilities.doubleQuote(operator.outputName))
-                .append(",").newline();
-        this.builder.append("\"inputs\": [");
+        this.currentOperator = this.topMapper.createObjectNode();
+        this.currentOperator.put("operation", operator.operation);
+        this.currentOperator.put("output", operator.outputName);
+        this.currentOperator.set("type", this.json(operator.outputType));
+        ArrayNode inputs = this.topMapper.createArrayNode();
+        this.currentOperator.set("inputs", inputs);
         for (int i = 0; i < operator.inputs.size(); i++) {
-            this.builder.append(Utilities.doubleQuote(operator.inputs.get(i).outputName));
+            inputs.add(operator.inputs.get(i).outputName);
         }
-        this.builder.append("]");
-        if (operator.comment != null) {
-            this.builder.append(",").newline();
-            this.builder.append("\"comment\": ")
-                    .append(Utilities.doubleQuote(operator.comment));
-        }
+        if (operator.comment != null)
+            this.currentOperator.put("comment", operator.comment);
         if (operator.function != null) {
-            this.builder.append(",").newline();
-            this.builder.append("\"function\" : ");
-            this.json(operator.function);
+            this.currentOperator.set("function", this.json(operator.function));
         }
-        this.builder.decrease().append("}");
         return false;
     }
 
     public static String circuitToJSON(IDBSPOuterNode node) {
-        StringBuilder builder = new StringBuilder();
-        IndentStream stream = new IndentStream(builder);
-        ToJSONVisitor visitor = new ToJSONVisitor(stream);
+        ToJSONVisitor visitor = new ToJSONVisitor();
         node.accept(visitor);
-        return builder.toString();
+        return visitor.root.toPrettyString();
     }
 }

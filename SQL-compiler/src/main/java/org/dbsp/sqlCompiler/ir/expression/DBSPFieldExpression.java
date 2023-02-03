@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.calcite.rex.RexNode;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
@@ -48,6 +49,7 @@ public class DBSPFieldExpression extends DBSPExpression {
         this(null, expression, fieldNo, type);
     }
 
+    @JsonIgnore
     static DBSPType getFieldType(DBSPType type, int fieldNo) {
         if (type.is(DBSPTypeAny.class))
             return type;
