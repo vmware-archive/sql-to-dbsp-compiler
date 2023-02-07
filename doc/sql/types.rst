@@ -34,3 +34,16 @@ The compiler supports the following SQL data types:
 A suffix of ``NULL`` or ``NOT NULL`` can be appended to a type name to
 indicate the nullability.  A type with no suffix is not nullable by
 default.
+
+Computations on nullable types
+------------------------------
+
+A type is nullable if it can represent the ``NULL`` value.  For input
+tables the nullability of a column is declared explicitly.  For
+intermediate results and output views the compiler infers the
+nullability of each column using type inference rules.
+
+Most SQL operations are defined for nullable types.  Our compiler
+follows the SQL standard in this respect.  Most operations (e.g.,
+``+``), when applied a ``NULL`` operand will produce a ``NULL``
+value.
