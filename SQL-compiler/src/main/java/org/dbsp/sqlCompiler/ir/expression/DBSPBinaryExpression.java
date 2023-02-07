@@ -23,9 +23,9 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.util.TranslationException;
 
 import javax.annotation.Nullable;
 
@@ -33,23 +33,32 @@ public class DBSPBinaryExpression extends DBSPExpression {
     public final DBSPExpression left;
     public final DBSPExpression right;
     public final String operation;
+    /**
+     * If 'true' it means that this is a native arithmetic operation (e.g., +).
+     * Otherwise this operation generates a runtime call (e.g., plus_i64_i64n).
+     * Primitive operations are only used to generate the sources for the genlib
+     * runtime library.
+     */
+    @JsonIgnore
+    public final boolean primitive;
 
-    @SuppressWarnings("ConstantConditions")
-    public DBSPBinaryExpression(@Nullable Object node, DBSPType type, String operation,
-                                DBSPExpression left, DBSPExpression right) {
+    protected DBSPBinaryExpression(@Nullable Object node, DBSPType type, String operation,
+                                DBSPExpression left, DBSPExpression right, boolean primitive) {
         super(node, type);
         this.operation = operation;
         this.left = left;
         this.right = right;
-        if (this.left == null)
-            throw new TranslationException("Null left operand", node);
-        if (this.right == null)
-            throw new TranslationException("Null right operand", node);
+        this.primitive = primitive;
+    }
+
+    public DBSPBinaryExpression(@Nullable Object node, DBSPType type, String operation,
+                                DBSPExpression left, DBSPExpression right) {
+        this(node, type, operation, left, right, false);
     }
 
     public DBSPBinaryExpression(DBSPType type, String operation,
-                                DBSPExpression left, DBSPExpression right) {
-        this(null, type, operation, left, right);
+                                DBSPExpression left, DBSPExpression right, boolean primitive) {
+        this(null, type, operation, left, right, primitive);
     }
 
     @Override

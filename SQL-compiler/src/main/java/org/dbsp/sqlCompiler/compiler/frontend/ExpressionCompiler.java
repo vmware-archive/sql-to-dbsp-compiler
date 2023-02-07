@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.compiler.frontend;
 
 import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.util.DateString;
 import org.apache.calcite.util.TimestampString;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
@@ -185,7 +186,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
     }
 
     public static DBSPExpression aggregateOperation(
-            String op, DBSPType type, DBSPExpression left, DBSPExpression right) {
+            SqlOperator node, String op, DBSPType type, DBSPExpression left, DBSPExpression right) {
         DBSPType leftType = left.getNonVoidType();
         DBSPType rightType = right.getNonVoidType();
         DBSPType commonBase = reduceType(leftType, rightType);
@@ -195,7 +196,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
                 op, type, commonBase.setMayBeNull(leftType.mayBeNull), commonBase.setMayBeNull(rightType.mayBeNull), true);
         DBSPExpression apply = new DBSPApplyExpression("agg_" + function.function, function.returnType, left, right);
-        return ExpressionCompiler.makeCast(apply, type);
+        return ExpressionCompiler.makeCast(node, apply, type);
     }
 
     // Like makeBinaryExpression, but accepts multiple operands.
@@ -206,7 +207,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         DBSPExpression accumulator = operands.get(0);
         for (int i = 1; i < operands.size(); i++)
             accumulator = makeBinaryExpression(node, type, op, Linq.list(accumulator, operands.get(i)));
-        return makeCast(accumulator, type);
+        return makeCast(node, accumulator, type);
     }
 
     @SuppressWarnings("unused")
@@ -233,22 +234,23 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 return DBSPLiteral.none(type);
             }
             if (!leftType.setMayBeNull(false).sameType(commonBase))
-                left = makeCast(left, commonBase.setMayBeNull(leftType.mayBeNull));
+                left = makeCast(node, left, commonBase.setMayBeNull(leftType.mayBeNull));
             if (!rightType.setMayBeNull(false).sameType(commonBase))
-                right = makeCast(right, commonBase.setMayBeNull(rightType.mayBeNull));
+                right = makeCast(node, right, commonBase.setMayBeNull(rightType.mayBeNull));
         }
+        // TODO: we don't need the whole function here, just the result type.
         SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
                 op, type, left.getNonVoidType(), right.getNonVoidType(), false);
-        DBSPExpression call = function.getCall(left, right);
-        return makeCast(call, type);
+        DBSPExpression call = new DBSPBinaryExpression(node, function.returnType, op, left, right);
+        return makeCast(node, call, type);
     }
 
-    public static DBSPExpression makeCast(DBSPExpression from, DBSPType to) {
+    public static DBSPExpression makeCast(@Nullable Object node, DBSPExpression from, DBSPType to) {
         DBSPType fromType = from.getNonVoidType();
         if (fromType.sameType(to)) {
             return from;
         }
-        return to.castFrom(from);
+        return new DBSPCastExpression(node, from, to);
     }
 
     public static DBSPExpression makeUnaryExpression(
@@ -259,7 +261,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         if (operand == null)
             throw new Unimplemented("Found unimplemented expression in " + node);
         DBSPExpression expr = new DBSPUnaryExpression(node, operand.getNonVoidType(), op, operand);
-        return makeCast(expr, type);
+        return makeCast(node, expr, type);
     }
 
     public static DBSPExpression wrapBoolIfNeeded(DBSPExpression expression) {
@@ -364,7 +366,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 return makeBinaryExpressions(call, type, "^", ops);
             case CAST:
             case REINTERPRET:
-                return makeCast(ops.get(0), type);
+                return makeCast(call, ops.get(0), type);
             case IS_NULL:
             case IS_NOT_NULL: {
                 if (!type.sameType(DBSPTypeBool.instance))
@@ -403,11 +405,11 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                             finalType = finalType.setMayBeNull(true);
                     }
                     if (!result.getNonVoidType().sameType(finalType))
-                        result = makeCast(result, finalType);
+                        result = makeCast(call, result, finalType);
                     for (int i = 1; i < ops.size() - 1; i += 2) {
                         DBSPExpression alt = ops.get(i + 1);
                         if (!alt.getNonVoidType().sameType(finalType))
-                            alt = makeCast(alt, finalType);
+                            alt = makeCast(call, alt, finalType);
                         DBSPExpression comp = makeBinaryExpression(
                                 call, DBSPTypeBool.instance, "==", Linq.list(value, ops.get(i)));
                         comp = wrapBoolIfNeeded(comp);
@@ -424,12 +426,12 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                     }
 
                     if (!result.getNonVoidType().sameType(finalType))
-                        result = makeCast(result, finalType);
+                        result = makeCast(call, result, finalType);
                     for (int i = 0; i < ops.size() - 1; i += 2) {
                         int index = ops.size() - i - 2;
                         DBSPExpression alt = ops.get(index);
                         if (!alt.getNonVoidType().sameType(finalType))
-                            alt = makeCast(alt, finalType);
+                            alt = makeCast(call, alt, finalType);
                         DBSPExpression condition = wrapBoolIfNeeded(ops.get(index - 1));
                         result = new DBSPIfExpression(call, condition, alt, result);
                     }
@@ -439,9 +441,9 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
             case ST_POINT: {
                 DBSPExpression tuple = new DBSPGeoPointLiteral(
                         call,
-                        makeCast(ops.get(0), DBSPTypeDouble.instance),
-                        makeCast(ops.get(1), DBSPTypeDouble.instance));
-                return makeCast(tuple, type);
+                        makeCast(call, ops.get(0), DBSPTypeDouble.instance),
+                        makeCast(call, ops.get(1), DBSPTypeDouble.instance));
+                return makeCast(call, tuple, type);
             }
             case OTHER_FUNCTION: {
                 String opName = call.op.getName().toLowerCase();
