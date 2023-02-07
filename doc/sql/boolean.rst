@@ -32,7 +32,7 @@ The following truth table defines the ``OR`` operator:
 AND
 ---
 
-The following truth table defines the ``OR`` operator:
+The following truth table defines the ``AND`` operator:
 
 .. list-table:: AND semantics
 

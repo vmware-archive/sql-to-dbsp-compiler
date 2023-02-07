@@ -1,10 +1,11 @@
 Integer Operations
 ==================
 
-There are four supported integer datatypes, ``TINYINT``, ``SMALLINT``,
-``INTEGER``, and ``BIGINT``.  These are represented as two's
-complement values, and computations on these types obey the standard
-two's complement semantics, including overflow.
+There are four supported integer datatypes, ``TINYINT`` (8 bits),
+``SMALLINT`` (16 bits), ``INTEGER`` (32 bits), and ``BIGINT`` (64
+bits).  These are represented as two's complement values, and
+computations on these types obey the standard two's complement
+semantics, including overflow.
 
 The legal operations are ``+`` (plus, unary and binary), ``-`` (minus,
 unary and binary), ``*`` (multiplication), ``/`` (division), ``%``

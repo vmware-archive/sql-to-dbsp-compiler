@@ -28,7 +28,7 @@ but always return a Boolean value (sometimes nullable):
   * -  ``<=``
     - less or equal
     -
-  * - `IS NULL``
+  * - ``IS NULL``
     - true if operand is ``NULL``
     -
   * -  ``IS NOT NULL``
