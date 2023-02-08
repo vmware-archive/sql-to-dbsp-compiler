@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 public class DBSPFilterOperator extends DBSPUnaryOperator {
     public DBSPFilterOperator(@Nullable Object filter, DBSPExpression condition, DBSPOperator input) {
@@ -43,7 +44,12 @@ public class DBSPFilterOperator extends DBSPUnaryOperator {
     }
 
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
+        return new DBSPFilterOperator(this.getNode(), Objects.requireNonNull(expression), this.input());
+    }
+
+    @Override
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPFilterOperator(
                     this.getNode(), this.getFunction(), newInputs.get(0));

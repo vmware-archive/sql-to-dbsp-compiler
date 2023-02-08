@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
@@ -42,7 +43,7 @@ public class DBSPDistinctOperator extends DBSPUnaryOperator {
 
     @CheckReturnValue
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPDistinctOperator(
                     this.getNode(), newInputs.get(0));

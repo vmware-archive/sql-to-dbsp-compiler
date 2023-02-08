@@ -32,10 +32,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.circuit.*;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.util.IModule;
+import org.dbsp.util.Logger;
 
 import javax.annotation.Nullable;
 
-public class ToJSONVisitor extends CircuitVisitor {
+public class ToJSONVisitor extends CircuitVisitor implements IModule {
     protected final ObjectNode root;
     protected final ObjectMapper topMapper;
     @Nullable
@@ -100,8 +102,15 @@ public class ToJSONVisitor extends CircuitVisitor {
         return false;
     }
 
-    public static String circuitToJSON(IDBSPOuterNode node) {
+    public static String circuitToJSON(DBSPCircuit node) {
         ToJSONVisitor visitor = new ToJSONVisitor();
+        ThreeAddressVisitor tav = new ThreeAddressVisitor();
+        CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(tav);
+        node = rewriter.apply(node);
+        Logger.instance.from(visitor, 1)
+                        .append("Rewritten circuit is ")
+                        .append(node.toString())
+                        .newline();
         node.accept(visitor);
         return visitor.root.toPrettyString();
     }

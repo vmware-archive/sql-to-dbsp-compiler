@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.circuit.operator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
@@ -100,6 +101,11 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
     }
 
     /**
+     * Return a version of this operator with the function replaced replaced.
+     */
+    public abstract DBSPOperator withFunction(@Nullable DBSPExpression expression);
+
+    /**
      * Check that the specified source operator produces a ZSet/IndexedZSet with element types that can be fed
      * to the specified function.
      * @param function Function with multiple arguments
@@ -148,6 +154,7 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
         return this.outputType;
     }
 
+    @JsonIgnore
     public DBSPExpression getFunction() {
         return Objects.requireNonNull(this.function);
     }
@@ -158,7 +165,7 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
      * @param force      If true always return a new operator.
      *                   If false and the inputs are the same this may return this.
      */
-    public abstract DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force);
+    public abstract DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force);
 
     /**
      * Return true if any of the inputs in `newInputs` is different from one of the inputs

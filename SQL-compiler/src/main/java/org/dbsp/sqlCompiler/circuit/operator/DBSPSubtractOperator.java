@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -45,7 +46,12 @@ public class DBSPSubtractOperator extends DBSPOperator {
     }
 
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withFunction(@Nullable DBSPExpression unused) {
+        return this;
+    }
+
+    @Override
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPSubtractOperator(
                     this.getNode(), newInputs.get(0), newInputs.get(1));

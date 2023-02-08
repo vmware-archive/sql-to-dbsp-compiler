@@ -124,7 +124,7 @@ public class CircuitCloneVisitor extends CircuitVisitor
                 .join(", ", Linq.map(sources, DBSPOperator::toString))
                 .newline()
                 .decrease();
-        DBSPOperator result = operator.replaceInputs(sources, this.force);
+        DBSPOperator result = operator.withInputs(sources, this.force);
         this.map(operator, result);
     }
 

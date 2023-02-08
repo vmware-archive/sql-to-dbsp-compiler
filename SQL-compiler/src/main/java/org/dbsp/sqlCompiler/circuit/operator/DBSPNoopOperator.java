@@ -50,7 +50,7 @@ public class DBSPNoopOperator extends DBSPUnaryOperator {
     }
 
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         return new DBSPNoopOperator(this.getNode(), newInputs.get(0), this.comment, this.outputName);
     }
 }
