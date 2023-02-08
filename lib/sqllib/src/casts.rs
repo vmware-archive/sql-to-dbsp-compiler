@@ -2086,6 +2086,12 @@ pub fn cast_to_ShortIntervalN_nullN(_value: Option<()>) -> Option<ShortInterval>
 //////// casts to Timestamp
 
 #[inline]
+pub fn cast_to_Timestamp_s(value: String) -> Timestamp
+{
+    cast_to_TimestampN_s(value).unwrap_or_default()
+}
+
+#[inline]
 pub fn cast_to_Timestamp_date(value: Date) -> Timestamp
 {
     value.to_timestamp()
@@ -2144,8 +2150,3 @@ pub fn cast_to_TimestampN_dateN(value: Option<Date>) -> Option<Timestamp>
     value.map(|v| cast_to_Timestamp_date(v))
 }
 
-#[inline]
-pub fn cast_to_timestampN_nullN(_value: Option<()>) -> Option<Timestamp>
-{
-    None
-}
