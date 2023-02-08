@@ -28,6 +28,9 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 
+/**
+ * Base class for all DBSP query operators that have a single input.
+ */
 public abstract class DBSPUnaryOperator extends DBSPOperator {
     protected DBSPUnaryOperator(@Nullable Object node, String operation,
                                 @Nullable DBSPExpression function, DBSPType outputType,
@@ -44,6 +47,9 @@ public abstract class DBSPUnaryOperator extends DBSPOperator {
         this.addInput(source);
     }
 
+    /**
+     * The only input of this operator.
+     */
     public DBSPOperator input() {
         return this.inputs.get(0);
     }

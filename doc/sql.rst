@@ -17,5 +17,10 @@ implementation.
 
    sql/structure.rst
    sql/types.rst
-   sql/semantics.rst
-   sql/functions.rst
+   sql/boolean.rst
+   sql/comparisons.rst
+   sql/integer.rst
+   sql/decimal.rst
+   sql/fp.rst
+   sql/string.rst
+   sql/datetime.rst

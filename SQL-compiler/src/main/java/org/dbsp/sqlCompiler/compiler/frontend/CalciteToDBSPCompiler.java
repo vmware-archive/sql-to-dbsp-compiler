@@ -336,7 +336,8 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 DBSPExpression flattenField = vResult.field(i);
                 // Here we correct from the type produced by the Folder (typeFromAggregate) to the
                 // actual expected type aggType (which is the tuple of aggTypes).
-                flattenFields[aggregate.getGroupCount() + i] = ExpressionCompiler.makeCast(flattenField, aggTypes[i]);
+                flattenFields[aggregate.getGroupCount() + i] = ExpressionCompiler.makeCast(
+                        aggregate, flattenField, aggTypes[i]);
             }
             DBSPExpression mapper = new DBSPTupleExpression(flattenFields).closure(
                     new DBSPParameter(kResult, vResult));
@@ -446,7 +447,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 DBSPType expectedType = tuple.getFieldType(index);
                 if (!exp.getNonVoidType().sameType(expectedType)) {
                     // Calcite's optimizations do not preserve types!
-                    exp = ExpressionCompiler.makeCast(exp, expectedType);
+                    exp = ExpressionCompiler.makeCast(project, exp, expectedType);
                 }
                 resultColumns.add(exp);
                 index++;
@@ -578,10 +579,10 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPTupleExpression lr = DBSPTupleExpression.flatten(l, r);
         List<DBSPExpression> leftKeyFields = Linq.map(
                 decomposition.comparisons,
-                c -> ExpressionCompiler.makeCast(l.field(c.leftColumn), c.resultType));
+                c -> ExpressionCompiler.makeCast(join, l.field(c.leftColumn), c.resultType));
         List<DBSPExpression> rightKeyFields = Linq.map(
                 decomposition.comparisons,
-                c -> ExpressionCompiler.makeCast(r.field(c.rightColumn), c.resultType));
+                c -> ExpressionCompiler.makeCast(join, r.field(c.rightColumn), c.resultType));
         DBSPExpression leftKey = new DBSPRawTupleExpression(leftKeyFields);
         DBSPExpression rightKey = new DBSPRawTupleExpression(rightKeyFields);
 
@@ -763,7 +764,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                         expr = DBSPLiteral.none(resultFieldType);
                 }
                 if (!expr.getNonVoidType().sameType(resultFieldType)) {
-                    DBSPExpression cast = ExpressionCompiler.makeCast(expr, resultFieldType);
+                    DBSPExpression cast = ExpressionCompiler.makeCast(values, expr, resultFieldType);
                     expressions.add(cast);
                 } else {
                     expressions.add(expr);
@@ -837,7 +838,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             numericBound = numType.getZero();
         else {
             DBSPExpression value = eComp.compile(Objects.requireNonNull(bound.getOffset()));
-            numericBound = ExpressionCompiler.makeCast(value, boundType);
+            numericBound = ExpressionCompiler.makeCast(bound, value, boundType);
         }
         String beforeAfter = bound.isPreceding() ? "Before" : "After";
         return new DBSPStructExpression(DBSPTypeAny.instance.path(
@@ -938,7 +939,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 // Calcite is very smart and sometimes infers non-nullable result types
                 // for these aggregates.  So we have to cast the results to whatever
                 // Calcite says they will be.
-                allFields[i + currentTupleType.size()] = ExpressionCompiler.makeCast(
+                allFields[i + currentTupleType.size()] = ExpressionCompiler.makeCast(window,
                         right.field(i), windowResultType.getFieldType(windowFieldIndex));
                 windowFieldIndex++;
             }

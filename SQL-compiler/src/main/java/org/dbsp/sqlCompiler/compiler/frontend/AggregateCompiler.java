@@ -206,10 +206,10 @@ public class AggregateCompiler {
         DBSPVariablePath accum = this.resultType.var("a");
         if (this.isDistinct) {
             increment = ExpressionCompiler.aggregateOperation(
-                    "+", this.resultType, accum, argument);
+                    function, "+", this.resultType, accum, argument);
         } else {
             increment = ExpressionCompiler.aggregateOperation(
-                    "+", this.resultType,
+                    function, "+", this.resultType,
                     accum, new DBSPApplyMethodExpression("mul_by_ref",
                             DBSPTypeInteger.signed64,
                             argument,
@@ -247,7 +247,7 @@ public class AggregateCompiler {
         DBSPExpression aggregatedValue = this.getAggregatedValue();
         DBSPVariablePath accum = this.nullableResultType.var("a");
         DBSPExpression increment = ExpressionCompiler.aggregateOperation(
-                call, this.nullableResultType, accum, aggregatedValue);
+                function, call, this.nullableResultType, accum, aggregatedValue);
         DBSPType semigroup = new DBSPTypeUser(null, semigroupName, false, accum.getNonVoidType());
         this.foldingFunction = new AggregateImplementation(
                 function, zero, this.makeRowClosure(increment, accum), zero, semigroup);
@@ -261,10 +261,10 @@ public class AggregateCompiler {
 
         if (this.isDistinct) {
             increment = ExpressionCompiler.aggregateOperation(
-                    "+", this.nullableResultType, accum, aggregatedValue);
+                    function, "+", this.nullableResultType, accum, aggregatedValue);
         } else {
             increment = ExpressionCompiler.aggregateOperation(
-                    "+", this.nullableResultType,
+                    function, "+", this.nullableResultType,
                     accum, new DBSPApplyMethodExpression("mul_by_ref",
                             aggregatedValue.getNonVoidType(),
                             aggregatedValue,
@@ -283,10 +283,10 @@ public class AggregateCompiler {
 
         if (this.isDistinct) {
             increment = ExpressionCompiler.aggregateOperation(
-                    "+", this.resultType, accum, aggregatedValue);
+                    function, "+", this.resultType, accum, aggregatedValue);
         } else {
             increment = ExpressionCompiler.aggregateOperation(
-                    "+", this.resultType,
+                    function, "+", this.resultType,
                     accum, new DBSPApplyMethodExpression("mul_by_ref",
                             aggregatedValue.getNonVoidType(),
                             aggregatedValue,
@@ -312,24 +312,24 @@ public class AggregateCompiler {
         final int countIndex = 1;
         DBSPExpression countAccumulator = accum.field(countIndex);
         DBSPExpression sumAccumulator = accum.field(sumIndex);
-        DBSPExpression aggregatedValue = ExpressionCompiler.makeCast(this.getAggregatedValue(), i64);
+        DBSPExpression aggregatedValue = ExpressionCompiler.makeCast(function, this.getAggregatedValue(), i64);
         DBSPExpression plusOne = new DBSPI64Literal(1L);
         if (aggregatedValueType.mayBeNull)
             plusOne = new DBSPApplyExpression("indicator", DBSPTypeInteger.signed64, aggregatedValue);
         if (this.isDistinct) {
             count = ExpressionCompiler.aggregateOperation(
-                    "+", i64, countAccumulator, plusOne);
+                    function, "+", i64, countAccumulator, plusOne);
             sum = ExpressionCompiler.aggregateOperation(
-                    "+", i64, sumAccumulator, aggregatedValue);
+                    function, "+", i64, sumAccumulator, aggregatedValue);
         } else {
             count = ExpressionCompiler.aggregateOperation(
-                    "+", i64,
+                    function, "+", i64,
                     countAccumulator, new DBSPApplyMethodExpression("mul_by_ref",
                             DBSPTypeInteger.signed64.setMayBeNull(plusOne.getNonVoidType().mayBeNull),
                             plusOne,
                             new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
             sum = ExpressionCompiler.aggregateOperation(
-                    "+", i64,
+                    function, "+", i64,
                     sumAccumulator, new DBSPApplyMethodExpression("mul_by_ref",
                             i64,
                             aggregatedValue,
@@ -341,7 +341,7 @@ public class AggregateCompiler {
         DBSPExpression divide = ExpressionCompiler.makeBinaryExpression(
                 function, this.resultType, "/",
                 Linq.list(a.field(sumIndex), a.field(countIndex)));
-        divide = ExpressionCompiler.makeCast(divide, this.nullableResultType);
+        divide = ExpressionCompiler.makeCast(function, divide, this.nullableResultType);
         DBSPClosureExpression post = new DBSPClosureExpression(
                 null, divide, a.asParameter());
         DBSPExpression postZero = DBSPLiteral.none(this.nullableResultType);

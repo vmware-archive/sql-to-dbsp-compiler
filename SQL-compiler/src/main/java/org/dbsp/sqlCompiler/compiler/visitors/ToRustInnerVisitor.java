@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.compiler.visitors;
 
 import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.ir.*;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -37,6 +38,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.IndentStream;
+import org.dbsp.util.UnsupportedException;
 import org.dbsp.util.Utilities;
 
 import java.util.Map;
@@ -243,27 +245,66 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPCastExpression expression) {
+        /*
+         * Default implementation of cast of a source expression to the 'this' type.
+         * Only defined for base types.
+         * For example, to cast source which is an Option[i16] to a bool
+         * the function called will be cast_to_b_i16N.
+         */
+        DBSPTypeBaseType base = expression.getNonVoidType().as(DBSPTypeBaseType.class);
+        if (base == null)
+            throw new UnsupportedException(this);
+        DBSPType sourceType = expression.source.getNonVoidType();
+        DBSPTypeBaseType baseSource = sourceType.as(DBSPTypeBaseType.class);
+        if (baseSource == null)
+            throw new UnsupportedException(sourceType);
+        String destName = base.shortName();
+        String srcName = baseSource.shortName();
+        String functionName = "cast_to_" + destName + (base.mayBeNull ? "N" : "") +
+                "_" + srcName + (baseSource.mayBeNull ? "N" : "");
+        this.builder.append(functionName).append("(");
+        expression.source.accept(this);
+        this.builder.append(")");
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPBinaryExpression expression) {
-        if (expression.left.getNonVoidType().mayBeNull) {
-            this.builder.append("(")
-                    .append("match (");
+        if (expression.primitive) {
+            if (expression.left.getNonVoidType().mayBeNull) {
+                this.builder.append("(")
+                        .append("match (");
+                expression.left.accept(this);
+                this.builder.append(", ");
+                expression.right.accept(this);
+                this.builder.append(") {").increase()
+                        .append("(Some(x), Some(y)) => Some(x ")
+                        .append(expression.operation)
+                        .append(" y),\n")
+                        .append("_ => None,\n")
+                        .decrease()
+                        .append("}")
+                        .append(")");
+            } else {
+                this.builder.append("(");
+                expression.left.accept(this);
+                this.builder.append(" ")
+                        .append(expression.operation)
+                        .append(" ");
+                expression.right.accept(this);
+                this.builder.append(")");
+            }
+        } else {
+            SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
+                    expression.operation,
+                    expression.getNonVoidType(),
+                    expression.left.getNonVoidType(),
+                    expression.right.getNonVoidType(),
+                    false);
+            this.builder.append(function.function).append("(");
             expression.left.accept(this);
             this.builder.append(", ");
-            expression.right.accept(this);
-            this.builder.append(") {").increase()
-                    .append("(Some(x), Some(y)) => Some(x ")
-                    .append(expression.operation)
-                    .append(" y),\n")
-                    .append("_ => None,\n")
-                    .decrease()
-                    .append("}")
-                    .append(")");
-        } else {
-            this.builder.append("(");
-            expression.left.accept(this);
-            this.builder.append(" ")
-                    .append(expression.operation)
-                    .append(" ");
             expression.right.accept(this);
             this.builder.append(")");
         }

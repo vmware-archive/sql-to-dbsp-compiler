@@ -336,11 +336,11 @@ public class SqlRuntimeLibrary {
                         if (i == 0) {
                             DBSPExpression leftVar = rawType.var("left");
                             DBSPExpression rightVar = rawType.var("right");
-                            def = new DBSPBinaryExpression(type, op, leftVar, rightVar);
+                            def = new DBSPBinaryExpression(type, op, leftVar, rightVar, true);
                         } else {
                             def = new DBSPBinaryExpression(type, op,
                                     rawType.var("l"),
-                                    rawType.var("r"));
+                                    rawType.var("r"), true);
                             def = new DBSPMatchExpression(
                                     new DBSPRawTupleExpression(
                                             leftType.var("left"),
