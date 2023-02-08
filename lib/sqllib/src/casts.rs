@@ -16,6 +16,7 @@
 // * signed64 -> i64
 // * str -> str         (not a SQL type, never nullable)
 // * usize -> u         (not a SQL type, never nullable)
+// * nullN -> null
 
 #![allow(non_snake_case)]
 
@@ -148,6 +149,12 @@ pub fn cast_to_b_u(value: usize) -> bool
 /////////// cast to bN
 
 #[inline]
+pub fn cast_to_bN_nullN(_value: Option<()>) -> Option<bool>
+{
+    None
+}
+
+#[inline]
 pub fn cast_to_bN_b(value: bool) -> Option<bool>
 {
     Some(value)
@@ -269,6 +276,12 @@ pub fn cast_to_bN_u(value: usize) -> Option<bool>
 // TODO
 
 /////////// cast to dateN
+
+#[inline]
+pub fn cast_to_dateN_nullN(_value: Option<()>) -> Option<Date>
+{
+    None
+}
 
 #[inline]
 pub fn cast_to_dateN_s(value: String) -> Option<Date>
@@ -406,6 +419,12 @@ pub fn cast_to_decimal_u(value: usize) -> Decimal
 }
 
 /////////// cast to decimalN
+
+#[inline]
+pub fn cast_to_decimalN_nullN(_value: Option<()>) -> Option<Decimal>
+{
+    None
+}
 
 #[inline]
 pub fn cast_to_decimalN_b(value: bool) -> Option<Decimal>
@@ -658,6 +677,12 @@ pub fn cast_to_d_u(value: usize) -> F64
 /////////// cast to doubleN
 
 #[inline]
+pub fn cast_to_dN_nullN(_value: Option<()>) -> Option<F64>
+{
+    None
+}
+
+#[inline]
 pub fn cast_to_dN_b(value: bool) -> Option<F64>
 {
     if value { Some(F64::one()) } else { Some(F64::zero()) }
@@ -894,6 +919,12 @@ pub fn cast_to_f_u(value: usize) -> F32
 }
 
 /////////// cast to floatN
+
+#[inline]
+pub fn cast_to_fN_nullN(_value: Option<()>) -> Option<F32>
+{
+    None
+}
 
 #[inline]
 pub fn cast_to_fN_b(value: bool) -> Option<F32>
@@ -1158,6 +1189,13 @@ pub fn cast_to_s_u(value: usize) -> String
 
 /////////// cast to StringN
 
+
+#[inline]
+pub fn cast_to_sN_nullN(_value: Option<()>) -> Option<String>
+{
+    None
+}
+
 #[inline]
 pub fn sN_helper<T>(value: Option<T>) -> Option<String>
 where T: ToString
@@ -1272,14 +1310,6 @@ pub fn cast_to_sN_u(value: usize) -> Option<String>
 {
     Some(value.to_string())
 }
-
-/////////// cast to Timestamp
-
-// TODO
-
-/////////// cast to TimestampN
-
-// TODO
 
 /////////// cast to i16
 
@@ -1398,6 +1428,12 @@ pub fn cast_to_i16_u(value: usize) -> i16
 }
 
 /////////// cast to i16N
+
+#[inline]
+pub fn cast_to_i16N_nullN(_value: Option<()>) -> Option<i16>
+{
+    None
+}
 
 #[inline]
 pub fn cast_to_i16N_b(value: bool) -> Option<i16>
@@ -1636,6 +1672,12 @@ pub fn cast_to_i32_u(value: usize) -> i32
 }
 
 /////////// cast to i32N
+
+#[inline]
+pub fn cast_to_i32N_nullN(_value: Option<()>) -> Option<i32>
+{
+    None
+}
 
 #[inline]
 pub fn cast_to_i32N_b(value: bool) -> Option<i32>
@@ -1888,6 +1930,12 @@ pub fn cast_to_i64_LongInterval(value: LongInterval) -> i64
 /////////// cast to i64N
 
 #[inline]
+pub fn cast_to_i64N_nullN(_value: Option<()>) -> Option<i64>
+{
+    None
+}
+
+#[inline]
 pub fn cast_to_i64N_b(value: bool) -> Option<i64>
 {
     if value { Some(1) } else { Some(0) }
@@ -2027,12 +2075,34 @@ pub fn cast_to_ShortInterval_i64(value: i64) -> ShortInterval
     ShortInterval::from(value)
 }
 
+//////// casts to ShortIntervalN
+
+#[inline]
+pub fn cast_to_ShortIntervalN_nullN(_value: Option<()>) -> Option<ShortInterval>
+{
+    None
+}
+
 //////// casts to Timestamp
 
 #[inline]
 pub fn cast_to_Timestamp_s(value: String) -> Timestamp
 {
     cast_to_TimestampN_s(value).unwrap_or_default()
+}
+
+#[inline]
+pub fn cast_to_Timestamp_date(value: Date) -> Timestamp
+{
+    value.to_timestamp()
+}
+
+//////// casts to TimestampN
+
+#[inline]
+pub fn cast_to_TimestampN_nullN(_value: Option<()>) -> Option<Timestamp>
+{
+    None
 }
 
 #[inline]
@@ -2075,13 +2145,8 @@ pub fn cast_to_TimestampN_Timestamp(value: Timestamp) -> Option<Timestamp>
 }
 
 #[inline]
-pub fn cast_to_Timestamp_date(value: Date) -> Timestamp
-{
-    value.to_timestamp()
-}
-
-#[inline]
 pub fn cast_to_TimestampN_dateN(value: Option<Date>) -> Option<Timestamp>
 {
     value.map(|v| cast_to_Timestamp_date(v))
 }
+

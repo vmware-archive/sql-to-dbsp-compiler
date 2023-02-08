@@ -120,7 +120,6 @@ public class SqlRuntimeLibrary {
         this.doubleFunctions.put("times", "*");
         this.doubleFunctions.put("div", "/");
         this.doubleFunctions.put("abs", "abs");
-        this.arithmeticFunctions.put("is_distinct", "is_distinct");
 
         this.dateFunctions.put("plus", "+");
         this.dateFunctions.put("minus", "-");
@@ -132,10 +131,9 @@ public class SqlRuntimeLibrary {
         this.dateFunctions.put("lte", "<=");
         this.dateFunctions.put("gte", ">=");
 
-        //this.stringFunctions.put("s_concat", "+");
+        this.stringFunctions.put("concat", "||");
         this.stringFunctions.put("eq", "==");
         this.stringFunctions.put("neq", "!=");
-        this.arithmeticFunctions.put("is_distinct", "is_distinct");
 
         this.booleanFunctions.put("eq", "==");
         this.booleanFunctions.put("neq", "!=");

@@ -149,6 +149,10 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
      * @return           Common type operands must be cast to.
      */
     public static DBSPType reduceType(DBSPType left, DBSPType right) {
+        if (left.is(DBSPTypeNull.class))
+            return right.setMayBeNull(true);
+        if (right.is(DBSPTypeNull.class))
+            return left.setMayBeNull(true);
         left = left.setMayBeNull(false);
         right = right.setMayBeNull(false);
         if (left.sameType(right))
@@ -466,9 +470,17 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                         return dist.getCall(left, right);
                     case "division":
                         return makeBinaryExpression(call, type, "/", ops);
+
                 }
                 throw new Unimplemented(call);
             }
+            case OTHER:
+                String opName = call.op.getName().toLowerCase();
+                switch (opName) {
+                    case "||":
+                        return makeBinaryExpression(call, type, "||", ops);
+                }
+                throw new Unimplemented(call);
             case EXTRACT: {
                 if (call.operands.size() != 2)
                     throw new Unimplemented(call);

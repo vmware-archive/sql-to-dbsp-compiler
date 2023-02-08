@@ -7,6 +7,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeString;
 import org.junit.Test;
 
 /**
@@ -44,6 +45,20 @@ public class EndToEndTests extends BaseSQLTests {
         DBSPExpression t = new DBSPTupleExpression(new DBSPI32Literal(10), new DBSPDoubleLiteral(13.0));
         String query = "SELECT T.COL1, SUM(T.COL2) OVER (ORDER BY T.COL1 RANGE UNBOUNDED PRECEDING) FROM T";
         this.testQuery(query, new DBSPZSetLiteral(t, t));
+    }
+
+    @Test
+    public void testConcat() {
+        String query = "SELECT T.COL4 || ' ' || T.COL4 FROM T";
+        DBSPExpression lit = new DBSPTupleExpression(new DBSPStringLiteral("Hi Hi"));
+        this.testQuery(query, new DBSPZSetLiteral(lit, lit));
+    }
+
+    @Test
+    public void testConcatNull() {
+        String query = "SELECT T.COL4 || NULL FROM T";
+        DBSPExpression lit = new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeString.instance.setMayBeNull(true)));
+        this.testQuery(query, new DBSPZSetLiteral(lit, lit));
     }
 
     @Test
