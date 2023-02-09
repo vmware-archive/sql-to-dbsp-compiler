@@ -33,10 +33,13 @@ import javax.annotation.Nullable;
 /**
  * Packages options for a compiler from SQL to Rust.
  */
+@SuppressWarnings("CanBeFinal")
+// These fields cannot be final, since JCommander writes them through reflection.
 public class CompilerOptions {
     /**
      * Options for the optimizer.
      */
+    @SuppressWarnings("CanBeFinal")
     public static class Optimizer {
         /**
          * If true the compiler should generate an incremental streaming circuit.
@@ -50,6 +53,7 @@ public class CompilerOptions {
     /**
      * Options related to input and output.
      */
+    @SuppressWarnings("CanBeFinal")
     public static class IO {
         @Parameter(names="-o", description = "Output file; stdout if null")
         @Nullable

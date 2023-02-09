@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.ir.expression;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.util.Linq;
 
 /**
  * Invocation of a Rust constructor with some arguments.
@@ -51,14 +50,4 @@ public class DBSPStructExpression extends DBSPExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPStructExpression fe = other.as(DBSPStructExpression.class);
-        if (fe == null)
-            return false;
-        return this.function == fe.function &&
-                Linq.same(this.arguments, fe.arguments);
-    }
 }

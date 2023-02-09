@@ -31,7 +31,7 @@ import java.util.List;
 
 public class DBSPDistinctOperator extends DBSPUnaryOperator {
     public DBSPDistinctOperator(@Nullable Object node, DBSPOperator input) {
-        super(node, "distinct", null, input.outputType, false, input);
+        super(node, "stream_distinct", null, input.outputType, false, input);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class DBSPDistinctOperator extends DBSPUnaryOperator {
 
     @CheckReturnValue
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPDistinctOperator(
                     this.getNode(), newInputs.get(0));

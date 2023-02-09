@@ -28,7 +28,6 @@ import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPPattern;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.util.Linq;
 
 import java.util.List;
 
@@ -80,14 +79,4 @@ public class DBSPMatchExpression extends DBSPExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPMatchExpression fe = other.as(DBSPMatchExpression.class);
-        if (fe == null)
-            return false;
-        return this.matched == fe.matched &&
-                Linq.same(this.cases, fe.cases);
-    }
 }

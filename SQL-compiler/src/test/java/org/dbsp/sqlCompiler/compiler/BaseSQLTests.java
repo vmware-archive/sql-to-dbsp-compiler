@@ -107,9 +107,8 @@ public class BaseSQLTests {
                             new DBSPExpressionStatement(
                                     new DBSPApplyExpression("assert!", null,
                                             new DBSPApplyExpression("must_equal", DBSPTypeBool.instance,
-                                                    new DBSPBorrowExpression(
-                                                            new DBSPFieldExpression(null, out.getVarReference(), i)),
-                                                    new DBSPBorrowExpression(pairs.outputs[i])))));
+                                                    new DBSPFieldExpression(null, out.getVarReference(), i).borrow(),
+                                                    pairs.outputs[i].borrow()))));
                 }
             }
             DBSPExpression body = new DBSPBlockExpression(list, null);
@@ -119,7 +118,7 @@ public class BaseSQLTests {
     }
 
     // Collect here all the tests to run and execute them using a single Rust compilation
-    static List<TestCase> testsToRun = new ArrayList<>();
+    static final List<TestCase> testsToRun = new ArrayList<>();
 
     @BeforeClass
     public static void prepareTests() throws IOException {
@@ -170,6 +169,9 @@ public class BaseSQLTests {
                 CircuitVisitor optimizer = this.getOptimizer();
                 circuit = optimizer.apply(circuit);
             }
+
+            // Test json serialization
+            ToJSONVisitor.validateJson(circuit);
             this.addRustTestCase(circuit, streams);
         } catch (Exception ex) {
             throw new RuntimeException(ex);

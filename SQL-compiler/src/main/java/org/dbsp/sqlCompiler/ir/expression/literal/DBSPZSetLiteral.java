@@ -161,13 +161,4 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         return result;
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPZSetLiteral fe = other.as(DBSPZSetLiteral.class);
-        if (fe == null)
-            return false;
-        return this.data == fe.data;
-    }
 }

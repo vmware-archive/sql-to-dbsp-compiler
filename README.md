@@ -33,6 +33,25 @@ the `run-tests.sh` script you should replace the `-u user` with the
 user name you have created, and `-p password` with the user's
 password.
 
+## Documentation
+
+Documentation is under development.  Generating the documentation
+requires Python, and make.  The documentation can be generated using
+the following command:
+
+```
+$ cd doc
+$ make html
+```
+
+(The first time you attempt to generate the documentation it will
+attempt to install additional dependencies, such as Sphinx; you may
+need to delete the Python-created `venv-docs` directory after this
+installation to be able to properly generate html.  The directory will
+be regenerated.)
+
+The result is produced in `doc/_build/html/index.html`.
+
 ## Running
 
 To run the tests:

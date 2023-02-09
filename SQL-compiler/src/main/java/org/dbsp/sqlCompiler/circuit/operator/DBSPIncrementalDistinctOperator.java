@@ -30,7 +30,7 @@ import java.util.List;
 
 public class DBSPIncrementalDistinctOperator extends DBSPUnaryOperator {
     public DBSPIncrementalDistinctOperator(@Nullable Object node, DBSPOperator input) {
-        super(node, "distinct_incremental", null, input.outputType, false, input);
+        super(node, "distinct", null, input.outputType, false, input);
     }
 
     @Override
@@ -40,7 +40,7 @@ public class DBSPIncrementalDistinctOperator extends DBSPUnaryOperator {
     }
 
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPIncrementalDistinctOperator(
                     this.getNode(), newInputs.get(0));

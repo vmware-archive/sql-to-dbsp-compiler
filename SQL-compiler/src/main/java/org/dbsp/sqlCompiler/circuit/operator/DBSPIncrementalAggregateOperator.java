@@ -30,6 +30,7 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 public class DBSPIncrementalAggregateOperator extends DBSPUnaryOperator {
     public final DBSPType keyType;
@@ -50,7 +51,13 @@ public class DBSPIncrementalAggregateOperator extends DBSPUnaryOperator {
     }
 
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
+        return new DBSPIncrementalAggregateOperator(
+                this.getNode(), Objects.requireNonNull(expression), this.keyType, this.outputElementType, this.input());
+    }
+
+    @Override
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPIncrementalAggregateOperator(
                     this.getNode(), this.getFunction(), this.keyType, this.outputElementType, newInputs.get(0));

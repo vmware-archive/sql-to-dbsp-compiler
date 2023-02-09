@@ -40,7 +40,7 @@ public class DBSPDifferentialOperator extends DBSPUnaryOperator {
     }
 
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPDifferentialOperator(
                     this.getNode(), newInputs.get(0));

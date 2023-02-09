@@ -74,15 +74,4 @@ public class DBSPLiteral extends DBSPExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPLiteral ol = other.as(DBSPLiteral.class);
-        if (ol == null)
-            return false;
-        return this.isNull == ol.isNull &&
-                this.getNonVoidType().sameType(ol.type) &&
-                this.value == ol.value;
-    }
 }

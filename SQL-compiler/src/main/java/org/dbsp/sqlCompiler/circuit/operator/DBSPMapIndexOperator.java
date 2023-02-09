@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeRawTuple;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 public class DBSPMapIndexOperator extends DBSPUnaryOperator {
     public final DBSPType keType;
@@ -55,7 +56,13 @@ public class DBSPMapIndexOperator extends DBSPUnaryOperator {
     }
 
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
+        return new DBSPMapIndexOperator(
+                this.getNode(), Objects.requireNonNull(expression), this.keType, this.valueType, this.input());
+    }
+
+    @Override
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPMapIndexOperator(
                     this.getNode(), this.getFunction(), this.keType, this.valueType, newInputs.get(0));

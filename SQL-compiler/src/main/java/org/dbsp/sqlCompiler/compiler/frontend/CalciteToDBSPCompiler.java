@@ -43,17 +43,16 @@ import org.dbsp.sqlCompiler.compiler.sqlparser.*;
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIsNullExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
-import org.dbsp.sqlCompiler.ir.pattern.DBSPPattern;
-import org.dbsp.sqlCompiler.ir.pattern.DBSPTupleStructPattern;
-import org.dbsp.sqlCompiler.ir.pattern.DBSPWildcardPattern;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.type.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeTimestamp;
 import org.dbsp.util.*;
@@ -77,7 +76,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
      * This should be selected by the SQL dialect, but it seems
      * to be hardwired in the Calcite optimizer.
      */
-    public static int firstDOW = 1;
+    public static final int firstDOW = 1;
     /**
      * If true, the inputs to the circuit are generated from the CREATE TABLE
      * statements.  Otherwise they are generated from the LogicalTableScan
@@ -521,25 +520,27 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         boolean shouldFilter = Linq.any(keyFields, i -> rowType.tupFields[i].mayBeNull);
         if (!shouldFilter) return input;
 
-        DBSPVariablePath var = rowType.var("r");
-        List<DBSPMatchExpression.Case> cases = new ArrayList<>();
-        DBSPPattern[] patterns = new DBSPPattern[rowType.size()];
+        DBSPVariablePath var = rowType.ref().var("r");
+        DBSPSomeExpression some = new DBSPSomeExpression(var.applyClone());
+        DBSPLiteral none = DBSPLiteral.none(some.getNonVoidType());
+        // Build a condition that checks whether any of the key fields is null.
+        @Nullable
+        DBSPExpression condition = null;
         for (int i = 0; i < rowType.size(); i++) {
             if (keyFields.contains(i)) {
-                patterns[i] = DBSPTupleStructPattern.somePattern(DBSPWildcardPattern.instance);
-            } else {
-                patterns[i] = DBSPWildcardPattern.instance;
+                DBSPFieldExpression field = new DBSPFieldExpression(join, var, i);
+                DBSPExpression expr = new DBSPIsNullExpression(join, field);
+                if (condition == null)
+                    condition = expr;
+                else
+                    condition = new DBSPBinaryExpression(join, DBSPTypeBool.instance, "||", condition, expr);
             }
         }
-        DBSPTupleStructPattern tup = new DBSPTupleStructPattern(rowType.toPath(), patterns);
-        DBSPSomeExpression some = new DBSPSomeExpression(
-                new DBSPApplyMethodExpression("clone", var.getNonVoidType(), var));
-        cases.add(new DBSPMatchExpression.Case(tup, some));
-        cases.add(new DBSPMatchExpression.Case(
-                DBSPWildcardPattern.instance, DBSPLiteral.none(some.getNonVoidType())));
-        DBSPMatchExpression match = new DBSPMatchExpression(var, cases, some.getNonVoidType());
-        DBSPClosureExpression filterFunc = match.closure(var.asRefParameter());
-        DBSPOperator filter = new DBSPFlatMapOperator(join, filterFunc, TypeCompiler.makeZSet(rowType), input);
+        DBSPExpression check = new DBSPIfExpression(join, Objects.requireNonNull(condition), none, some);
+        DBSPClosureExpression filterFunc = check.closure(var.asParameter());
+        DBSPExpression ff = this.declare("filter", filterFunc);
+
+        DBSPOperator filter = new DBSPFlatMapOperator(join, ff, TypeCompiler.makeZSet(rowType), input);
         this.circuit.addOperator(filter);
         return filter;
     }

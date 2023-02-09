@@ -48,9 +48,9 @@ public class OptimizeDistinctVisitor extends CircuitCloneVisitor {
             if (allDistinct) {
                 // distinct(map(distinct)) = distinct(map)
                 List<DBSPOperator> newInputs = Linq.map(input.inputs, i -> i.inputs.get(0));
-                DBSPOperator newInput = input.replaceInputs(newInputs, false);
+                DBSPOperator newInput = input.withInputs(newInputs, false);
                 this.addOperator(newInput);
-                DBSPOperator newDistinct = distinct.replaceInputs(Linq.list(newInput), false);
+                DBSPOperator newDistinct = distinct.withInputs(Linq.list(newInput), false);
                 this.map(distinct, newDistinct);
                 return;
             }
@@ -63,9 +63,9 @@ public class OptimizeDistinctVisitor extends CircuitCloneVisitor {
         if (input.is(DBSPDistinctOperator.class)) {
             DBSPDistinctOperator distinct = input.to(DBSPDistinctOperator.class);
             // swap distinct after filter
-            DBSPOperator newFilter = filter.replaceInputs(input.inputs, false);
+            DBSPOperator newFilter = filter.withInputs(input.inputs, false);
             this.addOperator(newFilter);
-            DBSPOperator result = distinct.replaceInputs(Linq.list(newFilter), false);
+            DBSPOperator result = distinct.withInputs(Linq.list(newFilter), false);
             this.map(filter, result);
             return;
         }
@@ -81,7 +81,7 @@ public class OptimizeDistinctVisitor extends CircuitCloneVisitor {
             // swap distinct after filter
             DBSPOperator newLeft = left.inputs.get(0);
             DBSPOperator newRight = right.inputs.get(0);
-            DBSPOperator result = join.replaceInputs(Linq.list(newLeft, newRight), false);
+            DBSPOperator result = join.withInputs(Linq.list(newLeft, newRight), false);
             this.addOperator(result);
             DBSPOperator distinct = new DBSPDistinctOperator(join.getNode(), result);
             this.map(join, distinct);

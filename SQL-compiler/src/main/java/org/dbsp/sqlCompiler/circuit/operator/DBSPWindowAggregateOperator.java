@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.ir.type.*;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This operator does not correspond to any standard DBSP operator currently.
@@ -57,7 +58,15 @@ public class DBSPWindowAggregateOperator extends DBSPUnaryOperator {
     }
 
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
+        return new DBSPWindowAggregateOperator(
+                this.getNode(), Objects.requireNonNull(expression), this.window,
+                this.partitionKeyType, this.timestampType, this.aggregateType,
+                this.input());
+    }
+
+    @Override
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPWindowAggregateOperator(
                     this.getNode(), this.aggregator, this.window,

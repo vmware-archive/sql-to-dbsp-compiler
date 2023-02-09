@@ -150,11 +150,11 @@ public class PostgresTimestampTests extends BaseSQLTests {
         this.addRustTestCase(circuit, streams);
     }
 
-    static SimpleDateFormat[] inputFormats = {
+    static final SimpleDateFormat[] inputFormats = {
             new SimpleDateFormat("EEE MMM d HH:mm:ss.SSS yyyy"),
             new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy")
     };
-    static SimpleDateFormat outputFormats = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+    static final SimpleDateFormat outputFormats = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
 
     /**
      * Convert a date from a format like Sat Feb 16 17:32:01 1996 to

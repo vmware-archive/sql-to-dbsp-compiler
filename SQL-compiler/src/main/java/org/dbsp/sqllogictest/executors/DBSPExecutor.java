@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
+import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -73,6 +74,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
     static final String rustDirectory = "../temp/src/";
     static final String testFileName = "test";
     private final boolean execute;
+    private final boolean validateJson;
     private int batchSize;  // Number of queries to execute together
     private int skip;       // Number of queries to skip in each test file.
     public final CompilerOptions options;
@@ -91,11 +93,14 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
     /**
      * Create an executor that executes SqlLogicTest queries directly compiling to
      * Rust and using the DBSP library.
+     * @param validateJson If true validate the JSON IR representation for each query.
+     * @param connectionString Connection string to use to get ground truth from database.
      * @param execute  If true the tests are executed, otherwise they are only compiled to Rust.
      * @param options  Options to use for compilation.
      */
-    public DBSPExecutor(boolean execute, CompilerOptions options, String connectionString) {
+    public DBSPExecutor(boolean execute, boolean validateJson, CompilerOptions options, String connectionString) {
         this.execute = execute;
+        this.validateJson = validateJson;
         this.inputPreparation = new SqlTestPrepareInput();
         this.tablePreparation = new SqlTestPrepareTables();
         this.viewPreparation = new SqlTestPrepareViews();
@@ -208,7 +213,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             for (int i = 0; i < inputType.tupFields.length; i++) {
                 DBSPExpression field = input.getVarReference().field(i);
                 DBSPExpression elems = new DBSPApplyExpression("to_elements",
-                        DBSPTypeAny.instance, new DBSPBorrowExpression(field));
+                        DBSPTypeAny.instance, field.borrow());
 
                 DBSPVariablePath e = DBSPTypeAny.instance.var("e");
                 DBSPExpression[] fields = new DBSPExpression[inputType.tupFields.length];
@@ -377,6 +382,8 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         }
 
         String rust = ToRustVisitor.circuitToRustString(dbsp);
+        if (this.validateJson)
+            ToJSONVisitor.validateJson(dbsp);
         DBSPFunction func = createTesterCode(
                 "tester" + suffix, dbsp,
                 inputGeneratingFunction,
@@ -541,7 +548,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             if (isVector) {
                 count = new DBSPApplyExpression("weighted_vector_count",
                         DBSPTypeUSize.instance,
-                        new DBSPBorrowExpression(output0));
+                        output0.borrow());
             } else {
                 count = new DBSPApplyMethodExpression("weighted_count",
                         DBSPTypeUSize.instance,
@@ -573,11 +580,11 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 list.add(new DBSPExpressionStatement(
                         new DBSPApplyExpression("assert_eq!", null,
                                 new DBSPApplyExpression(functionProducingStrings, DBSPTypeAny.instance,
-                                        new DBSPBorrowExpression(output0),
+                                        output0.borrow(),
                                         columnTypes,
                                         sort),
                                 new DBSPApplyExpression(zset_to_strings,
-                                        new DBSPBorrowExpression(output),
+                                        output.borrow(),
                                         columnTypes,
                                         sort))));
             } else {
@@ -593,7 +600,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             String hash = isVector ? "hash_vectors" : "hash";
             list.add(new DBSPLetStatement("_hash",
                     new DBSPApplyExpression(hash, DBSPTypeString.instance,
-                            new DBSPBorrowExpression(output0),
+                            output0.borrow(),
                             columnTypes,
                             sort)));
             list.add(

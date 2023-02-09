@@ -80,14 +80,4 @@ public class DBSPClosureExpression extends DBSPExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPClosureExpression cl = other.as(DBSPClosureExpression.class);
-        if (cl == null)
-            return false;
-        return this.body == cl.body &&
-                Linq.same(this.parameters, cl.parameters);
-    }
 }

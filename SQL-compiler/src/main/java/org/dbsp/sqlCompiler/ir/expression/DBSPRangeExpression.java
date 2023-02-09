@@ -62,13 +62,4 @@ public class DBSPRangeExpression extends DBSPExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPRangeExpression fe = other.as(DBSPRangeExpression.class);
-        if (fe == null)
-            return false;
-        return this.left == fe.left && this.right == fe.right && this.endInclusive == fe.endInclusive;
-    }
 }

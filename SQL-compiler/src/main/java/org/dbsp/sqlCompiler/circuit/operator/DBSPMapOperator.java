@@ -30,6 +30,7 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 public class DBSPMapOperator extends DBSPUnaryOperator {
     public final DBSPType outputElementType;
@@ -49,7 +50,13 @@ public class DBSPMapOperator extends DBSPUnaryOperator {
     }
 
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
+        return new DBSPMapOperator(
+                this.getNode(), Objects.requireNonNull(expression), this.outputElementType, this.input());
+    }
+
+    @Override
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPMapOperator(
                     this.getNode(), this.getFunction(), this.outputElementType, newInputs.get(0));

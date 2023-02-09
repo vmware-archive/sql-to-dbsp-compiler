@@ -53,13 +53,4 @@ public class DBSPUnaryExpression extends DBSPExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPUnaryExpression fe = other.as(DBSPUnaryExpression.class);
-        if (fe == null)
-            return false;
-        return this.operation.equals(fe.operation) && this.left == fe.left;
-    }
 }

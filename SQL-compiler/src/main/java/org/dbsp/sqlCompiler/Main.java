@@ -29,9 +29,7 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
-import org.dbsp.sqlCompiler.compiler.visitors.ToRustHandleVisitor;
+import org.dbsp.sqlCompiler.compiler.visitors.*;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -42,7 +40,7 @@ import java.nio.file.Paths;
  * Main entry point of the SQL compiler.
  */
 public class Main {
-    CompilerOptions options;
+    final CompilerOptions options;
 
     Main() {
         this.options = new CompilerOptions();

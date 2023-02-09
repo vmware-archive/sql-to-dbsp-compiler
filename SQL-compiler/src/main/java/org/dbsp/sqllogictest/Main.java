@@ -134,7 +134,8 @@ public class Main {
                 "-e", "hybrid",         // hybrid executor DBSP + JDBC
                 "-b", "psqlsltbugs.txt",// list of tests to exclude
                 "-i",                   // incremental (streaming) testing
-                "-d", "psql",           // SQL dialect to use
+                "-j",                   // Validate JSON IR.
+                "-d", "oracle",         // SQL dialect to use
                 "-u", "postgres",       // database user name
                 "-p", "password",       // database password
                 "-l", "db"              // can be csv or db

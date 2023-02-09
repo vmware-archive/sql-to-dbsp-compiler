@@ -35,7 +35,7 @@ public class ZetaSQLTest {
         /**
          * Optional feature which conditioned this result.
          */
-        public List<String> features = new ArrayList<>();
+        public final List<String> features = new ArrayList<>();
         @Nullable
         public DBSPExpression result;
         @Nullable
@@ -45,5 +45,5 @@ public class ZetaSQLTest {
     }
 
     public String statement = "";
-    public List<TestResult> results = new ArrayList<>();
+    public final List<TestResult> results = new ArrayList<>();
 }

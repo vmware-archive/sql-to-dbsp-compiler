@@ -101,7 +101,7 @@
         </dependency>
         <!-- TODO: Calcite uses Janino, but the current release uses a broken version,
              so we force a newer one here.  This should be removed once Calcite
-             has a new release. -->
+             has a new release.-->
         <dependency>
             <groupId>org.codehaus.janino</groupId>
             <artifactId>janino</artifactId>

@@ -30,6 +30,7 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 public class DBSPIncrementalJoinOperator extends DBSPOperator {
     public final DBSPType elementResultType;
@@ -46,7 +47,14 @@ public class DBSPIncrementalJoinOperator extends DBSPOperator {
     }
 
     @Override
-    public DBSPOperator replaceInputs(List<DBSPOperator> newInputs, boolean force) {
+    public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
+        return new DBSPIncrementalJoinOperator(
+                this.getNode(), this.elementResultType, Objects.requireNonNull(expression),
+                this.isMultiset, this.inputs.get(0), this.inputs.get(1));
+    }
+
+    @Override
+    public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPIncrementalJoinOperator(
                     this.getNode(), this.elementResultType, this.getFunction(),

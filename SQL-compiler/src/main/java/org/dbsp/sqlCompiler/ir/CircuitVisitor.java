@@ -220,6 +220,7 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
 
     public void postorder(DBSPOperator ignored) {}
 
+    @SuppressWarnings("EmptyMethod")
     public void postorder(IDBSPOuterNode ignored) {}
 
     public void postorder(IDBSPDeclaration node) { if (this.visitSuper) this.postorder((IDBSPOuterNode)node); }

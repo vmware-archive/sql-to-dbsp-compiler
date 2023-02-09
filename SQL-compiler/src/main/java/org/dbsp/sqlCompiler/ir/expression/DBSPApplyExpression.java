@@ -29,7 +29,6 @@ import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeFunction;
-import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
 
@@ -63,7 +62,11 @@ public class DBSPApplyExpression extends DBSPExpression {
     }
 
     public DBSPApplyExpression(DBSPExpression function, DBSPExpression... arguments) {
-        super(null, DBSPApplyExpression.getReturnType(function.getNonVoidType()));
+        this(function, DBSPApplyExpression.getReturnType(function.getNonVoidType()), arguments);
+    }
+
+    public DBSPApplyExpression(DBSPExpression function, @Nullable DBSPType returnType, DBSPExpression... arguments) {
+        super(null, returnType);
         this.function = function;
         this.arguments = arguments;
         this.checkArgs();
@@ -80,13 +83,4 @@ public class DBSPApplyExpression extends DBSPExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPApplyExpression oe = other.as(DBSPApplyExpression.class);
-        if (oe == null)
-            return false;
-        return this.function == oe.function && Linq.same(this.arguments, oe.arguments);
-    }
 }
