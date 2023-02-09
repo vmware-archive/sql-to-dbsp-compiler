@@ -24,3 +24,11 @@ words, names, or acronyms that are correctly spelled but not in the dictionary,
 please add them to the ``dict.txt`` file.
 
 To see the other available output formats, run ``make``.
+
+On Apple silicon, if you get the exception ``The 'enchant' C library was not found and maybe needs to be installed``
+when running the ``make`` commands, set the following environment variable first after
+installing enchant via ``brew install enchant```:
+
+```
+PYENCHANT_LIBRARY_PATH=/opt/homebrew/lib/libenchant-2.2.dylib
+```
