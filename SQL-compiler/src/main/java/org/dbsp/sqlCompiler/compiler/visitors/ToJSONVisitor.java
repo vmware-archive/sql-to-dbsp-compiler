@@ -104,7 +104,7 @@ public class ToJSONVisitor extends CircuitVisitor implements IModule {
 
     public static String circuitToJSON(DBSPCircuit node) {
         ToJSONVisitor visitor = new ToJSONVisitor();
-        ThreeAddressVisitor tav = new ThreeAddressVisitor();
+        ThreeOperandVisitor tav = new ThreeOperandVisitor();
         CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(tav);
         node = rewriter.apply(node);
         Logger.instance.from(visitor, 1)

@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.*;
@@ -40,6 +42,7 @@ import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.Utilities;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 
 import java.io.IOException;
@@ -107,9 +110,8 @@ public class BaseSQLTests {
                             new DBSPExpressionStatement(
                                     new DBSPApplyExpression("assert!", null,
                                             new DBSPApplyExpression("must_equal", DBSPTypeBool.instance,
-                                                    new DBSPBorrowExpression(
-                                                            new DBSPFieldExpression(null, out.getVarReference(), i)),
-                                                    new DBSPBorrowExpression(pairs.outputs[i])))));
+                                                    new DBSPFieldExpression(null, out.getVarReference(), i).borrow(),
+                                                    pairs.outputs[i].borrow()))));
                 }
             }
             DBSPExpression body = new DBSPBlockExpression(list, null);
@@ -170,6 +172,13 @@ public class BaseSQLTests {
                 CircuitVisitor optimizer = this.getOptimizer();
                 circuit = optimizer.apply(circuit);
             }
+
+            // Test json serialization
+            String json = ToJSONVisitor.circuitToJSON(circuit);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(json);
+            Assert.assertNotNull(root);
+
             this.addRustTestCase(circuit, streams);
         } catch (Exception ex) {
             throw new RuntimeException(ex);

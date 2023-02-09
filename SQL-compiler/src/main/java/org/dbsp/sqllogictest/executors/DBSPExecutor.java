@@ -208,7 +208,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             for (int i = 0; i < inputType.tupFields.length; i++) {
                 DBSPExpression field = input.getVarReference().field(i);
                 DBSPExpression elems = new DBSPApplyExpression("to_elements",
-                        DBSPTypeAny.instance, new DBSPBorrowExpression(field));
+                        DBSPTypeAny.instance, field.borrow());
 
                 DBSPVariablePath e = DBSPTypeAny.instance.var("e");
                 DBSPExpression[] fields = new DBSPExpression[inputType.tupFields.length];
@@ -541,7 +541,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             if (isVector) {
                 count = new DBSPApplyExpression("weighted_vector_count",
                         DBSPTypeUSize.instance,
-                        new DBSPBorrowExpression(output0));
+                        output0.borrow());
             } else {
                 count = new DBSPApplyMethodExpression("weighted_count",
                         DBSPTypeUSize.instance,
@@ -573,11 +573,11 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 list.add(new DBSPExpressionStatement(
                         new DBSPApplyExpression("assert_eq!", null,
                                 new DBSPApplyExpression(functionProducingStrings, DBSPTypeAny.instance,
-                                        new DBSPBorrowExpression(output0),
+                                        output0.borrow(),
                                         columnTypes,
                                         sort),
                                 new DBSPApplyExpression(zset_to_strings,
-                                        new DBSPBorrowExpression(output),
+                                        output.borrow(),
                                         columnTypes,
                                         sort))));
             } else {
@@ -593,7 +593,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             String hash = isVector ? "hash_vectors" : "hash";
             list.add(new DBSPLetStatement("_hash",
                     new DBSPApplyExpression(hash, DBSPTypeString.instance,
-                            new DBSPBorrowExpression(output0),
+                            output0.borrow(),
                             columnTypes,
                             sort)));
             list.add(

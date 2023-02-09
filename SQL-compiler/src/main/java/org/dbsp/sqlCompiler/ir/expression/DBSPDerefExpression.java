@@ -31,7 +31,7 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 public class DBSPDerefExpression extends DBSPExpression {
     public final DBSPExpression expression;
 
-    DBSPDerefExpression(DBSPExpression expression) {
+    public DBSPDerefExpression(DBSPExpression expression) {
         super(null, expression.getNonVoidType().deref());
         this.expression = expression;
     }
@@ -45,13 +45,4 @@ public class DBSPDerefExpression extends DBSPExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPDerefExpression de = other.as(DBSPDerefExpression.class);
-        if (de == null)
-            return false;
-        return this.expression == de.expression;
-    }
 }

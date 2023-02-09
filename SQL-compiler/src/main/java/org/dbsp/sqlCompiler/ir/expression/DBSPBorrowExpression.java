@@ -32,13 +32,13 @@ public class DBSPBorrowExpression extends DBSPExpression {
     public final DBSPExpression expression;
     public final boolean mut;
 
-    public DBSPBorrowExpression(DBSPExpression expression, boolean mutable) {
+    DBSPBorrowExpression(DBSPExpression expression, boolean mutable) {
         super(null, expression.getNonVoidType().ref());
         this.expression = expression;
         this.mut = mutable;
     }
 
-    public DBSPBorrowExpression(DBSPExpression expression) {
+    DBSPBorrowExpression(DBSPExpression expression) {
         this(expression, false);
     }
 
@@ -49,16 +49,5 @@ public class DBSPBorrowExpression extends DBSPExpression {
             this.type.accept(visitor);
         this.expression.accept(visitor);
         visitor.postorder(this);
-    }
-
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPBorrowExpression ae = other.as(DBSPBorrowExpression.class);
-        if (ae == null)
-            return false;
-        return this.mut == ae.mut &&
-                this.expression == ae.expression;
     }
 }

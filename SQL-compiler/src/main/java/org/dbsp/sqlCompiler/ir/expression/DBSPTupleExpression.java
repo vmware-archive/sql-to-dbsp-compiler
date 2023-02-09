@@ -116,13 +116,4 @@ public class DBSPTupleExpression extends DBSPBaseTupleExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPTupleExpression fe = other.as(DBSPTupleExpression.class);
-        if (fe == null)
-            return false;
-        return Linq.same(this.fields, fe.fields);
-    }
 }

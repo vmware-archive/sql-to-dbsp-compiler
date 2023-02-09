@@ -65,10 +65,7 @@ public class DBSPCompilerTests {
         compiler.compileStatement(ddl);
         compiler.compileStatement("CREATE VIEW V AS SELECT * FROM T WHERE COL1 > 5");
         DBSPCircuit dbsp = compiler.getFinalCircuit("circuit");
-        Logger.instance.setDebugLevel(ToJSONVisitor.class, 1);
-        Logger.instance.setDebugLevel(CircuitCloneVisitor.class, 3);
         String json = ToJSONVisitor.circuitToJSON(dbsp);
-        System.out.println(json);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(json);
         Assert.assertNotNull(root);

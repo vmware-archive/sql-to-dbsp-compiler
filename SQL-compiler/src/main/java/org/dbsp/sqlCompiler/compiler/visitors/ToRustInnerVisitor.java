@@ -311,6 +311,21 @@ public class ToRustInnerVisitor extends InnerVisitor {
         return false;
     }
 
+    @Override
+    public boolean preorder(DBSPIsNullExpression expression) {
+        expression.expression.accept(this);
+        this.builder.append(".is_none()");
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPCloneExpression expression) {
+        expression.expression.accept(this);
+        this.builder.append(".clone()");
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPUnaryExpression expression) {
         if (expression.left.getNonVoidType().mayBeNull) {
             this.builder.append("(")

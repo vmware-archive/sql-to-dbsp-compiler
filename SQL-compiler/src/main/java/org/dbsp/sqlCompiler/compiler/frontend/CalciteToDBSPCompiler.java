@@ -43,17 +43,16 @@ import org.dbsp.sqlCompiler.compiler.sqlparser.*;
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIsNullExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
-import org.dbsp.sqlCompiler.ir.pattern.DBSPPattern;
-import org.dbsp.sqlCompiler.ir.pattern.DBSPTupleStructPattern;
-import org.dbsp.sqlCompiler.ir.pattern.DBSPWildcardPattern;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.type.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeTimestamp;
 import org.dbsp.util.*;
@@ -521,25 +520,27 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         boolean shouldFilter = Linq.any(keyFields, i -> rowType.tupFields[i].mayBeNull);
         if (!shouldFilter) return input;
 
-        DBSPVariablePath var = rowType.var("r");
-        List<DBSPMatchExpression.Case> cases = new ArrayList<>();
-        DBSPPattern[] patterns = new DBSPPattern[rowType.size()];
+        DBSPVariablePath var = rowType.ref().var("r");
+        DBSPSomeExpression some = new DBSPSomeExpression(var.applyClone());
+        DBSPLiteral none = DBSPLiteral.none(some.getNonVoidType());
+        // Build a condition that checks whether any of the key fields is null.
+        @Nullable
+        DBSPExpression condition = null;
         for (int i = 0; i < rowType.size(); i++) {
             if (keyFields.contains(i)) {
-                patterns[i] = DBSPTupleStructPattern.somePattern(DBSPWildcardPattern.instance);
-            } else {
-                patterns[i] = DBSPWildcardPattern.instance;
+                DBSPFieldExpression field = new DBSPFieldExpression(join, var, i);
+                DBSPExpression expr = new DBSPIsNullExpression(join, field);
+                if (condition == null)
+                    condition = expr;
+                else
+                    condition = new DBSPBinaryExpression(join, DBSPTypeBool.instance, "||", condition, expr);
             }
         }
-        DBSPTupleStructPattern tup = new DBSPTupleStructPattern(rowType.toPath(), patterns);
-        DBSPSomeExpression some = new DBSPSomeExpression(
-                new DBSPApplyMethodExpression("clone", var.getNonVoidType(), var));
-        cases.add(new DBSPMatchExpression.Case(tup, some));
-        cases.add(new DBSPMatchExpression.Case(
-                DBSPWildcardPattern.instance, DBSPLiteral.none(some.getNonVoidType())));
-        DBSPMatchExpression match = new DBSPMatchExpression(var, cases, some.getNonVoidType());
-        DBSPClosureExpression filterFunc = match.closure(var.asRefParameter());
-        DBSPOperator filter = new DBSPFlatMapOperator(join, filterFunc, TypeCompiler.makeZSet(rowType), input);
+        DBSPExpression check = new DBSPIfExpression(join, Objects.requireNonNull(condition), none, some);
+        DBSPClosureExpression filterFunc = check.closure(var.asParameter());
+        DBSPExpression ff = this.declare("filter", filterFunc);
+
+        DBSPOperator filter = new DBSPFlatMapOperator(join, ff, TypeCompiler.makeZSet(rowType), input);
         this.circuit.addOperator(filter);
         return filter;
     }
@@ -799,11 +800,18 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPType inputRowType = this.convertType(input.getRowType());
         DBSPTypeTuple resultType = this.convertType(intersect.getRowType()).to(DBSPTypeTuple.class);
         DBSPVariablePath t = inputRowType.ref().var("t");
-        DBSPExpression entireKey =
+        DBSPExpression entireKey0 =
                 new DBSPRawTupleExpression(
                         t.applyClone(),
                         new DBSPRawTupleExpression()).closure(
                 t.asParameter());
+        // If we had a clone of entireKey0 we would use that.
+        // This makes the IR a tree instead of a DAG.
+        DBSPExpression entireKey1 =
+                new DBSPRawTupleExpression(
+                        t.applyClone(),
+                        new DBSPRawTupleExpression()).closure(
+                        t.asParameter());
         DBSPVariablePath l = DBSPTypeRawTuple.emptyTupleType.ref().var("l");
         DBSPVariablePath r = DBSPTypeRawTuple.emptyTupleType.ref().var("r");
         DBSPVariablePath k = inputRowType.ref().var("k");
@@ -813,13 +821,13 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         for (int i = 1; i < inputs.size(); i++) {
             DBSPOperator previousIndex = new DBSPIndexOperator(
                     intersect,
-                    this.declare("index", entireKey),
+                    this.declare("index", entireKey0),
                     inputRowType, new DBSPTypeRawTuple(), previous.isMultiset, previous);
             this.circuit.addOperator(previousIndex);
             DBSPOperator inputI = this.getInputAs(intersect.getInput(i), false);
             DBSPOperator index = new DBSPIndexOperator(
                     intersect,
-                    this.declare("index", entireKey),
+                    this.declare("index", entireKey1),
                     inputRowType, new DBSPTypeRawTuple(), inputI.isMultiset, inputI);
             this.circuit.addOperator(index);
             previous = new DBSPJoinOperator(intersect, resultType, closure, false,

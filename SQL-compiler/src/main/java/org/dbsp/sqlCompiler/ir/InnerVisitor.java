@@ -348,6 +348,16 @@ public abstract class InnerVisitor {
         else return true;
     }
 
+    public boolean preorder(DBSPCloneExpression node) {
+        if (this.visitSuper) return this.preorder((DBSPExpression) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPIsNullExpression node) {
+        if (this.visitSuper) return this.preorder((DBSPExpression) node);
+        else return true;
+    }
+
     public boolean preorder(DBSPClosureExpression node) {
         if (this.visitSuper) return this.preorder((DBSPExpression) node);
         else return true;
@@ -769,6 +779,14 @@ public abstract class InnerVisitor {
     }
 
     public void postorder(DBSPCastExpression node) {
+        if (this.visitSuper) this.postorder((DBSPExpression) node);
+    }
+
+    public void postorder(DBSPCloneExpression node) {
+        if (this.visitSuper) this.postorder((DBSPExpression) node);
+    }
+
+    public void postorder(DBSPIsNullExpression node) {
         if (this.visitSuper) this.postorder((DBSPExpression) node);
     }
 

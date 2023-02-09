@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.ir.expression;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.apache.calcite.rex.RexNode;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
@@ -39,7 +38,7 @@ public class DBSPFieldExpression extends DBSPExpression {
     public final DBSPExpression expression;
     public final int fieldNo;
 
-    protected DBSPFieldExpression(@Nullable RexNode node, DBSPExpression expression, int fieldNo, DBSPType type) {
+    protected DBSPFieldExpression(@Nullable Object node, DBSPExpression expression, int fieldNo, DBSPType type) {
         super(node, type);
         this.expression = expression;
         this.fieldNo = fieldNo;
@@ -57,7 +56,7 @@ public class DBSPFieldExpression extends DBSPExpression {
         return tuple.getFieldType(fieldNo);
     }
 
-    public DBSPFieldExpression(@Nullable RexNode node, DBSPExpression expression, int fieldNo) {
+    public DBSPFieldExpression(@Nullable Object node, DBSPExpression expression, int fieldNo) {
         this(node, expression, fieldNo, getFieldType(expression.getNonVoidType(), fieldNo));
     }
 
@@ -83,14 +82,4 @@ public class DBSPFieldExpression extends DBSPExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPFieldExpression fe = other.as(DBSPFieldExpression.class);
-        if (fe == null)
-            return false;
-        return this.expression == fe.expression &&
-                this.fieldNo == fe.fieldNo;
-    }
 }

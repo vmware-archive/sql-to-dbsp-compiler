@@ -90,14 +90,4 @@ public class DBSPVecLiteral extends DBSPLiteral implements IDBSPContainer {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPVecLiteral fe = other.as(DBSPVecLiteral.class);
-        if (fe == null)
-            return false;
-        return this.vecType.sameType(fe.vecType) &&
-                this.data == fe.data;
-    }
 }

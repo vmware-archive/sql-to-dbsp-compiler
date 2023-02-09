@@ -75,14 +75,4 @@ public class DBSPVariablePath extends DBSPExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPVariablePath fe = other.as(DBSPVariablePath.class);
-        if (fe == null)
-            return false;
-        return this.variable.equals(fe.variable) &&
-                this.getNonVoidType().sameType(fe.type);
-    }
 }

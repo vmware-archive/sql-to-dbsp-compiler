@@ -45,10 +45,11 @@ public class CircuitFunctionRewriter extends CircuitCloneVisitor {
     @Override
     public boolean preorder(DBSPOperator node) {
         IDBSPInnerNode function = this.transform.apply(node.function);
-        DBSPExpression funcExpr = null;
-        if (function != null)
-            funcExpr = function.to(DBSPExpression.class);
-        DBSPOperator result = node.withFunction(funcExpr);
+        DBSPOperator result = node;
+        if (function != null) {
+            DBSPExpression funcExpr = function.to(DBSPExpression.class);
+            result = node.withFunction(funcExpr);
+        }
         this.map(node, result);
         return false;
     }

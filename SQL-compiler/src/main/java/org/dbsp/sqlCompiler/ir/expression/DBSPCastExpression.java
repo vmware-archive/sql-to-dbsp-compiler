@@ -52,14 +52,4 @@ public class DBSPCastExpression extends DBSPExpression implements IDBSPInnerNode
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        if (this == other)
-            return true;
-        DBSPCastExpression oe = other.as(DBSPCastExpression.class);
-        if (oe == null)
-            return false;
-        return this.source == oe.source &&
-                this.type == oe.type;
-    }
 }

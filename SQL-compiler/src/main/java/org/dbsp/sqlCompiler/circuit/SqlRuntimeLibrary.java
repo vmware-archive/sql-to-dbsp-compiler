@@ -184,6 +184,8 @@ public class SqlRuntimeLibrary {
     
     public FunctionDescription getFunction(
             String op, @Nullable DBSPType expectedReturnType, DBSPType ltype, @Nullable DBSPType rtype, boolean aggregate) {
+        if (ltype.is(DBSPTypeAny.class) || (rtype != null && rtype.is(DBSPTypeAny.class)))
+            throw new RuntimeException("Unexpected type _ for operand of " + op);
         HashMap<String, String> map = null;
         boolean anyNull = ltype.mayBeNull || (rtype != null && rtype.mayBeNull);
         String suffixReturn = "";  // suffix based on the return type

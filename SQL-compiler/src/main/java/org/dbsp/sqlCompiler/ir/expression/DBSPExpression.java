@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.ir.expression;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPCloneExpression;
 import org.dbsp.sqlCompiler.ir.type.IHasType;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
@@ -44,10 +45,10 @@ public abstract class DBSPExpression
     }
 
     /**
-     * Generates an expression that calls clone() on this
+     * Generates an expression that calls clone() on this.
      */
     public DBSPExpression applyClone() {
-        return new DBSPApplyMethodExpression("clone", this.getNonVoidType().deref(), this);
+        return new DBSPCloneExpression(this.getNode(), this);
     }
 
     @Override
@@ -56,15 +57,12 @@ public abstract class DBSPExpression
         return this.type;
     }
 
-    /**
-     * Shallow and conservative test for equivalence.
-     * Two expressions are the same if they are equal as pointers, or they are
-     * are the same class with all fields equal as pointers.
-     */
-    public abstract boolean shallowSameExpression(DBSPExpression other);
-
     public DBSPExpression deref() {
         return new DBSPDerefExpression(this);
+    }
+
+    public DBSPExpression borrow() {
+        return new DBSPBorrowExpression(this);
     }
 
     public DBSPExpression field(int index) {

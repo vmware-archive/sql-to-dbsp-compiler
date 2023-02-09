@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,28 +21,29 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.expression;
+package org.dbsp.sqlCompiler.ir.expression.literal;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 
-public class DBSPAssignmentExpression extends DBSPExpression {
-    public final DBSPExpression left;
-    public final DBSPExpression right;
+import javax.annotation.Nullable;
 
-    public DBSPAssignmentExpression(DBSPExpression left, DBSPExpression right) {
-        super(null, null);
-        this.left = left;
-        this.right = right;
+/**
+ * Represents an expression of the form e.clone().
+ */
+public class DBSPCloneExpression extends DBSPExpression {
+    public final DBSPExpression expression;
+
+    public DBSPCloneExpression(@Nullable Object object, DBSPExpression expression) {
+        super(object, expression.getNonVoidType().deref());
+        this.expression = expression;
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        if (this.type != null)
-            this.type.accept(visitor);
-        this.left.accept(visitor);
-        this.right.accept(visitor);
+        if (!visitor.preorder(this))
+            return;
+        this.expression.accept(visitor);
         visitor.postorder(this);
     }
-
 }

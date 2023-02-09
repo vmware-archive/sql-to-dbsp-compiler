@@ -50,8 +50,4 @@ public class DBSPForExpression extends DBSPExpression {
         visitor.postorder(this);
     }
 
-    @Override
-    public boolean shallowSameExpression(DBSPExpression other) {
-        return false;
-    }
 }

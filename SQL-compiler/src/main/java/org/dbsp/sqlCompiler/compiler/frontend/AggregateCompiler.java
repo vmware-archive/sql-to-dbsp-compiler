@@ -213,7 +213,7 @@ public class AggregateCompiler {
                     accum, new DBSPApplyMethodExpression("mul_by_ref",
                             DBSPTypeInteger.signed64,
                             argument,
-                            new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
+                            CalciteToDBSPCompiler.weight.borrow()));
         }
         DBSPType semigroup = new DBSPTypeUser(null, "DefaultSemigroup", false, this.resultType);
         this.foldingFunction = new AggregateImplementation(
@@ -268,7 +268,7 @@ public class AggregateCompiler {
                     accum, new DBSPApplyMethodExpression("mul_by_ref",
                             aggregatedValue.getNonVoidType(),
                             aggregatedValue,
-                            new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
+                            CalciteToDBSPCompiler.weight.borrow()));
         }
         DBSPType semigroup = new DBSPTypeUser(null, "DefaultOptSemigroup", false, accum.getNonVoidType().setMayBeNull(false));
         this.foldingFunction = new AggregateImplementation(
@@ -290,7 +290,7 @@ public class AggregateCompiler {
                     accum, new DBSPApplyMethodExpression("mul_by_ref",
                             aggregatedValue.getNonVoidType(),
                             aggregatedValue,
-                            new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
+                            CalciteToDBSPCompiler.weight.borrow()));
         }
         String semigroupName = "DefaultSemigroup";
         if (accum.getNonVoidType().mayBeNull)
@@ -327,13 +327,13 @@ public class AggregateCompiler {
                     countAccumulator, new DBSPApplyMethodExpression("mul_by_ref",
                             DBSPTypeInteger.signed64.setMayBeNull(plusOne.getNonVoidType().mayBeNull),
                             plusOne,
-                            new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
+                            CalciteToDBSPCompiler.weight.borrow()));
             sum = ExpressionCompiler.aggregateOperation(
                     function, "+", i64,
                     sumAccumulator, new DBSPApplyMethodExpression("mul_by_ref",
                             i64,
                             aggregatedValue,
-                            new DBSPBorrowExpression(CalciteToDBSPCompiler.weight)));
+                            CalciteToDBSPCompiler.weight.borrow()));
         }
 
         DBSPExpression increment = new DBSPRawTupleExpression(sum, count);
