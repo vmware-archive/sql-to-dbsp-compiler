@@ -174,11 +174,7 @@ public class BaseSQLTests {
             }
 
             // Test json serialization
-            String json = ToJSONVisitor.circuitToJSON(circuit);
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(json);
-            Assert.assertNotNull(root);
-
+            ToJSONVisitor.validateJson(circuit);
             this.addRustTestCase(circuit, streams);
         } catch (Exception ex) {
             throw new RuntimeException(ex);

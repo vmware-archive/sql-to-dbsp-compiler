@@ -800,18 +800,11 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPType inputRowType = this.convertType(input.getRowType());
         DBSPTypeTuple resultType = this.convertType(intersect.getRowType()).to(DBSPTypeTuple.class);
         DBSPVariablePath t = inputRowType.ref().var("t");
-        DBSPExpression entireKey0 =
+        DBSPExpression entireKey =
                 new DBSPRawTupleExpression(
                         t.applyClone(),
                         new DBSPRawTupleExpression()).closure(
                 t.asParameter());
-        // If we had a clone of entireKey0 we would use that.
-        // This makes the IR a tree instead of a DAG.
-        DBSPExpression entireKey1 =
-                new DBSPRawTupleExpression(
-                        t.applyClone(),
-                        new DBSPRawTupleExpression()).closure(
-                        t.asParameter());
         DBSPVariablePath l = DBSPTypeRawTuple.emptyTupleType.ref().var("l");
         DBSPVariablePath r = DBSPTypeRawTuple.emptyTupleType.ref().var("r");
         DBSPVariablePath k = inputRowType.ref().var("k");
@@ -821,13 +814,13 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         for (int i = 1; i < inputs.size(); i++) {
             DBSPOperator previousIndex = new DBSPIndexOperator(
                     intersect,
-                    this.declare("index", entireKey0),
+                    this.declare("index", entireKey),
                     inputRowType, new DBSPTypeRawTuple(), previous.isMultiset, previous);
             this.circuit.addOperator(previousIndex);
             DBSPOperator inputI = this.getInputAs(intersect.getInput(i), false);
             DBSPOperator index = new DBSPIndexOperator(
                     intersect,
-                    this.declare("index", entireKey1),
+                    this.declare("index", entireKey),
                     inputRowType, new DBSPTypeRawTuple(), inputI.isMultiset, inputI);
             this.circuit.addOperator(index);
             previous = new DBSPJoinOperator(intersect, resultType, closure, false,

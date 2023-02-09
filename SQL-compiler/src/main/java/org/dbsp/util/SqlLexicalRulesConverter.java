@@ -49,7 +49,8 @@ public class SqlLexicalRulesConverter implements IStringConverter<Lex> {
             case "big_query":
                 return Lex.BIG_QUERY;
             default:
-                throw new ParameterException("Illegal value for SQL lexical rules; legal values are: " + legalDialects);
+                throw new ParameterException("Illegal value " + Utilities.singleQuote(s)
+                        + " for SQL lexical rules; legal values are: " + legalDialects);
         }
     }
 }

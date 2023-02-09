@@ -101,7 +101,7 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
     }
 
     /**
-     * Return a version of this operator with the function replaced replaced.
+     * Return a version of this operator with the function replaced.
      */
     public abstract DBSPOperator withFunction(@Nullable DBSPExpression expression);
 

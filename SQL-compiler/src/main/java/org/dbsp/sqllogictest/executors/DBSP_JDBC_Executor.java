@@ -49,12 +49,14 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
     private final List<String> tablesCreated;
 
     /**
+     * @param validateJson If true validate the JSON for the produced IRs.
      * @param execute If true the tests are executed, otherwise they are only compiled to Rust.
      * @param options Compilation options.
      */
-    public DBSP_JDBC_Executor(JDBCExecutor executor, boolean execute, CompilerOptions options,
+    public DBSP_JDBC_Executor(JDBCExecutor executor,
+                              boolean validateJson, boolean execute, CompilerOptions options,
                               String connectionString) {
-        super(execute, options, connectionString);
+        super(execute, validateJson, options, connectionString);
         this.statementExecutor = executor;
         this.tablesCreated = new ArrayList<>();
     }

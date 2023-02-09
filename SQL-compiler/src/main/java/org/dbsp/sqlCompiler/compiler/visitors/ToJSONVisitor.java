@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -113,5 +114,17 @@ public class ToJSONVisitor extends CircuitVisitor implements IModule {
                         .newline();
         node.accept(visitor);
         return visitor.root.toPrettyString();
+    }
+
+    public static void validateJson(DBSPCircuit circuit) {
+        try {
+            String json = ToJSONVisitor.circuitToJSON(circuit);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(json);
+            if (root == null)
+                throw new RuntimeException("No JSON produced from circuit");
+        } catch (JsonProcessingException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }

@@ -23,6 +23,7 @@
 
 package org.dbsp.sqllogictest.executors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
@@ -31,6 +32,7 @@ import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
+import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -73,6 +75,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
     static final String rustDirectory = "../temp/src/";
     static final String testFileName = "test";
     private final boolean execute;
+    private final boolean validateJson;
     private int batchSize;  // Number of queries to execute together
     private int skip;       // Number of queries to skip in each test file.
     public final CompilerOptions options;
@@ -91,11 +94,14 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
     /**
      * Create an executor that executes SqlLogicTest queries directly compiling to
      * Rust and using the DBSP library.
+     * @param validateJson If true validate the JSON IR representation for each query.
+     * @param connectionString Connection string to use to get ground truth from database.
      * @param execute  If true the tests are executed, otherwise they are only compiled to Rust.
      * @param options  Options to use for compilation.
      */
-    public DBSPExecutor(boolean execute, CompilerOptions options, String connectionString) {
+    public DBSPExecutor(boolean execute, boolean validateJson, CompilerOptions options, String connectionString) {
         this.execute = execute;
+        this.validateJson = validateJson;
         this.inputPreparation = new SqlTestPrepareInput();
         this.tablePreparation = new SqlTestPrepareTables();
         this.viewPreparation = new SqlTestPrepareViews();
@@ -377,6 +383,8 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         }
 
         String rust = ToRustVisitor.circuitToRustString(dbsp);
+        if (this.validateJson)
+            ToJSONVisitor.validateJson(dbsp);
         DBSPFunction func = createTesterCode(
                 "tester" + suffix, dbsp,
                 inputGeneratingFunction,

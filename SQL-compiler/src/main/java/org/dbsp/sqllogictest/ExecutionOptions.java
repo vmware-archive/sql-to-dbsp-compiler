@@ -81,6 +81,8 @@ public class ExecutionOptions {
     @Parameter(names = "-l", description = "Input source for DBSP program (choices: csv, db)")
     @Nullable
     String inputSource = "csv";
+    @Parameter(names = "-j", description = "Validate JSON IR representation while compiling")
+    boolean validateJson = false;
 
     static class PostgresPolicy implements AcceptancePolicy {
         @Override
@@ -181,7 +183,7 @@ public class ExecutionOptions {
             case "none":
                 return new NoExecutor();
             case "DBSP":
-                DBSPExecutor dExec = new DBSPExecutor(!this.doNotExecute, options, connectionString());
+                DBSPExecutor dExec = new DBSPExecutor(!this.doNotExecute, this.validateJson, options, connectionString());
                 dExec.avoid(sltBugs);
                 dExec.setValidateStatus(this.validateStatus);
                 return dExec;
@@ -190,8 +192,9 @@ public class ExecutionOptions {
             }
             case "hybrid": {
                 JDBCExecutor jdbc = this.jdbcExecutor(sltBugs);
-                DBSP_JDBC_Executor result = new DBSP_JDBC_Executor(jdbc, !this.doNotExecute, options,
-                                                                   connectionString());
+                DBSP_JDBC_Executor result = new DBSP_JDBC_Executor(
+                        jdbc, !this.doNotExecute, this.validateJson,
+                        options, connectionString());
                 result.avoid(sltBugs);
                 result.setValidateStatus(this.validateStatus);
                 return result;

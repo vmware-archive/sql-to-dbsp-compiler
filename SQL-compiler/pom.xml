@@ -101,13 +101,12 @@
         </dependency>
         <!-- TODO: Calcite uses Janino, but the current release uses a broken version,
              so we force a newer one here.  This should be removed once Calcite
-             has a new release.
+             has a new release.-->
         <dependency>
             <groupId>org.codehaus.janino</groupId>
             <artifactId>janino</artifactId>
             <version>3.1.9</version>
         </dependency>
-        -->
         <!-- ANTLR parser generator -->
         <dependency>
             <groupId>org.antlr</groupId>
@@ -129,12 +128,12 @@
         <dependency>
             <groupId>org.apache.calcite</groupId>
             <artifactId>calcite-core</artifactId>
-            <version>1.33.0</version>
+            <version>1.32.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.calcite</groupId>
             <artifactId>calcite-server</artifactId>
-            <version>1.33.0</version>
+            <version>1.32.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

@@ -32,7 +32,8 @@ import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import java.util.function.Function;
 
 /**
- * Applies a function to every function and declaration in the circuit.
+ * Applies a function (tihs.transform) to every function within an operator and
+ * to every declaration in a circuit.
  */
 public class CircuitFunctionRewriter extends CircuitCloneVisitor {
     private final Function<IDBSPInnerNode, IDBSPInnerNode> transform;
