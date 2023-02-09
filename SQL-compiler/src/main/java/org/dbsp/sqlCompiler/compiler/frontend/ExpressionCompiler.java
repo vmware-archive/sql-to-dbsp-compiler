@@ -479,6 +479,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 switch (opName) {
                     case "||":
                         return makeBinaryExpression(call, type, "||", ops);
+                    default:
+                        break;
                 }
                 throw new Unimplemented(call);
             case EXTRACT: {

@@ -40,7 +40,7 @@ import java.nio.file.Paths;
  * Main entry point of the SQL compiler.
  */
 public class Main {
-    CompilerOptions options;
+    final CompilerOptions options;
 
     Main() {
         this.options = new CompilerOptions();

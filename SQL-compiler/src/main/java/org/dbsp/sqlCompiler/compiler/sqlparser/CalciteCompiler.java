@@ -129,7 +129,7 @@ public class CalciteCompiler implements IModule {
 
     static class SqlDivideFunction extends SqlFunction {
         // Custom implementation of type inference DIVISION for our division operator.
-        static SqlReturnTypeInference divResultInference = new SqlReturnTypeInference() {
+        static final SqlReturnTypeInference divResultInference = new SqlReturnTypeInference() {
             @Override
             public @org.checkerframework.checker.nullness.qual.Nullable
             RelDataType inferReturnType(SqlOperatorBinding opBinding) {

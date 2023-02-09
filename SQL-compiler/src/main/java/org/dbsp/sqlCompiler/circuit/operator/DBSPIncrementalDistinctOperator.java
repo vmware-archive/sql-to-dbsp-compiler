@@ -24,14 +24,13 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
 public class DBSPIncrementalDistinctOperator extends DBSPUnaryOperator {
     public DBSPIncrementalDistinctOperator(@Nullable Object node, DBSPOperator input) {
-        super(node, "distinct_incremental", null, input.outputType, false, input);
+        super(node, "distinct", null, input.outputType, false, input);
     }
 
     @Override

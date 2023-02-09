@@ -30,12 +30,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.compiler.visitors.CircuitCloneVisitor;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
 import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
-import org.dbsp.util.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -66,7 +64,7 @@ public class DBSPCompilerTests {
         compiler.compileStatement("CREATE VIEW V AS SELECT * FROM T WHERE COL1 > 5");
         DBSPCircuit dbsp = compiler.getFinalCircuit("circuit");
         String json = ToJSONVisitor.circuitToJSON(dbsp);
-        System.out.println(json);
+        //System.out.println(json);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(json);
         Assert.assertNotNull(root);

@@ -136,7 +136,7 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     //////////////////////////// Expressions
 
-    // SOme expressions we do not really expect to see in the generated IR for queries.
+    // Some expressions we do not really expect to see in the generated IR for queries.
     // These throw Unimplemented.
     @Override
     public boolean preorder(DBSPQualifyTypeExpression expression) {

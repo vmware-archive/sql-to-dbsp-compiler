@@ -34,7 +34,7 @@ import java.nio.file.attribute.BasicFileAttributes;
  * Execute the tests in the Zetasql test suite.
  */
 public class Main {
-    static String zetaRepo = "../../zetasql/zetasql/compliance/testdata";
+    static final String zetaRepo = "../../zetasql/zetasql/compliance/testdata";
 
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;

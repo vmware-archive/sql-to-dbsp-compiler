@@ -38,6 +38,7 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.util.*;
 
+@SuppressWarnings("CanBeFinal")
 public class ExecutionOptions {
     public static class ExecutorValidator implements IParameterValidator {
         final private Set<String> legalExecutors;

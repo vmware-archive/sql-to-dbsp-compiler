@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
@@ -32,7 +31,7 @@ import java.util.List;
 
 public class DBSPDistinctOperator extends DBSPUnaryOperator {
     public DBSPDistinctOperator(@Nullable Object node, DBSPOperator input) {
-        super(node, "distinct", null, input.outputType, false, input);
+        super(node, "stream_distinct", null, input.outputType, false, input);
     }
 
     @Override

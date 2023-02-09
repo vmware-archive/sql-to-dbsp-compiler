@@ -43,7 +43,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 public class ZsetasqlTests extends BaseSQLTests implements IModule {
-    static String sample = "[name=current_date_1]\n" +
+    static final String sample = "[name=current_date_1]\n" +
             "select current_date() = current_date,\n" +
             "       current_date() >= '2015-03-17',\n" +
             "       current_date() >= date_from_unix_date(0),\n" +
@@ -101,7 +101,7 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
     }
 
     @Test
-    public void DDLZetaOverTest() throws SqlParseException, IOException, InterruptedException {
+    public void DDLZetaOverTest() throws SqlParseException {
         String query = "CREATE TABLE TestTable AS\n" +
                 "SELECT cast(1 as int64) as row_id,\n" +
                 "       cast(null as bool) as bool_val,\n" +
@@ -132,7 +132,7 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
     // Calcite does not seem to be able to parse this.
     // In fact, it does not seem to be defined in standard sql, which cannot mix
     // intervals of different types.
-    public void testIntervals() throws SqlParseException, IOException, InterruptedException {
+    public void testIntervals() throws SqlParseException {
         String query = "CREATE TABLE Intervals AS\n" +
                 //"SELECT 1 id, CAST(NULL AS INTERVAL) value UNION ALL\n" +
                 "SELECT 2, interval 0 year UNION ALL\n" +

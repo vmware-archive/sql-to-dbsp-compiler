@@ -37,7 +37,8 @@ import java.util.List;
 /**
  * Represents the data from a .test file from the
  * SqlLogicTest test framework.
- *
+ */
+/*
  *         The Test file format is described at
  *         https://www.sqlite.org/sqllogictest/doc/tip/about.wiki.
  *

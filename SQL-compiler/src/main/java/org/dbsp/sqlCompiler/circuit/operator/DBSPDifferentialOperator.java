@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 
 import javax.annotation.Nullable;
 import java.util.List;

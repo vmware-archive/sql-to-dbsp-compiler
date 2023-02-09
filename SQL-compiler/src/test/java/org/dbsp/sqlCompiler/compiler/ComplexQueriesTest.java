@@ -32,7 +32,7 @@ import java.io.IOException;
 @SuppressWarnings("SpellCheckingInspection")
 public class ComplexQueriesTest extends BaseSQLTests {
     @Test
-    public void smallTaxiTest() throws SqlParseException, IOException, InterruptedException {
+    public void smallTaxiTest() throws SqlParseException {
         String ddl = "CREATE TABLE green_tripdata\n" +
                 "(\n" +
                 "        lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
@@ -60,7 +60,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
     }
 
     @Test
-    public void taxiTest() throws SqlParseException, IOException, InterruptedException {
+    public void taxiTest() throws SqlParseException {
         String ddl = "CREATE TABLE green_tripdata\n" +
                 "(\n" +
                 "        lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
@@ -100,7 +100,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
 
     @Test
     // Not yet supported because of LAG
-    public void fraudDetectionTest() throws SqlParseException, IOException, InterruptedException {
+    public void fraudDetectionTest() throws SqlParseException {
         // fraudDetection-352718.cc_data.demo_
         String ddl0 = "CREATE TABLE demographics (\n" +
                 " cc_num FLOAT64 NOT NULL,\n" +

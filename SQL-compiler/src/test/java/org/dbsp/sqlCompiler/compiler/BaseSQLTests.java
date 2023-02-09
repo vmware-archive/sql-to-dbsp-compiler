@@ -23,8 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.*;
@@ -42,7 +40,6 @@ import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.Utilities;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 
 import java.io.IOException;
@@ -121,7 +118,7 @@ public class BaseSQLTests {
     }
 
     // Collect here all the tests to run and execute them using a single Rust compilation
-    static List<TestCase> testsToRun = new ArrayList<>();
+    static final List<TestCase> testsToRun = new ArrayList<>();
 
     @BeforeClass
     public static void prepareTests() throws IOException {

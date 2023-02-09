@@ -76,7 +76,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
      * This should be selected by the SQL dialect, but it seems
      * to be hardwired in the Calcite optimizer.
      */
-    public static int firstDOW = 1;
+    public static final int firstDOW = 1;
     /**
      * If true, the inputs to the circuit are generated from the CREATE TABLE
      * statements.  Otherwise they are generated from the LogicalTableScan

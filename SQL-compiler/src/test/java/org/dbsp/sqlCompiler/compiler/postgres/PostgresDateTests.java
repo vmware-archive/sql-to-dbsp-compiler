@@ -47,7 +47,7 @@ import org.junit.Test;
  */
 @SuppressWarnings("JavadocLinkAsPlainText")
 public class PostgresDateTests extends BaseSQLTests {
-    static DBSPType nullableDate = DBSPTypeDate.instance.setMayBeNull(true);
+    static final DBSPType nullableDate = DBSPTypeDate.instance.setMayBeNull(true);
 
     public DBSPCompiler compileQuery(String query, boolean optimize) throws SqlParseException {
         String data = "CREATE TABLE DATE_TBL (f1 date);\n" +

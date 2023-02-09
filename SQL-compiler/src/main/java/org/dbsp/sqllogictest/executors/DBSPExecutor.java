@@ -23,7 +23,6 @@
 
 package org.dbsp.sqllogictest.executors;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;

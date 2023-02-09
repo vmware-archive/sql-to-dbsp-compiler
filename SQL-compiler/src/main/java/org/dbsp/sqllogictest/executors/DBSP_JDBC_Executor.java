@@ -72,10 +72,10 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
         return result;
     }
 
-    static String regexCreate = "create\\s+table\\s+(\\w+)";
-    static Pattern patCreate = Pattern.compile(regexCreate);
-    static String regexDrop = "drop\\s+table\\s+(\\w+)";
-    static Pattern patDrop = Pattern.compile(regexDrop);
+    static final String regexCreate = "create\\s+table\\s+(\\w+)";
+    static final Pattern patCreate = Pattern.compile(regexCreate);
+    static final String regexDrop = "drop\\s+table\\s+(\\w+)";
+    static final Pattern patDrop = Pattern.compile(regexDrop);
 
     @Nullable
     String rewriteCreateTable(String command) throws SQLException {

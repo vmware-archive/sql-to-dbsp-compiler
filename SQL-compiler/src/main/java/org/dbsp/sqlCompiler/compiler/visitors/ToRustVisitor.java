@@ -246,6 +246,22 @@ public class ToRustVisitor extends CircuitVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPIncrementalDistinctOperator operator) {
+        DBSPType streamType = new DBSPTypeStream(operator.outputType);
+        this.writeComments(operator)
+                .append("let ")
+                .append(operator.getName())
+                .append(": ");
+        streamType.accept(this.innerVisitor);
+        this.builder.append(" = ")
+                .append(operator.input().getName())
+                .append(".")
+                .append(operator.operation)
+                .append("::<()>();");
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPSinkOperator operator) {
         this.writeComments(operator.query);
         this.writeComments(operator)
