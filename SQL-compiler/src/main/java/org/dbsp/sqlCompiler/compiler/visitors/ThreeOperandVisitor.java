@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.compiler.visitors;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.*;
+import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
@@ -110,11 +111,16 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     /**
      * Given an expression replace it by a temporary variable.
+     * However, if the expression is "simple", e.g. a variable reference, do nothing.
      * As a side-effect insert a statement defining the variable in the toInsert list.
      */
-    DBSPVariablePath remap(DBSPExpression expression) {
+    DBSPExpression remap(DBSPExpression expression) {
+        if (expression.is(DBSPVariablePath.class))
+            return expression;
         expression.accept(this);
         DBSPExpression replacement = this.getResultExpression();
+        if (expression.is(DBSPClosureExpression.class))
+            return replacement;
         String tmp = this.gen.toString();
         DBSPLetStatement stat = new DBSPLetStatement(tmp, replacement, false);
         this.toInsert.add(stat);
@@ -163,7 +169,7 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
             toInsert.add(stat);
             functionReplacement = stat.getVarReference();
         }
-        DBSPExpression[] args = Linq.map(expression.arguments, this::remap, DBSPExpression.class);
+        DBSPExpression[] args = Linq.map(expression.arguments, e -> this.makeBlock(this.remap(e)), DBSPExpression.class);
         DBSPExpression result = new DBSPApplyExpression(functionReplacement, expression.getType(), args);
         this.map(expression, result);
         return false;
@@ -179,8 +185,8 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
             toInsert.add(stat);
             functionReplacement = stat.getVarReference();
         }
-        DBSPExpression self = this.remap(expression.self);
-        DBSPExpression[] args = Linq.map(expression.arguments, this::remap, DBSPExpression.class);
+        DBSPExpression self = this.makeBlock(this.remap(expression.self));
+        DBSPExpression[] args = Linq.map(expression.arguments, e -> this.makeBlock(this.remap(e)), DBSPExpression.class);
         DBSPExpression result = new DBSPApplyMethodExpression(
                 functionReplacement, expression.getType(), self, args);
         this.map(expression, result);
@@ -194,16 +200,16 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     @Override
     public boolean preorder(DBSPAssignmentExpression expression) {
-        DBSPVariablePath left = this.remap(expression.left);
-        DBSPVariablePath right = this.remap(expression.right);
-        DBSPExpression result = new DBSPAssignmentExpression(left, right);
+        // We are assuming that the expression on the lhs is not complicated
+        DBSPExpression right = this.remap(expression.right);
+        DBSPExpression result = new DBSPAssignmentExpression(expression.left, right);
         this.map(expression, result);
         return false;
     }
 
     @Override
     public boolean preorder(DBSPDerefExpression expression) {
-        DBSPVariablePath var = this.remap(expression.expression);
+        DBSPExpression var = this.remap(expression.expression);
         DBSPExpression result = new DBSPDerefExpression(var);
         this.map(expression, result);
         return false;
@@ -211,7 +217,7 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     @Override
     public boolean preorder(DBSPBorrowExpression expression) {
-        DBSPVariablePath var = this.remap(expression.expression);
+        DBSPExpression var = this.remap(expression.expression);
         DBSPExpression result = var.borrow();
         this.map(expression, result);
         return false;
@@ -219,11 +225,11 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     @Override
     public boolean preorder(DBSPIfExpression expression) {
-        DBSPVariablePath cond = this.remap(expression.condition);
+        DBSPExpression cond = this.remap(expression.condition);
         DBSPExpression condBlock = this.makeBlock(cond);
-        DBSPVariablePath positive = this.remap(expression.positive);
+        DBSPExpression positive = this.remap(expression.positive);
         DBSPExpression positiveBlock = this.makeBlock(positive);
-        DBSPVariablePath negative = this.remap(expression.negative);
+        DBSPExpression negative = this.remap(expression.negative);
         DBSPExpression negativeBlock = this.makeBlock(negative);
         DBSPExpression result = new DBSPIfExpression(
                 expression.getNode(), condBlock, positiveBlock, negativeBlock);
@@ -237,7 +243,7 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
             this.map(expression, expression);
             return false;
         }
-        DBSPVariablePath var = this.remap(expression.expression);
+        DBSPExpression var = this.remap(expression.expression);
         DBSPExpression result = new DBSPFieldExpression(expression.getNode(), var, expression.fieldNo);
         this.map(expression, result);
         return false;
@@ -245,7 +251,7 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     @Override
     public boolean preorder(DBSPUnaryExpression expression) {
-        DBSPVariablePath var = this.remap(expression.left);
+        DBSPExpression var = this.remap(expression.left);
         DBSPType type = expression.getNonVoidType();
         DBSPExpression result = new DBSPUnaryExpression(expression.getNode(), type,
                 expression.operation, var);
@@ -279,7 +285,7 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     @Override
     public boolean preorder(DBSPCastExpression expression) {
-        DBSPVariablePath var = this.remap(expression.source);
+        DBSPExpression var = this.remap(expression.source);
         DBSPType type = expression.getNonVoidType();
         DBSPExpression result = new DBSPCastExpression(expression.getNode(), var, type);
         this.map(expression, result);
@@ -288,8 +294,8 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     @Override
     public boolean preorder(DBSPBinaryExpression expression) {
-        DBSPVariablePath left = this.remap(expression.left);
-        DBSPVariablePath right = this.remap(expression.right);
+        DBSPExpression left = this.remap(expression.left);
+        DBSPExpression right = this.remap(expression.right);
         DBSPType type = expression.getNonVoidType();
         DBSPExpression result = new DBSPBinaryExpression(expression.getNode(), type, expression.operation, left, right);
         this.map(expression, result);
@@ -325,13 +331,25 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
     ////////////////// Statements
 
     @Override
+    public boolean preorder(DBSPExpressionStatement statement) {
+        statement.expression.accept(this);
+        DBSPExpression mapped = this.getResultExpression();
+        DBSPExpressionStatement result = new DBSPExpressionStatement(mapped);
+        this.map(statement, result);
+        this.toInsert.add(result);
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPLetStatement statement) {
         if (statement.initializer == null)
             return false;
         statement.initializer.accept(this);
         DBSPExpression result = this.getResultExpression();
         DBSPExpression init = this.makeBlock(result);
-        this.map(statement, new DBSPLetStatement(statement.variable, init));
+        DBSPStatement let = new DBSPLetStatement(statement.variable, init);
+        this.map(statement, let);
+        this.toInsert.add(let);
         return false;
     }
 }

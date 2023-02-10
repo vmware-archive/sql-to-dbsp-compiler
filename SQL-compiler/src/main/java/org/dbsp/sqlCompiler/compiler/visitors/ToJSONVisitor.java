@@ -108,6 +108,7 @@ public class ToJSONVisitor extends CircuitVisitor implements IModule {
         ThreeOperandVisitor tav = new ThreeOperandVisitor();
         CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(tav);
         node = rewriter.apply(node);
+        //System.out.println(node);
         Logger.instance.from(visitor, 1)
                         .append("Rewritten circuit is ")
                         .append(node.toString())
