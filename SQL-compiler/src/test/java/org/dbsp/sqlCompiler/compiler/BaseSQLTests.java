@@ -170,7 +170,6 @@ public class BaseSQLTests {
                 circuit = optimizer.apply(circuit);
             }
 
-            System.out.println(circuit);
             ThreeOperandVisitor tav = new ThreeOperandVisitor();
             CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(tav);
             circuit = rewriter.apply(circuit);

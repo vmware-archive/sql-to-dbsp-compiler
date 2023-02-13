@@ -47,6 +47,36 @@ import java.util.function.Function;
  * };
  */
 public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPInnerNode, IDBSPInnerNode>, IModule {
+    static class PendingStatements {
+        final List<List<DBSPStatement>> statements = new ArrayList<>();
+
+        public PendingStatements() {
+            this.statements.add(new ArrayList<>());
+        }
+
+        int lastIndex() {
+            return this.statements.size() - 1;
+        }
+
+        public List<DBSPStatement> getCurrentAndClear() {
+            List<DBSPStatement> result = new ArrayList<>(this.statements.get(this.lastIndex()));
+            this.statements.get(this.lastIndex()).clear();
+            return result;
+        }
+
+        public void add(DBSPStatement statement) {
+            this.statements.get(this.lastIndex()).add(statement);
+        }
+
+        public void pop() {
+            this.statements.remove(this.lastIndex());
+        }
+
+        public void push() {
+            this.statements.add(new ArrayList<>());
+        }
+    }
+
     /**
      * Result produced by the last preorder invocation.
      */
@@ -56,15 +86,12 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
      * Generates fresh names.
      */
     private final NameGen gen;
-    /**
-     * List of statements defining temporaries created so far.
-     */
-    protected final List<DBSPStatement> toInsert;
+    protected final PendingStatements pending;
 
     public ThreeOperandVisitor() {
         super(true);
         this.gen = new NameGen("tmp");
-        this.toInsert = new ArrayList<>();
+        this.pending = new PendingStatements();
         this.lastResult = null;
     }
 
@@ -112,27 +139,28 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
     /**
      * Given an expression replace it by a temporary variable.
      * However, if the expression is "simple", e.g. a variable reference, do nothing.
-     * As a side-effect insert a statement defining the variable in the toInsert list.
+     * As a side effect insert a statement defining the variable in the pending list.
      */
     DBSPExpression remap(DBSPExpression expression) {
         if (expression.is(DBSPVariablePath.class))
             return expression;
         expression.accept(this);
         DBSPExpression replacement = this.getResultExpression();
-        if (expression.is(DBSPClosureExpression.class))
-            return replacement;
         String tmp = this.gen.toString();
-        DBSPLetStatement stat = new DBSPLetStatement(tmp, replacement, false);
-        this.toInsert.add(stat);
+        DBSPLetStatement stat = new DBSPLetStatement(tmp, replacement, true);
+        this.pending.add(stat);
         return stat.getVarReference();
     }
 
+    /**
+     * Generate a block from all the statements in the last pending list
+     * and return an expression equivalent to 'last'.
+     */
     DBSPExpression makeBlock(@Nullable DBSPExpression last) {
-        if (this.toInsert.isEmpty())
+        List<DBSPStatement> toInsert = this.pending.getCurrentAndClear();
+        if (toInsert.isEmpty())
             return Objects.requireNonNull(last);
-        DBSPExpression result = new DBSPBlockExpression(new ArrayList<>(this.toInsert), last);
-        this.toInsert.clear();
-        return result;
+        return new DBSPBlockExpression(toInsert, last);
     }
 
     @Override
@@ -166,10 +194,10 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
         if (functionReplacement != expression.function) {
             String tmp = this.gen.toString();
             DBSPLetStatement stat = new DBSPLetStatement(tmp, functionReplacement, false);
-            toInsert.add(stat);
+            this.pending.add(stat);
             functionReplacement = stat.getVarReference();
         }
-        DBSPExpression[] args = Linq.map(expression.arguments, e -> this.makeBlock(this.remap(e)), DBSPExpression.class);
+        DBSPExpression[] args = Linq.map(expression.arguments, this::remap, DBSPExpression.class);
         DBSPExpression result = new DBSPApplyExpression(functionReplacement, expression.getType(), args);
         this.map(expression, result);
         return false;
@@ -182,11 +210,11 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
         if (functionReplacement != expression.function) {
             String tmp = this.gen.toString();
             DBSPLetStatement stat = new DBSPLetStatement(tmp, functionReplacement, false);
-            toInsert.add(stat);
+            this.pending.add(stat);
             functionReplacement = stat.getVarReference();
         }
-        DBSPExpression self = this.makeBlock(this.remap(expression.self));
-        DBSPExpression[] args = Linq.map(expression.arguments, e -> this.makeBlock(this.remap(e)), DBSPExpression.class);
+        DBSPExpression self = this.remap(expression.self);
+        DBSPExpression[] args = Linq.map(expression.arguments, this::remap, DBSPExpression.class);
         DBSPExpression result = new DBSPApplyMethodExpression(
                 functionReplacement, expression.getType(), self, args);
         this.map(expression, result);
@@ -227,10 +255,14 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
     public boolean preorder(DBSPIfExpression expression) {
         DBSPExpression cond = this.remap(expression.condition);
         DBSPExpression condBlock = this.makeBlock(cond);
+        this.pending.push();
         DBSPExpression positive = this.remap(expression.positive);
         DBSPExpression positiveBlock = this.makeBlock(positive);
+        this.pending.pop();
+        this.pending.push();
         DBSPExpression negative = this.remap(expression.negative);
         DBSPExpression negativeBlock = this.makeBlock(negative);
+        this.pending.pop();
         DBSPExpression result = new DBSPIfExpression(
                 expression.getNode(), condBlock, positiveBlock, negativeBlock);
         this.map(expression, result);
@@ -304,9 +336,11 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     @Override
     public boolean preorder(DBSPClosureExpression expression) {
+        this.pending.push();
         expression.body.accept(this);
         DBSPExpression newBody = this.getResultExpression();
         DBSPExpression block = this.makeBlock(newBody);
+        this.pending.pop();
         DBSPExpression result = new DBSPClosureExpression(expression.getNode(),
                 block, expression.parameters);
         this.map(expression, result);
@@ -317,6 +351,8 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
     public boolean preorder(DBSPBlockExpression expression) {
         for (DBSPStatement statement: expression.contents) {
             statement.accept(this);
+            if (this.lastResult != null)
+                this.pending.add(this.lastResult.to(DBSPStatement.class));
         }
         DBSPExpression last = null;
         if (expression.lastExpression != null) {
@@ -336,7 +372,6 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
         DBSPExpression mapped = this.getResultExpression();
         DBSPExpressionStatement result = new DBSPExpressionStatement(mapped);
         this.map(statement, result);
-        this.toInsert.add(result);
         return false;
     }
 
@@ -347,9 +382,8 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
         statement.initializer.accept(this);
         DBSPExpression result = this.getResultExpression();
         DBSPExpression init = this.makeBlock(result);
-        DBSPStatement let = new DBSPLetStatement(statement.variable, init);
+        DBSPStatement let = new DBSPLetStatement(statement.variable, init, statement.mutable);
         this.map(statement, let);
-        this.toInsert.add(let);
         return false;
     }
 }
