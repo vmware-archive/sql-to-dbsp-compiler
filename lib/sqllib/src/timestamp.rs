@@ -1,6 +1,9 @@
 //! Support for SQL Timestamp and Date data types.
 
-use std::ops::Add;
+use std::{
+    fmt::{self, Debug},
+    ops::Add
+};
 use size_of::SizeOf;
 use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Timelike, Utc};
 use serde::{de::Error as _, ser::Error as _, Deserialize, Deserializer, Serialize, Serializer};
@@ -8,15 +11,25 @@ use crate::interval::{
     ShortInterval,
     LongInterval,
 };
-use serdebug::SerDebug;
 
 /// Similar to a unix timestamp: a positive time interval between Jan 1 1970 and the current time.
 /// The supported range is limited (e.g., up to 2038 in MySQL).
 /// We use milliseconds to represent the interval.
-#[derive(SerDebug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, SizeOf)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, SizeOf)]
 pub struct Timestamp {
     // since unix epoch
     milliseconds: i64,
+}
+
+impl Debug for Timestamp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let datetime =
+            NaiveDateTime::from_timestamp_millis(self.milliseconds).ok_or_else(|| {
+                fmt::Error
+            })?;
+
+        f.write_str(&datetime.format("%F %T%.f").to_string())
+    }
 }
 
 /// Serialize timestamp into the `YYYY-MM-DD HH:MM:SS.fff` format, where
