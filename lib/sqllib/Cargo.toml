@@ -13,5 +13,4 @@ geo-types = { version = "0.7" }
 size-of = { version = "0.1.1", features = ["rust_decimal"] }
 serde = { version = "1.0", features = ["derive"] }
 num = { version = "0.4.0" }
-chrono = { version = "0.4.22" }
-serdebug = { version = "1.0.5" }
+chrono = { version = "0.4.23" }
