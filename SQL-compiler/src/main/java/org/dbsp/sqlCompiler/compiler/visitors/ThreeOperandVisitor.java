@@ -47,33 +47,68 @@ import java.util.function.Function;
  * };
  */
 public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPInnerNode, IDBSPInnerNode>, IModule {
+    /**
+     * Keeps track of statements that will eventually form the body of a set of block
+     * statements.  The statements will usually have the form 'let temp = expr;'.
+     */
     static class PendingStatements {
+        /**
+         * A list of statements for each "context".  For example,
+         * an 'if' expression uses the outer context for evaluating the
+         * condition and two inner contexts for evaluating the 'then' and 'else'
+         * blocks, recursively.
+         */
         final List<List<DBSPStatement>> statements = new ArrayList<>();
 
         public PendingStatements() {
             this.statements.add(new ArrayList<>());
         }
 
-        int lastIndex() {
+        private int lastIndex() {
             return this.statements.size() - 1;
         }
 
+        /**
+         * Get all the statements in the innermost context and
+         * empty it, but do not delete it.
+         */
         public List<DBSPStatement> getCurrentAndClear() {
             List<DBSPStatement> result = new ArrayList<>(this.statements.get(this.lastIndex()));
             this.statements.get(this.lastIndex()).clear();
             return result;
         }
 
+        /**
+         * Add a new statement to the innermost context.
+         */
         public void add(DBSPStatement statement) {
             this.statements.get(this.lastIndex()).add(statement);
         }
 
+        /**
+         * Delete the innermost context.
+         */
         public void pop() {
             this.statements.remove(this.lastIndex());
         }
 
+        /**
+         * Create a new innermost context.
+         */
         public void push() {
             this.statements.add(new ArrayList<>());
+        }
+
+        /**
+         * Generate a block from all the statements in the innermost context,
+         * and return an expression equivalent to 'last'.
+         * Clears the innermost context.
+         */
+        DBSPExpression makeBlock(@Nullable DBSPExpression last) {
+            List<DBSPStatement> toInsert = this.getCurrentAndClear();
+            if (toInsert.isEmpty())
+                return Objects.requireNonNull(last);
+            return new DBSPBlockExpression(toInsert, last);
         }
     }
 
@@ -150,17 +185,6 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
         DBSPLetStatement stat = new DBSPLetStatement(tmp, replacement, true);
         this.pending.add(stat);
         return stat.getVarReference();
-    }
-
-    /**
-     * Generate a block from all the statements in the last pending list
-     * and return an expression equivalent to 'last'.
-     */
-    DBSPExpression makeBlock(@Nullable DBSPExpression last) {
-        List<DBSPStatement> toInsert = this.pending.getCurrentAndClear();
-        if (toInsert.isEmpty())
-            return Objects.requireNonNull(last);
-        return new DBSPBlockExpression(toInsert, last);
     }
 
     @Override
@@ -254,14 +278,14 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
     @Override
     public boolean preorder(DBSPIfExpression expression) {
         DBSPExpression cond = this.remap(expression.condition);
-        DBSPExpression condBlock = this.makeBlock(cond);
+        DBSPExpression condBlock = this.pending.makeBlock(cond);
         this.pending.push();
         DBSPExpression positive = this.remap(expression.positive);
-        DBSPExpression positiveBlock = this.makeBlock(positive);
+        DBSPExpression positiveBlock = this.pending.makeBlock(positive);
         this.pending.pop();
         this.pending.push();
         DBSPExpression negative = this.remap(expression.negative);
-        DBSPExpression negativeBlock = this.makeBlock(negative);
+        DBSPExpression negativeBlock = this.pending.makeBlock(negative);
         this.pending.pop();
         DBSPExpression result = new DBSPIfExpression(
                 expression.getNode(), condBlock, positiveBlock, negativeBlock);
@@ -339,7 +363,7 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
         this.pending.push();
         expression.body.accept(this);
         DBSPExpression newBody = this.getResultExpression();
-        DBSPExpression block = this.makeBlock(newBody);
+        DBSPExpression block = this.pending.makeBlock(newBody);
         this.pending.pop();
         DBSPExpression result = new DBSPClosureExpression(expression.getNode(),
                 block, expression.parameters);
@@ -359,7 +383,7 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
             expression.lastExpression.accept(this);
             last = this.getResultExpression();
         }
-        DBSPExpression result = this.makeBlock(last);
+        DBSPExpression result = this.pending.makeBlock(last);
         this.map(expression, result);
         return false;
     }
@@ -381,7 +405,7 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
             return false;
         statement.initializer.accept(this);
         DBSPExpression result = this.getResultExpression();
-        DBSPExpression init = this.makeBlock(result);
+        DBSPExpression init = this.pending.makeBlock(result);
         DBSPStatement let = new DBSPLetStatement(statement.variable, init, statement.mutable);
         this.map(statement, let);
         return false;
