@@ -170,6 +170,9 @@ public class BaseSQLTests {
                 circuit = optimizer.apply(circuit);
             }
 
+            ThreeOperandVisitor tav = new ThreeOperandVisitor();
+            CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(tav);
+            circuit = rewriter.apply(circuit);
             // Test json serialization
             ToJSONVisitor.validateJson(circuit);
             this.addRustTestCase(circuit, streams);
