@@ -48,8 +48,6 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
-import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
-import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
@@ -998,49 +996,27 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         this.circuit.addOperator(agg);
 
         // Generate comparison function for sorting the vector
-        DBSPExpression comparators = null;
+        DBSPComparatorExpression comparator = new DBSPNoComparatorExpression(sort, inputRowType);
         for (RelFieldCollation collation: sort.getCollation().getFieldCollations()) {
             int field = collation.getFieldIndex();
             RelFieldCollation.Direction direction = collation.getDirection();
-            DBSPExpression comparator = new DBSPApplyExpression(
-                    DBSPTypeAny.instance.path(
-                            new DBSPPath("Extract", "new")),
-                    row.field(field).closure(row.asRefParameter()));
+            boolean ascending;
             switch (direction) {
                 case ASCENDING:
+                    ascending = true;
                     break;
                 case DESCENDING:
-                    comparator = new DBSPApplyMethodExpression("rev", DBSPTypeAny.instance, comparator);
+                    ascending = false;
                     break;
+                default:
                 case STRICTLY_ASCENDING:
                 case STRICTLY_DESCENDING:
                 case CLUSTERED:
                     throw new Unimplemented(sort);
             }
-            if (comparators == null)
-                comparators = comparator;
-            else
-                comparators = new DBSPApplyMethodExpression("then", DBSPTypeAny.instance, comparators, comparator);
+            comparator = new DBSPFieldComparatorExpression(sort, comparator, field, ascending);
         }
-        if (comparators == null)
-            throw new TranslationException("ORDER BY without order?", sort);
-        DBSPExpression comp = this.declare("comp", comparators);
-        DBSPVariablePath k = new DBSPTypeRawTuple().ref().var("k");
-        DBSPVariablePath v = vecType.ref().var("v");
-        DBSPVariablePath v1 = vecType.var("v1");
-
-        DBSPVariablePath a = inputRowType.var("a");
-        DBSPVariablePath b = inputRowType.var("b");
-        DBSPExpression sorter =
-                new DBSPBlockExpression(
-                    Linq.list(
-                            new DBSPLetStatement(v1.variable,
-                                    v.applyClone(),true),
-                            new DBSPExpressionStatement(
-                                    new DBSPApplyMethodExpression("sort_unstable_by", vecType, v1,
-                                                    new DBSPApplyMethodExpression("compare", DBSPTypeAny.instance, comp, a, b).closure(
-                                                    a.asRefParameter(), b.asRefParameter())))),
-                    v1).closure(new DBSPParameter(k, v));
+        DBSPSortExpression sorter = new DBSPSortExpression(sort, inputRowType, comparator);
         DBSPOperator sortElement = new DBSPMapOperator(sort,
                 this.declare("sort", sorter), vecType, agg);
         this.assignOperator(sort, sortElement);

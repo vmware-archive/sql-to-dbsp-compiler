@@ -64,6 +64,58 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPSortExpression expression) {
+        /*
+        move |(k, v): (&(), &Vec<Tuple<...>>, ), | -> Vec<Tuple<...>> {
+            let comp = ...;    // comparator
+            let mut ec: _ = move |a: &Tuple<...>, b: &Tuple<...>, | -> _ {
+                comp.compare(a, b)
+            };
+            let mut v = v.clone();
+            v.sort_unstable_by(ec);
+            v
+        }
+         */
+        this.builder.append("move |(k, v): (&(), &Vec<");
+        expression.elementType.accept(this);
+        this.builder.append(">)| -> Vec<");
+        expression.elementType.accept(this);
+        this.builder.append("> {").increase();
+        this.builder.append("let ec = ");
+        expression.comparator.accept(this);
+        this.builder.append(";").newline();
+        this.builder.append("let comp = move |a: &");
+        expression.elementType.accept(this);
+        this.builder.append(", b: &");
+        expression.elementType.accept(this);
+        this.builder.append("| { ec.compare(a, b) };");
+        this.builder.append("let mut v = v.clone();").newline()
+                .append("v.sort_unstable_by(comp);").newline()
+                .append("v").newline()
+                .decrease()
+                .append("}");
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPFieldComparatorExpression expression) {
+        expression.source.accept(this);
+        boolean hasSource = expression.source.is(DBSPFieldComparatorExpression.class);
+        if (hasSource)
+            this.builder.append(".then(");
+        this.builder.append("Extract::new(move |r: &");
+        expression.tupleType().accept(this);
+        this.builder.append("| r.")
+                .append(expression.fieldNo)
+                .append(")");
+        if (!expression.ascending)
+            this.builder.append(".rev()");
+        if (hasSource)
+            this.builder.append(")");
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPTimestampLiteral literal) {
         assert literal.value != null;
         if (literal.mayBeNull())

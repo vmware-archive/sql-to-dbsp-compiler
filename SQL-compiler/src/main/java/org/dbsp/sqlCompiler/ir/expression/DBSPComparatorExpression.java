@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,16 +21,34 @@
  * SOFTWARE.
  */
 
+package org.dbsp.sqlCompiler.ir.expression;
+
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
+
+import javax.annotation.Nullable;
+
 /**
- * Package that doesn't allow null values as method parameters.
+ * A base class representing a comparator.
  */
+public abstract class DBSPComparatorExpression extends DBSPExpression {
+    protected DBSPComparatorExpression(@Nullable Object node) {
+        super(node, DBSPTypeAny.instance);
+    }
 
-@ParametersAreNonnullByDefault
-@FieldsAreNonnullByDefault
-@MethodsAreNonnullByDefault
-package org.dbsp.sqlCompiler.compiler.state;
+    @Override
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        visitor.postorder(this);
+    }
 
-import org.dbsp.util.FieldsAreNonnullByDefault;
-import org.dbsp.util.MethodsAreNonnullByDefault;
+    public DBSPComparatorExpression then(@Nullable Object node, int fieldNo, boolean ascending) {
+        return new DBSPFieldComparatorExpression(node, this, fieldNo, ascending);
+    }
 
-import javax.annotation.ParametersAreNonnullByDefault;
+    /**
+     * Type of tuple that is being compared.
+     */
+    public abstract DBSPType tupleType();
+}

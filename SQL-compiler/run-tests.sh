@@ -10,6 +10,7 @@ if [ ! -d ../../sqllogictest ]; then
     exit 1
 fi
 
+mvn clean
 mvn -DskipTests package
 mvn test
 echo "Running sqllogictest tests"
