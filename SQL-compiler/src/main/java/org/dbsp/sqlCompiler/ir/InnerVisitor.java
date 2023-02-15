@@ -332,6 +332,26 @@ public abstract class InnerVisitor {
 
     // Expressions
 
+    public boolean preorder(DBSPSortExpression node) {
+        if (this.visitSuper) return this.preorder((DBSPExpression) node);
+        else return true;
+    }
+
+    public boolean preoroder(DBSPComparatorExpression node) {
+        if (this.visitSuper) return this.preorder((DBSPExpression) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPNoComparatorExpression node) {
+        if (this.visitSuper) return this.preorder((DBSPComparatorExpression) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPFieldComparatorExpression node) {
+        if (this.visitSuper) return this.preorder((DBSPComparatorExpression) node);
+        else return true;
+    }
+
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean preorder(DBSPStructExpression node) {
         if (this.visitSuper) return this.preorder((DBSPExpression) node);
@@ -769,6 +789,22 @@ public abstract class InnerVisitor {
     }
 
     // Expressions
+
+    public void postorder(DBSPSortExpression node) {
+        if (this.visitSuper) this.postorder((DBSPExpression) node);
+    }
+
+    public void postorder(DBSPComparatorExpression node) {
+        if (this.visitSuper) this.postorder((DBSPExpression) node);
+    }
+
+    public void postorder(DBSPNoComparatorExpression node) {
+        if (this.visitSuper) this.postorder((DBSPComparatorExpression) node);
+    }
+
+    public void postorder(DBSPFieldComparatorExpression node) {
+        if (this.visitSuper) this.postorder((DBSPComparatorExpression) node);
+    }
 
     public void postorder(DBSPStructExpression node) {
         if (this.visitSuper) this.postorder((DBSPExpression) node);

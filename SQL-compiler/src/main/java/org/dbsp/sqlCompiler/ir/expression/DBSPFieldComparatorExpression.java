@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,29 +21,39 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.expression;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
+
+import javax.annotation.Nullable;
 
 /**
- * Represents the type of a Rust Vec as a TypeUser.
+ * A comparator that looks at the field of a tuple.
+ * A comparator takes a field of a tuple and compares tuples on the specified field.
+ * It also takes a direction, indicating whether the sort is ascending or descending.
  */
-public class DBSPTypeVec extends DBSPTypeUser {
-    public DBSPTypeVec(DBSPType vectorElementType) {
-        super(null, "Vec", false, vectorElementType);
-    }
+public class DBSPFieldComparatorExpression extends DBSPComparatorExpression {
+    public DBSPComparatorExpression source;
+    public final boolean ascending;
+    public final int fieldNo;
 
-    @JsonIgnore
-    public DBSPType getElementType() {
-        return this.getTypeArg(0);
+    public DBSPFieldComparatorExpression(@Nullable Object node, DBSPComparatorExpression source, int fieldNo, boolean ascending) {
+        super(node);
+        this.source = source;
+        this.fieldNo = fieldNo;
+        this.ascending = ascending;
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        for (DBSPType type: this.typeArgs)
-            type.accept(visitor);
+        this.source.accept(visitor);
         visitor.postorder(this);
+    }
+
+    public DBSPType tupleType() {
+        return source.tupleType();
     }
 }

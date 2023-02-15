@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,29 +21,25 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.ir.expression;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
+
+import javax.annotation.Nullable;
 
 /**
- * Represents the type of a Rust Vec as a TypeUser.
+ * A comparator that does not compare any fields.
  */
-public class DBSPTypeVec extends DBSPTypeUser {
-    public DBSPTypeVec(DBSPType vectorElementType) {
-        super(null, "Vec", false, vectorElementType);
-    }
+public class DBSPNoComparatorExpression extends DBSPComparatorExpression {
+    public final DBSPType tupleType;
 
-    @JsonIgnore
-    public DBSPType getElementType() {
-        return this.getTypeArg(0);
+    public DBSPNoComparatorExpression(@Nullable Object node, DBSPType tupleType) {
+        super(node);
+        this.tupleType = tupleType;
     }
 
     @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        for (DBSPType type: this.typeArgs)
-            type.accept(visitor);
-        visitor.postorder(this);
+    public DBSPType tupleType() {
+        return this.tupleType;
     }
 }
