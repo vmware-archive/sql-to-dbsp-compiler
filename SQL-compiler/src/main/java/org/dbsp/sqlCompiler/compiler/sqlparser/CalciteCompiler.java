@@ -51,6 +51,7 @@ import org.apache.calcite.sql.fun.SqlLibraryOperatorTableFactory;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.parser.babel.SqlBabelParserImpl;
 import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
 import org.apache.calcite.sql.type.*;
 import org.apache.calcite.sql.util.SqlOperatorTables;
@@ -176,13 +177,15 @@ public class CalciteCompiler implements IModule {
         connConfigProp.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
         connConfigProp.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
         connConfigProp.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        connConfigProp.put(CalciteConnectionProperty.CONFORMANCE.camelName(), SqlConformanceEnum.LENIENT.toString());
+        connConfigProp.put(CalciteConnectionProperty.CONFORMANCE.camelName(), SqlConformanceEnum.BABEL.toString());
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
         SqlConformance conformance = connectionConfig.conformance();
         this.parserConfig = SqlParser.config()
                 .withLex(options.ioOptions.lexicalRules)
                 // Add support for DDL language
                 .withParserFactory(SqlDdlParserImpl.FACTORY)
+                // TODO: would be nice to get DDL and BABEL at the same time...
+                //.withParserFactory(SqlBabelParserImpl.FACTORY)
                 .withConformance(conformance);
         this.typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
         this.catalog = new Catalog("schema");
@@ -194,8 +197,6 @@ public class CalciteCompiler implements IModule {
         rootSchema.add("FLOAT32", factory -> factory.createSqlType(SqlTypeName.FLOAT));
         rootSchema.add("STRING", factory -> factory.createSqlType(SqlTypeName.VARCHAR));
         rootSchema.add("BOOL", factory -> factory.createSqlType(SqlTypeName.BOOLEAN));
-        // TODO: not entirely correct
-        rootSchema.add("UINT64", factory -> factory.createSqlType(SqlTypeName.BIGINT));
         Prepare.CatalogReader catalogReader = new CalciteCatalogReader(
                 rootSchema, Collections.singletonList(catalog.schemaName), this.typeFactory, connectionConfig);
 

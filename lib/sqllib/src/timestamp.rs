@@ -87,7 +87,7 @@ impl Timestamp {
     }
 
     pub fn to_dateTime(&self) -> DateTime<Utc> {
-        Utc.timestamp_opt(self.milliseconds / 1000, (self.milliseconds % 1000) as u32).single().unwrap()
+        Utc.timestamp_opt(self.milliseconds / 1000, ((self.milliseconds % 1000i64) as u32) * 1_000_000).single().unwrap()
     }
 
     pub fn from_dateTime(date: DateTime<Utc>) -> Self {
@@ -246,7 +246,8 @@ pub fn extract_Timestamp_dowN(value: Option<Timestamp>) -> Option<i64> {
 }
 
 pub fn extract_Timestamp_isodow(value: Timestamp) -> i64 {
-    extract_Timestamp_dow(value)
+    let date = value.to_dateTime();
+    (date.weekday().num_days_from_monday() as i64) + 1
 }
 
 pub fn extract_Timestamp_isodowN(value: Option<Timestamp>) -> Option<i64> {
@@ -270,24 +271,45 @@ pub fn extract_Timestamp_epochN(value: Option<Timestamp>) -> Option<i64> {
     value.map(|x| extract_Timestamp_epoch(x))
 }
 
-pub fn extract_Timestamp_second(_value: Timestamp) -> i64 {
-    0
+pub fn extract_Timestamp_millisecond(value: Timestamp) -> i64 {
+    let date = value.to_dateTime();
+    (date.second() * 1000 + date.timestamp_subsec_millis()).into()
+}
+
+pub fn extract_Timestamp_millisecondN(value: Option<Timestamp>) -> Option<i64> {
+    value.map(|x| extract_Timestamp_millisecond(x))
+}
+
+pub fn extract_Timestamp_microsecond(value: Timestamp) -> i64 {
+    let date = value.to_dateTime();
+    (date.second() * 1_000_000 + date.timestamp_subsec_micros()).into()
+}
+
+pub fn extract_Timestamp_microsecondN(value: Option<Timestamp>) -> Option<i64> {
+    value.map(|x| extract_Timestamp_microsecond(x))
+}
+
+pub fn extract_Timestamp_second(value: Timestamp) -> i64 {
+    let date = value.to_dateTime();
+    date.second().into()
 }
 
 pub fn extract_Timestamp_secondN(value: Option<Timestamp>) -> Option<i64> {
     value.map(|x| extract_Timestamp_second(x))
 }
 
-pub fn extract_Timestamp_minute(_value: Timestamp) -> i64 {
-    0
+pub fn extract_Timestamp_minute(value: Timestamp) -> i64 {
+    let date = value.to_dateTime();
+    date.minute().into()
 }
 
 pub fn extract_Timestamp_minuteN(value: Option<Timestamp>) -> Option<i64> {
     value.map(|x| extract_Timestamp_minute(x))
 }
 
-pub fn extract_Timestamp_hour(_value: Timestamp) -> i64 {
-    0
+pub fn extract_Timestamp_hour(value: Timestamp) -> i64 {
+    let date = value.to_dateTime();
+    date.hour().into()
 }
 
 pub fn extract_Timestamp_hourN(value: Option<Timestamp>) -> Option<i64> {
@@ -451,7 +473,7 @@ pub fn lte_TimestampN_TimestampN(left: Option<Timestamp>, right: Option<Timestam
 }
 
 pub fn floor_Timestamp_week(value: Timestamp) -> Timestamp {
-    let wd = extract_Timestamp_dow(value);
+    let wd = extract_Timestamp_dow(value) - Date::first_day_of_week();
     let ts = value.to_dateTime();
     let notime = ts.with_hour(0).unwrap()
         .with_minute(0).unwrap()
@@ -848,8 +870,8 @@ pub fn extract_Date_dowN(value: Option<Date>) -> Option<i64> {
 }
 
 pub fn extract_Date_isodow(value: Date) -> i64 {
-    let dow = extract_Date_dow(value) - 1;
-    if dow == 0 { 7 } else { dow }
+    let date = value.to_dateTime();
+    (date.weekday().num_days_from_monday() as i64) + 1
 }
 
 pub fn extract_Date_isodowN(value: Option<Date>) -> Option<i64> {

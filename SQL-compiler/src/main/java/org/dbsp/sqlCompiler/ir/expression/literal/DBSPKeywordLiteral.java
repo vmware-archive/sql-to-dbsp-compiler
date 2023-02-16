@@ -55,6 +55,9 @@ public class DBSPKeywordLiteral extends DBSPLiteral {
             case "second":
             case "minute":
             case "hour":
+            case "millisecond":
+            case "microsecond":
+            case "nanosecond":
                 break;
             default:
                 throw new Unimplemented(node != null ? node : keyword);

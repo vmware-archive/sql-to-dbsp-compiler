@@ -64,15 +64,16 @@ The following arithmetic operations are supported:
   * - ``INTERVAL`` - ``INTERVAL`` (of the same kind)
     - ``INTERVAL``
     - Subtract two intervals
-  * - ``TIMESTAMP`` - ``TIMESTAMP``
-    - ``INTERVAL`` (long)
-    - Subtract two timestamps, convert result into days
   * - ``INTERVAL`` * ``DOUBLE``
     - ``INTERVAL``
     - Multiply an interval by a scalar
   * - ``INTERVAL`` / ``DOUBLE``
     - ``INTERVAL``
     - Divide an interval by a scalar
+
+.. * - ``TIMESTAMP`` - ``TIMESTAMP``
+..  - ``INTERVAL`` (long)
+..  - Subtract two timestamps, convert result into days
 
 The following are legal time units:
 
@@ -113,8 +114,17 @@ The following are legal time units:
     - A minute within an hour, a number between 0 and 59
   * - ``SECOND``
     - A second within a minute, a number between 0 and 59
+  * - ``MILLISECOND``
+    - A millisecond within a *minute*, including the number of seconds
+      multiplied by 1000, a number between 0 and 59,999
+  * - ``MICROSECOND``
+    - A microsecond within a *minute*, including the number of seconds
+      multiplied by 1,000,000, a number between 0 and 59,999,999
   * - ``EPOCH``
-    - Unix epoch timestamp in seconds since 1970/01/01.
+    - Number of seconds from Unix epoch, i.e., 1970/01/01.
+
+Operations on dates
+-------------------
 
 The following operations are available on dates:
 
@@ -145,6 +155,32 @@ For dates it always returns 0, since dates have no time component.
 ``FLOOR(datetime TO <unit>)``, where ``<unit>`` is a time unit.
 
 ``CEIL(datetime TO <unit>)``, where ``<unit>`` is a time unit.
+
+Operations on timestamps
+------------------------
+
+The following operations are available on dates:
+
+``EXTRACT(<unit> FROM timestamp)`` where ``<unit>`` is a time unit, as
+described above.  Result is always a ``BIGINT`` value.
+
+The following abbreviations can be used as well:
+
+``YEAR(timestamp)`` is an abbreviation for ``EXTRACT(YEAR FROM timestamp)``.
+
+``MONTH(timestamp)`` is an abbreviation for ``EXTRACT(MONTH FROM timestamp)``.
+
+``DAYOFMONTH(timestamp)`` is an abbreviation for ``EXTRACT(DAY FROM
+timestamp)``.
+
+``DAYOFWEEK(timestamp)`` is an abbreviation for ``EXTRACT(DOW FROM
+timestamp)``.
+
+``HOUR(timestamp)`` is an abbreviation for ``EXTRACT(HOUR FROM timestamp)``.
+
+``MINUTE(timestamp)`` is an abbreviation for ``EXTRACT(MINUTE FROM timestamp)``.
+
+``SECOND(timestamp)`` is an abbreviation for ``EXTRACT(SECOND FROM timestamp)``.
 
 Important unsupported operations
 --------------------------------
