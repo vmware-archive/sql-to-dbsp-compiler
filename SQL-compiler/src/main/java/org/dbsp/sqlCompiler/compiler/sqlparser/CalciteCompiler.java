@@ -176,13 +176,15 @@ public class CalciteCompiler implements IModule {
         connConfigProp.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
         connConfigProp.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
         connConfigProp.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        connConfigProp.put(CalciteConnectionProperty.CONFORMANCE.camelName(), SqlConformanceEnum.LENIENT.toString());
+        connConfigProp.put(CalciteConnectionProperty.CONFORMANCE.camelName(), SqlConformanceEnum.BABEL.toString());
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
         SqlConformance conformance = connectionConfig.conformance();
         this.parserConfig = SqlParser.config()
                 .withLex(options.ioOptions.lexicalRules)
                 // Add support for DDL language
                 .withParserFactory(SqlDdlParserImpl.FACTORY)
+                // TODO: would be nice to get DDL and BABEL at the same time...
+                //.withParserFactory(SqlBabelParserImpl.FACTORY)
                 .withConformance(conformance);
         this.typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
         this.catalog = new Catalog("schema");

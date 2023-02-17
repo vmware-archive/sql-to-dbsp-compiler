@@ -330,6 +330,7 @@ does not support the "unique index" SQL statement.
 The results in this table were produced using the JDBC executor with
 Postgres as a backing database.
 
+<!---
 ### ZetsSQL tests
 
 We are working for adding support for the tests from ZetaSQL
@@ -353,3 +354,15 @@ We (will) have multiple executors:
 This executor does not really run any tests.  But it can still be used
 by the test loading mechanism to check that we correctly parse all
 test files.
+--->
+
+### Postgres tests
+
+We are manually converting Postgres tests
+<https://github.com/postgres/postgres/blob/master/src/test/regress/expected>
+to run on DBSP, since the Postgres SQL syntax is too different from
+the Calcite syntax (especially in the functions supported).  In some
+cases the semantics of Postgres SQL is different from Calcite; for
+example, in Postgres the days of the week are numbered from 0, where 0
+is Sunday, but in Calcite the days of the week are numbered from 1,
+where 1 is Sunday.  In such cases we have to change the tests.
