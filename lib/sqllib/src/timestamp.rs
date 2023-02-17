@@ -918,3 +918,19 @@ pub fn extract_Date_hour(_value: Date) -> i64 {
 pub fn extract_Date_hourN(value: Option<Date>) -> Option<i64> {
     value.map(|x| extract_Date_hour(x))
 }
+
+pub fn extract_Date_millisecond(_value: Date) -> i64 {
+    0
+}
+
+pub fn extract_Date_millisecondN(value: Option<Date>) -> Option<i64> {
+    value.map(|x| extract_Date_millisecond(x))
+}
+
+pub fn extract_Date_microsecond(_value: Date) -> i64 {
+    0
+}
+
+pub fn extract_Date_microsecondN(value: Option<Date>) -> Option<i64> {
+    value.map(|x| extract_Date_microsecond(x))
+}

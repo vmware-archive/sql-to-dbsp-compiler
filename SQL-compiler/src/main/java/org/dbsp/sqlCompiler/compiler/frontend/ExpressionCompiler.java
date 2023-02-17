@@ -107,8 +107,19 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         DBSPType type = this.typeCompiler.convertType(literal.getType());
         if (literal.isNull())
             return DBSPLiteral.none(type);
-        if (type.is(DBSPTypeInteger.class))
-            return new DBSPI64Literal(Objects.requireNonNull(literal.getValueAs(Integer.class)));
+        if (type.is(DBSPTypeInteger.class)) {
+            DBSPTypeInteger itype = type.to(DBSPTypeInteger.class);
+            switch (itype.getWidth()) {
+                case 16:
+                    return new DBSPI32Literal(Objects.requireNonNull(literal.getValueAs(Short.class)));
+                case 32:
+                    return new DBSPI32Literal(Objects.requireNonNull(literal.getValueAs(Integer.class)));
+                case 64:
+                    return new DBSPI64Literal(Objects.requireNonNull(literal.getValueAs(Long.class)));
+                default:
+                    throw new UnsupportedOperationException("Unsupported integer width type " + itype.getWidth());
+            }
+        }
         else if (type.is(DBSPTypeDouble.class))
             return new DBSPDoubleLiteral(Objects.requireNonNull(literal.getValueAs(Double.class)));
         else if (type.is(DBSPTypeFloat.class))

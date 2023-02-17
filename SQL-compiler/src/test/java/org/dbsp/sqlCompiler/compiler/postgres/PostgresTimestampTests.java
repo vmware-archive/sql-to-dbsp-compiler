@@ -31,7 +31,6 @@ import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
@@ -41,6 +40,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import javax.annotation.Nullable;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Matcher;
@@ -52,6 +52,18 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings("JavadocLinkAsPlainText")
 public class PostgresTimestampTests extends BaseSQLTests {
+    // Cannot use non-deterministic values:
+    // INSERT INTO TIMESTAMP_TBL VALUES ('today');
+    // INSERT INTO TIMESTAMP_TBL VALUES ('yesterday');
+    //I NSERT INTO TIMESTAMP_TBL VALUES ('tomorrow');
+    // -- time zone should be ignored by this data type
+    // INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow EST');
+    // INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow zulu');
+    // INSERT INTO TIMESTAMP_TBL VALUES ('now');
+    // Infinity values not supported by Calcite
+    // INSERT INTO TIMESTAMP_TBL VALUES ('-infinity');
+    // INSERT INTO TIMESTAMP_TBL VALUES ('infinity');
+
     // Calcite is not very flexible with regards to timestamp formats
     public DBSPCompiler compileQuery(String query, boolean optimize) throws SqlParseException {
         String data =
@@ -108,7 +120,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
                 "INSERT INTO TIMESTAMP_TBL VALUES ('1997-02-14 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Feb 14 17:32:01 1997');
                 "INSERT INTO TIMESTAMP_TBL VALUES ('1997-02-15 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Feb 15 17:32:01 1997');
                 "INSERT INTO TIMESTAMP_TBL VALUES ('1997-02-16 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Feb 16 17:32:01 1997');
-                                                                                         // INSERT INTO TIMESTAMP_TBL VALUES ('Feb 16 17:32:01 0097 BC');
+                //"INSERT INTO TIMESTAMP_TBL VALUES ('-0097-02-16 17:32:01');\n" +         // INSERT INTO TIMESTAMP_TBL VALUES ('Feb 16 17:32:01 0097 BC');
                 "INSERT INTO TIMESTAMP_TBL VALUES ('0097-02-16 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Feb 16 17:32:01 0097');
                 "INSERT INTO TIMESTAMP_TBL VALUES ('0597-02-16 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Feb 16 17:32:01 0597');
                 "INSERT INTO TIMESTAMP_TBL VALUES ('1097-02-16 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Feb 16 17:32:01 1097');
@@ -124,7 +136,9 @@ public class PostgresTimestampTests extends BaseSQLTests {
                 "INSERT INTO TIMESTAMP_TBL VALUES ('1996-12-31 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Dec 31 17:32:01 1996');
                 "INSERT INTO TIMESTAMP_TBL VALUES ('1997-01-01 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Jan 01 17:32:01 1997');
                 "INSERT INTO TIMESTAMP_TBL VALUES ('1997-02-28 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Feb 28 17:32:01 1997');
-                "INSERT INTO TIMESTAMP_TBL VALUES ('1997-02-29 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Feb 29 17:32:01 1997'); // illegal
+                        // The following is not a legal date.  In calcite this inserts a NULL, in Postgres this insertion fails altogether.
+                        // That's why the next few queries will find a NULL in this table.
+                "INSERT INTO TIMESTAMP_TBL VALUES ('1997-02-29 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Feb 29 17:32:01 1997');
                                                                                          // ERROR:  date/time field value out of range: "Feb 29 17:32:01 1997"
                 "INSERT INTO TIMESTAMP_TBL VALUES ('1997-03-01 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Mar 01 17:32:01 1997');
                 "INSERT INTO TIMESTAMP_TBL VALUES ('1997-12-30 17:32:01');\n" +          // INSERT INTO TIMESTAMP_TBL VALUES ('Dec 30 17:32:01 1997');
@@ -157,6 +171,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
 
     static final SimpleDateFormat[] inputFormats = {
             new SimpleDateFormat("EEE MMM d HH:mm:ss.SSS yyyy"),
+            new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy G"),
             new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy")
     };
     static final SimpleDateFormat outputFormats = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
@@ -169,12 +184,18 @@ public class PostgresTimestampTests extends BaseSQLTests {
         if (date == null)
             return DBSPLiteral.none(DBSPTypeTimestamp.instance.setMayBeNull(true));
         for (SimpleDateFormat input: inputFormats) {
+            String out = null;
             try {
+                // Calcite problems: does not support negative years, or fractional seconds ending in 0
+                Date zero = new SimpleDateFormat("yyyy-MM-dd").parse("0000-01-01");
                 Date converted = input.parse(date);
-                String out = outputFormats.format(converted);
-                return new DBSPTimestampLiteral(out, true);
-            } catch (Exception ignored) {
+                out = outputFormats.format(converted);
+                if (converted.before(zero))
+                    out = "-" + out;
+            } catch (ParseException ignored) {
+                continue;
             }
+            return new DBSPTimestampLiteral(out, true);
         }
         throw new RuntimeException("Could not parse " + date);
     }
@@ -182,6 +203,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     @Test
     public void testTS() throws SqlParseException {
         String[] data = {
+                //"Tue Feb 16 17:32:01 0097 BC",
                 "Thu Jan 01 00:00:00 1970",
                 "Mon Feb 10 17:32:01 1997",
                 "Mon Feb 10 17:32:01 1997",
@@ -222,7 +244,6 @@ public class PostgresTimestampTests extends BaseSQLTests {
                 "Fri Feb 14 17:32:01 1997",
                 "Sat Feb 15 17:32:01 1997",
                 "Sun Feb 16 17:32:01 1997",
-                //"Tue Feb 16 17:32:01 0097 BC",
                 "Sat Feb 16 17:32:01 0097",
                 "Thu Feb 16 17:32:01 0597",
                 "Tue Feb 16 17:32:01 1097",
@@ -253,8 +274,29 @@ public class PostgresTimestampTests extends BaseSQLTests {
         this.testQuery(query, new DBSPZSetLiteral(results), true);
     }
 
+    // BC: not supported by Calcite
+    // -- Check behavior at the boundaries of the timestamp range
+    //SELECT '4714-11-24 00:00:00 BC'::timestamp;
+    //          timestamp
+    //-----------------------------
+    // Mon Nov 24 00:00:00 4714 BC
+    //(1 row)
+    //
+    //SELECT '4714-11-23 23:59:59 BC'::timestamp;  -- out of range
+    //ERROR:  timestamp out of range: "4714-11-23 23:59:59 BC"
+    //LINE 1: SELECT '4714-11-23 23:59:59 BC'::timestamp;
+    //               ^
+    // Calcite only supports 4 digit years.
+    //SELECT '294276-12-31 23:59:59'::timestamp;
+    //         timestamp
+    //----------------------------
+    // Sun Dec 31 23:59:59 294276
+
     @Test
     public void testGt() throws SqlParseException {
+        // Calcite does not support 'without time zone'.
+        // SELECT d1 FROM TIMESTAMP_TBL
+        //   WHERE d1 > timestamp without time zone '1997-01-02';
         String[] data = {
                 "Mon Feb 10 17:32:01 1997",
                 "Mon Feb 10 17:32:01 1997",
@@ -314,6 +356,8 @@ public class PostgresTimestampTests extends BaseSQLTests {
     
     @Test
     public void testLt() throws SqlParseException {
+        // SELECT d1 FROM TIMESTAMP_TBL
+        //   WHERE d1 < timestamp without time zone '1997-01-02';
         String[] data = {
                 "Thu Jan 01 00:00:00 1970",
                 //"Tue Feb 16 17:32:01 0097 BC",
@@ -339,6 +383,8 @@ public class PostgresTimestampTests extends BaseSQLTests {
 
     @Test
     public void testEq() throws SqlParseException {
+        // SELECT d1 FROM TIMESTAMP_TBL
+        //   WHERE d1 = timestamp without time zone '1997-01-02';
         String[] data = {
                 "Thu Jan 02 00:00:00 1997"
         };
@@ -351,6 +397,8 @@ public class PostgresTimestampTests extends BaseSQLTests {
 
     @Test
     public void testNe() throws SqlParseException {
+        // SELECT d1 FROM TIMESTAMP_TBL
+        //   WHERE d1 != timestamp without time zone '1997-01-02';
         String[] data = {
                 "Thu Jan 01 00:00:00 1970",
                 "Mon Feb 10 17:32:01 1997",
@@ -424,6 +472,8 @@ public class PostgresTimestampTests extends BaseSQLTests {
 
     @Test
     public void testLeq() throws SqlParseException {
+        // SELECT d1 FROM TIMESTAMP_TBL
+        //   WHERE d1 <= timestamp without time zone '1997-01-02';
         String[] data = {
                 "Thu Jan 01 00:00:00 1970",
                 "Thu Jan 02 00:00:00 1997",
@@ -450,6 +500,8 @@ public class PostgresTimestampTests extends BaseSQLTests {
 
     @Test
     public void testGte() throws SqlParseException {
+        // SELECT d1 FROM TIMESTAMP_TBL
+        //   WHERE d1 >= timestamp without time zone '1997-01-02';
         String[] data = {
                 "Mon Feb 10 17:32:01 1997",
                 "Mon Feb 10 17:32:01 1997",
@@ -562,6 +614,9 @@ public class PostgresTimestampTests extends BaseSQLTests {
 
     @Test
     public void diff() throws SqlParseException {
+        // Calcite does not support timestamp difference
+        // SELECT d1 - timestamp without time zone '1997-01-02' AS diff
+        //   FROM TIMESTAMP_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01';
         String[] data = {
                 "9863 days ago",
                 "39 days 17 hours 32 mins 1 sec",
@@ -637,19 +692,38 @@ public class PostgresTimestampTests extends BaseSQLTests {
 
     @Test
     public void testWeek() throws SqlParseException {
-        // This is called DATE_TRUNC in postgres
+        // SELECT date_trunc( 'week', timestamp '2004-02-29 15:44:17.71393' ) AS week_trunc;
+        // Calcite DDL does not support date_trunc
         // TODO: Postgres dives a different result from Calcite!
         // This day was a Sunday.  Postgres returns 2004-02-23, the previous Monday.
         String query = "SELECT FLOOR(timestamp '2004-02-29 15:44:17.71393' TO WEEK) AS week_trunc";
         this.testQueryTwice(query, new DBSPTimestampLiteral("2004-02-29 00:00:00", false));
     }
 
-    //@Test
+    // DATE_BIN not supported by Calcite.
+    // SELECT
+    //  str,
+    //  interval,
+    //  date_trunc(str, ts) = date_bin(interval::interval, ts, timestamp '2001-01-01') AS equal
+    //FROM (
+    //  VALUES
+    //  ('week', '7 d'),
+    //  ('day', '1 d'),
+    //  ('hour', '1 h'),
+    //  ('minute', '1 m'),
+    //  ('second', '1 s'),
+    //  ('millisecond', '1 ms'),
+    //  ('microsecond', '1 us')
+    //) intervals (str, interval),
+    //(VALUES (timestamp '2020-02-29 15:44:17.71393')) ts (ts);
+
+    @Test
     public void testCastBetween() throws SqlParseException {
-        // TODO: Calcite error:  Cannot apply '-' to arguments of type '<TIMESTAMP(2)> - <TIMESTAMP(0)>'. Supported form(s): '<NUMERIC> - <NUMERIC>'
-        // '<DATETIME_INTERVAL> - <DATETIME_INTERVAL>'
-        // '<DATETIME> - <DATETIME_INTERVAL>'
-        String query = "SELECT d1 - timestamp '1997-01-02' AS diff\n" +
+        // SELECT d1 - timestamp without time zone '1997-01-02' AS diff
+        //  FROM TIMESTAMP_TBL
+        //  WHERE d1 BETWEEN timestamp without time zone '1902-01-01'
+        //   AND timestamp without time zone '2038-01-01';
+        String query = "SELECT TIMESTAMPDIFF(SECOND, d1, timestamp '1997-01-02') AS diff\n" +
                 "  FROM TIMESTAMP_TBL\n" +
                 "  WHERE d1 BETWEEN timestamp '1902-01-01'\n" +
                 "   AND timestamp '2038-01-01'";
@@ -712,12 +786,17 @@ public class PostgresTimestampTests extends BaseSQLTests {
         };
         DBSPExpression[] results = Linq.map(data, d ->
                 new DBSPTupleExpression(d == null ? DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)) :
-                        new DBSPI32Literal(-intervalToSeconds(d) / 60, true)), DBSPExpression.class);
+                        new DBSPI32Literal(-intervalToSeconds(d), true)), DBSPExpression.class);
         this.testQuery(query, new DBSPZSetLiteral(results), true);
     }
 
     @Test
     public void testDatePart() throws SqlParseException {
+        // SELECT d1 as "timestamp",
+        //   date_part( 'year', d1) AS year, date_part( 'month', d1) AS month,
+        //   date_part( 'day', d1) AS day, date_part( 'hour', d1) AS hour,
+        //   date_part( 'minute', d1) AS minute, date_part( 'second', d1) AS second
+        //   FROM TIMESTAMP_TBL;
         // Postgres EXTRACT returns floats for seconds...
         String query = "SELECT d1 as \"timestamp\",\n" +
                 "EXTRACT(YEAR FROM d1) AS 'year', EXTRACT(month FROM d1) AS 'month',\n" +
@@ -798,7 +877,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
             expressions[0] = convertDate(fields[0].trim());
             for (int i = 1; i < columns - 1; i++)
                 expressions[i] = new DBSPI64Literal(Long.parseLong(fields[i].trim()), true);
-            expressions[columns - 1] = new DBSPI64Literal(Long.parseLong(fields[6].trim().split("\\.")[0]), true);
+            expressions[columns - 1] = new DBSPI64Literal((long)Double.parseDouble(fields[6].trim()), true);
             tuples[j] = new DBSPTupleExpression(expressions);
         }
         DBSPLiteral none = DBSPLiteral.none(DBSPTypeInteger.signed64.setMayBeNull(true));
@@ -808,6 +887,10 @@ public class PostgresTimestampTests extends BaseSQLTests {
     
     @Test
     public void testQuarter() throws SqlParseException {
+        // SELECT d1 as "timestamp",
+        //   date_part( 'quarter', d1) AS quarter, date_part( 'msec', d1) AS msec,
+        //   date_part( 'usec', d1) AS usec
+        //   FROM TIMESTAMP_TBL;
         String query = "SELECT d1 as \"timestamp\",\n" +
                 "   EXTRACT(quarter FROM d1) AS 'quarter', EXTRACT(MILLISECOND FROM d1) AS 'msec',\n" +
                 "   EXTRACT(MICROSECOND FROM d1) AS 'usec'\n" +
@@ -895,6 +978,11 @@ public class PostgresTimestampTests extends BaseSQLTests {
     
     @Test
     public void testDay() throws SqlParseException {
+        // SELECT d1 as "timestamp",
+        //   date_part( 'isoyear', d1) AS isoyear, date_part( 'week', d1) AS week,
+        //   date_part( 'isodow', d1) AS isodow, date_part( 'dow', d1) AS dow,
+        //   date_part( 'doy', d1) AS doy
+        //   FROM TIMESTAMP_TBL;
         String query = "SELECT d1 as \"timestamp\",\n" +
                 "   extract(isoyear FROM d1) AS 'isoyear', extract(week FROM d1) AS 'week',\n" +
                 "   extract(isodow FROM d1) AS 'isodow', extract(dow FROM d1) AS 'dow',\n" +
@@ -986,6 +1074,13 @@ public class PostgresTimestampTests extends BaseSQLTests {
     
     @Test
     public void testCenturies() throws SqlParseException {
+        // SELECT d1 as "timestamp",
+        //   date_part( 'decade', d1) AS decade,
+        //   date_part( 'century', d1) AS century,
+        //   date_part( 'millennium', d1) AS millennium,
+        //   round(date_part( 'julian', d1)) AS julian,
+        //   date_part( 'epoch', d1) AS epoch
+        //   FROM TIMESTAMP_TBL;
         String query = "SELECT d1 as \"timestamp\",\n" +
                 "   extract(decade FROM d1) AS 'decade',\n" +
                 "   extract(century FROM d1) AS 'century',\n" +
@@ -1069,11 +1164,136 @@ public class PostgresTimestampTests extends BaseSQLTests {
             for (int i = 1; i < columns - 2; i++)
                 expressions[i] = new DBSPI64Literal(Long.parseLong(fields[i].trim()), true);
             // Postgres gives a float for epoch
-            expressions[4] = new DBSPI64Literal(Long.parseLong(fields[5].trim().split("[.]")[0]), true);
+            expressions[4] = new DBSPI64Literal((long)Double.parseDouble(fields[5].trim()), true);
             tuples[j] = new DBSPTupleExpression(expressions);
         }
         DBSPLiteral none = DBSPLiteral.none(DBSPTypeInteger.signed64.setMayBeNull(true));
         tuples[data.length] = new DBSPTupleExpression(convertDate(null), none, none, none, none);
         this.testQuery(query, new DBSPZSetLiteral(tuples), true);
     }
+
+    @Test
+    public void testMicroseconds() throws SqlParseException {
+        // SELECT d1 as "timestamp",
+        //   extract(microseconds from d1) AS microseconds,
+        //   extract(milliseconds from d1) AS milliseconds,
+        //   extract(seconds from d1) AS seconds,
+        //   round(extract(julian from d1)) AS julian,
+        //   extract(epoch from d1) AS epoch
+        //   FROM TIMESTAMP_TBL;
+        // microsecond, second, epoch are all floats in Postgres
+        String query = "SELECT d1 as \"timestamp\",\n" +
+                "   extract(microsecond from d1) AS 'microseconds',\n" +
+                "   extract(millisecond from d1) AS 'milliseconds',\n" +
+                "   extract(second from d1) AS 'seconds',\n" +
+                "   -- round(extract(julian from d1)) AS julian,\n" +
+                "   extract(epoch from d1) AS 'epoch'\n" +
+                "   FROM TIMESTAMP_TBL";
+        String[] data = {
+            "Thu Jan 01 00:00:00 1970    |            0 |        0.000 |  0.000000 |   2440588 |            0.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:02 1997    |      2000000 |     2000.000 |  2.000000 |   2450491 |    855595922.000000",
+            "Mon Feb 10 17:32:01.4 1997  |      1400000 |     1400.000 |  1.400000 |   2450491 |    855595921.400000",
+            "Mon Feb 10 17:32:01.5 1997  |      1500000 |     1500.000 |  1.500000 |   2450491 |    855595921.500000",
+            "Mon Feb 10 17:32:01.6 1997  |      1600000 |     1600.000 |  1.600000 |   2450491 |    855595921.600000",
+            "Thu Jan 02 00:00:00 1997    |            0 |        0.000 |  0.000000 |   2450451 |    852163200.000000",
+            "Thu Jan 02 03:04:05 1997    |      5000000 |     5000.000 |  5.000000 |   2450451 |    852174245.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Tue Jun 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450611 |    865963921.000000",
+            "Sat Sep 22 18:19:20 2001    |     20000000 |    20000.000 | 20.000000 |   2452176 |   1001182760.000000",
+            "Wed Mar 15 08:14:01 2000    |      1000000 |     1000.000 |  1.000000 |   2451619 |    953108041.000000",
+            "Wed Mar 15 13:14:02 2000    |      2000000 |     2000.000 |  2.000000 |   2451620 |    953126042.000000",
+            "Wed Mar 15 12:14:03 2000    |      3000000 |     3000.000 |  3.000000 |   2451620 |    953122443.000000",
+            "Wed Mar 15 03:14:04 2000    |      4000000 |     4000.000 |  4.000000 |   2451619 |    953090044.000000",
+            "Wed Mar 15 02:14:05 2000    |      5000000 |     5000.000 |  5.000000 |   2451619 |    953086445.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:00 1997    |            0 |        0.000 |  0.000000 |   2450491 |    855595920.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Tue Jun 10 18:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450611 |    865967521.000000",
+            "Mon Feb 10 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450491 |    855595921.000000",
+            "Tue Feb 11 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450492 |    855682321.000000",
+            "Wed Feb 12 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450493 |    855768721.000000",
+            "Thu Feb 13 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450494 |    855855121.000000",
+            "Fri Feb 14 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450495 |    855941521.000000",
+            "Sat Feb 15 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450496 |    856027921.000000",
+            "Sun Feb 16 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450497 |    856114321.000000",
+            //"Tue Feb 16 17:32:01 0097 BC |      1000000 |     1000.000 |  1.000000 |   1686043 | -65192711279.000000",
+            "Sat Feb 16 17:32:01 0097    |      1000000 |     1000.000 |  1.000000 |   1756537 | -59102029679.000000",
+            "Thu Feb 16 17:32:01 0597    |      1000000 |     1000.000 |  1.000000 |   1939158 | -43323575279.000000",
+            "Tue Feb 16 17:32:01 1097    |      1000000 |     1000.000 |  1.000000 |   2121779 | -27545120879.000000",
+            "Sat Feb 16 17:32:01 1697    |      1000000 |     1000.000 |  1.000000 |   2340925 |  -8610906479.000000",
+            "Thu Feb 16 17:32:01 1797    |      1000000 |     1000.000 |  1.000000 |   2377449 |  -5455232879.000000",
+            "Tue Feb 16 17:32:01 1897    |      1000000 |     1000.000 |  1.000000 |   2413973 |  -2299559279.000000",
+            "Sun Feb 16 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450497 |    856114321.000000",
+            "Sat Feb 16 17:32:01 2097    |      1000000 |     1000.000 |  1.000000 |   2487022 |   4011874321.000000",
+            "Wed Feb 28 17:32:01 1996    |      1000000 |     1000.000 |  1.000000 |   2450143 |    825528721.000000",
+            "Thu Feb 29 17:32:01 1996    |      1000000 |     1000.000 |  1.000000 |   2450144 |    825615121.000000",
+            "Fri Mar 01 17:32:01 1996    |      1000000 |     1000.000 |  1.000000 |   2450145 |    825701521.000000",
+            "Mon Dec 30 17:32:01 1996    |      1000000 |     1000.000 |  1.000000 |   2450449 |    851967121.000000",
+            "Tue Dec 31 17:32:01 1996    |      1000000 |     1000.000 |  1.000000 |   2450450 |    852053521.000000",
+            "Wed Jan 01 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450451 |    852139921.000000",
+            "Fri Feb 28 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450509 |    857151121.000000",
+            "Sat Mar 01 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450510 |    857237521.000000",
+            "Tue Dec 30 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450814 |    883503121.000000",
+            "Wed Dec 31 17:32:01 1997    |      1000000 |     1000.000 |  1.000000 |   2450815 |    883589521.000000",
+            "Fri Dec 31 17:32:01 1999    |      1000000 |     1000.000 |  1.000000 |   2451545 |    946661521.000000",
+            "Sat Jan 01 17:32:01 2000    |      1000000 |     1000.000 |  1.000000 |   2451546 |    946747921.000000",
+            "Sun Dec 31 17:32:01 2000    |      1000000 |     1000.000 |  1.000000 |   2451911 |    978283921.000000",
+            "Mon Jan 01 17:32:01 2001    |      1000000 |     1000.000 |  1.000000 |   2451912 |    978370321.000000"
+        };
+        int columns = 6;
+        DBSPExpression[] tuples = new DBSPExpression[data.length+1]; // last one with nulls.
+        for (int j = 0; j < data.length; j++) {
+            String d = data[j];
+            String[] fields = d.split("[|]");
+            Assert.assertEquals(columns, fields.length);
+            DBSPExpression[] expressions = new DBSPExpression[columns - 1]; // Skip the Julian unsupported column
+            expressions[0] = convertDate(fields[0].trim());
+            for (int i = 1; i < columns - 2; i++)
+                expressions[i] = new DBSPI64Literal((long)Double.parseDouble(fields[i].trim()), true);
+            // Postgres gives a float for epoch
+            expressions[4] = new DBSPI64Literal((long)Double.parseDouble(fields[5].trim()), true);
+            tuples[j] = new DBSPTupleExpression(expressions);
+        }
+        DBSPLiteral none = DBSPLiteral.none(DBSPTypeInteger.signed64.setMayBeNull(true));
+        tuples[data.length] = new DBSPTupleExpression(convertDate(null), none, none, none, none);
+        this.testQuery(query, new DBSPZSetLiteral(tuples), true);
+    }
+
+    // Postgres supports the ::timestamp syntax for casts
+    // Calcite only supports 4 digit year for timestamps.
+    // SELECT date_part('epoch', '294270-01-01 00:00:00'::timestamp);
+
+    @Test
+    public void testLargeYear() throws SqlParseException {
+        // Timestamp out of range to be represented using milliseconds
+        String query = "SELECT extract(epoch from TIMESTAMP '5000-01-01 00:00:00')\n";
+        this.testQuery(query, new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPI64Literal(95617584000L))), true);
+    }
+
+    //-- TO_CHAR()
+    // Calcite does not support to_char
+    //SELECT to_char(d1, 'DAY Day day DY Dy dy MONTH Month month RM MON Mon mon')
+    //   FROM TIMESTAMP_TBL;
+
+    // select make_timestamp(0, 7, 15, 12, 30, 15);
+    // Calcite does not support make_timestmap
+
+    // select * from generate_series('2020-01-01 00:00'::timestamp,
+    //                              '2020-01-02 03:00'::timestamp,
+    //                              '1 hour'::interval);
+    // Calcite does not support generate_series
 }

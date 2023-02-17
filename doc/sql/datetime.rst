@@ -159,7 +159,10 @@ For dates it always returns 0, since dates have no time component.
 Operations on timestamps
 ------------------------
 
-The following operations are available on dates:
+Timestamp literals can only represent 4-digit year positive values.
+So values BC or values greater than 10,000 years are not supported.
+
+The following operations are available on timestamps:
 
 ``EXTRACT(<unit> FROM timestamp)`` where ``<unit>`` is a time unit, as
 described above.  Result is always a ``BIGINT`` value.
@@ -180,7 +183,12 @@ timestamp)``.
 
 ``MINUTE(timestamp)`` is an abbreviation for ``EXTRACT(MINUTE FROM timestamp)``.
 
-``SECOND(timestamp)`` is an abbreviation for ``EXTRACT(SECOND FROM timestamp)``.
+``SECOND(timestamp)`` is an abbreviation for ``EXTRACT(SECOND FROM
+timestamp)``.
+
+``TIMESTAMPDIFF(<unit>, left, right)`` computes the difference between
+two timestamps and expresses the result in the specified time units.
+The result is a 32-bit integer.
 
 Important unsupported operations
 --------------------------------

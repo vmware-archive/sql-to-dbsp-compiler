@@ -46,6 +46,7 @@ public class TimeTests extends BaseSQLTests {
 
     void testQuery(String query, DBSPExpression... fields) {
         try {
+            // T contains a date with timestamp '100'.
             query = "CREATE VIEW V AS " + query;
             DBSPCompiler compiler = this.compileQuery(query);
             DBSPCircuit circuit = getCircuit(compiler);
@@ -81,9 +82,51 @@ public class TimeTests extends BaseSQLTests {
     }
 
     @Test
+    public void secondTest() {
+        String query = "SELECT SECOND(T.COL1) FROM T";
+        this.testQuery(query, new DBSPI64Literal(0));
+    }
+
+    @Test
+    public void minuteTest() {
+        String query = "SELECT MINUTE(T.COL1) FROM T";
+        this.testQuery(query, new DBSPI64Literal(0));
+    }
+
+    @Test
+    public void hourTest() {
+        String query = "SELECT HOUR(T.COL1) FROM T";
+        this.testQuery(query, new DBSPI64Literal(0));
+    }
+
+    @Test
+    public void dayTest() {
+        String query = "SELECT DAYOFMONTH(T.COL1) FROM T";
+        this.testQuery(query, new DBSPI64Literal(1));
+    }
+
+    @Test
+    public void dayOfWeekTest() {
+        String query = "SELECT DAYOFWEEK(T.COL1) FROM T";
+        this.testQuery(query, new DBSPI64Literal(5));
+    }
+
+    @Test
+    public void monthTest() {
+        String query = "SELECT MONTH(T.COL1) FROM T";
+        this.testQuery(query, new DBSPI64Literal(1));
+    }
+
+    @Test
+    public void yearTest() {
+        String query = "SELECT YEAR(T.COL1) FROM T";
+        this.testQuery(query, new DBSPI64Literal(1970));
+    }
+
+    @Test
     public void dowTest() {
         String query = "SELECT extract (ISODOW from COL1) FROM T";
-        this.testQuery(query, new DBSPI64Literal(5));
+        this.testQuery(query, new DBSPI64Literal(4));
         // We know that the next date was a Thursday
         query = "SELECT extract (ISODOW from TIMESTAMP '2022-12-15')";
         this.testQuery(query, new DBSPI64Literal(4));
