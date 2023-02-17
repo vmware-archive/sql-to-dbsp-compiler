@@ -90,7 +90,7 @@ The following are legal time units:
     - Ten years; a number between 1 and 10
   * - ``YEAR``
     - One year; can be positive or negative
-  * - ``QUARTER``,
+  * - ``QUARTER``
     - 1/4 of a year; a number between 1 and 4
   * - ``MONTH``
     - One month; a number between 1 and 12

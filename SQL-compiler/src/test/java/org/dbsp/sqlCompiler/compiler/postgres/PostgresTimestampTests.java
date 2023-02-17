@@ -55,7 +55,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     // Cannot use non-deterministic values:
     // INSERT INTO TIMESTAMP_TBL VALUES ('today');
     // INSERT INTO TIMESTAMP_TBL VALUES ('yesterday');
-    //I NSERT INTO TIMESTAMP_TBL VALUES ('tomorrow');
+    // INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow');
     // -- time zone should be ignored by this data type
     // INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow EST');
     // INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow zulu');
@@ -683,8 +683,12 @@ public class PostgresTimestampTests extends BaseSQLTests {
         this.testQuery(query, new DBSPZSetLiteral(results), true);
     }
 
+    /**
+     * Run query with and without optimizations.
+     * By running with optimizations disabled we test runtime evaluation of constant expressions,
+     * which should give the same result as the Calcite evaluation.
+     */
     void testQueryTwice(String query, DBSPTimestampLiteral expectedValue) throws SqlParseException {
-        // by running with optimizations disabled we test runtime evaluation
         DBSPZSetLiteral zset = new DBSPZSetLiteral(new DBSPTupleExpression(expectedValue));
         this.testQuery(query, zset, false);
         this.testQuery(query, zset, true);

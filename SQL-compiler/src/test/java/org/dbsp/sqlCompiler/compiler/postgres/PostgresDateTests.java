@@ -133,9 +133,10 @@ public class PostgresDateTests extends BaseSQLTests {
     static final SimpleDateFormat outputFormats = new SimpleDateFormat("yyyy-MM-dd");
 
     /**
-     * Convert a date from a format like 04-09-1996 to a format like 1996-04-09
+     * Convert a date from a MM-DD-YYYY format (which is used in the Postgres output)
+     * to YYYY-MM-DD
      */
-    static DBSPLiteral convertDate(@Nullable String date) {
+    static DBSPLiteral reformatDate(@Nullable String date) {
         if (date == null)
             return DBSPLiteral.none(DBSPTypeTimestamp.instance.setMayBeNull(true));
         try {
@@ -157,7 +158,7 @@ public class PostgresDateTests extends BaseSQLTests {
             if (s == null)
                 value = DBSPLiteral.none(type);
             else
-                value = convertDate(s);
+                value = reformatDate(s);
             result.add(new DBSPTupleExpression(value));
         }
         return result;
@@ -1165,7 +1166,7 @@ public class PostgresDateTests extends BaseSQLTests {
         for (int i = 0; i < data.length; i++) {
             Object[] row = data[i];
             DBSPTupleExpression tuple = new DBSPTupleExpression(
-                    convertDate((String)row[0]),
+                    reformatDate((String)row[0]),
                     new DBSPI64Literal((Integer)row[1], true),
                     new DBSPI64Literal((Integer)row[2], true),
                     new DBSPI64Literal((Integer)row[3], true),

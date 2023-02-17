@@ -77,7 +77,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     public static final int firstDOW = 1;
     /**
      * If true, the inputs to the circuit are generated from the CREATE TABLE
-     * statements.  Otherwise they are generated from the LogicalTableScan
+     * statements.  Otherwise, they are generated from the LogicalTableScan
      * operations in a view plan.
      */
     boolean generateInputsFromTables = false;
