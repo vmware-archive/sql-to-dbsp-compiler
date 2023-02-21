@@ -101,7 +101,7 @@ public class Main {
         try {
             result.contents = this.getInputFile(this.options.ioOptions.inputFile);
         } catch (IOException e) {
-            result.reportError(SourcePositionRange.invalid, false,
+            result.reportError(SourcePositionRange.INVALID, false,
                     "Error reading file", e.getMessage());
             return result;
         }
@@ -136,7 +136,7 @@ public class Main {
         try {
             this.writeToOutput(output, this.options.ioOptions.outputFile);
         } catch (IOException e) {
-            result.reportError(SourcePositionRange.invalid,
+            result.reportError(SourcePositionRange.INVALID,
                     false, "Error writing to file", e.getMessage());
             return result;
         }

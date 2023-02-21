@@ -9,8 +9,8 @@ public class SourcePositionRange {
     public final SourcePosition start;
     public final SourcePosition end;
 
-    public static final SourcePositionRange invalid =
-            new SourcePositionRange(SourcePosition.invalid, SourcePosition.invalid);
+    public static final SourcePositionRange INVALID =
+            new SourcePositionRange(SourcePosition.INVALID, SourcePosition.INVALID);
 
     public SourcePositionRange(SourcePosition start, SourcePosition end) {
         this.start = start;

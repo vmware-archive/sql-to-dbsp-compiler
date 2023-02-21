@@ -53,7 +53,7 @@ public class CompilerMessages {
         }
 
         Error(Throwable e) {
-            this.range = SourcePositionRange.invalid;
+            this.range = SourcePositionRange.INVALID;
             this.warning = false;
             this.errorType = "This is a bug in the compiler (please report it to the developers)";
             this.message = e.getMessage();
@@ -65,10 +65,10 @@ public class CompilerMessages {
                     SqlNode node = (SqlNode)e.object;
                     this.range = new SourcePositionRange(node.getParserPosition());
                 } else {
-                    this.range = SourcePositionRange.invalid;
+                    this.range = SourcePositionRange.INVALID;
                 }
             } else {
-                this.range = SourcePositionRange.invalid;
+                this.range = SourcePositionRange.INVALID;
             }
             this.errorType = "Feature not yet implemented";
             this.warning = false;

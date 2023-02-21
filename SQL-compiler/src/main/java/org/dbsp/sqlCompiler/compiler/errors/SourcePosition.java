@@ -1,7 +1,7 @@
 package org.dbsp.sqlCompiler.compiler.errors;
 
 class SourcePosition {
-    public static SourcePosition invalid = new SourcePosition(0, 0);
+    public static SourcePosition INVALID = new SourcePosition(0, 0);
 
     public final int line;    // Numbered from 1
     public final int column;  // Numbered from 1
