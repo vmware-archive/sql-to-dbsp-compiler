@@ -29,6 +29,8 @@ import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.util.Utilities;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -169,5 +171,21 @@ public class ToCsvVisitor extends InnerVisitor {
             throw new RuntimeException(ex);
         }
         return false;
+    }
+
+    /**
+     * Write a literal to a file as a csv format.
+     * @param fileName    File to write to.
+     * @param literal Literal to write.
+     */
+    public static File toCsv(String fileName, DBSPZSetLiteral literal) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        ToCsvVisitor visitor = new ToCsvVisitor(builder, () -> "");
+        visitor.traverse(literal);
+        File file = new File(fileName);
+        FileWriter writer = new FileWriter(file);
+        writer.write(builder.toString());
+        writer.close();
+        return file;
     }
 }

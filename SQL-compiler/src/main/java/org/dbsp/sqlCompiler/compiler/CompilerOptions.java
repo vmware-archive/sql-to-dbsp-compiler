@@ -58,12 +58,10 @@ public class CompilerOptions {
         @Parameter(names="-o", description = "Output file; stdout if null")
         @Nullable
         public String outputFile = null;
-        /**
-         * SQL input script which contains table and view declarations.
-         * We expect that declarations are terminated by semicolons.
-         */
         @Parameter(names = "-j", description = "Emit JSON instead of Rust")
         public boolean emitJson = false;
+        @Parameter(names = "-je", description = "Emit error messages as a JSON array to stderr")
+        public boolean emitJsonErrors = false;
         @Parameter(description = "Input file to compile", required = true)
         @Nullable
         public String inputFile = null;
