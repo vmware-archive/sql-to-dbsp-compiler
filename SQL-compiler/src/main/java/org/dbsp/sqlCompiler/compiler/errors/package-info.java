@@ -21,29 +21,16 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler;
+/**
+ * Package that doesn't allow null values as method parameters.
+ */
 
-import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqlCompiler.compiler.errors;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
 
-public class Solutions {
-    /**
-     * Write a literal to a file as a csv format.
-     * @param fileName    File to write to.
-     * @param literal Literal to write.
-     */
-    public static File toCsv(String fileName, DBSPZSetLiteral literal) throws IOException {
-        StringBuilder builder = new StringBuilder();
-        ToCsvVisitor visitor = new ToCsvVisitor(builder, () -> "");
-        visitor.traverse(literal);
-        File file = new File(fileName);
-        FileWriter writer = new FileWriter(file);
-        writer.write(builder.toString());
-        writer.close();
-        return file;
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

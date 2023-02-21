@@ -23,9 +23,11 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
 import org.dbsp.sqlCompiler.Main;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
@@ -179,7 +181,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
     public void rustCsvTest() throws IOException, InterruptedException {
         DBSPZSetLiteral data = new DBSPZSetLiteral(BaseSQLTests.e0, BaseSQLTests.e1);
         String fileName = BaseSQLTests.rustDirectory + "/" + "test.csv";
-        File file = Solutions.toCsv(fileName, data);
+        File file = ToCsvVisitor.toCsv(fileName, data);
         List<DBSPStatement> list = new ArrayList<>();
         // let src = csv_source::<Tuple3<bool, Option<String>, Option<u32>>, isize>("src/test.csv");
         DBSPLetStatement src = new DBSPLetStatement("src",
@@ -265,7 +267,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 new DBSPTupleExpression(DBSPI32Literal.none(DBSPTypeInteger.signed32.setMayBeNull(true)))
         );
         String fileName = BaseSQLTests.rustDirectory + "/" + "test.csv";
-        File file = Solutions.toCsv(fileName, data);
+        File file = ToCsvVisitor.toCsv(fileName, data);
         List<DBSPStatement> list = new ArrayList<>();
         DBSPLetStatement src = new DBSPLetStatement("src",
                 new DBSPApplyExpression("read_csv", data.getNonVoidType(),
@@ -288,8 +290,16 @@ public class OtherTests extends BaseSQLTests implements IModule {
         Assert.assertTrue(success);
     }
 
+    File createInputScript(String[] contents) throws FileNotFoundException, UnsupportedEncodingException {
+        String inputScript = rustDirectory + "/script.sql";
+        PrintWriter script = new PrintWriter(inputScript, "UTF-8");
+        script.println(String.join(";\n", contents));
+        script.close();
+        return new File(inputScript);
+    }
+
     @Test
-    public void testCompiler() throws IOException, SqlParseException, InterruptedException {
+    public void testRustCompiler() throws IOException, InterruptedException {
         String[] statements = new String[]{
                 "CREATE TABLE T (\n" +
                         "COL1 INT NOT NULL" +
@@ -297,19 +307,15 @@ public class OtherTests extends BaseSQLTests implements IModule {
                         ")",
                 "CREATE VIEW V AS SELECT COL1 FROM T"
         };
-        String inputScript = rustDirectory + "/script.sql";
-        PrintWriter script = new PrintWriter(inputScript, "UTF-8");
-        script.println(String.join(";\n", statements));
-        script.close();
-        Main.execute("-o", BaseSQLTests.testFilePath, inputScript);
+        File file = this.createInputScript(statements);
+        Main.execute("-o", BaseSQLTests.testFilePath, file.getPath());
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
-        File file = new File(inputScript);
         boolean success = file.delete();
         Assert.assertTrue(success);
     }
 
     @Test
-    public void testCompilerToJson() throws IOException, SqlParseException {
+    public void testCompilerToJson() throws IOException {
         String[] statements = new String[]{
                 "CREATE TABLE T (\n" +
                         "COL1 INT NOT NULL" +
@@ -317,19 +323,72 @@ public class OtherTests extends BaseSQLTests implements IModule {
                         ")",
                 "CREATE VIEW V AS SELECT COL1 FROM T WHERE COL1 > 5"
         };
-        String inputScript = rustDirectory + "/script.sql";
-        PrintWriter script = new PrintWriter(inputScript, "UTF-8");
-        script.println(String.join(";\n", statements));
-        script.close();
+        File file = this.createInputScript(statements);
         File json = File.createTempFile("out", ".json", new File("."));
-        Main.execute("-j", "-o", json.getPath(), inputScript);
+        CompilerMessages message = Main.execute("-j", "-o", json.getPath(), file.getPath());
+        Assert.assertEquals(message.exitCode, 0);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode parsed = mapper.readTree(json);
         Assert.assertNotNull(parsed);
-        File file = new File(inputScript);
         boolean success = file.delete();
         Assert.assertTrue(success);
         success = json.delete();
         Assert.assertTrue(success);
+    }
+
+    @Test
+    public void errorTest() throws FileNotFoundException, UnsupportedEncodingException {
+        String[] statements = new String[]{
+                "This is not SQL"
+        };
+        File file = this.createInputScript(statements);
+        CompilerMessages messages = Main.execute("-o", BaseSQLTests.testFilePath, file.getPath());
+        Assert.assertEquals(messages.exitCode, 1);
+        Assert.assertEquals(messages.errorCount(), 1);
+        CompilerMessages.Error msg = messages.getError(0);
+        Assert.assertFalse(msg.warning);
+        Assert.assertEquals(msg.message, "Non-query expression encountered in illegal context");
+
+        statements = new String[] {
+                "CREATE VIEW V AS SELECT * FROM T"
+        };
+        file = this.createInputScript(statements);
+        messages = Main.execute("-o", BaseSQLTests.testFilePath, file.getPath());
+        Assert.assertEquals(messages.exitCode, 1);
+        Assert.assertEquals(messages.errorCount(), 1);
+        msg = messages.getError(0);
+        Assert.assertFalse(msg.warning);
+        Assert.assertEquals(msg.message, "Object 'T' not found");
+
+        statements = new String[] {
+                "CREATE VIEW V AS SELECT ST_MAKELINE(ST_POINT(0,0), ST_POINT(0, 0))"
+        };
+        file = this.createInputScript(statements);
+        messages = Main.execute("-o", BaseSQLTests.testFilePath, file.getPath());
+        Assert.assertEquals(messages.exitCode, 1);
+        Assert.assertEquals(messages.errorCount(), 1);
+        msg = messages.getError(0);
+        Assert.assertFalse(msg.warning);
+        Assert.assertEquals(msg.message, "Not yet implemented: cannot convert GEOMETRY literal to class org.locationtech.jts.geom.Point\n" +
+                "LINESTRING (0 0, 0 0):GEOMETRY");
+
+        boolean success = file.delete();
+        Assert.assertTrue(success);
+    }
+
+    @Test
+    public void jsonErrorTest() throws FileNotFoundException, UnsupportedEncodingException, JsonProcessingException {
+        String[] statements = new String[] {
+                "CREATE VIEW V AS SELECT * FROM T"
+        };
+        File file = this.createInputScript(statements);
+        CompilerMessages messages = Main.execute("-je", file.getPath());
+        Assert.assertEquals(messages.exitCode, 1);
+        Assert.assertEquals(messages.errorCount(), 1);
+        String json = messages.toString();
+        System.out.println(json);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = mapper.readTree(json);
+        Assert.assertNotNull(jsonNode);
     }
 }

@@ -25,24 +25,36 @@
 
 package org.dbsp.util;
 
+import javax.annotation.Nullable;
+
 /**
  * Exception thrown for code that is not yet implemented.
  */
 public class Unimplemented extends RuntimeException {
+    @Nullable
+    public final Object object;
+
     public Unimplemented() {
         super("Not yet implemented");
+        this.object = null;
     }
 
     public Unimplemented(Object obj) {
         super("Not yet implemented: " + obj.getClass().toString() + ":" + obj);
+        this.object = obj;
     }
 
     public Unimplemented(String message, Object obj) {
         super("Not yet implemented: " + message + obj.getClass().toString() + ":" + obj);
+        this.object = obj;
     }
 
-    @SuppressWarnings("unused")
-    public Unimplemented(String msg, boolean ignored) {
-        super("Not yet implemented: " + msg);
+    public Unimplemented(Object obj, Throwable cause) {
+        super("Not yet implemented: "
+                        + cause.getMessage()
+                        + System.lineSeparator()
+                        + obj
+                , cause);
+        this.object = obj;
     }
 }

@@ -26,11 +26,11 @@ package org.dbsp.sqllogictest.executors;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
-import org.dbsp.sqlCompiler.compiler.Solutions;
 import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
+import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
 import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -149,7 +149,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             if (connectionString.equals("csv")) {
                 for (int i = 0; i < tables.length; i++) {
                     String fileName = (rustDirectory + tables[i].tableName) + ".csv";
-                    Solutions.toCsv(fileName, tables[i].contents);
+                    ToCsvVisitor.toCsv(fileName, tables[i].contents);
                     fields[i] = new DBSPApplyExpression("read_csv",
                             tables[i].contents.getNonVoidType(),
                             new DBSPStrLiteral(fileName));

@@ -95,8 +95,8 @@ public class DBSPCompiler implements IModule {
         this.compileStatement(statement, null);
     }
 
-    public void compileStatements(String statements) throws SqlParseException {
-        SqlNodeList nodes = this.frontend.parseStatements(statements);
+    public void compileStatements(String program) throws SqlParseException {
+        SqlNodeList nodes = this.frontend.parseStatements(program);
         for (SqlNode node: nodes) {
             FrontEndStatement fe = this.frontend.compile(node.toString(), node, null);
             this.midend.compile(fe);

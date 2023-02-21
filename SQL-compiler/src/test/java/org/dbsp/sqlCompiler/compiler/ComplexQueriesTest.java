@@ -24,7 +24,12 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.apache.calcite.sql.parser.SqlParser;
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.compiler.visitors.CircuitFunctionRewriter;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.visitors.ThreeOperandVisitor;
+import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -56,6 +61,124 @@ public class ComplexQueriesTest extends BaseSQLTests {
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl);
         compiler.compileStatement(query);
+        this.addRustTestCase(getCircuit(compiler));
+    }
+
+    @Test
+    public void simpleOver() throws SqlParseException {
+        String query = "CREATE TABLE green_tripdata\n" +
+                "(\n" +
+                "    lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
+                "    lpep_dropoff_datetime TIMESTAMP NOT NULL,\n" +
+                "    pickup_location_id BIGINT NOT NULL,\n" +
+                "    dropoff_location_id BIGINT NOT NULL,\n" +
+                "    trip_distance DOUBLE PRECISION,\n" +
+                "    fare_amount DOUBLE PRECISION\n" +
+                ");\n" +
+                "\n" +
+                "CREATE VIEW FEATURES as SELECT\n" +
+                "    *,\n" +
+                "    COUNT(*) OVER(\n" +
+                "      PARTITION BY  pickup_location_id\n" +
+                "      ORDER BY extract (EPOCH from  CAST (lpep_pickup_datetime AS TIMESTAMP) )\n" +
+                "      -- 1 hour is 3600  seconds\n" +
+                "      RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip\n" +
+                "    -- AVG(fare_amount) OVER(\n" +
+                "    --   PARTITION BY  pickup_location_id\n" +
+                "    --   ORDER BY  extract (EPOCH from  CAST (lpep_pickup_datetime AS TIMESTAMP) )\n" +
+                "    --   -- 1 hour is 3600  seconds\n" +
+                "    --   RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS mean_fare_window_1h_pickup_zip,\n" +
+                "    -- COUNT(*) OVER(\n" +
+                "    --    PARTITION BY  dropoff_location_id\n" +
+                "    --    ORDER BY  extract (EPOCH from  CAST (lpep_dropoff_datetime AS TIMESTAMP) )\n" +
+                "    --    -- 0.5 hour is 1800  seconds\n" +
+                "    --    RANGE BETWEEN 1800  PRECEDING AND 1 PRECEDING ) AS count_trips_window_30m_dropoff_zip,\n" +
+                "    -- case when extract (ISODOW from  CAST (lpep_dropoff_datetime AS TIMESTAMP)) > 5 then 1 else 0 end as dropoff_is_weekend\n" +
+                "FROM green_tripdata;\n";
+        DBSPCompiler compiler = new DBSPCompiler(options);
+        compiler.setGenerateInputsFromTables(true);
+        compiler.compileStatements(query);
+        DBSPCircuit circuit = getCircuit(compiler);
+        ThreeOperandVisitor tav = new ThreeOperandVisitor();
+        CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(tav);
+        circuit = rewriter.apply(circuit);
+        System.out.println(ToJSONVisitor.circuitToJSON(circuit));
+        this.addRustTestCase(circuit);
+    }
+
+    @Test
+    public void demographicsTest() throws SqlParseException {
+        String query =
+                "CREATE TABLE demographics (\n" +
+                "    cc_num FLOAT64 NOT NULL,\n" +
+                "    first STRING,\n" +
+                "    gender STRING,\n" +
+                "    street STRING,\n" +
+                "    city STRING,\n" +
+                "    state STRING,\n" +
+                "    zip INTEGER,\n" +
+                "    lat FLOAT64,\n" +
+                "    long FLOAT64,\n" +
+                "    city_pop INTEGER,\n" +
+                "    job STRING,\n" +
+                "    dob STRING\n" +
+                "    --dob DATE\n" +
+                ");\n" +
+                "\n" +
+                "CREATE TABLE transactions (\n" +
+                "    trans_date_trans_time TIMESTAMP NOT NULL,\n" +
+                "    cc_num FLOAT64 NOT NULL,\n" +
+                "    merchant STRING,\n" +
+                "    category STRING,\n" +
+                "    amt FLOAT64,\n" +
+                "    trans_num STRING,\n" +
+                "    unix_time INTEGER NOT NULL,\n" +
+                "    merch_lat FLOAT64,\n" +
+                "    merch_long FLOAT64,\n" +
+                "    is_fraud INTEGER\n" +
+                ");\n" +
+                "\n" +
+                "CREATE VIEW features as\n" +
+                "    SELECT\n" +
+                "        -- DAYOFWEEK(trans_date_trans_time) AS d,\n" +
+                "        -- TIMESTAMPDIFF(YEAR, trans_date_trans_time, CAST(dob as TIMESTAMP)) AS age,\n" +
+                "        ST_DISTANCE(ST_POINT(long,lat), ST_POINT(merch_long,merch_lat)) AS distance,\n" +
+                "        -- TIMESTAMPDIFF(MINUTE, trans_date_trans_time, last_txn_date) AS trans_diff,\n" +
+                "        AVG(amt) OVER(\n" +
+                "            PARTITION BY   CAST(cc_num AS NUMERIC)\n" +
+                "            ORDER BY unix_time\n" +
+                "            -- 1 week is 604800  seconds\n" +
+                "            RANGE BETWEEN 604800  PRECEDING AND 1 PRECEDING) AS\n" +
+                "        avg_spend_pw,\n" +
+                "        AVG(amt) OVER(\n" +
+                "            PARTITION BY  CAST(cc_num AS NUMERIC)\n" +
+                "            ORDER BY unix_time\n" +
+                "            -- 1 month(30 days) is 2592000 seconds\n" +
+                "            RANGE BETWEEN 2592000 PRECEDING AND 1 PRECEDING) AS\n" +
+                "        avg_spend_pm,\n" +
+                "        COUNT(*) OVER(\n" +
+                "            PARTITION BY  CAST(cc_num AS NUMERIC)\n" +
+                "            ORDER BY unix_time\n" +
+                "            -- 1 day is 86400  seconds\n" +
+                "            RANGE BETWEEN 86400  PRECEDING AND 1 PRECEDING ) AS\n" +
+                "        trans_freq_24,\n" +
+                "        category,\n" +
+                "        amt,\n" +
+                "        state,\n" +
+                "        job,\n" +
+                "        unix_time,\n" +
+                "        city_pop,\n" +
+                "        merchant,\n" +
+                "        is_fraud\n" +
+                "    FROM (\n" +
+                "        SELECT t1.*, t2.*\n" +
+                "               -- , LAG(trans_date_trans_time, 1) OVER (PARTITION BY t1.cc_num  ORDER BY trans_date_trans_time ASC) AS last_txn_date\n" +
+                "        FROM  transactions AS t1\n" +
+                "        LEFT JOIN  demographics AS t2\n" +
+                "        ON t1.cc_num = t2.cc_num);";
+        DBSPCompiler compiler = new DBSPCompiler(options);
+        compiler.setGenerateInputsFromTables(true);
+        compiler.compileStatements(query);
         this.addRustTestCase(getCircuit(compiler));
     }
 

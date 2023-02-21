@@ -104,49 +104,52 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
 
     @Override
     public DBSPExpression visitLiteral(RexLiteral literal) {
-        DBSPType type = this.typeCompiler.convertType(literal.getType());
-        if (literal.isNull())
-            return DBSPLiteral.none(type);
-        if (type.is(DBSPTypeInteger.class)) {
-            DBSPTypeInteger itype = type.to(DBSPTypeInteger.class);
-            switch (itype.getWidth()) {
-                case 16:
-                    return new DBSPI32Literal(Objects.requireNonNull(literal.getValueAs(Short.class)));
-                case 32:
-                    return new DBSPI32Literal(Objects.requireNonNull(literal.getValueAs(Integer.class)));
-                case 64:
-                    return new DBSPI64Literal(Objects.requireNonNull(literal.getValueAs(Long.class)));
-                default:
-                    throw new UnsupportedOperationException("Unsupported integer width type " + itype.getWidth());
+        try {
+            DBSPType type = this.typeCompiler.convertType(literal.getType());
+            if (literal.isNull())
+                return DBSPLiteral.none(type);
+            if (type.is(DBSPTypeInteger.class)) {
+                DBSPTypeInteger itype = type.to(DBSPTypeInteger.class);
+                switch (itype.getWidth()) {
+                    case 16:
+                        return new DBSPI32Literal(Objects.requireNonNull(literal.getValueAs(Short.class)));
+                    case 32:
+                        return new DBSPI32Literal(Objects.requireNonNull(literal.getValueAs(Integer.class)));
+                    case 64:
+                        return new DBSPI64Literal(Objects.requireNonNull(literal.getValueAs(Long.class)));
+                    default:
+                        throw new UnsupportedOperationException("Unsupported integer width type " + itype.getWidth());
+                }
+            } else if (type.is(DBSPTypeDouble.class))
+                return new DBSPDoubleLiteral(Objects.requireNonNull(literal.getValueAs(Double.class)));
+            else if (type.is(DBSPTypeFloat.class))
+                return new DBSPFloatLiteral(Objects.requireNonNull(literal.getValueAs(Float.class)));
+            else if (type.is(DBSPTypeString.class))
+                return new DBSPStringLiteral(Objects.requireNonNull(literal.getValueAs(String.class)));
+            else if (type.is(DBSPTypeBool.class))
+                return new DBSPBoolLiteral(Objects.requireNonNull(literal.getValueAs(Boolean.class)));
+            else if (type.is(DBSPTypeDecimal.class))
+                return new DBSPDecimalLiteral(
+                        literal, type, Objects.requireNonNull(literal.getValueAs(BigDecimal.class)));
+            else if (type.is(DBSPTypeKeyword.class))
+                return new DBSPKeywordLiteral(literal, Objects.requireNonNull(literal.getValue()).toString());
+            else if (type.is(DBSPTypeMillisInterval.class))
+                return new DBSPIntervalMillisLiteral(literal, type, Objects.requireNonNull(
+                        literal.getValueAs(BigDecimal.class)).longValue());
+            else if (type.is(DBSPTypeTimestamp.class)) {
+                return new DBSPTimestampLiteral(literal, type,
+                        Objects.requireNonNull(literal.getValueAs(TimestampString.class)));
+            } else if (type.is(DBSPTypeDate.class)) {
+                return new DBSPDateLiteral(literal, type, Objects.requireNonNull(literal.getValueAs(DateString.class)));
+            } else if (type.is(DBSPTypeGeoPoint.class)) {
+                Point point = literal.getValueAs(Point.class);
+                Coordinate c = Objects.requireNonNull(point).getCoordinate();
+                return new DBSPGeoPointLiteral(literal,
+                        new DBSPDoubleLiteral(c.getOrdinate(0)),
+                        new DBSPDoubleLiteral(c.getOrdinate(1)));
             }
-        }
-        else if (type.is(DBSPTypeDouble.class))
-            return new DBSPDoubleLiteral(Objects.requireNonNull(literal.getValueAs(Double.class)));
-        else if (type.is(DBSPTypeFloat.class))
-            return new DBSPFloatLiteral(Objects.requireNonNull(literal.getValueAs(Float.class)));
-        else if (type.is(DBSPTypeString.class))
-            return new DBSPStringLiteral(Objects.requireNonNull(literal.getValueAs(String.class)));
-        else if (type.is(DBSPTypeBool.class))
-            return new DBSPBoolLiteral(Objects.requireNonNull(literal.getValueAs(Boolean.class)));
-        else if (type.is(DBSPTypeDecimal.class))
-            return new DBSPDecimalLiteral(
-                    literal, type, Objects.requireNonNull(literal.getValueAs(BigDecimal.class)));
-        else if (type.is(DBSPTypeKeyword.class))
-            return new DBSPKeywordLiteral(literal, Objects.requireNonNull(literal.getValue()).toString());
-        else if (type.is(DBSPTypeMillisInterval.class))
-            return new DBSPIntervalMillisLiteral(literal, type, Objects.requireNonNull(
-                    literal.getValueAs(BigDecimal.class)).longValue());
-        else if (type.is(DBSPTypeTimestamp.class)) {
-            return new DBSPTimestampLiteral(literal, type,
-                    Objects.requireNonNull(literal.getValueAs(TimestampString.class)));
-        } else if (type.is(DBSPTypeDate.class)) {
-            return new DBSPDateLiteral(literal, type, Objects.requireNonNull(literal.getValueAs(DateString.class)));
-        } else if (type.is(DBSPTypeGeoPoint.class)) {
-            Point point = literal.getValueAs(Point.class);
-            Coordinate c = Objects.requireNonNull(point).getCoordinate();
-            return new DBSPGeoPointLiteral(literal,
-                    new DBSPDoubleLiteral(c.getOrdinate(0)),
-                    new DBSPDoubleLiteral(c.getOrdinate(1)));
+        } catch (Throwable ex) {
+            throw new Unimplemented(literal, ex);
         }
         throw new Unimplemented(literal);
     }
