@@ -46,7 +46,8 @@ public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType {
         return "d";
     }
 
-    public static final DBSPTypeDouble instance = new DBSPTypeDouble(null,false);
+    public static final DBSPTypeDouble INSTANCE = new DBSPTypeDouble(null,false);
+    public static final DBSPTypeDouble NULLABLE_INSTANCE = new DBSPTypeDouble(null,true);
 
     @Override
     public boolean sameType(@Nullable DBSPType type) {

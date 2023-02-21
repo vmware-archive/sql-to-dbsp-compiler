@@ -257,7 +257,7 @@ public class SLTTestFile implements IModule {
     }
 
     private void add(ISqlTestOperation operation) {
-        Logger.instance.from(this, 2)
+        Logger.INSTANCE.from(this, 2)
                 .append("Operation added ")
                 .append(operation.toString())
                 .newline();

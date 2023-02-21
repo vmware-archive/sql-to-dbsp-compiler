@@ -50,7 +50,8 @@ public class DBSPTypeBool extends DBSPTypeBaseType {
         return type.is(DBSPTypeBool.class);
     }
 
-    public static final DBSPTypeBool instance = new DBSPTypeBool(null, false);
+    public static final DBSPTypeBool INSTANCE = new DBSPTypeBool(null, false);
+    public static final DBSPTypeBool NULLABLE_INSTANCE = new DBSPTypeBool(null, true);
 
     @Override
     public void accept(InnerVisitor visitor) {

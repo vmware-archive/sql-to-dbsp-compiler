@@ -42,7 +42,7 @@ public class DBSPUSizeLiteral extends DBSPLiteral {
     }
 
     public DBSPUSizeLiteral(@Nullable Long value, boolean nullable) {
-        super(null, DBSPTypeUSize.instance.setMayBeNull(nullable), value);
+        super(null, DBSPTypeUSize.INSTANCE.setMayBeNull(nullable), value);
         if (value == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         if (value != null && value < 0)

@@ -35,7 +35,8 @@ import javax.annotation.Nullable;
 
 public class DBSPTypeTimestamp extends DBSPTypeBaseType
         implements IsNumericType, IsDateType {
-    public static final DBSPTypeTimestamp instance = new DBSPTypeTimestamp(null, false);
+    public static final DBSPTypeTimestamp INSTANCE =new DBSPTypeTimestamp(null, false);
+    public static final DBSPTypeTimestamp NULLABLE_INSTANCE = new DBSPTypeTimestamp(null, true);
 
     protected DBSPTypeTimestamp(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);

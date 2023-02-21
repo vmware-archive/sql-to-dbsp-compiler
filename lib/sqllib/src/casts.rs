@@ -2139,6 +2139,15 @@ pub fn cast_to_TimestampN_s(value: String) -> Option<Timestamp>
 }
 
 #[inline]
+pub fn cast_to_TimestampN_sN(value: Option<String>) -> Option<Timestamp>
+{
+    match value {
+        None => None,
+        Some(x) => cast_to_TimestampN_s(x),
+    }
+}
+
+#[inline]
 pub fn cast_to_TimestampN_Timestamp(value: Timestamp) -> Option<Timestamp>
 {
     Some(value)
@@ -2149,4 +2158,3 @@ pub fn cast_to_TimestampN_dateN(value: Option<Date>) -> Option<Timestamp>
 {
     value.map(|v| cast_to_Timestamp_date(v))
 }
-

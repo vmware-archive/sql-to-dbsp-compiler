@@ -41,7 +41,7 @@ public class DBSPDoubleLiteral extends DBSPLiteral {
     }
 
     public DBSPDoubleLiteral(@Nullable Double f, boolean nullable) {
-        super(null, DBSPTypeDouble.instance.setMayBeNull(nullable), f);
+        super(null, DBSPTypeDouble.INSTANCE.setMayBeNull(nullable), f);
         if (f == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = f;

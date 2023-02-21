@@ -45,7 +45,7 @@ public class DBSPI64Literal extends DBSPLiteral {
     }
 
     public DBSPI64Literal(@Nullable Object node, @Nullable Long value, boolean nullable) {
-        super(node, DBSPTypeInteger.signed64.setMayBeNull(nullable), value);
+        super(node, DBSPTypeInteger.SIGNED_64.setMayBeNull(nullable), value);
         if (value == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = value;

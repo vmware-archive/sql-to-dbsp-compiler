@@ -24,15 +24,16 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.apache.calcite.sql.parser.SqlParser;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.CircuitFunctionRewriter;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ThreeOperandVisitor;
 import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
+import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
+import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeFloat;
 import org.junit.Test;
-
-import java.io.IOException;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class ComplexQueriesTest extends BaseSQLTests {
@@ -83,17 +84,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "      ORDER BY extract (EPOCH from  CAST (lpep_pickup_datetime AS TIMESTAMP) )\n" +
                 "      -- 1 hour is 3600  seconds\n" +
                 "      RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip\n" +
-                "    -- AVG(fare_amount) OVER(\n" +
-                "    --   PARTITION BY  pickup_location_id\n" +
-                "    --   ORDER BY  extract (EPOCH from  CAST (lpep_pickup_datetime AS TIMESTAMP) )\n" +
-                "    --   -- 1 hour is 3600  seconds\n" +
-                "    --   RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS mean_fare_window_1h_pickup_zip,\n" +
-                "    -- COUNT(*) OVER(\n" +
-                "    --    PARTITION BY  dropoff_location_id\n" +
-                "    --    ORDER BY  extract (EPOCH from  CAST (lpep_dropoff_datetime AS TIMESTAMP) )\n" +
-                "    --    -- 0.5 hour is 1800  seconds\n" +
-                "    --    RANGE BETWEEN 1800  PRECEDING AND 1 PRECEDING ) AS count_trips_window_30m_dropoff_zip,\n" +
-                "    -- case when extract (ISODOW from  CAST (lpep_dropoff_datetime AS TIMESTAMP)) > 5 then 1 else 0 end as dropoff_is_weekend\n" +
                 "FROM green_tripdata;\n";
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
@@ -122,7 +112,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "    city_pop INTEGER,\n" +
                 "    job STRING,\n" +
                 "    dob STRING\n" +
-                "    --dob DATE\n" +
                 ");\n" +
                 "\n" +
                 "CREATE TABLE transactions (\n" +
@@ -140,8 +129,8 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "\n" +
                 "CREATE VIEW features as\n" +
                 "    SELECT\n" +
-                "        -- DAYOFWEEK(trans_date_trans_time) AS d,\n" +
-                "        -- TIMESTAMPDIFF(YEAR, trans_date_trans_time, CAST(dob as TIMESTAMP)) AS age,\n" +
+                "        DAYOFWEEK(trans_date_trans_time) AS d,\n" +
+                "        TIMESTAMPDIFF(YEAR, trans_date_trans_time, CAST(dob as TIMESTAMP)) AS age,\n" +
                 "        ST_DISTANCE(ST_POINT(long,lat), ST_POINT(merch_long,merch_lat)) AS distance,\n" +
                 "        -- TIMESTAMPDIFF(MINUTE, trans_date_trans_time, last_txn_date) AS trans_diff,\n" +
                 "        AVG(amt) OVER(\n" +
@@ -179,7 +168,38 @@ public class ComplexQueriesTest extends BaseSQLTests {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         compiler.compileStatements(query);
-        this.addRustTestCase(getCircuit(compiler));
+        DBSPZSetLiteral[] inputs = new DBSPZSetLiteral[] {
+                new DBSPZSetLiteral(new DBSPTupleExpression(
+                        new DBSPDoubleLiteral(0.0),
+                        new DBSPStringLiteral("First", true),
+                        new DBSPStringLiteral("Male", true),
+                        new DBSPStringLiteral("Street", true),
+                        new DBSPStringLiteral("City", true),
+                        new DBSPStringLiteral("State", true),
+                        new DBSPI32Literal(94043, true),
+                        //new DBSPDoubleLiteral(128.0, true),
+                        DBSPLiteral.none(DBSPTypeDouble.NULLABLE_INSTANCE),
+                        new DBSPDoubleLiteral(128.0, true),
+                        new DBSPI32Literal(100000, true),
+                        new DBSPStringLiteral("Job", true),
+                        new DBSPStringLiteral("2020-02-20", true)
+                        )),
+                new DBSPZSetLiteral(new DBSPTupleExpression(
+                        new DBSPTimestampLiteral("2020-02-20 10:00:00", false),
+                        new DBSPDoubleLiteral(0.0, false),
+                        new DBSPStringLiteral("Merchant", true),
+                        new DBSPStringLiteral("Category", true),
+                        new DBSPDoubleLiteral(10.0, true),
+                        new DBSPStringLiteral("Transnum", true),
+                        new DBSPI32Literal(1000),
+                        new DBSPDoubleLiteral(128.0, true),
+                        new DBSPDoubleLiteral(128.0, true),
+                        new DBSPI32Literal(0, true)
+                ))
+        };
+        DBSPZSetLiteral[] outputs = new DBSPZSetLiteral[] {};
+        InputOutputPair ip = new InputOutputPair(inputs, outputs);
+        this.addRustTestCase(getCircuit(compiler), ip);
     }
 
     @Test

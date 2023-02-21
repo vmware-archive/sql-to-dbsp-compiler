@@ -34,7 +34,7 @@ public class DBSPGeoPointLiteral extends DBSPLiteral {
     public final DBSPExpression right;
 
     public DBSPGeoPointLiteral(@Nullable Object node, DBSPExpression left, DBSPExpression right) {
-        super(node, DBSPTypeGeoPoint.instance, 0);  // value unused.
+        super(node, DBSPTypeGeoPoint.INSTANCE, 0);  // value unused.
         this.left = left;
         this.right = right;
     }

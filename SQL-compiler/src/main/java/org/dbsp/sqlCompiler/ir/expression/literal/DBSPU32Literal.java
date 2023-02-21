@@ -42,7 +42,7 @@ public class DBSPU32Literal extends DBSPLiteral {
     }
 
     public DBSPU32Literal(@Nullable Integer value, boolean nullable) {
-        super(null, DBSPTypeInteger.unsigned32.setMayBeNull(nullable), value);
+        super(null, DBSPTypeInteger.UNSIGNED_32.setMayBeNull(nullable), value);
         if (value == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         if (value != null && value < 0)

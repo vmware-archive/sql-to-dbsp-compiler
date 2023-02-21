@@ -38,7 +38,8 @@ import javax.annotation.Nullable;
  * Always stores the interval value in milliseconds.
  */
 public class DBSPTypeMillisInterval extends DBSPTypeBaseType implements IsNumericType, IsDateType {
-    public static final DBSPType instance = new DBSPTypeMillisInterval(null, false);
+    public static final DBSPType INSTANCE =new DBSPTypeMillisInterval(null, false);
+    public static final DBSPType NULLABLE_INSTANCE = new DBSPTypeMillisInterval(null, true);
 
     public DBSPTypeMillisInterval(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);

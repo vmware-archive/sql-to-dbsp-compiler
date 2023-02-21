@@ -35,11 +35,11 @@ public class DBSPIntervalMonthsLiteral extends DBSPLiteral {
     }
 
     public DBSPIntervalMonthsLiteral(int value) {
-        this(null, DBSPTypeMonthsInterval.instance, value);
+        this(null, DBSPTypeMonthsInterval.INSTANCE, value);
     }
 
     public DBSPIntervalMonthsLiteral(int value, boolean mayBeNull) {
-        this(null, DBSPTypeMonthsInterval.instance.setMayBeNull(mayBeNull), value);
+        this(null, DBSPTypeMonthsInterval.INSTANCE.setMayBeNull(mayBeNull), value);
     }
 
     @Override

@@ -48,21 +48,21 @@ public class PassesVisitor extends CircuitVisitor implements IModule {
     public DBSPCircuit apply(DBSPCircuit circuit) {
         int count = 0;
         if (this.getDebugLevel() >= 3) {
-            Logger.instance.from(this, 3)
+            Logger.INSTANCE.from(this, 3)
                     .append("Writing circuit to before.jpg")
                     .newline();
             ToDotVisitor.toDot("0before.jpg", true, circuit);
         }
         ++count;
         for (CircuitVisitor pass: this.passes) {
-            Logger.instance.from(this, 1)
+            Logger.INSTANCE.from(this, 1)
                     .append("Executing ")
                     .append(pass.toString())
                     .newline();
             circuit = pass.apply(circuit);
             if (this.getDebugLevel() >= 3) {
                 String name = count + pass.toString().replace(" ", "_") + ".jpg";
-                Logger.instance.from(this, 3)
+                Logger.INSTANCE.from(this, 3)
                         .append("Writing circuit to ")
                         .append(name)
                         .newline();

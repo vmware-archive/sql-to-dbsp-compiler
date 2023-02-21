@@ -73,7 +73,7 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
     }
 
     public void addOperator(DBSPOperator operator) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Adding ")
                 .append(operator.toString())
                 .newline();

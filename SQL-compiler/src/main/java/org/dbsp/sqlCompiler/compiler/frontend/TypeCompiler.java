@@ -66,16 +66,16 @@ public class TypeCompiler {
                     return new DBSPTypeDecimal(tn, tn.getMinScale(), nullable);
                 case FLOAT:
                 case REAL:
-                    return DBSPTypeFloat.instance.setMayBeNull(nullable);
+                    return DBSPTypeFloat.INSTANCE.setMayBeNull(nullable);
                 case DOUBLE:
-                    return DBSPTypeDouble.instance.setMayBeNull(nullable);
+                    return DBSPTypeDouble.INSTANCE.setMayBeNull(nullable);
                 case CHAR:
                 case VARCHAR:
-                    return DBSPTypeString.instance.setMayBeNull(nullable);
+                    return DBSPTypeString.INSTANCE.setMayBeNull(nullable);
                 case NULL:
-                    return DBSPTypeNull.instance;
+                    return DBSPTypeNull.INSTANCE;
                 case SYMBOL:
-                    return DBSPTypeKeyword.instance;
+                    return DBSPTypeKeyword.INSTANCE;
                 case BINARY:
                 case VARBINARY:
                 case UNKNOWN:
@@ -111,11 +111,11 @@ public class TypeCompiler {
                 case INTERVAL_SECOND:
                     return new DBSPTypeMillisInterval(tn, nullable);
                 case GEOMETRY:
-                    return DBSPTypeGeoPoint.instance.setMayBeNull(nullable);
+                    return DBSPTypeGeoPoint.INSTANCE.setMayBeNull(nullable);
                 case TIMESTAMP:
-                    return DBSPTypeTimestamp.instance.setMayBeNull(nullable);
+                    return DBSPTypeTimestamp.INSTANCE.setMayBeNull(nullable);
                 case DATE:
-                    return DBSPTypeDate.instance.setMayBeNull(nullable);
+                    return DBSPTypeDate.INSTANCE.setMayBeNull(nullable);
             }
         }
         throw new Unimplemented(dt);

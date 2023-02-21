@@ -105,7 +105,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
     @Override
     public Void visitTest(Zetatest.TestContext ctx) {
         try {
-            Logger.instance.from(this, 2)
+            Logger.INSTANCE.from(this, 2)
                     .append("Visiting test ")
                     .append(ctx.getText()).newline();
             ZetaSQLTest test = new ZetaSQLTest();
@@ -129,7 +129,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitTypedvalue(Zetatest.TypedvalueContext ctx) {
-        Logger.instance.from(this, 2)
+        Logger.INSTANCE.from(this, 2)
                .append("Visiting typedvalue ")
                .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentResult);
@@ -158,133 +158,133 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
     @Override
     public Void visitBytestype(Zetatest.BytestypeContext ctx) {
         // TODO: add support for byte arrays
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting bytes ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeString.instance.setMayBeNull(true);
+        this.resultType = DBSPTypeString.NULLABLE_INSTANCE;
         return super.visitBytestype(ctx);
     }
 
     @Override
     public Void visitInt64type(Zetatest.Int64typeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting int64 ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeInteger.signed64.setMayBeNull(true);
+        this.resultType = DBSPTypeInteger.SIGNED_64.setMayBeNull(true);
         return super.visitInt64type(ctx);
     }
 
     @Override
     public Void visitInt32type(Zetatest.Int32typeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting int32 ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeInteger.signed32.setMayBeNull(true);
+        this.resultType = DBSPTypeInteger.SIGNED_32.setMayBeNull(true);
         return super.visitInt32type(ctx);
     }
 
     @Override
     public Void visitUint32type(Zetatest.Uint32typeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting uint32 ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeInteger.unsigned32.setMayBeNull(true);
+        this.resultType = DBSPTypeInteger.UNSIGNED_32.setMayBeNull(true);
         return super.visitUint32type(ctx);
     }
 
     @Override
     public Void visitUint64type(Zetatest.Uint64typeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting uint64 ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeInteger.unsigned64.setMayBeNull(true);
+        this.resultType = DBSPTypeInteger.UNSIGNED_64.setMayBeNull(true);
         return super.visitUint64type(ctx);
     }
 
     @Override
     public Void visitBooltype(Zetatest.BooltypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting bool ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeBool.instance.setMayBeNull(true);
+        this.resultType = DBSPTypeBool.NULLABLE_INSTANCE;
         return super.visitBooltype(ctx);
     }
 
     @Override
     public Void visitDatetype(Zetatest.DatetypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting date ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeDate.instance.setMayBeNull(true);
+        this.resultType = DBSPTypeDate.NULLABLE_INSTANCE;
         return super.visitDatetype(ctx);
     }
 
     @Override
     public Void visitTimestamptype(Zetatest.TimestamptypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting timestamp ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeTimestamp.instance.setMayBeNull(true);
+        this.resultType = DBSPTypeTimestamp.NULLABLE_INSTANCE;
         return super.visitTimestamptype(ctx);
     }
 
     @Override
     public Void visitTimetype(Zetatest.TimetypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting time ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeTime.instance.setMayBeNull(true);
+        this.resultType = DBSPTypeTime.NULLABLE_INSTANCE;
         return super.visitTimetype(ctx);
     }
 
     @Override
     public Void visitDatetimetype(Zetatest.DatetimetypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting datetime ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeTimestamp.instance.setMayBeNull(true);
+        this.resultType = DBSPTypeTimestamp.NULLABLE_INSTANCE;
         return super.visitDatetimetype(ctx);
     }
 
     @Override
     public Void visitGeographytype(Zetatest.GeographytypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting geography ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeGeoPoint.instance.setMayBeNull(true);
+        this.resultType = DBSPTypeGeoPoint.NULLABLE_INSTANCE;
         return super.visitGeographytype(ctx);
     }
 
     @Override
     public Void visitDoubletype(Zetatest.DoubletypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting double ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeDouble.instance.setMayBeNull(true);
+        this.resultType = DBSPTypeDouble.NULLABLE_INSTANCE;
         return super.visitDoubletype(ctx);
     }
 
     @Override
     public Void visitFloattype(Zetatest.FloattypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting float ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeFloat.instance.setMayBeNull(true);
+        this.resultType = DBSPTypeFloat.NULLABLE_INSTANCE;
         return super.visitFloattype(ctx);
     }
 
     @Override
     public Void visitStringtype(Zetatest.StringtypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting string ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeString.instance.setMayBeNull(true);
+        this.resultType = DBSPTypeString.NULLABLE_INSTANCE;
         return super.visitStringtype(ctx);
     }
 
     @Override
     public Void visitNumerictype(Zetatest.NumerictypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting numeric ")
                 .append(ctx.getText()).newline();
         this.resultType = new DBSPTypeDecimal(null,128, true);
@@ -293,7 +293,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitBignumerictype(Zetatest.BignumerictypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting bignumeric ")
                 .append(ctx.getText()).newline();
         this.resultType = new DBSPTypeDecimal(null,256, true);
@@ -302,7 +302,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitArraytype(Zetatest.ArraytypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting array ")
                 .append(ctx.getText()).newline();
         if (ctx.sqltype() != null) {
@@ -312,7 +312,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
         } else {
             // ARRAY<> will be translated to a vector type
             // unfortunately the element type is not specified at this point.
-            this.resultType = new DBSPTypeVec(DBSPTypeAny.instance);
+            this.resultType = new DBSPTypeVec(DBSPTypeAny.INSTANCE);
         }
         return null;
     }
@@ -324,16 +324,16 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitPrototype(Zetatest.PrototypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting proto ")
                 .append(ctx.getText()).newline();
-        this.resultType = DBSPTypeAny.instance;
+        this.resultType = DBSPTypeAny.INSTANCE;
         throw new Unimplemented("PROTO type not yet supported");
     }
 
     @Override
     public Void visitStructtype(Zetatest.StructtypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting struct ")
                 .append(ctx.getText()).newline();
         this.structNestingLevel++;
@@ -351,11 +351,11 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitEnumtype(Zetatest.EnumtypeContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting enum ")
                 .append(ctx.getText()).newline();
         // TODO: What should this be?
-        this.resultType = DBSPTypeString.instance.setMayBeNull(true);
+        this.resultType = DBSPTypeString.NULLABLE_INSTANCE;
         return super.visitEnumtype(ctx);
     }
 
@@ -363,7 +363,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitBytesvalue(Zetatest.BytesvalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting bytesvalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -375,7 +375,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitBoolvalue(Zetatest.BoolvalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting boolvalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -393,7 +393,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitStringvalue(Zetatest.StringvalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting stringvalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -406,7 +406,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitFloatvalue(Zetatest.FloatvalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting floatvalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -454,7 +454,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitNullvalue(Zetatest.NullvalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting nullvalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -464,7 +464,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitArrayvalue(Zetatest.ArrayvalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting arrayvalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -513,7 +513,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitProtovalue(Zetatest.ProtovalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting protovalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -522,7 +522,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
                     " expected type " + this.currentExpressionType);
         List<DBSPExpression> fields = new ArrayList<>();
         for (Zetatest.ProtofieldvalueContext sqlvalue: ctx.protofieldvalue()) {
-            this.currentExpressionType = DBSPTypeAny.instance;
+            this.currentExpressionType = DBSPTypeAny.INSTANCE;
             this.visitSqlvalue(sqlvalue.sqlvalue());
             Objects.requireNonNull(this.currentValue);
             fields.add(this.currentValue);
@@ -533,7 +533,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitStructvalue(Zetatest.StructvalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting structvalue ")
                 .append(ctx.getText()).newline();
         DBSPType saveExpressionType = this.currentExpressionType;
@@ -557,7 +557,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitDatetimevalue(Zetatest.DatetimevalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting datetime ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -572,7 +572,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitTimevalue(Zetatest.TimevalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting timevalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -585,7 +585,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitEnumvalue(Zetatest.EnumvalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting enumvalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -598,7 +598,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitDatevalue(Zetatest.DatevalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting datevalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -610,7 +610,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitTimestampvalue(Zetatest.TimestampvalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting timestampvalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -626,7 +626,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitIntvalue(Zetatest.IntvalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting intvalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);
@@ -665,7 +665,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
 
     @Override
     public Void visitSt_pointvalue(Zetatest.St_pointvalueContext ctx) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Visiting pointvalue ")
                 .append(ctx.getText()).newline();
         Objects.requireNonNull(this.currentExpressionType);

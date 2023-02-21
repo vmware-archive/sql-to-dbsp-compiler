@@ -211,7 +211,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         if (commonBase.is(DBSPTypeNull.class)) {
             return DBSPLiteral.none(type);
         }
-        SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
+        SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.INSTANCE.getFunction(
                 op, type, commonBase.setMayBeNull(leftType.mayBeNull), commonBase.setMayBeNull(rightType.mayBeNull), true);
         DBSPExpression apply = new DBSPApplyExpression("agg_" + function.function, function.returnType, left, right);
         return ExpressionCompiler.makeCast(node, apply, type);
@@ -257,7 +257,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 right = makeCast(node, right, commonBase.setMayBeNull(rightType.mayBeNull));
         }
         // TODO: we don't need the whole function here, just the result type.
-        SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
+        SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.INSTANCE.getFunction(
                 op, type, left.getNonVoidType(), right.getNonVoidType(), false);
         DBSPExpression call = new DBSPBinaryExpression(node, function.returnType, op, left, right);
         return makeCast(node, call, type);
@@ -293,7 +293,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
 
     @Override
     public DBSPExpression visitCall(RexCall call) {
-        Logger.instance.from(this, 2)
+        Logger.INSTANCE.from(this, 2)
                 .append(call.toString())
                 .append(" ")
                 .append(call.getType().toString());
@@ -331,7 +331,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 return makeBinaryExpression(call, type, "is_distinct", ops);
             case IS_NOT_DISTINCT_FROM: {
                 DBSPExpression op = makeBinaryExpression(call, type, "is_distinct", ops);
-                return makeUnaryExpression(call, DBSPTypeBool.instance, "!", Linq.list(op));
+                return makeUnaryExpression(call, DBSPTypeBool.INSTANCE, "!", Linq.list(op));
             }
             case NOT_EQUALS:
                 return makeBinaryExpression(call, type, "!=", ops);
@@ -368,7 +368,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                         throw new RuntimeException("Should not be reachable");
                 }
                 SqlRuntimeLibrary.FunctionDescription function =
-                        SqlRuntimeLibrary.instance.getFunction(
+                        SqlRuntimeLibrary.INSTANCE.getFunction(
                                 functionName, type, arg.getNonVoidType(), null, false);
                 return function.getCall(arg);
             }
@@ -387,7 +387,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 return makeCast(call, ops.get(0), type);
             case IS_NULL:
             case IS_NOT_NULL: {
-                if (!type.sameType(DBSPTypeBool.instance))
+                if (!type.sameType(DBSPTypeBool.INSTANCE))
                     throw new TranslationException("Expected expression to produce a boolean result", call);
                 DBSPExpression arg = ops.get(0);
                 DBSPType argType = arg.getNonVoidType();
@@ -429,7 +429,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                         if (!alt.getNonVoidType().sameType(finalType))
                             alt = makeCast(call, alt, finalType);
                         DBSPExpression comp = makeBinaryExpression(
-                                call, DBSPTypeBool.instance, "==", Linq.list(value, ops.get(i)));
+                                call, DBSPTypeBool.INSTANCE, "==", Linq.list(value, ops.get(i)));
                         comp = wrapBoolIfNeeded(comp);
                         result = new DBSPIfExpression(call, comp, alt, result);
                     }
@@ -457,11 +457,14 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 return result;
             }
             case ST_POINT: {
-                DBSPExpression tuple = new DBSPGeoPointLiteral(
-                        call,
-                        makeCast(call, ops.get(0), DBSPTypeDouble.instance),
-                        makeCast(call, ops.get(1), DBSPTypeDouble.instance));
-                return makeCast(call, tuple, type);
+                if (ops.size() != 2)
+                    throw new Unimplemented("Expected only 2 operands", call);
+                DBSPExpression left = ops.get(0);
+                DBSPExpression right = ops.get(1);
+                String functionName = "make_geopoint" + type.nullableSuffix() +
+                        "_d" + left.getNonVoidType().nullableSuffix() +
+                        "_d" + right.getNonVoidType().nullableSuffix();
+                return new DBSPApplyExpression(functionName, type, left, right);
             }
             case OTHER_FUNCTION: {
                 String opName = call.op.getName().toLowerCase();
@@ -472,7 +475,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                         DBSPExpression arg = ops.get(0);
                         DBSPType argType = arg.getNonVoidType();
                         SqlRuntimeLibrary.FunctionDescription abs =
-                                SqlRuntimeLibrary.instance.getFunction("abs", type, argType, null, false);
+                                SqlRuntimeLibrary.INSTANCE.getFunction("abs", type, argType, null, false);
                         return abs.getCall(arg);
                     case "st_distance":
                         if (call.operands.size() != 2)
@@ -480,7 +483,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                         DBSPExpression left = ops.get(0);
                         DBSPExpression right = ops.get(1);
                         SqlRuntimeLibrary.FunctionDescription dist =
-                                SqlRuntimeLibrary.instance.getFunction("st_distance", type, left.getNonVoidType(), right.getNonVoidType(), false);
+                                SqlRuntimeLibrary.INSTANCE.getFunction("st_distance", type, left.getNonVoidType(), right.getNonVoidType(), false);
                         return dist.getCall(left, right);
                     case "division":
                         return makeBinaryExpression(call, type, "/", ops);
@@ -502,9 +505,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                     throw new Unimplemented(call);
                 DBSPKeywordLiteral keyword = ops.get(0).to(DBSPKeywordLiteral.class);
                 DBSPType type1 = ops.get(1).getNonVoidType();
-                String functionName = "extract_" + type1.to(IsNumericType.class).getRustString() + "_" + keyword;
-                if (type1.mayBeNull)
-                    functionName += "N";
+                String functionName = "extract_" + type1.to(IsNumericType.class).getRustString() +
+                        "_" + keyword + type1.nullableSuffix();
                 return new DBSPApplyExpression(functionName, type, ops.get(1));
             }
             case FLOOR:
@@ -512,9 +514,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 if (call.operands.size() != 2)
                     throw new Unimplemented(call);
                 DBSPKeywordLiteral keyword = ops.get(1).to(DBSPKeywordLiteral.class);
-                String functionName = call.getKind().toString().toLowerCase() + "_" + type.to(IsNumericType.class).getRustString() + "_" + keyword;
-                if (type.mayBeNull)
-                    functionName += "N";
+                String functionName = call.getKind().toString().toLowerCase() + "_" + type.to(IsNumericType.class).getRustString() + "_" + keyword + type.nullableSuffix();
                 return new DBSPApplyExpression(functionName, type, ops.get(0));
             }
             default:
@@ -523,7 +523,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
     }
 
     DBSPExpression compile(RexNode expression) {
-        Logger.instance.from(this, 3)
+        Logger.INSTANCE.from(this, 3)
                 .append("Compiling ")
                 .append(expression.toString())
                 .newline();

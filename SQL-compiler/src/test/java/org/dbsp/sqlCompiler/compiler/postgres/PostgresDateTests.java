@@ -53,7 +53,7 @@ import java.util.Date;
  */
 @SuppressWarnings("JavadocLinkAsPlainText")
 public class PostgresDateTests extends BaseSQLTests {
-    static final DBSPType nullableDate = DBSPTypeDate.instance.setMayBeNull(true);
+    static final DBSPType nullableDate = DBSPTypeDate.NULLABLE_INSTANCE;
     
     // CREATE TABLE DATE_TBL (f1 date);
     //INSERT INTO DATE_TBL VALUES ('1957-04-09');
@@ -138,7 +138,7 @@ public class PostgresDateTests extends BaseSQLTests {
      */
     static DBSPLiteral reformatDate(@Nullable String date) {
         if (date == null)
-            return DBSPLiteral.none(DBSPTypeTimestamp.instance.setMayBeNull(true));
+            return DBSPLiteral.none(DBSPTypeTimestamp.NULLABLE_INSTANCE);
         try {
             Date converted = inputFormat.parse(date);
             String out = outputFormats.format(converted);
@@ -149,7 +149,7 @@ public class PostgresDateTests extends BaseSQLTests {
     }
 
     static DBSPZSetLiteral makeSet(String[] data, boolean nullable) {
-        DBSPType type = nullable ? nullableDate : DBSPTypeDate.instance;
+        DBSPType type = nullable ? nullableDate : DBSPTypeDate.INSTANCE;
         DBSPZSetLiteral result = new DBSPZSetLiteral(
                 TypeCompiler.makeZSet(
                         new DBSPTypeTuple(type)));
@@ -1045,7 +1045,8 @@ public class PostgresDateTests extends BaseSQLTests {
                 new DBSPZSetLiteral(Linq.map(results,
                         l -> new DBSPTupleExpression(new DBSPIntervalMillisLiteral(
                                 l * 86400 * 1000, true)), DBSPExpression.class));
-        result.add(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeMillisInterval.instance.setMayBeNull(true))));
+        result.add(new DBSPTupleExpression(DBSPLiteral.none(
+                DBSPTypeMillisInterval.NULLABLE_INSTANCE)));
         this.testQuery(query, result, true);
     }
 
@@ -1183,7 +1184,7 @@ public class PostgresDateTests extends BaseSQLTests {
             );
             exprs[i] = tuple;
         }
-        DBSPExpression ni = DBSPLiteral.none(DBSPTypeInteger.signed64.setMayBeNull(true));
+        DBSPExpression ni = DBSPLiteral.none(DBSPTypeInteger.SIGNED_64.setMayBeNull(true));
         exprs[data.length] = new DBSPTupleExpression(DBSPLiteral.none(nullableDate), ni, ni, ni, ni, ni, ni, ni, ni, ni, ni, ni, ni, ni);
         this.testQuery(query, new DBSPZSetLiteral(exprs), true);
     }

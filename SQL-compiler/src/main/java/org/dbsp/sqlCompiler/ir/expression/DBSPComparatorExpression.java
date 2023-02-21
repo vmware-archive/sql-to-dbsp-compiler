@@ -34,7 +34,7 @@ import javax.annotation.Nullable;
  */
 public abstract class DBSPComparatorExpression extends DBSPExpression {
     protected DBSPComparatorExpression(@Nullable Object node) {
-        super(node, DBSPTypeAny.instance);
+        super(node, DBSPTypeAny.INSTANCE);
     }
 
     @Override

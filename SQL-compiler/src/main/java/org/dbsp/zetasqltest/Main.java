@@ -68,7 +68,7 @@ public class Main {
 
 
     public static void main(String[] args) throws IOException {
-        //Logger.instance.setDebugLevel(ZetatestVisitor.class, 1);
+        //Logger.INSTANCE.setDebugLevel(ZetatestVisitor.class, 1);
         Path path = Paths.get(zetaRepo);
         TestLoader loader = new TestLoader();
         Files.walkFileTree(path, loader);

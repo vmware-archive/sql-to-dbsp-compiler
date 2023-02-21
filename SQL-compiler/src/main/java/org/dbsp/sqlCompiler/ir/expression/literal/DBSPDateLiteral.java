@@ -36,7 +36,7 @@ public class DBSPDateLiteral extends DBSPLiteral {
     }
 
     public DBSPDateLiteral(String value, boolean mayBeNull) {
-        super(null, DBSPTypeDate.instance.setMayBeNull(mayBeNull), new DateString(value).getDaysSinceEpoch());
+        super(null, DBSPTypeDate.INSTANCE.setMayBeNull(mayBeNull), new DateString(value).getDaysSinceEpoch());
     }
 
     public DBSPDateLiteral(String value) {

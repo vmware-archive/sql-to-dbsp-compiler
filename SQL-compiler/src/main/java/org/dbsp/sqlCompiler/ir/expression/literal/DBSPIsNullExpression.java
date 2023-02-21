@@ -37,7 +37,7 @@ public class DBSPIsNullExpression extends DBSPExpression {
     public final DBSPExpression expression;
 
     public DBSPIsNullExpression(@Nullable Object node, DBSPExpression expression) {
-        super(node, DBSPTypeBool.instance);
+        super(node, DBSPTypeBool.INSTANCE);
         this.expression = expression;
         if (!expression.getNonVoidType().mayBeNull)
             throw new RuntimeException("isNull applied to non-nullable expression? " + expression);

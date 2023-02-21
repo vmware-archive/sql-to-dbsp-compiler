@@ -39,7 +39,7 @@ public class Logger implements IDebuggable {
     /**
      * There is only one instance of the logger for the whole program.
      */
-    public static final Logger instance = new Logger();
+    public static final Logger INSTANCE = new Logger();
 
     private Logger() {
         this.debugStream = new IndentStream(System.err);

@@ -205,7 +205,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         List<DBSPStatement> statements = new ArrayList<>();
         statements.add(input);
         DBSPLetStatement let = new DBSPLetStatement(vec.variable,
-                new DBSPApplyExpression(DBSPTypeAny.instance.path(
+                new DBSPApplyExpression(DBSPTypeAny.INSTANCE.path(
                         new DBSPPath("Vec", "new"))),
                 true);
         statements.add(let);
@@ -213,9 +213,9 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             for (int i = 0; i < inputType.tupFields.length; i++) {
                 DBSPExpression field = input.getVarReference().field(i);
                 DBSPExpression elems = new DBSPApplyExpression("to_elements",
-                        DBSPTypeAny.instance, field.borrow());
+                        DBSPTypeAny.INSTANCE, field.borrow());
 
-                DBSPVariablePath e = DBSPTypeAny.instance.var("e");
+                DBSPVariablePath e = DBSPTypeAny.INSTANCE.var("e");
                 DBSPExpression[] fields = new DBSPExpression[inputType.tupFields.length];
                 for (int j = 0; j < inputType.tupFields.length; j++) {
                     DBSPType fieldType = inputType.tupFields[j];
@@ -228,9 +228,9 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 DBSPExpression projected = new DBSPRawTupleExpression(fields);
                 DBSPExpression lambda = projected.closure(e.asParameter());
                 DBSPExpression iter = new DBSPApplyMethodExpression(
-                        "iter", DBSPTypeAny.instance, elems);
+                        "iter", DBSPTypeAny.INSTANCE, elems);
                 DBSPExpression map = new DBSPApplyMethodExpression(
-                        "map", DBSPTypeAny.instance, iter, lambda);
+                        "map", DBSPTypeAny.INSTANCE, iter, lambda);
                 DBSPExpression expr = new DBSPApplyMethodExpression(
                         "extend", null, vec, map);
                 DBSPStatement statement = new DBSPExpressionStatement(expr);
@@ -304,7 +304,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         String dbspQuery = origQuery;
         if (!dbspQuery.toLowerCase().contains("create view"))
             dbspQuery = "CREATE VIEW V AS (" + origQuery + ")";
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Query ")
                 .append(suffix)
                 .append(":\n")
@@ -430,7 +430,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 boolean status;
                 try {
                     if (this.buggyOperations.contains(stat.statement)) {
-                        Logger.instance.from(this, 1)
+                        Logger.INSTANCE.from(this, 1)
                                 .append("Skipping buggy test ")
                                 .append(stat.statement)
                                 .newline();
@@ -439,7 +439,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                         status = this.statement(stat);
                     }
                 } catch (SQLException ex) {
-                    Logger.instance.from(this, 1)
+                    Logger.INSTANCE.from(this, 1)
                             .append("Statement failed ")
                             .append(stat.statement)
                             .newline();
@@ -457,7 +457,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                     continue;
                 }
                 if (this.buggyOperations.contains(query.query)) {
-                    Logger.instance.from(this, 1)
+                    Logger.INSTANCE.from(this, 1)
                             .append("Skipping buggy test ")
                             .append(query.query)
                             .newline();
@@ -479,7 +479,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         // Make sure there are no left-overs if this executor
         // is invoked to process a new file.
         this.reset();
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Finished executing ")
                 .append(file.toString())
                 .newline();
@@ -504,7 +504,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             SqlTestQueryOutputDescription description) {
         List<DBSPStatement> list = new ArrayList<>();
         DBSPLetStatement circ = new DBSPLetStatement("circ",
-                new DBSPApplyExpression(circuit.name, DBSPTypeAny.instance), true);
+                new DBSPApplyExpression(circuit.name, DBSPTypeAny.INSTANCE), true);
         list.add(circ);
         DBSPType circuitOutputType = circuit.getOutputType(0);
         // the following may not be the same, since SqlLogicTest sometimes lies about the output type
@@ -520,7 +520,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             String inputI = circuit.getInputTables().get(i);
             int index = contents.getTableIndex(inputI);
             arguments[i] = new DBSPFieldExpression(null,
-                    DBSPTypeAny.instance.var("_in"), index);
+                    DBSPTypeAny.INSTANCE.var("_in"), index);
         }
         DBSPLetStatement createOutput = new DBSPLetStatement(
                 "output",
@@ -547,11 +547,11 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             DBSPExpression count;
             if (isVector) {
                 count = new DBSPApplyExpression("weighted_vector_count",
-                        DBSPTypeUSize.instance,
+                        DBSPTypeUSize.INSTANCE,
                         output0.borrow());
             } else {
                 count = new DBSPApplyMethodExpression("weighted_count",
-                        DBSPTypeUSize.instance,
+                        DBSPTypeUSize.INSTANCE,
                         output0);
             }
             list.add(new DBSPExpressionStatement(
@@ -573,13 +573,13 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                     elementType = oType.elementType;
                 }
                 DBSPExpression zset_to_strings = new DBSPQualifyTypeExpression(
-                        DBSPTypeAny.instance.var(functionProducingStrings),
+                        DBSPTypeAny.INSTANCE.var(functionProducingStrings),
                         elementType,
                         oType.weightType
                 );
                 list.add(new DBSPExpressionStatement(
                         new DBSPApplyExpression("assert_eq!", null,
-                                new DBSPApplyExpression(functionProducingStrings, DBSPTypeAny.instance,
+                                new DBSPApplyExpression(functionProducingStrings, DBSPTypeAny.INSTANCE,
                                         output0.borrow(),
                                         columnTypes,
                                         sort),
@@ -599,14 +599,14 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 throw new RuntimeException("Expected hash to be supplied");
             String hash = isVector ? "hash_vectors" : "hash";
             list.add(new DBSPLetStatement("_hash",
-                    new DBSPApplyExpression(hash, DBSPTypeString.instance,
+                    new DBSPApplyExpression(hash, DBSPTypeString.INSTANCE,
                             output0.borrow(),
                             columnTypes,
                             sort)));
             list.add(
                     new DBSPExpressionStatement(
                             new DBSPApplyExpression("assert_eq!", null,
-                                    DBSPTypeString.instance.var("_hash"),
+                                    DBSPTypeString.INSTANCE.var("_hash"),
                                     new DBSPStringLiteral(description.hash))));
         }
         DBSPExpression body = new DBSPBlockExpression(list, null);
@@ -615,7 +615,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
     }
 
     public boolean statement(SqlStatement statement) throws SQLException {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Executing ")
                 .append(statement.toString())
                 .newline();

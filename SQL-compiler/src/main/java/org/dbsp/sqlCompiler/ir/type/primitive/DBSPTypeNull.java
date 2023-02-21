@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
  * This type has a single value, NULL.
  */
 public class DBSPTypeNull extends DBSPTypeBaseType {
-    public static final DBSPType instance = new DBSPTypeNull(null, true);
+    public static final DBSPType INSTANCE =new DBSPTypeNull(null, true);
 
     @SuppressWarnings("SameParameterValue")
     protected DBSPTypeNull(@Nullable Object node, boolean mayBeNull) {

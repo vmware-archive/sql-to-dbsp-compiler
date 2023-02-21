@@ -33,7 +33,8 @@ import org.dbsp.util.UnsupportedException;
 import javax.annotation.Nullable;
 
 public class DBSPTypeDate extends DBSPTypeBaseType implements IsNumericType, IsDateType {
-    public static final DBSPTypeDate instance = new DBSPTypeDate(null, false);
+    public static final DBSPTypeDate INSTANCE =new DBSPTypeDate(null, false);
+    public static final DBSPTypeDate NULLABLE_INSTANCE = new DBSPTypeDate(null, true);
 
     protected DBSPTypeDate(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);
@@ -60,12 +61,12 @@ public class DBSPTypeDate extends DBSPTypeBaseType implements IsNumericType, IsD
 
     @Override
     public DBSPLiteral getZero() {
-        throw new UnsupportedException(instance);
+        throw new UnsupportedException(this);
     }
 
     @Override
     public DBSPLiteral getOne() {
-        throw new UnsupportedException(instance);
+        throw new UnsupportedException(this);
     }
 
     @Override

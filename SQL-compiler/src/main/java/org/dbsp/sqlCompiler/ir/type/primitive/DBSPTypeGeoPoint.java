@@ -29,9 +29,10 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import javax.annotation.Nullable;
 
 public class DBSPTypeGeoPoint extends DBSPTypeGeo {
-    public static final DBSPTypeGeoPoint instance = new DBSPTypeGeoPoint(null, false);
+    public static final DBSPTypeGeoPoint INSTANCE =new DBSPTypeGeoPoint(null, false);
+    public static final DBSPTypeGeoPoint NULLABLE_INSTANCE = new DBSPTypeGeoPoint(null, true);
 
-    protected DBSPTypeGeoPoint(@Nullable Object node, boolean mayBeNull) {
+    public DBSPTypeGeoPoint(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);
     }
 

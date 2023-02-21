@@ -34,7 +34,7 @@ import java.util.Objects;
 public class DBSPFilterOperator extends DBSPUnaryOperator {
     public DBSPFilterOperator(@Nullable Object filter, DBSPExpression condition, DBSPOperator input) {
         super(filter, "filter", condition, input.outputType, input.isMultiset, input);
-        this.checkResultType(condition, DBSPTypeBool.instance);
+        this.checkResultType(condition, DBSPTypeBool.INSTANCE);
     }
 
     @Override

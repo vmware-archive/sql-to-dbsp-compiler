@@ -104,14 +104,14 @@ public class NaiveIncrementalTests extends EndToEndTests {
         String query = "SELECT DIVISION(1, 0)";
         this.testConstantOutput(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
-                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test @Override
     public void inTest() {
         String query = "SELECT 3 in (SELECT COL5 FROM T)";
         this.testAggregate(query,
-                new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeBool.instance.setMayBeNull(true)))),
+                new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeBool.NULLABLE_INSTANCE))),
                 new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPBoolLiteral(false, true)))
         );
     }
@@ -123,8 +123,8 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 "0.5 * (SELECT Sum(r1.COL5) FROM T r1) =\n" +
                 "(SELECT Sum(r2.COL5) FROM T r2 WHERE r2.COL1 = r.COL1)";
         this.testAggregate(query,
-                new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))),
-                new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))),
+                new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test @Override
@@ -132,7 +132,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
         String query = "SELECT 1 / 0";
         this.testConstantOutput(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
-                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test @Override
@@ -140,7 +140,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
         String query = "SELECT 2 / (1 / 0)";
         this.testConstantOutput(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
-                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test @Override
@@ -174,7 +174,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
         String query = "SELECT SUM(T.COL1) FROM T WHERE FALSE";
         DBSPZSetLiteral result = new DBSPZSetLiteral(
                 new DBSPTupleExpression(
-                DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true))));
+                DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true))));
         this.testConstantOutput(query, result);
     }
 
@@ -203,7 +203,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPI32Literal(6, true))),
                 new DBSPZSetLiteral(
-                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test @Override
@@ -213,7 +213,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPI32Literal(10, true))),
                 new DBSPZSetLiteral(
-                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test @Override
@@ -224,7 +224,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 new DBSPI32Literal(10, true)));
         this.testAggregate(query, output, new DBSPZSetLiteral(
                 output.zsetType.weightType,
-                new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test @Override
@@ -234,7 +234,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPDoubleLiteral(13.0, true))),
                 new DBSPZSetLiteral(
-                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeDouble.instance.setMayBeNull(true)))));
+                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeDouble.NULLABLE_INSTANCE))));
     }
 
     @Test @Override
@@ -244,7 +244,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPI32Literal(1, true))),
                 new DBSPZSetLiteral(
-                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.NULLABLE_SIGNED_32))));
     }
 
     @Test @Override
@@ -254,7 +254,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPI32Literal(20, true))),
                 new DBSPZSetLiteral(
-                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.NULLABLE_SIGNED_32))));
     }
 
     @Test @Override
@@ -267,7 +267,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
                                 new DBSPDoubleLiteral(13.0, true))),
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(
-                                DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)),
-                                DBSPLiteral.none(DBSPTypeDouble.instance.setMayBeNull(true)))));
+                                DBSPLiteral.none(DBSPTypeInteger.NULLABLE_SIGNED_32),
+                                DBSPLiteral.none(DBSPTypeDouble.NULLABLE_INSTANCE))));
     }
 }

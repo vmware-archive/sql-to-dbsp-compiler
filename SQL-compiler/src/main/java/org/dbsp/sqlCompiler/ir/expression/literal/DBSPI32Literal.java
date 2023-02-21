@@ -41,7 +41,7 @@ public class DBSPI32Literal extends DBSPLiteral {
     }
 
     public DBSPI32Literal(@Nullable Integer value, boolean nullable) {
-        super(null, DBSPTypeInteger.signed32.setMayBeNull(nullable), value);
+        super(null, DBSPTypeInteger.SIGNED_32.setMayBeNull(nullable), value);
         if (value == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = value;

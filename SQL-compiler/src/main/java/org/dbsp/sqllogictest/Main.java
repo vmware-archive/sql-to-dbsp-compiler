@@ -104,7 +104,7 @@ public class Main {
 
     @SuppressWarnings("SpellCheckingInspection")
     public static void main(String[] argv) throws IOException {
-        SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
+        SqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         String benchDir = "../../sqllogictest/test";
         List<String> files = Linq.list(
                 "random/expr/slt_good_7.test"
@@ -149,13 +149,13 @@ public class Main {
             args = a.toArray(new String[0]);
         }
         /*
-        Logger.instance.setDebugLevel(JDBCExecutor.class, 3);
-        Logger.instance.setDebugLevel(DBSPExecutor.class, 3);
-        Logger.instance.setDebugLevel(DBSP_JDBC_Executor.class, 3);
-        Logger.instance.setDebugLevel(SLTTestFile.class, 3);
-        Logger.instance.setDebugLevel(PassesVisitor.class, 3);
-        Logger.instance.setDebugLevel(RemoveOperatorsVisitor.class, 3);
-        Logger.instance.setDebugLevel(CalciteCompiler.class, 3);
+        Logger.INSTANCE.setDebugLevel(JDBCExecutor.class, 3);
+        Logger.INSTANCE.setDebugLevel(DBSPExecutor.class, 3);
+        Logger.INSTANCE.setDebugLevel(DBSP_JDBC_Executor.class, 3);
+        Logger.INSTANCE.setDebugLevel(SLTTestFile.class, 3);
+        Logger.INSTANCE.setDebugLevel(PassesVisitor.class, 3);
+        Logger.INSTANCE.setDebugLevel(RemoveOperatorsVisitor.class, 3);
+        Logger.INSTANCE.setDebugLevel(CalciteCompiler.class, 3);
          */
         ExecutionOptions options = new ExecutionOptions();
         options.parse(args);

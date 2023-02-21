@@ -144,7 +144,7 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
      * @param old     only used for debugging.
      */
     void map(IDBSPInnerNode old, IDBSPInnerNode newOp) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append(this.toString())
                 .append(":")
                 .append(old.toString())

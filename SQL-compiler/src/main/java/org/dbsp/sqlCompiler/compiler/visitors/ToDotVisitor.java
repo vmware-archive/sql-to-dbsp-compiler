@@ -88,7 +88,7 @@ public class ToDotVisitor extends CircuitVisitor implements IModule {
 
     public static DBSPCircuit toDot(String fileName, boolean toJpg, DBSPCircuit circuit) {
         try {
-            Logger.instance.from("ToDotVisitor", 1)
+            Logger.INSTANCE.from("ToDotVisitor", 1)
                     .append("Writing circuit to ")
                     .append(fileName)
                     .newline();

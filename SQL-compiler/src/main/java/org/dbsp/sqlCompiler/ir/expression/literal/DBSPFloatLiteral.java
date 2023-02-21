@@ -42,7 +42,7 @@ public class DBSPFloatLiteral extends DBSPLiteral {
     }
 
     public DBSPFloatLiteral(@Nullable Float f, boolean nullable) {
-        super(null, DBSPTypeFloat.instance.setMayBeNull(nullable), f);
+        super(null, DBSPTypeFloat.INSTANCE.setMayBeNull(nullable), f);
         if (f == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = f;

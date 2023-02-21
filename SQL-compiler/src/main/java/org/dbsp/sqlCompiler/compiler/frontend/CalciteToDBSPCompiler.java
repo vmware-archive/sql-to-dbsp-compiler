@@ -154,7 +154,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     <T> boolean visitIfMatches(RelNode node, Class<T> clazz, Consumer<T> method) {
         T value = ICastable.as(node, clazz);
         if (value != null) {
-            Logger.instance.from(this, 4)
+            Logger.INSTANCE.from(this, 4)
                     .append("Processing ")
                     .append(node.toString())
                     .newline();
@@ -255,13 +255,13 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPExpression increment = this.declare("increment", accumFunction);
         DBSPClosureExpression postClosure = new DBSPTupleExpression(posts).closure(postAccum.asParameter());
         DBSPExpression post = this.declare("post", postClosure);
-        DBSPExpression constructor = DBSPTypeAny.instance.path(
+        DBSPExpression constructor = DBSPTypeAny.INSTANCE.path(
                 new DBSPPath(
                         new DBSPSimplePathSegment("Fold",
-                                DBSPTypeAny.instance,
+                                DBSPTypeAny.INSTANCE,
                                 new DBSPSemigroupType(semigroups, accumulatorTypes),
-                                DBSPTypeAny.instance,
-                                DBSPTypeAny.instance),
+                                DBSPTypeAny.INSTANCE,
+                                DBSPTypeAny.INSTANCE),
                         new DBSPSimplePathSegment("with_output")));
         DBSPExpression folder = new DBSPApplyExpression(constructor, zero, increment, post);
         return new FoldingDescription(this.declare("folder", folder),
@@ -363,7 +363,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 //                  +
                 //              {z->1}/{c->1}
                 this.circuit.addOperator(map);
-                DBSPVariablePath _t = DBSPTypeAny.instance.var("_t");
+                DBSPVariablePath _t = DBSPTypeAny.INSTANCE.var("_t");
                 DBSPExpression toZero = fd.defaultZero.closure(_t.asParameter());
                 DBSPOperator map1 = new DBSPMapOperator(aggregate, toZero, type, map);
                 this.circuit.addOperator(map1);
@@ -531,7 +531,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 if (condition == null)
                     condition = expr;
                 else
-                    condition = new DBSPBinaryExpression(join, DBSPTypeBool.instance, "||", condition, expr);
+                    condition = new DBSPBinaryExpression(join, DBSPTypeBool.INSTANCE, "||", condition, expr);
             }
         }
         DBSPExpression check = new DBSPIfExpression(join, Objects.requireNonNull(condition), none, some);
@@ -840,9 +840,9 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             numericBound = ExpressionCompiler.makeCast(bound, value, boundType);
         }
         String beforeAfter = bound.isPreceding() ? "Before" : "After";
-        return new DBSPStructExpression(DBSPTypeAny.instance.path(
+        return new DBSPStructExpression(DBSPTypeAny.INSTANCE.path(
                 new DBSPPath("RelOffset", beforeAfter)),
-                DBSPTypeAny.instance, numericBound);
+                DBSPTypeAny.INSTANCE, numericBound);
     }
 
     public void visitWindow(LogicalWindow window) {
@@ -880,9 +880,9 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             DBSPExpression lb = this.compileWindowBound(group.lowerBound, sortType, eComp);
             DBSPExpression ub = this.compileWindowBound(group.upperBound, sortType, eComp);
             DBSPExpression windowExpr = new DBSPStructExpression(
-                    DBSPTypeAny.instance.path(
+                    DBSPTypeAny.INSTANCE.path(
                             new DBSPPath("RelRange", "new")),
-                    DBSPTypeAny.instance, lb, ub);
+                    DBSPTypeAny.INSTANCE, lb, ub);
             DBSPExpression windowExprVar = this.declare("window", windowExpr);
 
             // Map each row to an expression of the form: |t| (partition, (order, t.clone()))
@@ -971,7 +971,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         this.circuit.addOperator(index);
         // apply an aggregation function that just creates a vector.
         DBSPTypeVec vecType = new DBSPTypeVec(inputRowType);
-        DBSPExpression zero = new DBSPApplyExpression(DBSPTypeAny.instance.path(
+        DBSPExpression zero = new DBSPApplyExpression(DBSPTypeAny.INSTANCE.path(
                 new DBSPPath(vecType.name, "new")));
         DBSPVariablePath accum = vecType.var("a");
         DBSPVariablePath row = inputRowType.var("v");
@@ -979,14 +979,14 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPExpression wPush = new DBSPApplyExpression("weighted_push", null, accum, row, weight);
         DBSPExpression push = wPush.closure(
                 accum.asRefParameter(true), row.asRefParameter(), CalciteToDBSPCompiler.weight.asParameter());
-        DBSPExpression constructor = DBSPTypeAny.instance.path(
+        DBSPExpression constructor = DBSPTypeAny.INSTANCE.path(
             new DBSPPath(
                     new DBSPSimplePathSegment("Fold",
-                            DBSPTypeAny.instance,
+                            DBSPTypeAny.INSTANCE,
                         new DBSPTypeUser(null, "UnimplementedSemigroup",
-                                false, DBSPTypeAny.instance),
-                        DBSPTypeAny.instance,
-                        DBSPTypeAny.instance),
+                                false, DBSPTypeAny.INSTANCE),
+                        DBSPTypeAny.INSTANCE,
+                        DBSPTypeAny.INSTANCE),
                     new DBSPSimplePathSegment("new")));
 
         DBSPExpression folder = new DBSPApplyExpression(constructor, zero, push);
@@ -1026,7 +1026,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     public void visit(
             RelNode node, int ordinal,
             @org.checkerframework.checker.nullness.qual.Nullable RelNode parent) {
-        Logger.instance.from(this, 3)
+        Logger.INSTANCE.from(this, 3)
                 .append("Visiting ")
                 .append(node.toString())
                 .newline();
@@ -1058,7 +1058,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         if (statement.is(CreateViewStatement.class)) {
             CreateViewStatement view = statement.to(CreateViewStatement.class);
             RelNode rel = view.getRelNode();
-            Logger.instance.from(this, 2)
+            Logger.INSTANCE.from(this, 2)
                     .append(CalciteCompiler.getPlan(rel))
                     .newline();
             this.go(rel);

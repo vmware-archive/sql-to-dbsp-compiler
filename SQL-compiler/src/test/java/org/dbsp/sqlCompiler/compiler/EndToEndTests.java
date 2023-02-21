@@ -57,7 +57,7 @@ public class EndToEndTests extends BaseSQLTests {
     @Test
     public void testConcatNull() {
         String query = "SELECT T.COL4 || NULL FROM T";
-        DBSPExpression lit = new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeString.instance.setMayBeNull(true)));
+        DBSPExpression lit = new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeString.NULLABLE_INSTANCE));
         this.testQuery(query, new DBSPZSetLiteral(lit, lit));
     }
 
@@ -105,7 +105,7 @@ public class EndToEndTests extends BaseSQLTests {
                 "0.5 * (SELECT Sum(r1.COL5) FROM T r1) =\n" +
                 "(SELECT Sum(r2.COL5) FROM T r2 WHERE r2.COL1 = r.COL1)";
         this.testQuery(query, new DBSPZSetLiteral(new DBSPTupleExpression(
-                DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
 
         // TODO
         query = "SELECT Sum(b.price * b.volume) FROM bids b\n" +
@@ -136,7 +136,7 @@ public class EndToEndTests extends BaseSQLTests {
         this.testQuery(query,
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPI32Literal(11, true)),
-                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test
@@ -145,7 +145,7 @@ public class EndToEndTests extends BaseSQLTests {
         this.testQuery(query,
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPI32Literal(-1, true)),
-                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test
@@ -154,7 +154,7 @@ public class EndToEndTests extends BaseSQLTests {
         this.testQuery(query,
                 new DBSPZSetLiteral(
                         new DBSPTupleExpression(new DBSPI32Literal(1, true)),
-                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test
@@ -327,7 +327,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT T.COL1 / T.COL5 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
-                        DBSPTypeInteger.signed32.setMayBeNull(true))),
+                        DBSPTypeInteger.SIGNED_32.setMayBeNull(true))),
                 new DBSPTupleExpression(new DBSPI32Literal(10, true))));
     }
 
@@ -336,7 +336,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT T.COL5 / T.COL5 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
-                        DBSPTypeInteger.signed32.setMayBeNull(true))),
+                        DBSPTypeInteger.SIGNED_32.setMayBeNull(true))),
                 new DBSPTupleExpression(new DBSPI32Literal(1, true))));
     }
 
@@ -345,7 +345,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT 1 / 0";
         this.testQuery(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
-                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test
@@ -353,7 +353,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT 2 / (1 / 0)";
         this.testQuery(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
-                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test
@@ -362,7 +362,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT DIVISION(1, 0)";
         this.testQuery(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
-                        DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test
@@ -370,7 +370,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT T.COL6 / T.COL6 FROM T";
         this.testQuery(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(DBSPLiteral.none(
-                        DBSPTypeDouble.instance.setMayBeNull(true))),
+                        DBSPTypeDouble.NULLABLE_INSTANCE)),
                 new DBSPTupleExpression(new DBSPDoubleLiteral(Double.NaN, true))));
     }
 
@@ -418,7 +418,7 @@ public class EndToEndTests extends BaseSQLTests {
     public void inTest() {
         String query = "SELECT 3 in (SELECT COL5 FROM T)";
         this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeBool.instance.setMayBeNull(true)))));
+                new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeBool.NULLABLE_INSTANCE))));
     }
 
     @Test
@@ -458,7 +458,7 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT SUM(T.COL1) FROM T WHERE FALSE";
         this.testQuery(query, new DBSPZSetLiteral(
                  new DBSPTupleExpression(
-                        DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)))));
+                        DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 
     @Test
