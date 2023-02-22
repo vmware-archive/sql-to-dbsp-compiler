@@ -30,3 +30,27 @@ impl GeoPoint {
         F64::from(left.euclidean_distance(&right))
     }
 }
+
+pub fn make_geopoint_d_d(left: F64, right: F64) -> GeoPoint {
+    GeoPoint::new(left, right)
+}
+
+pub fn make_geopointN_d_d(left: F64, right: F64) -> Option<GeoPoint> {
+    Some(make_geopoint_d_d(left, right))
+}
+
+pub fn make_geopointN_dN_d(left: Option<F64>, right: F64) -> Option<GeoPoint> {
+    left.map(|x| make_geopoint_d_d(x, right))
+}
+
+pub fn make_geopointN_d_dN(left: F64, right: Option<F64>) -> Option<GeoPoint> {
+    right.map(|x| make_geopoint_d_d(left, x))
+}
+
+pub fn make_geopointN_dN_dN(left: Option<F64>, right: Option<F64>) -> Option<GeoPoint> {
+    match (left, right) {
+        (None, _) => None,
+        (_, None) => None,
+        (Some(x), Some(y)) => make_geopointN_d_d(x, y),
+    }
+}

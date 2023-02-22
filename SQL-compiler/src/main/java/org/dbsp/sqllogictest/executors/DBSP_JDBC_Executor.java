@@ -90,7 +90,7 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
     public boolean statement(SqlStatement statement) throws SQLException {
         this.statementExecutor.statement(statement);
         String command = statement.statement.toLowerCase();
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Executing ")
                 .append(command)
                 .newline();

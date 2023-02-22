@@ -313,8 +313,8 @@ public class ToRustInnerVisitor extends InnerVisitor {
             throw new UnsupportedException(sourceType);
         String destName = base.shortName();
         String srcName = baseSource.shortName();
-        String functionName = "cast_to_" + destName + (base.mayBeNull ? "N" : "") +
-                "_" + srcName + (baseSource.mayBeNull ? "N" : "");
+        String functionName = "cast_to_" + destName + base.nullableSuffix() +
+                "_" + srcName + baseSource.nullableSuffix();
         this.builder.append(functionName).append("(");
         expression.source.accept(this);
         this.builder.append(")");
@@ -348,7 +348,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
                 this.builder.append(")");
             }
         } else {
-            SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.instance.getFunction(
+            SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.INSTANCE.getFunction(
                     expression.operation,
                     expression.getNonVoidType(),
                     expression.left.getNonVoidType(),

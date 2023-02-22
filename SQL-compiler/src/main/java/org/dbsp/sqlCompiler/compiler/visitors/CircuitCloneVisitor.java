@@ -67,7 +67,7 @@ public class CircuitCloneVisitor extends CircuitVisitor
     }
 
     void map(DBSPOperator old, DBSPOperator newOp, boolean add) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append(this.toString())
                 .append(":")
                 .append(old.toString())
@@ -84,7 +84,7 @@ public class CircuitCloneVisitor extends CircuitVisitor
     }
 
     void addOperator(DBSPOperator operator) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append(this.toString())
                 .append(" adding ")
                 .append(operator.toString())
@@ -112,7 +112,7 @@ public class CircuitCloneVisitor extends CircuitVisitor
             return;
         this.visited.add(operator);
         List<DBSPOperator> sources = Linq.map(operator.inputs, this::mapped);
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append(this.toString())
                 .append(" replacing inputs of ")
                 .increase()

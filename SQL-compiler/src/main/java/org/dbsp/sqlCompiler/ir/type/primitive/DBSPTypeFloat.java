@@ -46,7 +46,8 @@ public class DBSPTypeFloat extends DBSPTypeFP implements IsNumericType {
         return "f";
     }
 
-    public static final DBSPTypeFloat instance = new DBSPTypeFloat(null,false);
+    public static final DBSPTypeFloat INSTANCE =new DBSPTypeFloat(null,false);
+    public static final DBSPTypeFloat NULLABLE_INSTANCE = new DBSPTypeFloat(null,true);
 
     @Override
     public boolean sameType(@Nullable DBSPType type) {

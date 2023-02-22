@@ -29,7 +29,8 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import javax.annotation.Nullable;
 
 public class DBSPTypeString extends DBSPTypeBaseType {
-    public static final DBSPTypeString instance = new DBSPTypeString(null,false);
+    public static final DBSPTypeString INSTANCE =new DBSPTypeString(null,false);
+    public static final DBSPTypeString NULLABLE_INSTANCE = new DBSPTypeString(null,true);
 
     protected DBSPTypeString(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
 

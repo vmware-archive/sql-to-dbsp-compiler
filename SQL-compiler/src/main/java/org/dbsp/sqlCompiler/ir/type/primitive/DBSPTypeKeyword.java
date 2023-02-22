@@ -35,7 +35,7 @@ import javax.annotation.Nullable;
  * It should never surface in code.
  */
 public class DBSPTypeKeyword extends DBSPTypeBaseType {
-    public static final DBSPTypeKeyword instance = new DBSPTypeKeyword();
+    public static final DBSPTypeKeyword INSTANCE =new DBSPTypeKeyword();
 
     protected DBSPTypeKeyword() {
         super(null, false);

@@ -36,7 +36,7 @@ public class DBSPTimeLiteral extends DBSPLiteral {
     }
 
     public DBSPTimeLiteral(String value, boolean mayBeNull) {
-        super(null, DBSPTypeTime.instance.setMayBeNull(mayBeNull), new TimeString(value));
+        super(null, DBSPTypeTime.INSTANCE.setMayBeNull(mayBeNull), new TimeString(value));
     }
 
     @Override

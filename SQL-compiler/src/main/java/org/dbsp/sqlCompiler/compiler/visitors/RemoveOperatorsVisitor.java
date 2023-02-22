@@ -47,7 +47,7 @@ public class RemoveOperatorsVisitor extends CircuitCloneVisitor {
         if (this.keep.contains(node)) {
             this.replace(node);
         } else {
-            Logger.instance.from(this, 2)
+            Logger.INSTANCE.from(this, 2)
                     .append("Removing ")
                     .append(node.toString())
                     .newline();
@@ -61,7 +61,7 @@ public class RemoveOperatorsVisitor extends CircuitCloneVisitor {
             DBSPOperator input = this.mapped(node.input());
             this.map(node, input, false);
         } else {
-            Logger.instance.from(this, 2)
+            Logger.INSTANCE.from(this, 2)
                     .append("Removing ")
                     .append(node.toString())
                     .newline();
@@ -72,7 +72,7 @@ public class RemoveOperatorsVisitor extends CircuitCloneVisitor {
     @Override
     public void startVisit(IDBSPOuterNode node) {
         super.startVisit(node);
-        Logger.instance.from(this, 2)
+        Logger.INSTANCE.from(this, 2)
                 .append("Keeping ")
                 .append(this.keep.toString())
                 .newline();

@@ -394,7 +394,7 @@ public class CalciteCompiler implements IModule {
 
     RelNode optimize(RelNode rel) {
         // Without the following some optimization rules do nothing.
-        Logger.instance.from(this, 2)
+        Logger.INSTANCE.from(this, 2)
                 .append("Before optimizer")
                 .increase()
                 .append(getPlan(rel))
@@ -405,7 +405,7 @@ public class CalciteCompiler implements IModule {
                 cluster, null);
         // This converts correlated sub-queries into standard joins.
         rel = RelDecorrelator.decorrelateQuery(rel, relBuilder);
-        Logger.instance.from(this, 2)
+        Logger.INSTANCE.from(this, 2)
                 .append("After decorrelator")
                 .increase()
                 .append(getPlan(rel))
@@ -417,7 +417,7 @@ public class CalciteCompiler implements IModule {
             HepPlanner planner = new HepPlanner(program);
             planner.setRoot(rel);
             rel = planner.findBestExp();
-            Logger.instance.from(this, 3)
+            Logger.INSTANCE.from(this, 3)
                     .append("After optimizer stage ")
                     .append(stage)
                     .increase()
@@ -427,7 +427,7 @@ public class CalciteCompiler implements IModule {
             stage++;
         }
 
-        Logger.instance.from(this, 2)
+        Logger.INSTANCE.from(this, 2)
                 .append("After optimizer ")
                 .increase()
                 .append(getPlan(rel))
@@ -494,7 +494,7 @@ public class CalciteCompiler implements IModule {
                 } else {
                     if (ct.query == null)
                         throw new UnsupportedException(node);
-                    Logger.instance.from(this, 1)
+                    Logger.INSTANCE.from(this, 1)
                             .append(ct.query.toString())
                             .newline();
                     RelRoot relRoot = this.converter.convertQuery(ct.query, true, true);
@@ -508,11 +508,11 @@ public class CalciteCompiler implements IModule {
             if (node.getKind().equals(SqlKind.CREATE_VIEW)) {
                 SqlCreateView cv = (SqlCreateView) node;
                 SqlNode query = cv.query;
-                Logger.instance.from(this, 2)
+                Logger.INSTANCE.from(this, 2)
                         .append(query.toString())
                         .newline();
                 query = query.accept(this.astRewriter);
-                Logger.instance.from(this, 2)
+                Logger.INSTANCE.from(this, 2)
                         .append(Objects.requireNonNull(query).toString())
                         .newline();
                 RelRoot relRoot = this.converter.convertQuery(query, true, true);

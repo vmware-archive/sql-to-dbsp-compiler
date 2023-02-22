@@ -40,7 +40,7 @@ public class DBSPTimestampLiteral extends DBSPLiteral {
     }
 
     public DBSPTimestampLiteral(long value) {
-        this(null, DBSPTypeTimestamp.instance, value);
+        this(null, DBSPTypeTimestamp.INSTANCE, value);
     }
 
     static TimestampString createTimestampString(String timestamp) {
@@ -53,11 +53,11 @@ public class DBSPTimestampLiteral extends DBSPLiteral {
     }
 
     public DBSPTimestampLiteral(String string, boolean mayBeNull) {
-        this(null, DBSPTypeTimestamp.instance.setMayBeNull(mayBeNull), createTimestampString(string));
+        this(null, DBSPTypeTimestamp.INSTANCE.setMayBeNull(mayBeNull), createTimestampString(string));
     }
 
     public DBSPTimestampLiteral(long value, boolean mayBeNull) {
-        this(null, DBSPTypeTimestamp.instance.setMayBeNull(mayBeNull), value);
+        this(null, DBSPTypeTimestamp.INSTANCE.setMayBeNull(mayBeNull), value);
     }
 
     @Override

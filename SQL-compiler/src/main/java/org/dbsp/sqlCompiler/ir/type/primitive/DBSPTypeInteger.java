@@ -39,12 +39,14 @@ public class DBSPTypeInteger extends DBSPTypeBaseType
     private final int width;
     private final boolean signed;
 
-    public static final DBSPTypeInteger signed16 = new DBSPTypeInteger(null, 16, true,false);
-    public static final DBSPTypeInteger signed32 = new DBSPTypeInteger(null, 32, true,false);
-    public static final DBSPTypeInteger signed64 = new DBSPTypeInteger(null, 64, true,false);
-    public static final DBSPTypeInteger unsigned16 = new DBSPTypeInteger(null, 16, false,false);
-    public static final DBSPTypeInteger unsigned32 = new DBSPTypeInteger(null, 32, false,false);
-    public static final DBSPTypeInteger unsigned64 = new DBSPTypeInteger(null, 64, false,false);
+    public static final DBSPTypeInteger SIGNED_16 = new DBSPTypeInteger(null, 16, true,false);
+    public static final DBSPTypeInteger SIGNED_32 = new DBSPTypeInteger(null, 32, true,false);
+    public static final DBSPTypeInteger SIGNED_64 = new DBSPTypeInteger(null, 64, true,false);
+    public static final DBSPTypeInteger UNSIGNED_32 = new DBSPTypeInteger(null, 32, false,false);
+    public static final DBSPTypeInteger UNSIGNED_64 = new DBSPTypeInteger(null, 64, false,false);
+    public static final DBSPTypeInteger NULLABLE_SIGNED_16 = new DBSPTypeInteger(null, 16, true,true);
+    public static final DBSPTypeInteger NULLABLE_SIGNED_32 = new DBSPTypeInteger(null, 32, true,true);
+    public static final DBSPTypeInteger NULLABLE_SIGNED_64 = new DBSPTypeInteger(null, 64, true,true);
 
     public DBSPTypeInteger(@Nullable Object node, int width, boolean signed, boolean mayBeNull) {
         super(node, mayBeNull);

@@ -115,7 +115,7 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
     }
 
     void statement(SqlStatement statement) throws SQLException {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append(this.statementsExecuted)
                 .append(": ")
                 .append(statement.statement)
@@ -126,7 +126,7 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
             stmt.execute(statement.statement);
         } catch (SQLException ex) {
             stmt.close();
-            Logger.instance.from(this, 1)
+            Logger.INSTANCE.from(this, 1)
                     .append("ERROR: ")
                     .append(ex.getMessage())
                     .newline();
@@ -147,7 +147,7 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         stmt.close();
         resultSet.close();
         this.queriesExecuted++;
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append(this.queriesExecuted)
                 .append(": ")
                 .append(query.query)
@@ -328,15 +328,15 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
                 nullable = false;
             switch (columnType) {
                 case INTEGER:
-                    colTypes[i1] = DBSPTypeInteger.signed32.setMayBeNull(nullable);
+                    colTypes[i1] = DBSPTypeInteger.SIGNED_32.setMayBeNull(nullable);
                     break;
                 case REAL:
                 case DOUBLE:
-                    colTypes[i1] = DBSPTypeDouble.instance.setMayBeNull(nullable);
+                    colTypes[i1] = DBSPTypeDouble.INSTANCE.setMayBeNull(nullable);
                     break;
                 case VARCHAR:
                 case LONGVARCHAR:
-                    colTypes[i1] = DBSPTypeString.instance.setMayBeNull(nullable);
+                    colTypes[i1] = DBSPTypeString.INSTANCE.setMayBeNull(nullable);
                     break;
                 default:
                     throw new RuntimeException("Unexpected column type " + columnType);
@@ -350,19 +350,19 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
                 if (type.is(DBSPTypeInteger.class)) {
                     int value = rs.getInt(i + 1);
                     if (rs.wasNull())
-                        exp = DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true));
+                        exp = DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true));
                     else
                         exp = new DBSPI32Literal(value, type.mayBeNull);
                 } else if (type.is(DBSPTypeDouble.class)) {
                     double value = rs.getDouble(i + 1);
                     if (rs.wasNull())
-                        exp = DBSPLiteral.none(DBSPTypeDouble.instance.setMayBeNull(true));
+                        exp = DBSPLiteral.none(DBSPTypeDouble.NULLABLE_INSTANCE);
                     else
                         exp = new DBSPDoubleLiteral(value, type.mayBeNull);
                 } else {
                     String s = rs.getString(i + 1);
                     if (s == null)
-                        exp = DBSPLiteral.none(DBSPTypeString.instance.setMayBeNull(true));
+                        exp = DBSPLiteral.none(DBSPTypeString.NULLABLE_INSTANCE);
                     else
                         exp = new DBSPStringLiteral(s, type.mayBeNull);
                 }
@@ -422,7 +422,7 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         List<String> tables = this.getTableList();
         for (String tableName: tables) {
             String del = "DROP TABLE " + tableName;
-            Logger.instance.from(this, 2).append(del).newline();
+            Logger.INSTANCE.from(this, 2).append(del).newline();
             Statement drop = this.connection.createStatement();
             drop.execute(del);
             drop.close();
@@ -434,7 +434,7 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         List<String> tables = this.getViewList();
         for (String tableName: tables) {
             String del = "DROP VIEW IF EXISTS " + tableName + " CASCADE";
-            Logger.instance.from(this, 2).append(del).newline();
+            Logger.INSTANCE.from(this, 2).append(del).newline();
             Statement drop = this.connection.createStatement();
             drop.execute(del);
             drop.close();

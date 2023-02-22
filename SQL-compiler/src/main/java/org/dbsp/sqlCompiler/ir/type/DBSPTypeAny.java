@@ -29,7 +29,7 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
  * An unknown type, represented in code as _.
  */
 public class DBSPTypeAny extends DBSPType {
-    public static final DBSPType instance = new DBSPTypeAny();
+    public static final DBSPType INSTANCE = new DBSPTypeAny();
 
     protected DBSPTypeAny() {
         super(null, false);

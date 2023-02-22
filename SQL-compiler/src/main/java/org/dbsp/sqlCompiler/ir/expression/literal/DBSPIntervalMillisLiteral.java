@@ -35,11 +35,11 @@ public class DBSPIntervalMillisLiteral extends DBSPLiteral {
     }
 
     public DBSPIntervalMillisLiteral(long value) {
-        this(null, DBSPTypeMillisInterval.instance, value);
+        this(null, DBSPTypeMillisInterval.INSTANCE, value);
     }
 
     public DBSPIntervalMillisLiteral(long value, boolean mayBeNull) {
-        this(null, DBSPTypeMillisInterval.instance.setMayBeNull(mayBeNull), value);
+        this(null, DBSPTypeMillisInterval.INSTANCE.setMayBeNull(mayBeNull), value);
     }
 
     @Override

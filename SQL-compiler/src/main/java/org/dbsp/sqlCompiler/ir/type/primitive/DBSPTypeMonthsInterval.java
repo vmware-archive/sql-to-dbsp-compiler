@@ -38,7 +38,7 @@ import javax.annotation.Nullable;
  * Always stores the interval value in days.
  */
 public class DBSPTypeMonthsInterval extends DBSPTypeBaseType implements IsNumericType, IsDateType {
-    public static final DBSPType instance = new DBSPTypeMonthsInterval(null, false);
+    public static final DBSPType INSTANCE =new DBSPTypeMonthsInterval(null, false);
 
     public DBSPTypeMonthsInterval(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);

@@ -82,7 +82,7 @@ public class DBSPCompiler implements IModule {
 
     public void compileStatement(String statement, @Nullable String comment) throws SqlParseException {
         SqlNode node = this.frontend.parse(statement);
-        Logger.instance.from(this, 2)
+        Logger.INSTANCE.from(this, 2)
                 .append("Parsing result")
                 .newline()
                 .append(node.toString())

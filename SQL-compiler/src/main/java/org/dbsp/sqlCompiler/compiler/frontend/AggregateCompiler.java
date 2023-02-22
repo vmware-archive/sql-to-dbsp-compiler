@@ -211,7 +211,7 @@ public class AggregateCompiler {
             increment = ExpressionCompiler.aggregateOperation(
                     function, "+", this.resultType,
                     accum, new DBSPApplyMethodExpression("mul_by_ref",
-                            DBSPTypeInteger.signed64,
+                            DBSPTypeInteger.SIGNED_64,
                             argument,
                             CalciteToDBSPCompiler.weight.borrow()));
         }
@@ -302,7 +302,7 @@ public class AggregateCompiler {
 
     void processAvg(SqlAvgAggFunction function) {
         DBSPType aggregatedValueType = this.getAggregatedValueType();
-        DBSPType i64 = DBSPTypeInteger.signed64.setMayBeNull(true);
+        DBSPType i64 = DBSPTypeInteger.SIGNED_64.setMayBeNull(true);
         DBSPExpression zero = new DBSPRawTupleExpression(
                 DBSPLiteral.none(i64), DBSPLiteral.none(i64));
         DBSPType pairType = zero.getNonVoidType();
@@ -315,7 +315,7 @@ public class AggregateCompiler {
         DBSPExpression aggregatedValue = ExpressionCompiler.makeCast(function, this.getAggregatedValue(), i64);
         DBSPExpression plusOne = new DBSPI64Literal(1L);
         if (aggregatedValueType.mayBeNull)
-            plusOne = new DBSPApplyExpression("indicator", DBSPTypeInteger.signed64, aggregatedValue);
+            plusOne = new DBSPApplyExpression("indicator", DBSPTypeInteger.SIGNED_64, aggregatedValue);
         if (this.isDistinct) {
             count = ExpressionCompiler.aggregateOperation(
                     function, "+", i64, countAccumulator, plusOne);
@@ -325,7 +325,7 @@ public class AggregateCompiler {
             count = ExpressionCompiler.aggregateOperation(
                     function, "+", i64,
                     countAccumulator, new DBSPApplyMethodExpression("mul_by_ref",
-                            DBSPTypeInteger.signed64.setMayBeNull(plusOne.getNonVoidType().mayBeNull),
+                            DBSPTypeInteger.SIGNED_64.setMayBeNull(plusOne.getNonVoidType().mayBeNull),
                             plusOne,
                             CalciteToDBSPCompiler.weight.borrow()));
             sum = ExpressionCompiler.aggregateOperation(
@@ -346,8 +346,8 @@ public class AggregateCompiler {
                 null, divide, a.asParameter());
         DBSPExpression postZero = DBSPLiteral.none(this.nullableResultType);
         DBSPType semigroup = new DBSPTypeUser(null,"PairSemigroup", false, i64, i64,
-                new DBSPTypeUser(null, "DefaultOptSemigroup", false, DBSPTypeInteger.signed64),
-                new DBSPTypeUser(null, "DefaultOptSemigroup", false, DBSPTypeInteger.signed64));
+                new DBSPTypeUser(null, "DefaultOptSemigroup", false, DBSPTypeInteger.SIGNED_64),
+                new DBSPTypeUser(null, "DefaultOptSemigroup", false, DBSPTypeInteger.SIGNED_64));
         this.foldingFunction = new AggregateImplementation(
                 function, zero, this.makeRowClosure(increment, accum), post, postZero, semigroup);
     }

@@ -36,7 +36,7 @@ public class DBSPKeywordLiteral extends DBSPLiteral {
     public final String keyword;
 
     public DBSPKeywordLiteral(@Nullable Object node, String keyword) {
-        super(node, DBSPTypeKeyword.instance, keyword);
+        super(node, DBSPTypeKeyword.INSTANCE, keyword);
         this.keyword = keyword.toLowerCase();
         switch (keyword.toLowerCase()) {
             case "dow":

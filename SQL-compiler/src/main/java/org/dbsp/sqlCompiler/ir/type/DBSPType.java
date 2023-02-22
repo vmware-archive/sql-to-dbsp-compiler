@@ -111,4 +111,12 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
             return this;
         return this.to(DBSPTypeRef.class).type;
     }
+
+    /**
+     * Returns "N" if the type may be nullable, "" otherwise.
+     * Used in the code generation.
+     */
+    public String nullableSuffix() {
+        return this.mayBeNull ? "N" : "";
+    }
 }

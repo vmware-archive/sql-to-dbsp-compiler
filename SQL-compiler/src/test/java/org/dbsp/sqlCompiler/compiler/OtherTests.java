@@ -101,19 +101,19 @@ public class OtherTests extends BaseSQLTests implements IModule {
     @Test
     public void loggerTest() {
         StringBuilder builder = new StringBuilder();
-        Appendable save = Logger.instance.setDebugStream(builder);
-        Logger.instance.setDebugLevel(this.getModule(), 1);
+        Appendable save = Logger.INSTANCE.setDebugStream(builder);
+        Logger.INSTANCE.setDebugLevel(this.getModule(), 1);
         Assert.assertEquals("OtherTests", this.getModule());
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append("Logging one statement")
                 .newline();
-        Logger.instance.setDebugLevel(this.getModule(), 0);
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.setDebugLevel(this.getModule(), 0);
+        Logger.INSTANCE.from(this, 1)
                 .append("This one is not logged")
                 .newline();
-        Logger.instance.setDebugStream(save);
+        Logger.INSTANCE.setDebugStream(save);
         Assert.assertEquals("Logging one statement\n", builder.toString());
-        Logger.instance.setDebugLevel(this.getModule(), 0);
+        Logger.INSTANCE.setDebugLevel(this.getModule(), 0);
     }
 
     @Test
@@ -264,7 +264,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         DBSPZSetLiteral data = new DBSPZSetLiteral(
                 new DBSPTupleExpression(new DBSPI32Literal(1, true)),
                 new DBSPTupleExpression(new DBSPI32Literal(2, true)),
-                new DBSPTupleExpression(DBSPI32Literal.none(DBSPTypeInteger.signed32.setMayBeNull(true)))
+                new DBSPTupleExpression(DBSPI32Literal.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))
         );
         String fileName = BaseSQLTests.rustDirectory + "/" + "test.csv";
         File file = ToCsvVisitor.toCsv(fileName, data);

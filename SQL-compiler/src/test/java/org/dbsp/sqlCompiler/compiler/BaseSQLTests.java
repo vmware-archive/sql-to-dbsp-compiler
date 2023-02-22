@@ -96,7 +96,7 @@ public class BaseSQLTests {
         DBSPFunction createTesterCode() {
             List<DBSPStatement> list = new ArrayList<>();
             DBSPLetStatement circ = new DBSPLetStatement("circuit",
-                    new DBSPApplyExpression(this.circuit.name, DBSPTypeAny.instance), true);
+                    new DBSPApplyExpression(this.circuit.name, DBSPTypeAny.INSTANCE), true);
             list.add(circ);
             for (InputOutputPair pairs: this.data) {
                 DBSPLetStatement out = new DBSPLetStatement("output",
@@ -106,7 +106,7 @@ public class BaseSQLTests {
                     list.add(
                             new DBSPExpressionStatement(
                                     new DBSPApplyExpression("assert!", null,
-                                            new DBSPApplyExpression("must_equal", DBSPTypeBool.instance,
+                                            new DBSPApplyExpression("must_equal", DBSPTypeBool.INSTANCE,
                                                     new DBSPFieldExpression(null, out.getVarReference(), i).borrow(),
                                                     pairs.outputs[i].borrow()))));
                 }
@@ -144,7 +144,7 @@ public class BaseSQLTests {
 
     @SuppressWarnings("SpellCheckingInspection")
     public static void generateLib() throws IOException {
-        SqlRuntimeLibrary.instance.writeSqlLibrary( "../lib/genlib/src/lib.rs");
+        SqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
     }
 
     CircuitVisitor getOptimizer() {
@@ -211,8 +211,8 @@ public class BaseSQLTests {
             new DBSPDoubleLiteral(12.0),
             DBSPBoolLiteral.True,
             new DBSPStringLiteral("Hi"),
-            DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true)),
-            DBSPLiteral.none(DBSPTypeDouble.instance.setMayBeNull(true))
+            DBSPLiteral.none(DBSPTypeInteger.NULLABLE_SIGNED_32),
+            DBSPLiteral.none(DBSPTypeDouble.NULLABLE_INSTANCE)
     );
     public static final DBSPTupleExpression e1 = new DBSPTupleExpression(
             new DBSPI32Literal(10),
@@ -227,7 +227,7 @@ public class BaseSQLTests {
             new DBSPI32Literal(10),
             DBSPBoolLiteral.True,
             new DBSPStringLiteral("Hi"),
-            DBSPLiteral.none(DBSPTypeInteger.signed32.setMayBeNull(true))
+            DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true))
     );
     public static final DBSPTupleExpression e1NoDouble = new DBSPTupleExpression(
             new DBSPI32Literal(10),

@@ -39,6 +39,6 @@ public interface IModule {
      * Get the debugging level of the current module.
      */
     default int getDebugLevel() {
-        return Logger.instance.getDebugLevel(this.getModule());
+        return Logger.INSTANCE.getDebugLevel(this.getModule());
     }
 }

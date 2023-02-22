@@ -42,7 +42,7 @@ public class DBSPApplyMethodExpression extends DBSPExpression {
             String function, @Nullable DBSPType returnType,
             DBSPExpression self, DBSPExpression... arguments) {
         super(null, returnType);
-        this.function = DBSPTypeAny.instance.path(new DBSPPath(function));
+        this.function = DBSPTypeAny.INSTANCE.path(new DBSPPath(function));
         this.self = self;
         this.arguments = arguments;
     }

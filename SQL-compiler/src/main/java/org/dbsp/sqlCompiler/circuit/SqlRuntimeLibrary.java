@@ -58,7 +58,7 @@ public class SqlRuntimeLibrary {
     private final Set<String> comparisons = new HashSet<>();
     private final Set<String> handWritten = new HashSet<>();
 
-    public static final SqlRuntimeLibrary instance = new SqlRuntimeLibrary();
+    public static final SqlRuntimeLibrary INSTANCE =new SqlRuntimeLibrary();
 
     protected SqlRuntimeLibrary() {
         this.aggregateFunctions.add("count");
@@ -199,9 +199,7 @@ public class SqlRuntimeLibrary {
                 if (ltype.is(DBSPTypeTimestamp.class) || ltype.is(DBSPTypeDate.class)) {
                     assert expectedReturnType != null;
                     returnType = expectedReturnType;
-                    suffixReturn = "_" + returnType.to(DBSPTypeBaseType.class).shortName();
-                    if (returnType.mayBeNull)
-                        suffixReturn += "N";
+                    suffixReturn = "_" + returnType.to(DBSPTypeBaseType.class).shortName() + returnType.nullableSuffix();
                 }
             }
         } else if (ltype.is(IsNumericType.class)) {
@@ -210,23 +208,23 @@ public class SqlRuntimeLibrary {
             map = this.stringFunctions;
         }
         if (isComparison(op))
-            returnType = DBSPTypeBool.instance.setMayBeNull(anyNull);
+            returnType = DBSPTypeBool.INSTANCE.setMayBeNull(anyNull);
         if (op.equals("/"))
             // Always, for division by 0
             returnType = returnType.setMayBeNull(true);
         if (op.equals("is_true") || op.equals("is_not_true") ||
                 op.equals("is_false") || op.equals("is_not_false") ||
                 op.equals("is_distinct"))
-            returnType = DBSPTypeBool.instance;
-        String suffixl = ltype.mayBeNull ? "N" : "";
-        String suffixr = rtype == null ? "" : (rtype.mayBeNull ? "N" : "");
+            returnType = DBSPTypeBool.INSTANCE;
+        String suffixl = ltype.nullableSuffix();
+        String suffixr = rtype == null ? "" : rtype.nullableSuffix();
         String tsuffixl;
         String tsuffixr;
         if (aggregate || op.equals("is_distinct")) {
             tsuffixl = "";
             tsuffixr = "";
         } else if (op.equals("st_distance")) {
-            return new FunctionDescription("st_distance_" + suffixl + "_" + suffixr, DBSPTypeDouble.instance.setMayBeNull(anyNull));
+            return new FunctionDescription("st_distance_" + suffixl + "_" + suffixr, DBSPTypeDouble.INSTANCE.setMayBeNull(anyNull));
         } else {
             tsuffixl = ltype.to(DBSPTypeBaseType.class).shortName();
             tsuffixr = (rtype == null) ? "" : rtype.to(DBSPTypeBaseType.class).shortName();
@@ -244,40 +242,40 @@ public class SqlRuntimeLibrary {
     void generateProgram() {
         List<IDBSPDeclaration> declarations = new ArrayList<>();
         DBSPParameter arg = new DBSPParameter(
-                "b", DBSPTypeBool.instance.setMayBeNull(true));
+                "b", DBSPTypeBool.NULLABLE_INSTANCE);
         declarations.add(
                 new DBSPFunction("wrap_bool",
                         Collections.singletonList(arg),
-                        DBSPTypeBool.instance,
+                        DBSPTypeBool.INSTANCE,
                         new DBSPMatchExpression(
                                 arg.getNonVoidType().var("b"),
                                 Arrays.asList(
                                     new DBSPMatchExpression.Case(
                                             DBSPTupleStructPattern.somePattern(
                                                     new DBSPIdentifierPattern("x")),
-                                            DBSPTypeBool.instance.var("x")
+                                            DBSPTypeBool.INSTANCE.var("x")
                                     ),
                                     new DBSPMatchExpression.Case(
-                                            DBSPWildcardPattern.instance,
+                                            DBSPWildcardPattern.INSTANCE,
                                             new DBSPBoolLiteral(false)
                                     )
                                 ),
-                                DBSPTypeBool.instance)));
+                                DBSPTypeBool.INSTANCE)));
 
         DBSPType[] numericTypes = new DBSPType[] {
-                DBSPTypeInteger.signed16,
-                DBSPTypeInteger.signed32,
-                DBSPTypeInteger.signed64,
+                DBSPTypeInteger.SIGNED_16,
+                DBSPTypeInteger.SIGNED_32,
+                DBSPTypeInteger.SIGNED_64,
         };
         DBSPType[] boolTypes = new DBSPType[] {
-                DBSPTypeBool.instance
+                DBSPTypeBool.INSTANCE
         };
         DBSPType[] stringTypes = new DBSPType[] {
-                DBSPTypeString.instance
+                DBSPTypeString.INSTANCE
         };
         DBSPType[] fpTypes = new DBSPType[] {
-                DBSPTypeDouble.instance,
-                DBSPTypeFloat.instance
+                DBSPTypeDouble.INSTANCE,
+                DBSPTypeFloat.INSTANCE
         };
 
         for (HashMap<String, String> h: Arrays.asList(
@@ -351,8 +349,8 @@ public class SqlRuntimeLibrary {
                                                     new DBSPSomeExpression(def)),
                                             new DBSPMatchExpression.Case(
                                                     new DBSPTuplePattern(
-                                                            DBSPWildcardPattern.instance,
-                                                            DBSPWildcardPattern.instance),
+                                                            DBSPWildcardPattern.INSTANCE,
+                                                            DBSPWildcardPattern.INSTANCE),
                                                     DBSPLiteral.none(type))),
                                     type);
                         }

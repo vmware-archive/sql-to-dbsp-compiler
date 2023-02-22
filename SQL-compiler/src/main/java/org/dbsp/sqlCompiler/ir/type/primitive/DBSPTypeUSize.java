@@ -37,7 +37,7 @@ import javax.annotation.Nullable;
  */
 public class DBSPTypeUSize extends DBSPTypeBaseType
         implements IsNumericType {
-    public static final DBSPTypeUSize instance = new DBSPTypeUSize(null, false);
+    public static final DBSPTypeUSize INSTANCE =new DBSPTypeUSize(null, false);
 
     @SuppressWarnings("SameParameterValue")
     protected DBSPTypeUSize(@Nullable Object node, boolean mayBeNull) {

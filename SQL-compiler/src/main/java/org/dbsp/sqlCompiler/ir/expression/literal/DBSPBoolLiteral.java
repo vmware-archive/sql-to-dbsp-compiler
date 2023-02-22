@@ -47,7 +47,7 @@ public class DBSPBoolLiteral extends DBSPLiteral {
     }
 
     public DBSPBoolLiteral(@Nullable Boolean b, boolean nullable) {
-        super(null, DBSPTypeBool.instance.setMayBeNull(nullable), b);
+        super(null, DBSPTypeBool.INSTANCE.setMayBeNull(nullable), b);
         if (b == null && !nullable)
             throw new RuntimeException("Null value with non-nullable type");
         this.value = b;

@@ -49,7 +49,7 @@ public class DeadCodeVisitor extends CircuitVisitor implements IModule {
     }
 
     public void keep(DBSPOperator operator) {
-        Logger.instance.from(this, 1)
+        Logger.INSTANCE.from(this, 1)
                 .append(operator.toString())
                 .append(" reachable")
                 .newline();
