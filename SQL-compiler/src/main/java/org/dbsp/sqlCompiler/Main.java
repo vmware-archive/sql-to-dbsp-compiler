@@ -149,9 +149,9 @@ public class Main {
         return main.run();
     }
 
-    public static int main(String[] argv) {
+    public static void main(String[] argv) {
         CompilerMessages messages = execute(argv);
         System.err.println(messages);
-        return messages.exitCode;
+        System.exit(messages.exitCode);
     }
 }
