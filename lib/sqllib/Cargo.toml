@@ -6,11 +6,10 @@ edition = "2021"
 [dependencies]
 dbsp = { git = "https://github.com/vmware/database-stream-processor.git" }
 #dbsp = { path = "../../../database-stream-processor.git" }
-rust_decimal = { version = "1.26" }
-rust_decimal_macros = { version = "1.26" }
+sqlx = { version = "0.6.2", features = ["bigdecimal"] }
 geo = { version = "0.23" }
 geo-types = { version = "0.7" }
-size-of = { version = "0.1.1", features = ["rust_decimal"] }
+size-of = { version = "0.1.5", features = ["bigdecimal"] }
 serde = { version = "1.0", features = ["derive"] }
 num = { version = "0.4.0" }
 chrono = { version = "0.4.23" }

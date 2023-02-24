@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler.postgres;
 
-import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.BaseSQLTests;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
@@ -77,7 +76,7 @@ public class PostgresDateTests extends BaseSQLTests {
     //INSERT INTO DATE_TBL VALUES ('2040-04-10');
     //INSERT INTO DATE_TBL VALUES ('2040-04-10 BC');
 
-    public DBSPCompiler compileQuery(String query, boolean optimize) throws SqlParseException {
+    public DBSPCompiler compileQuery(String query, boolean optimize) {
         String data = "CREATE TABLE DATE_TBL (f1 date);\n" +
                 "INSERT INTO DATE_TBL VALUES ('1957-04-09');\n" +
                 "INSERT INTO DATE_TBL VALUES ('1957-06-13');\n" +
@@ -110,16 +109,13 @@ public class PostgresDateTests extends BaseSQLTests {
     }
 
     void testQuery(String query, DBSPZSetLiteral expectedOutput, boolean optimize) {
-        try {
-            query = "CREATE VIEW V AS " + query;
-            DBSPCompiler compiler = this.compileQuery(query, optimize);
-            DBSPCircuit circuit = getCircuit(compiler);
-            DBSPZSetLiteral input = compiler.getTableContents().getTableContents("DATE_TBL");
-            InputOutputPair streams = new InputOutputPair(input, expectedOutput);
-            this.addRustTestCase(circuit, streams);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        query = "CREATE VIEW V AS " + query;
+        DBSPCompiler compiler = this.compileQuery(query, optimize);
+        compiler.throwOnError();
+        DBSPCircuit circuit = getCircuit(compiler);
+        DBSPZSetLiteral input = compiler.getTableContents().getTableContents("DATE_TBL");
+        InputOutputPair streams = new InputOutputPair(input, expectedOutput);
+        this.addRustTestCase(circuit, streams);
     }
 
     void testQueryTwice(String query, long expectedValue) {
@@ -148,8 +144,8 @@ public class PostgresDateTests extends BaseSQLTests {
         }
     }
 
-    static DBSPZSetLiteral makeSet(String[] data, boolean nullable) {
-        DBSPType type = nullable ? nullableDate : DBSPTypeDate.INSTANCE;
+    static DBSPZSetLiteral makeSet(String[] data) {
+        DBSPType type = nullableDate;
         DBSPZSetLiteral result = new DBSPZSetLiteral(
                 TypeCompiler.makeZSet(
                         new DBSPTypeTuple(type)));
@@ -187,7 +183,7 @@ public class PostgresDateTests extends BaseSQLTests {
                 //"04-10-2040 BC",
                 null
         };
-        DBSPZSetLiteral result = makeSet(results, true);
+        DBSPZSetLiteral result = makeSet(results);
         this.testQuery(query, result, true);
     }
 
@@ -207,7 +203,7 @@ public class PostgresDateTests extends BaseSQLTests {
                 "03-02-1997",
                 //" 04-10-2040 BC",
         };
-        DBSPZSetLiteral result = makeSet(results, true);
+        DBSPZSetLiteral result = makeSet(results);
         this.testQuery(query, result, true);
     }
 
@@ -222,7 +218,7 @@ public class PostgresDateTests extends BaseSQLTests {
                 "04-02-2000",
                 "04-03-2000"
         };
-        DBSPZSetLiteral result = makeSet(results, true);
+        DBSPZSetLiteral result = makeSet(results);
         this.testQuery(query, result, true);
     }
 
@@ -1234,7 +1230,7 @@ public class PostgresDateTests extends BaseSQLTests {
     }
 
     @Test
-    public void testMillenium1() {
+    public void testMillennium1() {
         String query = "SELECT EXTRACT(MILLENNIUM FROM DATE '1000-12-31')";
         this.testQueryTwice(query, 1);
     }
@@ -1249,7 +1245,7 @@ public class PostgresDateTests extends BaseSQLTests {
     // SELECT EXTRACT(CENTURY FROM CURRENT_DATE)>=21 AS True;     -- true
 
     @Test
-    public void testMillenium3() {
+    public void testMillennium3() {
         String query = "SELECT EXTRACT(MILLENNIUM FROM DATE '2001-01-01')";
         this.testQueryTwice(query, 3);
     }
@@ -1291,7 +1287,7 @@ public class PostgresDateTests extends BaseSQLTests {
     //ERROR:  unit "hour" not supported for type date
 
     @Test
-    public void testMillseconds() {
+    public void testMilliseconds() {
         String query = "SELECT EXTRACT(MILLISECOND  FROM DATE '2020-08-11')";
         this.testQueryTwice(query, 0);
     }

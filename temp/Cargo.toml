@@ -15,13 +15,11 @@ serde = { version = "1.0", features = ["derive"] }
 hashing = { path = "../lib/hashing" }
 compare = { version = "0.1.0" }
 genlib = { path = "../lib/genlib" }
-size-of = { version = "0.1.1", features = ["rust_decimal"] }
+size-of = { version = "0.1.1" }
 readers = { path = "../lib/readers" }
-rust_decimal = { version = "1.26" }
-rust_decimal_macros = { version = "1.26" }
 geo = { version = "0.23" }
 geo-types = { version = "0.7" }
-sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls", "sqlite", "any" ] }
+sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls", "sqlite", "any", "bigdecimal" ] }
 
 [lib]
 path = "src/lib.rs"
