@@ -218,11 +218,6 @@ public class SqlRuntimeLibrary {
         if (aggregate || op.equals("is_distinct")) {
             tsuffixl = "";
             tsuffixr = "";
-<<<<<<< HEAD
-        } else if (op.equals("st_distance")) {
-            return new FunctionDescription("st_distance_" + suffixl + "_" + suffixr, DBSPTypeDouble.INSTANCE.setMayBeNull(anyNull));
-=======
->>>>>>> Restructure handling of errors
         } else {
             tsuffixl = ltype.to(DBSPTypeBaseType.class).shortName();
             tsuffixr = (rtype == null) ? "" : rtype.to(DBSPTypeBaseType.class).shortName();

@@ -539,8 +539,8 @@ public class PostgresNumericTests extends BaseSQLTests {
                 new DBSPZSetLiteral[] {
                 new DBSPZSetLiteral(
                         TypeCompiler.makeZSet(new DBSPTypeTuple(
-                                DBSPTypeInteger.signed32,
-                                DBSPTypeInteger.signed64,
+                                DBSPTypeInteger.SIGNED_32,
+                                DBSPTypeInteger.SIGNED_64,
                                 new DBSPTypeDecimal(null, width, 10, false),
                                 new DBSPTypeDecimal(null, width, 10, false)))
                 )}
