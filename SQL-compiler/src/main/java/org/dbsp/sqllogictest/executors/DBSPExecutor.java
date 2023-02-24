@@ -26,7 +26,6 @@ package org.dbsp.sqllogictest.executors;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
-import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
@@ -120,7 +119,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         }
     }
 
-    public TableValue[] getInputSets(DBSPCompiler compiler) throws SQLException, SqlParseException {
+    public TableValue[] getInputSets(DBSPCompiler compiler) throws SQLException {
         for (SqlStatement statement : this.inputPreparation.statements)
             compiler.compileStatement(statement.statement, null);
         TableContents tables = compiler.getTableContents();
@@ -254,7 +253,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         return new DBSPFunction("stream_input", Linq.list(), returnType, block);
     }
 
-    void runBatch(TestStatistics result) throws SqlParseException, IOException, InterruptedException, SQLException {
+    void runBatch(TestStatistics result) throws IOException, InterruptedException, SQLException {
         DBSPCompiler compiler = new DBSPCompiler(this.options);
         final List<ProgramAndTester> codeGenerated = new ArrayList<>();
         // Create input tables
@@ -298,8 +297,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             DBSPCompiler compiler,
             DBSPFunction inputGeneratingFunction,
             SqlTestPrepareViews viewPreparation,
-            SqlTestQuery testQuery, int suffix)
-            throws SqlParseException {
+            SqlTestQuery testQuery, int suffix) {
         String origQuery = testQuery.query;
         String dbspQuery = origQuery;
         if (!dbspQuery.toLowerCase().contains("create view"))
@@ -317,9 +315,8 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         }
         compiler.generateOutputForNextView(true);
         compiler.compileStatement(dbspQuery, testQuery.name);
+        compiler.optimize();
         DBSPCircuit dbsp = compiler.getFinalCircuit("gen" + suffix);
-        CircuitOptimizer optimizer = new CircuitOptimizer(compiler.options.optimizerOptions);
-        dbsp = optimizer.optimize(dbsp);
         //ToDotVisitor.toDot("circuit.jpg", true, dbsp);
         DBSPZSetLiteral expectedOutput = null;
         if (testQuery.outputDescription.queryResults != null) {
@@ -405,7 +402,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         }
     }
 
-    void createTables(DBSPCompiler compiler) throws SqlParseException {
+    void createTables(DBSPCompiler compiler) {
         for (SqlStatement statement : this.tablePreparation.statements) {
             String stat = statement.statement;
             compiler.compileStatement(stat, stat);

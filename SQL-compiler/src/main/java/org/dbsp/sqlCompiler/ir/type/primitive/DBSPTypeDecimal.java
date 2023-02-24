@@ -35,16 +35,30 @@ import java.math.BigDecimal;
 
 public class DBSPTypeDecimal extends DBSPTypeBaseType
         implements IsNumericType {
+    public static final int MAX_PRECISION = 38;  // Total digits. Rather arbitrary.
+    public static final int MAX_SCALE = 10;       // Digits after decimal period.  Rather arbitrary.
+
+    public final int precision;
     public final int scale;
 
-    public DBSPTypeDecimal(@Nullable Object node, int scale, boolean mayBeNull) {
+    public DBSPTypeDecimal(@Nullable Object node, int precision, int scale, boolean mayBeNull) {
         super(node, mayBeNull);
+        if (precision <= 0)
+            throw new IllegalArgumentException("Precision must be positive: " + precision);
+        if (scale < 0)
+            // Postgres allows negative scales.
+            throw new IllegalArgumentException("Scale must be positive: " + scale);
+        if (precision > MAX_PRECISION)
+            throw new UnsupportedException(precision + " larger than maximum supported precision " + MAX_PRECISION, node);
+        if (scale > MAX_SCALE)
+            throw new UnsupportedException(scale + " larger than maximum supported scale " + MAX_SCALE, node);
+        this.precision = precision;
         this.scale = scale;
     }
 
     @Override
     public String getRustString() {
-        return "rust_decimal";
+        return "BigDecimal";
     }
 
     @Override
@@ -71,7 +85,12 @@ public class DBSPTypeDecimal extends DBSPTypeBaseType
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (mayBeNull == this.mayBeNull)
             return this;
-        return new DBSPTypeDecimal(this.getNode(), this.scale, mayBeNull);
+        return new DBSPTypeDecimal(this.getNode(), this.precision, this.scale, mayBeNull);
+    }
+
+    @Override
+    public boolean hasCopy() {
+        return false;
     }
 
     @Override
@@ -87,7 +106,7 @@ public class DBSPTypeDecimal extends DBSPTypeBaseType
         if (!type.is(DBSPTypeDecimal.class))
             return false;
         DBSPTypeDecimal other = type.to(DBSPTypeDecimal.class);
-        return this.scale == other.scale;
+        return this.scale == other.scale && this.precision == other.precision;
     }
 
     @Override

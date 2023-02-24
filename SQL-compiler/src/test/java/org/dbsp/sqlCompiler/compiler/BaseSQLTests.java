@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.*;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
@@ -58,8 +57,7 @@ public class BaseSQLTests {
         public final DBSPZSetLiteral[] inputs;
         public final DBSPZSetLiteral[] outputs;
 
-        @SuppressWarnings("unused")
-        InputOutputPair(DBSPZSetLiteral[] inputs, DBSPZSetLiteral[] outputs) {
+        public InputOutputPair(DBSPZSetLiteral[] inputs, DBSPZSetLiteral[] outputs) {
             this.inputs = inputs;
             this.outputs = outputs;
         }
@@ -188,7 +186,7 @@ public class BaseSQLTests {
 
     protected final static CompilerOptions options = new CompilerOptions();
 
-    public DBSPCompiler compileQuery(String query) throws SqlParseException {
+    public DBSPCompiler compileQuery(String query) {
         DBSPCompiler compiler = new DBSPCompiler(options);
         // This is necessary if we want queries that do not depend on the input
         // to generate circuits that still have inputs.

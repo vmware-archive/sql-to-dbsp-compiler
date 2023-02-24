@@ -317,12 +317,6 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     @Override
     public boolean preorder(DBSPTupleExpression expression) {
-        if (false) {
-            // Experimental case for JIT compiler
-            this.map(expression, expression);
-            return false;
-        }
-
         DBSPExpression[] sources = Linq.map(expression.fields, this::remap, DBSPExpression.class);
         DBSPExpression result = new DBSPTupleExpression(sources);
         this.map(expression, result);
@@ -331,12 +325,6 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     @Override
     public boolean preorder(DBSPRawTupleExpression expression) {
-        if (false) {
-            // Experimental case for JIT compiler
-            this.map(expression, expression);
-            return false;
-        }
-
         DBSPExpression[] sources = Linq.map(expression.fields, this::remap, DBSPExpression.class);
         DBSPExpression result = new DBSPRawTupleExpression(sources);
         this.map(expression, result);

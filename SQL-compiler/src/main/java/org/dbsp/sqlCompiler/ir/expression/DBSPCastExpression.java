@@ -51,5 +51,4 @@ public class DBSPCastExpression extends DBSPExpression implements IDBSPInnerNode
         this.getNonVoidType().accept(visitor);
         visitor.postorder(this);
     }
-
 }

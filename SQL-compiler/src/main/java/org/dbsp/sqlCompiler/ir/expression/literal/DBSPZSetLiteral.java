@@ -75,6 +75,9 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         this.zsetType = zsetType;
     }
 
+    /**
+     * Creates an empty zset with the specified type.
+     */
     public DBSPZSetLiteral(DBSPType type) {
         super(null, type, 0); // Value is unused, but needs to be non-null
         this.zsetType = this.getNonVoidType().to(DBSPTypeZSet.class);

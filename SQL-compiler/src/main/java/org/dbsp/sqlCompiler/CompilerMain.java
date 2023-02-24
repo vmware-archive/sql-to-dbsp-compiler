@@ -25,16 +25,11 @@ package org.dbsp.sqlCompiler;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
-import org.apache.calcite.runtime.CalciteContextException;
-import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
-import org.dbsp.sqlCompiler.compiler.errors.SourceFileContents;
 import org.dbsp.sqlCompiler.compiler.errors.SourcePositionRange;
-import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.visitors.*;
-import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -44,10 +39,10 @@ import java.nio.file.Paths;
 /**
  * Main entry point of the SQL compiler.
  */
-public class Main {
+public class CompilerMain {
     final CompilerOptions options;
 
-    Main() {
+    CompilerMain() {
         this.options = new CompilerOptions();
     }
 
@@ -79,50 +74,33 @@ public class Main {
         outputStream.close();
     }
 
-    SourceFileContents getInputFile(@Nullable String inputFile) throws IOException {
-        InputStream stream;
-        String name;
+    InputStream getInputFile(@Nullable String inputFile) throws IOException {
         if (inputFile == null) {
-            name = "-";
-            stream = System.in;
+            return System.in;
         } else {
-            name = inputFile;
-            stream = Files.newInputStream(Paths.get(inputFile));
+            return Files.newInputStream(Paths.get(inputFile));
         }
-        return new SourceFileContents(name, stream);
     }
 
     /**
      * Run compiler, return exit code.
      */
     CompilerMessages run() {
-        CompilerMessages result = new CompilerMessages(this.options);
         DBSPCompiler compiler = new DBSPCompiler(this.options);
         try {
-            result.contents = this.getInputFile(this.options.ioOptions.inputFile);
+            InputStream input = this.getInputFile(this.options.ioOptions.inputFile);
+            compiler.setEntireInput(this.options.ioOptions.inputFile, input);
         } catch (IOException e) {
-            result.reportError(SourcePositionRange.INVALID, false,
+            compiler.reportError(SourcePositionRange.INVALID, false,
                     "Error reading file", e.getMessage());
-            return result;
+            return compiler.messages;
         }
-        try {
-            compiler.compileStatements(result.contents.wholeProgram);
-        } catch (SqlParseException e) {
-            result.reportError(e);
-            return result;
-        } catch (CalciteContextException e) {
-            result.reportError(e);
-            return result;
-        } catch (Unimplemented e) {
-            result.reportError(e);
-            return result;
-        } catch (Throwable e) {
-            result.reportError(e);
-            return result;
-        }
+        compiler.compileInput();
+        if (compiler.hasErrors())
+            return compiler.messages;
+
+        compiler.optimize();
         DBSPCircuit dbsp = compiler.getFinalCircuit(this.options.ioOptions.functionName);
-        CircuitOptimizer optimizer = new CircuitOptimizer(this.options.optimizerOptions);
-        dbsp = optimizer.optimize(dbsp);
         String output;
         if (this.options.ioOptions.emitJson) {
             output = ToJSONVisitor.circuitToJSON(dbsp);
@@ -136,22 +114,22 @@ public class Main {
         try {
             this.writeToOutput(output, this.options.ioOptions.outputFile);
         } catch (IOException e) {
-            result.reportError(SourcePositionRange.INVALID,
+            compiler.reportError(SourcePositionRange.INVALID,
                     false, "Error writing to file", e.getMessage());
-            return result;
+            return compiler.messages;
         }
-        return result;
+        return compiler.messages;
     }
 
     public static CompilerMessages execute(String... argv) {
-        Main main = new Main();
+        CompilerMain main = new CompilerMain();
         main.parseOptions(argv);
         return main.run();
     }
 
     public static void main(String[] argv) {
         CompilerMessages messages = execute(argv);
-        System.err.println(messages);
+        messages.show(System.err);
         System.exit(messages.exitCode);
     }
 }

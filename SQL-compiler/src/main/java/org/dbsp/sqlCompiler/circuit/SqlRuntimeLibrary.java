@@ -90,8 +90,6 @@ public class SqlRuntimeLibrary {
         this.arithmeticFunctions.put("bxor", "^");
         this.arithmeticFunctions.put("min", "min");
         this.arithmeticFunctions.put("max", "max");
-        this.arithmeticFunctions.put("abs", "abs");
-        this.arithmeticFunctions.put("st_distance", "st_distance");
         this.arithmeticFunctions.put("is_distinct", "is_distinct");
 
         this.handWritten.add("is_false");
@@ -103,8 +101,6 @@ public class SqlRuntimeLibrary {
         this.handWritten.add("min");
         this.handWritten.add("max");
         this.handWritten.add("/");
-        this.handWritten.add("abs");
-        this.handWritten.add("st_distance");
         this.handWritten.add("is_distinct");
         this.handWritten.add("is_not_distinct");
 
@@ -119,7 +115,6 @@ public class SqlRuntimeLibrary {
         this.doubleFunctions.put("mod", "%");
         this.doubleFunctions.put("times", "*");
         this.doubleFunctions.put("div", "/");
-        this.doubleFunctions.put("abs", "abs");
 
         this.dateFunctions.put("plus", "+");
         this.dateFunctions.put("minus", "-");
@@ -223,8 +218,11 @@ public class SqlRuntimeLibrary {
         if (aggregate || op.equals("is_distinct")) {
             tsuffixl = "";
             tsuffixr = "";
+<<<<<<< HEAD
         } else if (op.equals("st_distance")) {
             return new FunctionDescription("st_distance_" + suffixl + "_" + suffixr, DBSPTypeDouble.INSTANCE.setMayBeNull(anyNull));
+=======
+>>>>>>> Restructure handling of errors
         } else {
             tsuffixl = ltype.to(DBSPTypeBaseType.class).shortName();
             tsuffixr = (rtype == null) ? "" : rtype.to(DBSPTypeBaseType.class).shortName();

@@ -7,10 +7,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.compiler.CompilerOptions;
+import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
+import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -60,25 +62,14 @@ public class CompilerMessages {
         }
 
         Error(Unimplemented e) {
-            if (e.object != null) {
-                if (e.object instanceof SqlNode) {
-                    SqlNode node = (SqlNode)e.object;
-                    this.range = new SourcePositionRange(node.getParserPosition());
-                } else {
-                    this.range = SourcePositionRange.INVALID;
-                }
-            } else {
-                this.range = SourcePositionRange.INVALID;
-            }
+            this.range = CompilerMessages.getPositionRange(e.object);
             this.errorType = "Feature not yet implemented";
             this.warning = false;
             this.message = e.getMessage();
         }
 
-        public void format(StringBuilder output) {
-            String sourceFile = "(none)";
-            if (contents != null)
-                sourceFile = contents.getSourceFileName(this.range.start);
+        public void format(SourceFileContents contents, StringBuilder output) {
+            String sourceFile = contents.getSourceFileName(this.range.start);
             output.append(sourceFile)
                     .append(": ")
                     .append(this.errorType)
@@ -94,8 +85,7 @@ public class CompilerMessages {
             output.append(": ")
                     .append(this.message)
                     .append(SourceFileContents.newline());
-            if (CompilerMessages.this.contents != null)
-                output.append(CompilerMessages.this.contents.getFragment(this.range));
+            output.append(contents.getFragment(this.range));
         }
 
         public JsonNode toJson(ObjectMapper mapper) {
@@ -113,20 +103,17 @@ public class CompilerMessages {
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
-            this.format(builder);
+            this.format(CompilerMessages.this.compiler.sources, builder);
             return builder.toString();
         }
     }
 
-    public final CompilerOptions options;
-    @Nullable
-    public SourceFileContents contents;
+    public final DBSPCompiler compiler;
     public final List<Error> messages;
     public int exitCode = 0;
 
-    public CompilerMessages(CompilerOptions options) {
-        this.contents = null;
-        this.options = options;
+    public CompilerMessages(DBSPCompiler compiler) {
+        this.compiler = compiler;
         this.messages = new ArrayList<>();
     }
 
@@ -170,15 +157,34 @@ public class CompilerMessages {
         return this.messages.get(ct);
     }
 
+    public static SourcePositionRange getPositionRange(@Nullable Object object) {
+        if (object == null)
+            return SourcePositionRange.INVALID;
+        if (object instanceof SqlNode) {
+            SqlNode node = (SqlNode) object;
+            return new SourcePositionRange(node.getParserPosition());
+        } else if (object instanceof FrontEndStatement){
+            FrontEndStatement stat = (FrontEndStatement) object;
+            SqlNode node = stat.getNode();
+            if (node != null)
+                return new SourcePositionRange(node.getParserPosition());
+        }
+        return SourcePositionRange.INVALID;
+    }
+
+    public void show(PrintStream stream) {
+        stream.println(this);
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        if (this.options.ioOptions.emitJsonErrors) {
+        if (this.compiler.options.ioOptions.emitJsonErrors) {
             JsonNode node = this.toJson();
             builder.append(node.toPrettyString());
         } else {
             for (Error message: this.messages) {
-                message.format(builder);
+                message.format(this.compiler.sources, builder);
             }
         }
         return builder.toString();

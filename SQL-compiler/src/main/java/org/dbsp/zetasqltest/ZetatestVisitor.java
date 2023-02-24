@@ -287,7 +287,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
         Logger.INSTANCE.from(this, 1)
                 .append("Visiting numeric ")
                 .append(ctx.getText()).newline();
-        this.resultType = new DBSPTypeDecimal(null,128, true);
+        this.resultType = new DBSPTypeDecimal(null,128, 30,true);
         return super.visitNumerictype(ctx);
     }
 
@@ -296,7 +296,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
         Logger.INSTANCE.from(this, 1)
                 .append("Visiting bignumeric ")
                 .append(ctx.getText()).newline();
-        this.resultType = new DBSPTypeDecimal(null,256, true);
+        this.resultType = new DBSPTypeDecimal(null,256, 30,true);
         return super.visitBignumerictype(ctx);
     }
 

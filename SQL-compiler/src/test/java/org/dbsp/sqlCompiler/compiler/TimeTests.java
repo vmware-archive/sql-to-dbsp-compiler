@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
@@ -33,7 +32,7 @@ import org.junit.Test;
 
 public class TimeTests extends BaseSQLTests {
     @Override
-    public DBSPCompiler compileQuery(String query) throws SqlParseException {
+    public DBSPCompiler compileQuery(String query) {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
@@ -45,17 +44,14 @@ public class TimeTests extends BaseSQLTests {
     }
 
     void testQuery(String query, DBSPExpression... fields) {
-        try {
-            // T contains a date with timestamp '100'.
-            query = "CREATE VIEW V AS " + query;
-            DBSPCompiler compiler = this.compileQuery(query);
-            DBSPCircuit circuit = getCircuit(compiler);
-            DBSPZSetLiteral expectedOutput = new DBSPZSetLiteral(new DBSPTupleExpression(fields));
-            InputOutputPair streams = new InputOutputPair(this.createInput(), expectedOutput);
-            this.addRustTestCase(circuit, streams);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        // T contains a date with timestamp '100'.
+        query = "CREATE VIEW V AS " + query;
+        DBSPCompiler compiler = this.compileQuery(query);
+        compiler.throwOnError();
+        DBSPCircuit circuit = getCircuit(compiler);
+        DBSPZSetLiteral expectedOutput = new DBSPZSetLiteral(new DBSPTupleExpression(fields));
+        InputOutputPair streams = new InputOutputPair(this.createInput(), expectedOutput);
+        this.addRustTestCase(circuit, streams);
     }
 
     @Override

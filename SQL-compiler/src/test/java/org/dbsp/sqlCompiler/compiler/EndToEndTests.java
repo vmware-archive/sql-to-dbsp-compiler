@@ -95,6 +95,7 @@ public class EndToEndTests extends BaseSQLTests {
         this.testQuery(query, new DBSPZSetLiteral(t, t));
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     @Test
     public void correlatedAggregate() {
         // From: Efficient Incrementialization of Correlated Nested Aggregate

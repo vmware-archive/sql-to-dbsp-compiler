@@ -41,6 +41,7 @@ import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
 import org.dbsp.sqlCompiler.compiler.sqlparser.*;
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
+import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIsNullExpression;
@@ -104,15 +105,19 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     final TypeCompiler typeCompiler;
     final TableContents tableContents;
     final CompilerOptions options;
+    final DBSPCompiler compiler;
 
     /**
      * Create a compiler that translated from calcite to DBSP circuits.
      * @param calciteCompiler     Calcite compiler.
      * @param trackTableContents  If true this compiler will track INSERT and DELETE statements.
      * @param options             Options for compilation.
+     * @param compiler            Parent compiler; used to report errors.
      */
-    public CalciteToDBSPCompiler(CalciteCompiler calciteCompiler, boolean trackTableContents, CompilerOptions options) {
-        this.circuit = new DBSPPartialCircuit();
+    public CalciteToDBSPCompiler(CalciteCompiler calciteCompiler, boolean trackTableContents,
+                                 CompilerOptions options, DBSPCompiler compiler) {
+        this.circuit = new DBSPPartialCircuit(compiler);
+        this.compiler = compiler;
         this.typeCompiler = new TypeCompiler();
         this.calciteCompiler = calciteCompiler;
         this.nodeOperator = new HashMap<>();
@@ -133,7 +138,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
      */
     public DBSPPartialCircuit getFinalCircuit() {
         DBSPPartialCircuit result = this.circuit;
-        this.circuit = new DBSPPartialCircuit();
+        this.circuit = new DBSPPartialCircuit(this.compiler);
         return result;
     }
 
@@ -588,6 +593,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         @Nullable
         RexNode leftOver = decomposition.getLeftOver();
         DBSPExpression condition = null;
+        DBSPExpression originalCondition = null;
         if (leftOver != null) {
             DBSPVariablePath t = resultType.ref().var("t");
             ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.calciteCompiler);
@@ -595,6 +601,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             if (condition.getNonVoidType().mayBeNull) {
                 condition = new DBSPApplyExpression("wrap_bool", condition.getNonVoidType().setMayBeNull(false), condition);
             }
+            originalCondition = condition;
             condition = new DBSPClosureExpression(join.getCondition(), condition, t.asParameter());
             condition = this.declare("cond", condition);
         }
@@ -622,8 +629,8 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 left.isMultiset || right.isMultiset, lindex, rIndex);
 
         DBSPOperator inner = joinResult;
-        if (condition != null) {
-            DBSPBoolLiteral blit = condition.as(DBSPBoolLiteral.class);
+        if (originalCondition != null) {
+            DBSPBoolLiteral blit = originalCondition.as(DBSPBoolLiteral.class);
             if (blit == null || blit.value == null || !blit.value) {
                 // Technically if blit.value == null or !blit.value then
                 // the filter is false, and the result is empty.  But hopefully
@@ -887,8 +894,8 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
 
             // Map each row to an expression of the form: |t| (partition, (order, t.clone()))
             List<Integer> partitionKeys = group.keys.toList();
-            List<DBSPExpression> exprs = Linq.map(partitionKeys, inputRowRefVar::field);
-            DBSPTupleExpression partition = new DBSPTupleExpression(window, exprs);
+            List<DBSPExpression> expressions = Linq.map(partitionKeys, inputRowRefVar::field);
+            DBSPTupleExpression partition = new DBSPTupleExpression(window, expressions);
             DBSPExpression orderAndRow = new DBSPRawTupleExpression(orderField, inputRowRefVar.applyClone());
             DBSPExpression mapExpr = new DBSPRawTupleExpression(partition, orderAndRow);
             DBSPClosureExpression mapClo = mapExpr.closure(inputRowRefVar.asParameter());
@@ -913,8 +920,8 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                     windowExprVar, partition.getNonVoidType(), sortType,
                     aggResultType, diff);
             this.circuit.addOperator(windowAgg);
-            DBSPIntegralOperator integ = new DBSPIntegralOperator(window, windowAgg);
-            this.circuit.addOperator(integ);
+            DBSPIntegralOperator integral = new DBSPIntegralOperator(window, windowAgg);
+            this.circuit.addOperator(integral);
 
             // Join the previous result with the aggregate
             // First index the aggregate.
@@ -946,7 +953,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             DBSPClosureExpression addExtraField =
                     addExtraFieldBody.closure(key.asRefParameter(), left.asRefParameter(), right.asParameter());
             lastOperator = new DBSPJoinOperator(window, addExtraFieldBody.getNonVoidType(), this.declare("join", addExtraField),
-                    indexInput.isMultiset || windowAgg.isMultiset, indexInput, integ);
+                    indexInput.isMultiset || windowAgg.isMultiset, indexInput, integral);
             currentTupleType = addExtraFieldBody.getNonVoidType().to(DBSPTypeTuple.class);
             previousRowRefVar = currentTupleType.ref().var("t");
         }

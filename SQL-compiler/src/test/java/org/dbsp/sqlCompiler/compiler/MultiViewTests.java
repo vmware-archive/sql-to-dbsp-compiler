@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
@@ -50,7 +49,7 @@ public class MultiViewTests extends BaseSQLTests {
      * Two output views.
      */
     @Test
-    public void twoViewTest() throws SqlParseException {
+    public void twoViewTest() {
         String query1 = "CREATE VIEW V1 AS SELECT T.COL3 FROM T";
         String query2 = "CREATE VIEW V2 as SELECT T.COL2 FROM T";
 
@@ -79,7 +78,7 @@ public class MultiViewTests extends BaseSQLTests {
      * A view is an input for another view.
      */
     @Test
-    public void nestedViewTest() throws SqlParseException {
+    public void nestedViewTest() {
         String query1 = "CREATE VIEW V1 AS SELECT T.COL3 FROM T";
         String query2 = "CREATE VIEW V2 as SELECT * FROM V1";
 
@@ -108,7 +107,7 @@ public class MultiViewTests extends BaseSQLTests {
      * A view is used twice.
      */
     @Test
-    public void multiViewTest() throws SqlParseException {
+    public void multiViewTest() {
         String query1 = "CREATE VIEW V1 AS SELECT T.COL3 AS COL3 FROM T";
         String query2 = "CREATE VIEW V2 as SELECT DISTINCT COL1 FROM (SELECT * FROM V1 JOIN T ON V1.COL3 = T.COL3)";
 
