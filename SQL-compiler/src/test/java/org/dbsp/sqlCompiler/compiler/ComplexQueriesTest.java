@@ -91,7 +91,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
         ThreeOperandVisitor tav = new ThreeOperandVisitor();
         CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(tav);
         circuit = rewriter.apply(circuit);
-        System.out.println(ToJSONVisitor.circuitToJSON(circuit));
         this.addRustTestCase(circuit);
     }
 

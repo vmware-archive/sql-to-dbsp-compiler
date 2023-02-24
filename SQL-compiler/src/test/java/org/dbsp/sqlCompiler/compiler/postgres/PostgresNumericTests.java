@@ -27,14 +27,12 @@ import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.BaseSQLTests;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
-import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDecimal;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
-import org.dbsp.util.Logger;
 import org.junit.Test;
 
 /**
@@ -43,7 +41,7 @@ import org.junit.Test;
  */
 @SuppressWarnings("JavadocLinkAsPlainText")
 public class PostgresNumericTests extends BaseSQLTests {
-    int width = 20;
+    int width = 25;
     DBSPCompiler create() {
         String createTables = "CREATE TABLE num_data (id int4, val numeric(" + width + ",10));\n" +
                 "CREATE TABLE num_exp_add (id1 int4, id2 int4, expected numeric(" + width + ",10));\n" +
@@ -552,7 +550,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testAdd() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id as ID2, t1.val + t2.val AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id as ID2, CAST(t1.val + t2.val AS NUMERIC(" + width + ", 10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, t2.expected\n" +
                 "    FROM num_result t1, num_exp_add t2\n" +
@@ -563,7 +561,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testRoundAdd() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, round(t1.val + t2.val, 10) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(round(t1.val + t2.val, 10) AS NUMERIC(" + width + ", 10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, round(t2.expected, 10) as expected\n" +
                 "    FROM num_result t1, num_exp_add t2\n" +
@@ -574,7 +572,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testSubtraction() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, t1.val - t2.val AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(t1.val - t2.val AS NUMERIC(" + width + ", 10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, t2.expected\n" +
                 "    FROM num_result t1, num_exp_sub t2\n" +
@@ -585,7 +583,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testRoundSubtraction() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, ROUND(t1.val - t2.val, 40) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(ROUND(t1.val - t2.val, 40) AS NUMERIC(" + width + ",10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, round(t2.expected, 40)\n" +
                 "    FROM num_result t1, num_exp_sub t2\n" +
@@ -596,7 +594,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testMultiply() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, t1.val * t2.val AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(t1.val * t2.val AS NUMERIC(" + width + ",10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, t2.expected\n" +
                 "    FROM num_result t1, num_exp_mul t2\n" +
@@ -607,7 +605,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testRoundMultiply() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, round(t1.val * t2.val, 30) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(round(t1.val * t2.val, 30) AS NUMERIC(" + width + ", 10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, round(t2.expected, 30)\n" +
                 "    FROM num_result t1, num_exp_mul t2\n" +
@@ -624,18 +622,17 @@ public class PostgresNumericTests extends BaseSQLTests {
                 "    FROM num_result t1, num_exp_div t2\n" +
                 "    WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2\n" +
                 "    AND t1.results != t2.expected";
-        Logger.instance.setDebugLevel(CalciteToDBSPCompiler.class, 3);
         this.testQuery(intermediate, last);
     }
 
     @Test
     public void testDivisionRound() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(round(t1.val / t2.val, 80) AS NUMERIC(" + width + ", 10)) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(round(t1.val / t2.val, 10) AS NUMERIC(" + width + ", 10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
-        String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, round(t2.expected, 80)\n" +
+        String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, round(t2.expected, 10)\n" +
                 "    FROM num_result t1, num_exp_div t2\n" +
                 "    WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2\n" +
-                "    AND t1.results != round(t2.expected, 80)";
+                "    AND t1.results != round(t2.expected, 10)";
         this.testQuery(intermediate, last);
     }
 }

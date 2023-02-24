@@ -385,7 +385,6 @@ public class OtherTests extends BaseSQLTests implements IModule {
         Assert.assertEquals(messages.exitCode, 1);
         Assert.assertEquals(messages.errorCount(), 1);
         String json = messages.toString();
-        System.out.println(json);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = mapper.readTree(json);
         Assert.assertNotNull(jsonNode);
