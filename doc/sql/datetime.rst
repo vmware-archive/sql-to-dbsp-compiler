@@ -1,13 +1,7 @@
 Date/time operations
 ====================
 
-``DATE`` literals have the form ``DATE 'YYYY-MM-DD'``.
-
 ``TIME`` literals have the form ``TIME 'HH:MM:SS.FFF``, where the
-fractional part is optional.
-
-A timestamp contains both a date and a time.  ``TIMESTAMP`` literals
-have the form ``TIMESTAMP 'YYYY-MM-DD HH:MM:SS.FFF'``, where the
 fractional part is optional.
 
 Values of type ``DATE``, ``TIME``, and ``TIMESTAMP`` can be compared
@@ -126,6 +120,8 @@ The following are legal time units:
 Operations on dates
 -------------------
 
+``DATE`` literals have the form ``DATE 'YYYY-MM-DD'``.
+
 The following operations are available on dates:
 
 ``EXTRACT(<unit> FROM date)`` where ``<unit>`` is a time unit, as
@@ -159,8 +155,15 @@ For dates it always returns 0, since dates have no time component.
 Operations on timestamps
 ------------------------
 
+A timestamp contains both a date and a time.  ``TIMESTAMP`` literals
+have the form ``TIMESTAMP 'YYYY-MM-DD HH:MM:SS.FFF'``, where the
+fractional part is optional.
+
 Timestamp literals can only represent 4-digit year positive values.
-So values BC or values greater than 10,000 years are not supported.
+Values BC or values greater than 10,000 years are not supported.
+
+The precision of timestamps is milliseconds, additional digits of
+precision in timestamp literals are rounded to milliseconds.
 
 The following operations are available on timestamps:
 

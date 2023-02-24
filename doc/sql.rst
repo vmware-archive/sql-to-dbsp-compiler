@@ -20,6 +20,7 @@ implementation.
    sql/boolean.rst
    sql/comparisons.rst
    sql/integer.rst
+   sql/float.rst
    sql/decimal.rst
    sql/fp.rst
    sql/string.rst
