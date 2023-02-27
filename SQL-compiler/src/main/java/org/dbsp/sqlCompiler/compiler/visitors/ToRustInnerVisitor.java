@@ -286,12 +286,13 @@ public class ToRustInnerVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPDecimalLiteral literal) {
         assert literal.value != null;
-        if (literal.getNonVoidType().mayBeNull)
+        DBSPTypeDecimal type = literal.getNonVoidType().to(DBSPTypeDecimal.class);
+        if (type.mayBeNull)
             this.builder.append("Some(");
-        this.builder.append("Decimal::from_str(\"")
+        this.builder.append("BigDecimal::from_str(\"")
                 .append(literal.value.toString())
                 .append("\").unwrap()");
-        if (literal.getNonVoidType().mayBeNull)
+        if (type.mayBeNull)
             this.builder.append(")");
         return false;
     }
@@ -304,19 +305,27 @@ public class ToRustInnerVisitor extends InnerVisitor {
          * For example, to cast source which is an Option[i16] to a bool
          * the function called will be cast_to_b_i16N.
          */
-        DBSPTypeBaseType base = expression.getNonVoidType().as(DBSPTypeBaseType.class);
-        if (base == null)
+        DBSPTypeBaseType baseDest = expression.getNonVoidType().as(DBSPTypeBaseType.class);
+        if (baseDest == null)
             throw new UnsupportedException(this);
         DBSPType sourceType = expression.source.getNonVoidType();
         DBSPTypeBaseType baseSource = sourceType.as(DBSPTypeBaseType.class);
         if (baseSource == null)
             throw new UnsupportedException(sourceType);
-        String destName = base.shortName();
+        String destName = baseDest.shortName();
         String srcName = baseSource.shortName();
-        String functionName = "cast_to_" + destName + base.nullableSuffix() +
-                "_" + srcName + baseSource.nullableSuffix();
+        String functionName = "cast_to_" + destName + baseDest.nullableSuffix() +
+                "_" + srcName + sourceType.nullableSuffix();
         this.builder.append(functionName).append("(");
         expression.source.accept(this);
+        DBSPTypeDecimal dec = baseDest.as(DBSPTypeDecimal.class);
+        if (dec != null) {
+            // pass precision and scale as arguments to cast method too
+            this.builder.append(", ")
+                    .append(dec.precision)
+                    .append(", ")
+                    .append(dec.scale);
+        }
         this.builder.append(")");
         return false;
     }
@@ -599,7 +608,8 @@ public class ToRustInnerVisitor extends InnerVisitor {
         expression.expression.accept(this);
         this.builder.append(".")
                 .append(expression.fieldNo);
-        if (expression.getNonVoidType().is(DBSPTypeString.class))
+        DBSPType type = expression.getNonVoidType();
+        if (!type.hasCopy())
             this.builder.append(".clone()");
         return false;
     }
@@ -844,7 +854,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPTypeDecimal type) {
-        type.wrapOption(this.builder,"Decimal");
+        type.wrapOption(this.builder,"BigDecimal");
         return false;
     }
 

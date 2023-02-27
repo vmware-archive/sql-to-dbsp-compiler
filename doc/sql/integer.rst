@@ -18,11 +18,16 @@ different types.
 
 TODO: document the implicit casts.
 
-Predefined functions
---------------------
+Predefined functions on integer values
+--------------------------------------
 
-``ABS(value)`` return absolute value.
-``MOD(left, right)`` same as ``left % right``.
+.. list-table:: Predefined functions on decimal values
+  :header-rows: 1
+
+  * - ``ABS(value)``
+    - return absolute value.
+  * - ``MOD(left, right)``
+    - integer modulus.  Same as ``left % right``.
 
 Operations not supported
 ------------------------

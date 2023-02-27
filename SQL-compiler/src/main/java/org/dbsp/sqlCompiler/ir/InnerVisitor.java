@@ -337,6 +337,7 @@ public abstract class InnerVisitor {
         else return true;
     }
 
+    @SuppressWarnings("RedundantCast")
     public boolean preoroder(DBSPComparatorExpression node) {
         if (this.visitSuper) return this.preorder((DBSPExpression) node);
         else return true;
@@ -352,7 +353,6 @@ public abstract class InnerVisitor {
         else return true;
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean preorder(DBSPStructExpression node) {
         if (this.visitSuper) return this.preorder((DBSPExpression) node);
         else return true;

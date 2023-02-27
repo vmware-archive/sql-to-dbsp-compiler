@@ -25,19 +25,27 @@
 
 package org.dbsp.util;
 
+import javax.annotation.Nullable;
+
 /**
  * Exception thrown when an unsupported construct is compiled.
  */
 public class UnsupportedException extends RuntimeException {
+    static String toString(@Nullable Object obj) {
+        if (obj == null)
+            return "";
+        return obj.getClass().getSimpleName() + ":" + obj;
+    }
+
     public UnsupportedException(Object obj) {
-        super("Not supported: " + obj.getClass().toString() + ":" + obj);
+        super("Not supported: " + toString(obj));
     }
 
     public UnsupportedException(String msg, boolean ignored) {
         super("Not supported: " + msg);
     }
 
-    public UnsupportedException(String msg, Object obj) {
-        super("Not supported: " + msg + obj.getClass().toString() + ":" + obj);
+    public UnsupportedException(String msg, @Nullable Object obj) {
+        super("Not supported: " + msg + " " + toString(obj));
     }
 }

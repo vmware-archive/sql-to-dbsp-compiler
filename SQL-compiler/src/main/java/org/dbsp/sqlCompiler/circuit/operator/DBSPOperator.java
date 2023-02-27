@@ -26,6 +26,8 @@ package org.dbsp.sqlCompiler.circuit.operator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
+import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
+import org.dbsp.sqlCompiler.compiler.errors.SourcePositionRange;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.util.IHasName;
@@ -112,7 +114,8 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
      * @param source   Source operator producing the arg input to function.
      * @param arg      Argument number of the function supplied from source operator.
      */
-    protected void checkArgumentFunctionType(DBSPExpression function, int arg, DBSPOperator source) {
+    protected void checkArgumentFunctionType(DBSPExpression function,
+                                             @SuppressWarnings("SameParameterValue") int arg, DBSPOperator source) {
         if (function.getNonVoidType().is(DBSPTypeAny.class))
             return;
         DBSPType sourceElementType;
@@ -190,5 +193,9 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
                 .replace("DBSP", "")
                 .replace("Operator", "")
                 + " " + this.id;
+    }
+
+    public SourcePositionRange getSourcePosition() {
+        return CompilerMessages.getPositionRange(this.getNode());
     }
 }

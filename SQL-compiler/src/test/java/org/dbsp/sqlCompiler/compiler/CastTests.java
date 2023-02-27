@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.*;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
@@ -34,11 +33,11 @@ import org.junit.Test;
 import java.math.BigDecimal;
 
 public class CastTests extends BaseSQLTests {
-    final DBSPTypeDecimal tenTwo = new DBSPTypeDecimal(null, 2, true);
-    final DBSPTypeDecimal tenFour = new DBSPTypeDecimal(null, 4, false);
+    final DBSPTypeDecimal tenTwo = new DBSPTypeDecimal(null, 10, 2, true);
+    final DBSPTypeDecimal tenFour = new DBSPTypeDecimal(null, 10, 4, false);
 
     @Override
-    public DBSPCompiler compileQuery(String query) throws SqlParseException {
+    public DBSPCompiler compileQuery(String query) {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
@@ -46,7 +45,7 @@ public class CastTests extends BaseSQLTests {
                 ", COL2 DOUBLE NOT NULL" +
                 ", COL3 VARCHAR NOT NULL" +
                 ", COL4 DECIMAL(10,2)" +
-                ", COL5 DECIMAL(10, 4) NOT NULL" +
+                ", COL5 DECIMAL(10,4) NOT NULL" +
                 ")";
         compiler.compileStatement(ddl);
         compiler.compileStatement(query);

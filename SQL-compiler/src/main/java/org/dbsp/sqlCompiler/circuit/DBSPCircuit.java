@@ -63,4 +63,8 @@ public class DBSPCircuit extends DBSPNode implements IDBSPOuterNode {
     public List<String> getInputTables() {
         return this.circuit.getInputTables();
     }
+
+    public DBSPCircuit rename(String name) {
+        return new DBSPCircuit(this.circuit, name);
+    }
 }

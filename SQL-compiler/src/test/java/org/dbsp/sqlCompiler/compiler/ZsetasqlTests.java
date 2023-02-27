@@ -26,7 +26,6 @@ package org.dbsp.sqlCompiler.compiler;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.calcite.config.Lex;
-import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.Zetatest;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
@@ -39,7 +38,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.dbsp.Zetalexer;
 
-import java.io.IOException;
 import java.util.Objects;
 
 public class ZsetasqlTests extends BaseSQLTests implements IModule {
@@ -101,7 +99,7 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
     }
 
     @Test
-    public void DDLZetaOverTest() throws SqlParseException {
+    public void DDLZetaOverTest() {
         String query = "CREATE TABLE TestTable AS\n" +
                 "SELECT cast(1 as int64) as row_id,\n" +
                 "       cast(null as bool) as bool_val,\n" +
@@ -132,7 +130,7 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
     // Calcite does not seem to be able to parse this.
     // In fact, it does not seem to be defined in standard sql, which cannot mix
     // intervals of different types.
-    public void testIntervals() throws SqlParseException {
+    public void testIntervals() {
         String query = "CREATE TABLE Intervals AS\n" +
                 //"SELECT 1 id, CAST(NULL AS INTERVAL) value UNION ALL\n" +
                 "SELECT 2, interval 0 year UNION ALL\n" +
@@ -155,7 +153,7 @@ public class ZsetasqlTests extends BaseSQLTests implements IModule {
     }
 
     @Test
-    public void DDLZetaSyntaxTest() throws SqlParseException {
+    public void DDLZetaSyntaxTest() {
         // ZetaSQL query syntax - BIG_QUERY dialect
         String query = "CREATE TABLE R AS\n" +
                 "SELECT cast(1 as int64) as primary_key,\n" +

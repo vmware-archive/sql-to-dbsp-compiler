@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.CircuitFunctionRewriter;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
@@ -38,7 +37,7 @@ import org.junit.Test;
 @SuppressWarnings("SpellCheckingInspection")
 public class ComplexQueriesTest extends BaseSQLTests {
     @Test
-    public void smallTaxiTest() throws SqlParseException {
+    public void smallTaxiTest() {
         String ddl = "CREATE TABLE green_tripdata\n" +
                 "(\n" +
                 "        lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
@@ -66,7 +65,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
     }
 
     @Test
-    public void simpleOver() throws SqlParseException {
+    public void simpleOver() {
         String query = "CREATE TABLE green_tripdata\n" +
                 "(\n" +
                 "    lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
@@ -92,12 +91,11 @@ public class ComplexQueriesTest extends BaseSQLTests {
         ThreeOperandVisitor tav = new ThreeOperandVisitor();
         CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(tav);
         circuit = rewriter.apply(circuit);
-        System.out.println(ToJSONVisitor.circuitToJSON(circuit));
         this.addRustTestCase(circuit);
     }
 
     @Test
-    public void demographicsTest() throws SqlParseException {
+    public void demographicsTest() {
         String query =
                 "CREATE TABLE demographics (\n" +
                 "    cc_num FLOAT64 NOT NULL,\n" +
@@ -203,7 +201,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
     }
 
     @Test
-    public void taxiTest() throws SqlParseException {
+    public void taxiTest() {
         String ddl = "CREATE TABLE green_tripdata\n" +
                 "(\n" +
                 "        lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
@@ -243,7 +241,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
 
     @Test
     // Not yet supported because of LAG
-    public void fraudDetectionTest() throws SqlParseException {
+    public void fraudDetectionTest() {
         // fraudDetection-352718.cc_data.demo_
         String ddl0 = "CREATE TABLE demographics (\n" +
                 " cc_num FLOAT64 NOT NULL,\n" +

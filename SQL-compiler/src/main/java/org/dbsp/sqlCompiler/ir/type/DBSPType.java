@@ -112,6 +112,15 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
         return this.to(DBSPTypeRef.class).type;
     }
 
+
+    /**
+     * True if this type has a Rust 'copy' method.
+     */
+    public boolean hasCopy() {
+        // Perhaps this shouldn't be here, but in a visitor.
+        return true;
+    }
+
     /**
      * Returns "N" if the type may be nullable, "" otherwise.
      * Used in the code generation.

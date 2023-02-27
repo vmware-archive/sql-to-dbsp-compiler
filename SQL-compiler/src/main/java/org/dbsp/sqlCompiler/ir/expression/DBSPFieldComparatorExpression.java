@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.ir.expression;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
 
 import javax.annotation.Nullable;
 
@@ -35,7 +34,7 @@ import javax.annotation.Nullable;
  * It also takes a direction, indicating whether the sort is ascending or descending.
  */
 public class DBSPFieldComparatorExpression extends DBSPComparatorExpression {
-    public DBSPComparatorExpression source;
+    public final DBSPComparatorExpression source;
     public final boolean ascending;
     public final int fieldNo;
 

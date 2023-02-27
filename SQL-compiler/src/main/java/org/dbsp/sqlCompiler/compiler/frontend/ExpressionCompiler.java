@@ -109,8 +109,8 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
             if (literal.isNull())
                 return DBSPLiteral.none(type);
             if (type.is(DBSPTypeInteger.class)) {
-                DBSPTypeInteger itype = type.to(DBSPTypeInteger.class);
-                switch (itype.getWidth()) {
+                DBSPTypeInteger intType = type.to(DBSPTypeInteger.class);
+                switch (intType.getWidth()) {
                     case 16:
                         return new DBSPI32Literal(Objects.requireNonNull(literal.getValueAs(Short.class)));
                     case 32:
@@ -118,7 +118,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                     case 64:
                         return new DBSPI64Literal(Objects.requireNonNull(literal.getValueAs(Long.class)));
                     default:
-                        throw new UnsupportedOperationException("Unsupported integer width type " + itype.getWidth());
+                        throw new UnsupportedOperationException("Unsupported integer width type " + intType.getWidth());
                 }
             } else if (type.is(DBSPTypeDouble.class))
                 return new DBSPDoubleLiteral(Objects.requireNonNull(literal.getValueAs(Double.class)));
@@ -303,6 +303,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
             call = (RexCall)RexUtil.expandSearch(this.rexBuilder, null, call);
         }
         List<DBSPExpression> ops = Linq.map(call.operands, e -> e.accept(this));
+        boolean anyNull = Linq.any(ops, o -> o.getNonVoidType().mayBeNull);
         DBSPType type = this.typeCompiler.convertType(call.getType());
         switch (call.op.kind) {
             case TIMES:
@@ -469,22 +470,40 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
             case OTHER_FUNCTION: {
                 String opName = call.op.getName().toLowerCase();
                 switch (opName) {
-                    case "abs":
+                    case "round": {
+                        DBSPExpression right;
+                        if (call.operands.size() < 1)
+                            throw new Unimplemented(call);
+                        DBSPExpression left = ops.get(0);
+                        if (call.operands.size() == 1)
+                            right = new DBSPI32Literal(0);
+                        else
+                            right = ops.get(1);
+                        DBSPType leftType = left.getNonVoidType();
+                        DBSPType rightType = right.getNonVoidType();
+                        if (!rightType.is(DBSPTypeInteger.class))
+                            throw new Unimplemented("ROUND expects a constant second argument", call);
+                        String function = "round_" +
+                                leftType.to(DBSPTypeBaseType.class).shortName() + leftType.nullableSuffix();
+                        return new DBSPApplyExpression(function, type, left, right);
+                    }
+                    case "abs": {
                         if (call.operands.size() != 1)
                             throw new Unimplemented(call);
                         DBSPExpression arg = ops.get(0);
                         DBSPType argType = arg.getNonVoidType();
-                        SqlRuntimeLibrary.FunctionDescription abs =
-                                SqlRuntimeLibrary.INSTANCE.getFunction("abs", type, argType, null, false);
-                        return abs.getCall(arg);
-                    case "st_distance":
+                        String function = "abs_" + argType.to(DBSPTypeBaseType.class).shortName() + argType.nullableSuffix() + "_";
+                        return new DBSPApplyExpression(function, type, arg);
+                    }
+                    case "st_distance": {
                         if (call.operands.size() != 2)
                             throw new Unimplemented(call);
                         DBSPExpression left = ops.get(0);
                         DBSPExpression right = ops.get(1);
-                        SqlRuntimeLibrary.FunctionDescription dist =
-                                SqlRuntimeLibrary.INSTANCE.getFunction("st_distance", type, left.getNonVoidType(), right.getNonVoidType(), false);
-                        return dist.getCall(left, right);
+                        String function = "st_distance_" + left.getNonVoidType().nullableSuffix() +
+                                "_" + right.getNonVoidType().nullableSuffix();
+                        return new DBSPApplyExpression(function, DBSPTypeDouble.INSTANCE.setMayBeNull(anyNull), left, right);
+                    }
                     case "division":
                         return makeBinaryExpression(call, type, "/", ops);
 

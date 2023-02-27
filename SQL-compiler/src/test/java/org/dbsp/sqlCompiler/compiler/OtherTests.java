@@ -26,9 +26,8 @@ package org.dbsp.sqlCompiler.compiler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
-import org.dbsp.sqlCompiler.Main;
+import org.dbsp.sqlCompiler.CompilerMain;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
@@ -60,7 +59,7 @@ import java.util.List;
 public class OtherTests extends BaseSQLTests implements IModule {
     static final CompilerOptions options = new CompilerOptions();
 
-    private DBSPCompiler compileDef() throws SqlParseException {
+    private DBSPCompiler compileDef() {
         DBSPCompiler compiler = new DBSPCompiler(options);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
@@ -75,7 +74,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         return compiler;
     }
 
-    public DBSPCircuit queryToCircuit(String query) throws SqlParseException {
+    public DBSPCircuit queryToCircuit(String query) {
         DBSPCompiler compiler = this.compileDef();
         compiler.compileStatement(query);
         return getCircuit(compiler);
@@ -117,7 +116,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
     }
 
     @Test
-    public void testJoin() throws SqlParseException, IOException, InterruptedException {
+    public void testJoin() throws IOException, InterruptedException {
         String statement0 = "CREATE TABLE demographics (\n" +
                 "    cc_num FLOAT64,\n" +
                 "    first STRING,\n" +
@@ -308,7 +307,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 "CREATE VIEW V AS SELECT COL1 FROM T"
         };
         File file = this.createInputScript(statements);
-        Main.execute("-o", BaseSQLTests.testFilePath, file.getPath());
+        CompilerMain.execute("-o", BaseSQLTests.testFilePath, file.getPath());
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
         boolean success = file.delete();
         Assert.assertTrue(success);
@@ -325,7 +324,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         };
         File file = this.createInputScript(statements);
         File json = File.createTempFile("out", ".json", new File("."));
-        CompilerMessages message = Main.execute("-j", "-o", json.getPath(), file.getPath());
+        CompilerMessages message = CompilerMain.execute("-j", "-o", json.getPath(), file.getPath());
         Assert.assertEquals(message.exitCode, 0);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode parsed = mapper.readTree(json);
@@ -342,7 +341,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 "This is not SQL"
         };
         File file = this.createInputScript(statements);
-        CompilerMessages messages = Main.execute("-o", BaseSQLTests.testFilePath, file.getPath());
+        CompilerMessages messages = CompilerMain.execute("-o", BaseSQLTests.testFilePath, file.getPath());
         Assert.assertEquals(messages.exitCode, 1);
         Assert.assertEquals(messages.errorCount(), 1);
         CompilerMessages.Error msg = messages.getError(0);
@@ -353,7 +352,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 "CREATE VIEW V AS SELECT * FROM T"
         };
         file = this.createInputScript(statements);
-        messages = Main.execute("-o", BaseSQLTests.testFilePath, file.getPath());
+        messages = CompilerMain.execute("-o", BaseSQLTests.testFilePath, file.getPath());
         Assert.assertEquals(messages.exitCode, 1);
         Assert.assertEquals(messages.errorCount(), 1);
         msg = messages.getError(0);
@@ -364,7 +363,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 "CREATE VIEW V AS SELECT ST_MAKELINE(ST_POINT(0,0), ST_POINT(0, 0))"
         };
         file = this.createInputScript(statements);
-        messages = Main.execute("-o", BaseSQLTests.testFilePath, file.getPath());
+        messages = CompilerMain.execute("-o", BaseSQLTests.testFilePath, file.getPath());
         Assert.assertEquals(messages.exitCode, 1);
         Assert.assertEquals(messages.errorCount(), 1);
         msg = messages.getError(0);
@@ -382,11 +381,10 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 "CREATE VIEW V AS SELECT * FROM T"
         };
         File file = this.createInputScript(statements);
-        CompilerMessages messages = Main.execute("-je", file.getPath());
+        CompilerMessages messages = CompilerMain.execute("-je", file.getPath());
         Assert.assertEquals(messages.exitCode, 1);
         Assert.assertEquals(messages.errorCount(), 1);
         String json = messages.toString();
-        System.out.println(json);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = mapper.readTree(json);
         Assert.assertNotNull(jsonNode);

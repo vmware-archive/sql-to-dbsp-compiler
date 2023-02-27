@@ -55,6 +55,11 @@ public class DBSPTypeString extends DBSPTypeBaseType {
     }
 
     @Override
+    public boolean hasCopy() {
+        return false;
+    }
+
+    @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);

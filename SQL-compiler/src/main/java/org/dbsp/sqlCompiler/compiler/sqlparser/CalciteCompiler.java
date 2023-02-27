@@ -66,6 +66,7 @@ import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.Pair;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDecimal;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
@@ -168,10 +169,20 @@ public class CalciteCompiler implements IModule {
         }
     }
 
+    public static final RelDataTypeSystem TYPE_SYSTEM = new RelDataTypeSystemImpl() {
+        public int getMaxNumericPrecision() {
+            return DBSPTypeDecimal.MAX_PRECISION;
+        }
+        public int getMaxNumericScale() {
+            return DBSPTypeDecimal.MAX_SCALE;
+        }
+    };
+
     // Adapted from https://www.querifylabs.com/blog/assembling-a-query-optimizer-with-apache-calcite
     public CalciteCompiler(CompilerOptions options) {
         this.astRewriter = new RewriteDivision();
         this.options = options;
+
         Properties connConfigProp = new Properties();
         connConfigProp.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
         connConfigProp.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
@@ -186,11 +197,14 @@ public class CalciteCompiler implements IModule {
                 // TODO: would be nice to get DDL and BABEL at the same time...
                 //.withParserFactory(SqlBabelParserImpl.FACTORY)
                 .withConformance(conformance);
-        this.typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
+        this.typeFactory = new SqlTypeFactoryImpl(TYPE_SYSTEM);
         this.catalog = new Catalog("schema");
         CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
         rootSchema.add(catalog.schemaName, this.catalog);
         // Register new types
+        rootSchema.add("INT2", factory -> factory.createSqlType(SqlTypeName.SMALLINT));
+        rootSchema.add("INT8", factory -> factory.createSqlType(SqlTypeName.BIGINT));
+        rootSchema.add("INT4", factory -> factory.createSqlType(SqlTypeName.INTEGER));
         rootSchema.add("INT64", factory -> factory.createSqlType(SqlTypeName.BIGINT));
         rootSchema.add("FLOAT64", factory -> factory.createSqlType(SqlTypeName.DOUBLE));
         rootSchema.add("FLOAT32", factory -> factory.createSqlType(SqlTypeName.FLOAT));
@@ -369,26 +383,39 @@ public class CalciteCompiler implements IModule {
     }
 
     /**
+     * Keep here a number of empty lines.  This is done to fool the SqlParser
+     * below: for each invocation of parseStatements we create a new SqlParser.
+     * There is no way to reuse the previous parser one, unfortunately.
+     */
+    StringBuilder newlines = new StringBuilder();
+
+    SqlParser createSqlParser(String sql) {
+        // This function can be invoked multiple times.
+        // In order to get correct line numbers, we feed the parser extra empty lines
+        // before the statements we compile in this round..
+        String toParse = newlines + sql;
+        SqlParser sqlParser = SqlParser.create(toParse, this.parserConfig);
+        int lines = sql.split("\n").length;
+        for (int i = 0; i < lines; i++)
+            this.newlines.append("\n");
+        return sqlParser;
+    }
+
+    /**
      * Given a SQL statement returns a SqlNode - a calcite AST
      * representation of the query.
      * @param sql  SQL query to compile
      */
     public SqlNode parse(String sql) throws SqlParseException {
-        // This is a weird API - the parser depends on the query string!
-        try {
-            SqlParser sqlParser = SqlParser.create(sql, this.parserConfig);
-            return sqlParser.parseStmt();
-        } catch (SqlParseException parse) {
-            System.err.println("Exception while parsing " + sql);
-            throw parse;
-        }
+        SqlParser sqlParser = this.createSqlParser(sql);
+        return sqlParser.parseStmt();
     }
 
     /**
      * Given a list of statements separated by semicolons, parse all of them.
      */
     public SqlNodeList parseStatements(String statements) throws SqlParseException {
-        SqlParser sqlParser = SqlParser.create(statements, this.parserConfig);
+        SqlParser sqlParser = this.createSqlParser(statements);
         return sqlParser.parseStmtList();
     }
 

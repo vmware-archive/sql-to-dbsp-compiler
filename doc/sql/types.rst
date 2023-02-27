@@ -15,7 +15,7 @@ The compiler supports the following SQL data types:
 - ``DECIMAL(precision, scale)``, a high precision fixed-point type,
   with a precision (number of decimal digits after decimal point) and
   a scale (total number of decimall digits)
-- ``NUMERIC``, a high-precision fixed-point type
+- ``NUMERIC(precision, scale)``, another name for ``DECIMAL``
 - ``FLOAT``, an IEEE 32-bit floating point number
 - ``DOUBLE``, an IEEE 64-bit floating point number
 - ``VARCHAR(n)``, or ``CHAR(n)``, or ``CHARACTER(n)``, or ``CHARACTER

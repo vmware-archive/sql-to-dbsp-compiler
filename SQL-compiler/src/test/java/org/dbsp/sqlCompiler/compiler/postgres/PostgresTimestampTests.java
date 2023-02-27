@@ -65,7 +65,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     // INSERT INTO TIMESTAMP_TBL VALUES ('infinity');
 
     // Calcite is not very flexible with regards to timestamp formats
-    public DBSPCompiler compileQuery(String query, boolean optimize) throws SqlParseException {
+    public DBSPCompiler compileQuery(String query, boolean optimize) {
         String data =
                 "CREATE TABLE TIMESTAMP_TBL (d1 timestamp(2) without time zone)\n;" +
                                                                                          // -- Postgres v6.0 standard output format
@@ -159,8 +159,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
         return compiler;
     }
 
-    @SuppressWarnings("SameParameterValue")
-    void testQuery(String query, DBSPZSetLiteral expectedOutput, boolean optimize) throws SqlParseException {
+    void testQuery(String query, DBSPZSetLiteral expectedOutput, boolean optimize) {
         query = "CREATE VIEW V AS " + query;
         DBSPCompiler compiler = this.compileQuery(query, optimize);
         DBSPCircuit circuit = getCircuit(compiler);
@@ -184,7 +183,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
         if (date == null)
             return DBSPLiteral.none(DBSPTypeTimestamp.NULLABLE_INSTANCE);
         for (SimpleDateFormat input: inputFormats) {
-            String out = null;
+            String out;
             try {
                 // Calcite problems: does not support negative years, or fractional seconds ending in 0
                 Date zero = new SimpleDateFormat("yyyy-MM-dd").parse("0000-01-01");
@@ -201,7 +200,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
 
     @Test
-    public void testTS() throws SqlParseException {
+    public void testTS() {
         String[] data = {
                 //"Tue Feb 16 17:32:01 0097 BC",
                 "Thu Jan 01 00:00:00 1970",
@@ -293,7 +292,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     // Sun Dec 31 23:59:59 294276
 
     @Test
-    public void testGt() throws SqlParseException {
+    public void testGt() {
         // Calcite does not support 'without time zone'.
         // SELECT d1 FROM TIMESTAMP_TBL
         //   WHERE d1 > timestamp without time zone '1997-01-02';
@@ -355,7 +354,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
     
     @Test
-    public void testLt() throws SqlParseException {
+    public void testLt() {
         // SELECT d1 FROM TIMESTAMP_TBL
         //   WHERE d1 < timestamp without time zone '1997-01-02';
         String[] data = {
@@ -382,7 +381,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
 
     @Test
-    public void testEq() throws SqlParseException {
+    public void testEq() {
         // SELECT d1 FROM TIMESTAMP_TBL
         //   WHERE d1 = timestamp without time zone '1997-01-02';
         String[] data = {
@@ -396,7 +395,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
 
     @Test
-    public void testNe() throws SqlParseException {
+    public void testNe() {
         // SELECT d1 FROM TIMESTAMP_TBL
         //   WHERE d1 != timestamp without time zone '1997-01-02';
         String[] data = {
@@ -471,7 +470,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
 
     @Test
-    public void testLeq() throws SqlParseException {
+    public void testLeq() {
         // SELECT d1 FROM TIMESTAMP_TBL
         //   WHERE d1 <= timestamp without time zone '1997-01-02';
         String[] data = {
@@ -499,7 +498,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
 
     @Test
-    public void testGte() throws SqlParseException {
+    public void testGte() {
         // SELECT d1 FROM TIMESTAMP_TBL
         //   WHERE d1 >= timestamp without time zone '1997-01-02';
         String[] data = {
@@ -613,7 +612,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
 
     @Test
-    public void diff() throws SqlParseException {
+    public void diff() {
         // Calcite does not support timestamp difference
         // SELECT d1 - timestamp without time zone '1997-01-02' AS diff
         //   FROM TIMESTAMP_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01';
@@ -688,7 +687,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
      * By running with optimizations disabled we test runtime evaluation of constant expressions,
      * which should give the same result as the Calcite evaluation.
      */
-    void testQueryTwice(String query, DBSPTimestampLiteral expectedValue) throws SqlParseException {
+    void testQueryTwice(String query, DBSPTimestampLiteral expectedValue) {
         DBSPZSetLiteral zset = new DBSPZSetLiteral(new DBSPTupleExpression(expectedValue));
         this.testQuery(query, zset, false);
         this.testQuery(query, zset, true);
@@ -722,7 +721,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     //(VALUES (timestamp '2020-02-29 15:44:17.71393')) ts (ts);
 
     @Test
-    public void testCastBetween() throws SqlParseException {
+    public void testCastBetween() {
         // SELECT d1 - timestamp without time zone '1997-01-02' AS diff
         //  FROM TIMESTAMP_TBL
         //  WHERE d1 BETWEEN timestamp without time zone '1902-01-01'
@@ -795,7 +794,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
 
     @Test
-    public void testDatePart() throws SqlParseException {
+    public void testDatePart() {
         // SELECT d1 as "timestamp",
         //   date_part( 'year', d1) AS year, date_part( 'month', d1) AS month,
         //   date_part( 'day', d1) AS day, date_part( 'hour', d1) AS hour,
@@ -890,7 +889,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
     
     @Test
-    public void testQuarter() throws SqlParseException {
+    public void testQuarter() {
         // SELECT d1 as "timestamp",
         //   date_part( 'quarter', d1) AS quarter, date_part( 'msec', d1) AS msec,
         //   date_part( 'usec', d1) AS usec
@@ -981,7 +980,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
     
     @Test
-    public void testDay() throws SqlParseException {
+    public void testDay() {
         // SELECT d1 as "timestamp",
         //   date_part( 'isoyear', d1) AS isoyear, date_part( 'week', d1) AS week,
         //   date_part( 'isodow', d1) AS isodow, date_part( 'dow', d1) AS dow,
@@ -1077,7 +1076,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
     
     @Test
-    public void testCenturies() throws SqlParseException {
+    public void testCenturies() {
         // SELECT d1 as "timestamp",
         //   date_part( 'decade', d1) AS decade,
         //   date_part( 'century', d1) AS century,
@@ -1177,7 +1176,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     }
 
     @Test
-    public void testMicroseconds() throws SqlParseException {
+    public void testMicroseconds() {
         // SELECT d1 as "timestamp",
         //   extract(microseconds from d1) AS microseconds,
         //   extract(milliseconds from d1) AS milliseconds,
@@ -1282,7 +1281,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     // SELECT date_part('epoch', '294270-01-01 00:00:00'::timestamp);
 
     @Test
-    public void testLargeYear() throws SqlParseException {
+    public void testLargeYear() {
         // Timestamp out of range to be represented using milliseconds
         String query = "SELECT extract(epoch from TIMESTAMP '5000-01-01 00:00:00')\n";
         this.testQuery(query, new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPI64Literal(95617584000L))), true);
@@ -1294,7 +1293,7 @@ public class PostgresTimestampTests extends BaseSQLTests {
     //   FROM TIMESTAMP_TBL;
 
     // select make_timestamp(0, 7, 15, 12, 30, 15);
-    // Calcite does not support make_timestmap
+    // Calcite does not support make_timestamp
 
     // select * from generate_series('2020-01-01 00:00'::timestamp,
     //                              '2020-01-02 03:00'::timestamp,

@@ -69,8 +69,7 @@ public class ToRustVisitor extends CircuitVisitor {
                     "    Runtime,\n" +
                     "};\n" +
                     "use dbsp_adapters::Catalog;\n" +
-                    "use rust_decimal_macros::dec;\n" +
-                    "use rust_decimal::prelude::*;\n" +
+                    "use sqlx::types::BigDecimal;\n" +
                     "use genlib::*;\n" +
                     "use size_of::*;\n" +
                     "use ::serde::{Deserialize,Serialize};\n" +
@@ -81,6 +80,7 @@ public class ToRustVisitor extends CircuitVisitor {
                     "    cell::RefCell,\n" +
                     "    rc::Rc,\n" +
                     "    marker::PhantomData,\n" +
+                    "    str::FromStr,\n" +
                     "};\n" +
                     "use tuple::declare_tuples;\n" +
                     "use sqllib::{\n" +
@@ -328,7 +328,7 @@ public class ToRustVisitor extends CircuitVisitor {
         streamType.accept(this.innerVisitor);
         builder.append(" = " )
                 .append(tmp)
-                .append(".map_index(|(key, (ts, agg))| { ((*key, *ts), agg.unwrap_or_default())});");
+                .append(".map_index(|(key, (ts, agg))| { ((key.clone(), *ts), agg.unwrap_or_default())});");
         return false;
     }
 
@@ -381,7 +381,8 @@ public class ToRustVisitor extends CircuitVisitor {
     }
 
      IIndentStream writeComments(DBSPOperator operator) {
-        return this.writeComments(operator.comment);
+        return this.writeComments(operator.getClass().getSimpleName() + " " + operator.id +
+                (operator.comment != null ? "\n" + operator.comment : ""));
     }
 
     @Override

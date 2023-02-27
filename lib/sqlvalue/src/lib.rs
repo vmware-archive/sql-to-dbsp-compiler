@@ -5,7 +5,7 @@
 //! to SqlRow objects when they need to be displayed.
 
 use dbsp::algebra::{F32, F64};
-use rust_decimal::prelude::*;
+use sqlx::types::BigDecimal;
 use sqllib::casts::*;
 
 #[derive(Debug)]
@@ -16,7 +16,7 @@ pub enum SqlValue {
     Flt(f32),
     Dbl(f64),
     Bool(bool),
-    Decimal(Decimal),
+    BigDecimal(BigDecimal),
 
     OptInt(Option<i32>),
     OptLong(Option<i64>),
@@ -24,7 +24,7 @@ pub enum SqlValue {
     OptFlt(Option<f32>),
     OptDbl(Option<f64>),
     OptBool(Option<bool>),
-    OptDecimal(Option<Decimal>),
+    OptBigDecimal(Option<BigDecimal>),
 }
 
 impl From<i32> for SqlValue {
@@ -75,9 +75,9 @@ impl From<String> for SqlValue {
     }
 }
 
-impl From<Decimal> for SqlValue {
-    fn from(value: Decimal) -> Self {
-        SqlValue::Decimal(value)
+impl From<BigDecimal> for SqlValue {
+    fn from(value: BigDecimal) -> Self {
+        SqlValue::BigDecimal(value)
     }
 }
 
@@ -135,9 +135,9 @@ impl From<Option<String>> for SqlValue {
     }
 }
 
-impl From<Option<Decimal>> for SqlValue {
-    fn from(value: Option<Decimal>) -> Self {
-        SqlValue::OptDecimal(value)
+impl From<Option<BigDecimal>> for SqlValue {
+    fn from(value: Option<BigDecimal>) -> Self {
+        SqlValue::OptBigDecimal(value)
     }
 }
 
@@ -215,9 +215,9 @@ impl SqlLogicTestFormat for SqlValue {
             (SqlValue::OptInt(None), _) => String::from("NULL"),
             (SqlValue::OptInt(Some(x)), _) => format!("{}", x),
 
-            (SqlValue::Decimal(x), _) => format!("{}", x),
-            (SqlValue::OptDecimal(None), _) => String::from("NULL"),
-            (SqlValue::OptDecimal(Some(x)), _) => format!("{}", x),
+            (SqlValue::BigDecimal(x), _) => format!("{}", x),
+            (SqlValue::OptBigDecimal(None), _) => String::from("NULL"),
+            (SqlValue::OptBigDecimal(Some(x)), _) => format!("{}", x),
 
             (SqlValue::Long(x), _) => format!("{}", x),
             (SqlValue::OptLong(None), _) => String::from("NULL"),

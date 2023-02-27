@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.circuit;
 
+import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
@@ -47,9 +48,11 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
     // This is the structure that is visited.
     public final List<IDBSPNode> code = new ArrayList<>();
     public final Map<String, DBSPOperator> operatorDeclarations = new HashMap<>();
+    public final DBSPCompiler compiler;
 
-    public DBSPPartialCircuit() {
+    public DBSPPartialCircuit(DBSPCompiler compiler) {
         super(null);
+        this.compiler = compiler;
     }
 
     /**
@@ -77,6 +80,14 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
                 .append("Adding ")
                 .append(operator.toString())
                 .newline();
+        if (this.operatorDeclarations.containsKey(operator.outputName)) {
+            compiler.reportError(operator.getSourcePosition(), false, "Duplicate definition",
+                    "View " + operator.outputName + " already defined");
+            DBSPOperator previous = this.operatorDeclarations.get(operator.outputName);
+            compiler.reportError(previous.getSourcePosition(), false, "Duplicate definition",
+                    "This is the previous definition");
+            return;
+        }
         Utilities.putNew(this.operatorDeclarations, operator.outputName, operator);
         if (operator.is(DBSPSourceOperator.class))
             this.inputOperators.add(operator.to(DBSPSourceOperator.class));

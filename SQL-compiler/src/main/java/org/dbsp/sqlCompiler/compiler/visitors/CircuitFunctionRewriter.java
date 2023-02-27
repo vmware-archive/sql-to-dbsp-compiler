@@ -32,7 +32,7 @@ import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import java.util.function.Function;
 
 /**
- * Applies a function (tihs.transform) to every function within an operator and
+ * Applies a function (this.transform) to every function within an operator and
  * to every declaration in a circuit.
  */
 public class CircuitFunctionRewriter extends CircuitCloneVisitor {
@@ -46,7 +46,7 @@ public class CircuitFunctionRewriter extends CircuitCloneVisitor {
     @Override
     public void postorder(DBSPOperator node) {
         IDBSPInnerNode function = this.transform.apply(node.function);
-        DBSPOperator result = node;
+        DBSPOperator result;
         if (function != null) {
             DBSPExpression funcExpr = function.to(DBSPExpression.class);
             result = node.withFunction(funcExpr);

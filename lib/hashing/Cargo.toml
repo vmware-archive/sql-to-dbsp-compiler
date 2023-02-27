@@ -8,4 +8,4 @@ md5 = { version = "0.7.0" }
 sqlvalue = { path = "../sqlvalue" }
 #dbsp = { path = "../../../database-stream-processor.git" }
 dbsp = { git = "https://github.com/vmware/database-stream-processor.git", default-features = false }
-size-of = { version = "0.1.1" }
+size-of = { version = "0.1.5", features = ["bigdecimal"] }

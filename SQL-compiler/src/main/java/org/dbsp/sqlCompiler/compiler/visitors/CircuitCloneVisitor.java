@@ -237,7 +237,7 @@ public class CircuitCloneVisitor extends CircuitVisitor
     @Override
     public DBSPCircuit apply(DBSPCircuit circuit) {
         this.startVisit(circuit);
-        this.result = new DBSPPartialCircuit();
+        this.result = new DBSPPartialCircuit(circuit.circuit.compiler);
         circuit.accept(this);
         this.endVisit();
         DBSPPartialCircuit result = this.getResult();
