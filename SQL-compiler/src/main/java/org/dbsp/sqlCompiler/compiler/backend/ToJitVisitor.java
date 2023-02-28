@@ -34,10 +34,7 @@ import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
-import org.dbsp.sqlCompiler.ir.expression.DBSPClosureExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPVariablePath;
+import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
@@ -61,9 +58,6 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         }
 
         public int getTypeId(DBSPType type) {
-            DBSPTypeRef ref = type.as(DBSPTypeRef.class);
-            if (ref != null)
-                type = ref.type;
             if (this.typeId.containsKey(type))
                 return this.typeId.get(type);
             int result = this.typeId.size() + 1; // 0 is not a valid index

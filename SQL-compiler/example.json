@@ -1,0 +1,234 @@
+{
+  "nodes": {
+    "1": {
+      "Source": {
+        "layout": 2
+      }
+    },
+    "2": {
+      "Filter": {
+        "input": 1,
+        "filter": {
+          "args": [
+            {
+              "id": 1,
+              "layout": 2,
+              "flags": "input"
+            }
+          ],
+          "ret": "Bool",
+          "entry_block": 1,
+          "blocks": {
+            "1": {
+              "id": 1,
+              "body": [
+                [
+                  2,
+                  {
+                    "Load": {
+                      "source": 1,
+                      "source_layout": 2,
+                      "column": 0,
+                      "column_type": "I32"
+                    }
+                  }
+                ],
+                [
+                  3,
+                  {
+                    "IsNull": {
+                      "target": 1,
+                      "target_layout": 2,
+                      "column": 0
+                    }
+                  }
+                ],
+                [
+                  4,
+                  {
+                    "Cast": {
+                      "value": 2,
+                      "from": "I32",
+                      "to": "I64"
+                    }
+                  }
+                ],
+                [
+                  5,
+                  {
+                    "Constant": {
+                      "I64": 1000
+                    }
+                  }
+                ],
+                [
+                  6,
+                  {
+                    "BinOp": {
+                      "lhs": 4,
+                      "rhs": 5,
+                      "operand_ty": "I64",
+                      "kind": "GreaterThan"
+                    }
+                  }
+                ]
+              ],
+              "terminator": {
+                "Branch": {
+                  "cond": {
+                    "Expr": 3
+                  },
+                  "truthy": 3,
+                  "falsy": 2
+                }
+              }
+            },
+            "2": {
+              "id": 2,
+              "body": [],
+              "terminator": {
+                "Return": {
+                  "value": {
+                    "Expr": 6
+                  }
+                }
+              }
+            },
+            "3": {
+              "id": 3,
+              "body": [],
+              "terminator": {
+                "Return": {
+                  "value": {
+                    "Imm": {
+                      "Bool": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "3": {
+      "Map": {
+        "input": 2,
+        "map": {
+          "args": [
+            {
+              "id": 1,
+              "layout": 2,
+              "flags": "input"
+            },
+            {
+              "id": 2,
+              "layout": 3,
+              "flags": "output"
+            }
+          ],
+          "ret": "Unit",
+          "entry_block": 1,
+          "blocks": {
+            "1": {
+              "id": 1,
+              "body": [
+                [
+                  3,
+                  {
+                    "Load": {
+                      "source": 1,
+                      "source_layout": 2,
+                      "column": 1,
+                      "column_type": "I32"
+                    }
+                  }
+                ],
+                [
+                  4,
+                  {
+                    "IsNull": {
+                      "target": 1,
+                      "target_layout": 2,
+                      "column": 1
+                    }
+                  }
+                ],
+                [
+                  5,
+                  {
+                    "Store": {
+                      "target": 2,
+                      "target_layout": 3,
+                      "column": 0,
+                      "value": {
+                        "Expr": 3
+                      },
+                      "value_type": "I32"
+                    }
+                  }
+                ],
+                [
+                  6,
+                  {
+                    "SetNull": {
+                      "target": 2,
+                      "target_layout": 3,
+                      "column": 0,
+                      "is_null": {
+                        "Expr": 4
+                      }
+                    }
+                  }
+                ]
+              ],
+              "terminator": {
+                "Return": {
+                  "value": {
+                    "Imm": "Unit"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "layout": 3
+      }
+    },
+    "4": {
+      "Sink": {
+        "input": 3
+      }
+    }
+  },
+  "layouts": {
+    "1": {
+      "columns": [
+        {
+          "ty": "Unit",
+          "nullable": false
+        }
+      ]
+    },
+    "2": {
+      "columns": [
+        {
+          "ty": "I32",
+          "nullable": true
+        },
+        {
+          "ty": "I32",
+          "nullable": true
+        }
+      ]
+    },
+    "3": {
+      "columns": [
+        {
+          "ty": "I32",
+          "nullable": true
+        }
+      ]
+    }
+  }
+}

@@ -71,7 +71,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 + "ID INTEGER,\n"
                 + "VALS INTEGER ARRAY,\n"
                 + "VALVALS VARCHAR(10) ARRAY)";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         compiler.compileStatement(ddl);
         if (compiler.hasErrors())
             compiler.showErrors(System.err);
