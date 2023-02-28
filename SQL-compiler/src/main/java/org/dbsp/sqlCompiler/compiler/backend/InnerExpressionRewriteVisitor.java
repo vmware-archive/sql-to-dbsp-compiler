@@ -17,10 +17,14 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
+<<<<<<< HEAD
  * Base class for Inner visitors which rewrite expressions and statements.
  * This class recurses over the structure of expressions and statements
  * and if any fields have changed builds a new version of the same expression
  * or statement.
+=======
+ * Base class for Inner visitors which rewrite expressions.
+>>>>>>> WIP
  */
 public abstract class InnerExpressionRewriteVisitor
         extends InnerVisitor
