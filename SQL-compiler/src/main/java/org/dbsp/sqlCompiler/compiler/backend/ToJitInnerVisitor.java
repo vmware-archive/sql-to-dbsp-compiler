@@ -22,7 +22,7 @@ import java.util.*;
 
 /**
  * Generate code for the JIT compiler using a JSON representation.
-
+ * Handles InnerNodes - i.e., expressions, closures, statements.
  */
 public class ToJitInnerVisitor extends InnerVisitor {
     public static boolean isLegalId(int id) {
@@ -171,7 +171,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
      */
     public final ToJitVisitor.TypeCatalog catalog;
     /**
-     * The names of the variable currently being assigned.
+     * The names of the variables currently being assigned.
      * This is a stack, because we can have nested blocks:
      * let var1 = { let v2 = 1 + 2; v2 + 1 }
      */

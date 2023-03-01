@@ -17,7 +17,10 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Base class for Inner visitors which rewrite expressions.
+ * Base class for Inner visitors which rewrite expressions and statements.
+ * This class recurses over the structure of expressions and statements
+ * and if any fields have changed builds a new version of the same expression
+ * or statement.
  */
 public abstract class InnerExpressionRewriteVisitor
         extends InnerVisitor
@@ -84,8 +87,8 @@ public abstract class InnerExpressionRewriteVisitor
         return this.getResultExpression();
     }
 
-    DBSPStatement transform(DBSPStatement expression) {
-        expression.accept(this);
+    DBSPStatement transform(DBSPStatement statement) {
+        statement.accept(this);
         return this.getResult().to(DBSPStatement.class);
     }
 
@@ -171,7 +174,7 @@ public abstract class InnerExpressionRewriteVisitor
         DBSPExpression source = this.transform(expression.expression);
         DBSPExpression result = expression;
         if (source != expression.expression) {
-            result = new DBSPBorrowExpression(source, expression.mut);
+            result = source.borrow(expression.mut);
         }
         this.map(expression, result);
         return false;

@@ -66,6 +66,10 @@ public abstract class DBSPExpression
         return new DBSPBorrowExpression(this);
     }
 
+    public DBSPExpression borrow(boolean mutable) {
+        return new DBSPBorrowExpression(this, mutable);
+    }
+
     public DBSPExpression field(int index) {
         return new DBSPFieldExpression(this, index);
     }
