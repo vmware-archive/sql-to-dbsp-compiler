@@ -60,15 +60,6 @@ public class DBSPTypeUser extends DBSPType {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DBSPTypeUser that = (DBSPTypeUser) o;
-        return name.equals(that.name) &&
-                Arrays.equals(typeArgs, that.typeArgs);
-    }
-
-    @Override
     public boolean sameType(@Nullable DBSPType type) {
         if (!super.sameType(type))
             return false;
@@ -78,18 +69,13 @@ public class DBSPTypeUser extends DBSPType {
         DBSPTypeUser other = type.to(DBSPTypeUser.class);
         if (!this.name.equals(other.name))
             return false;
-        if (this.typeArgs.length != other.typeArgs.length)
-            return false;
-        for (int i = 0; i < this.typeArgs.length; i++)
-            if (!this.typeArgs[i].sameType(other.typeArgs[i]))
-                return false;
-        return true;
+        return DBSPType.sameTypes(this.typeArgs, other.typeArgs);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(name);
-        result = 31 * result + Arrays.hashCode(typeArgs);
+        int result = Objects.hash(super.hashCode(), name);
+        result = Objects.hash(result, Arrays.hashCode(typeArgs));
         return result;
     }
 

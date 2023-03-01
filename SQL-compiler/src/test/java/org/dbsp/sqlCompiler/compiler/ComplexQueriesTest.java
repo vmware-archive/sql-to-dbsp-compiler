@@ -24,9 +24,9 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.compiler.visitors.CircuitFunctionRewriter;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.visitors.ThreeOperandVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.CircuitFunctionRewriter;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.backend.ThreeOperandVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;

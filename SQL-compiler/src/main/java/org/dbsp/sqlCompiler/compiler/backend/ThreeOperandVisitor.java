@@ -21,10 +21,8 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.compiler.backend;
 
-import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
@@ -34,7 +32,6 @@ import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.Function;
 
 /**
  * A visitor which rewrites expressions into "three-operand" code introducing temporaries.
@@ -46,7 +43,9 @@ import java.util.function.Function;
  *   tmp1
  * };
  */
-public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPInnerNode, IDBSPInnerNode>, IModule {
+public class ThreeOperandVisitor
+        extends InnerExpressionRewriteVisitor
+        implements IModule {
     /**
      * Keeps track of statements that will eventually form the body of a set of block
      * statements.  The statements will usually have the form 'let temp = expr;'.
@@ -113,11 +112,6 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
     }
 
     /**
-     * Result produced by the last preorder invocation.
-     */
-    @Nullable
-    protected IDBSPInnerNode lastResult;
-    /**
      * Generates fresh names.
      */
     private final NameGen gen;
@@ -128,38 +122,6 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
         this.gen = new NameGen("tmp");
         this.pending = new PendingStatements();
         this.lastResult = null;
-    }
-
-    @Override
-    @Nullable
-    public IDBSPInnerNode apply(@Nullable IDBSPInnerNode dbspNode) {
-        if (dbspNode == null)
-            return null;
-        dbspNode.accept(this);
-        return this.getResult();
-    }
-
-    /**
-     * Replace the 'old' IR node with the 'newOp' IR node.
-     * @param old     only used for debugging.
-     */
-    void map(IDBSPInnerNode old, IDBSPInnerNode newOp) {
-        Logger.INSTANCE.from(this, 1)
-                .append(this.toString())
-                .append(":")
-                .append(old.toString())
-                .append(" -> ")
-                .append(newOp.toString())
-                .newline();
-        this.lastResult = newOp;
-    }
-
-    IDBSPInnerNode getResult() {
-        return Objects.requireNonNull(this.lastResult);
-    }
-
-    DBSPExpression getResultExpression() {
-        return this.getResult().to(DBSPExpression.class);
     }
 
     @Override
@@ -307,7 +269,7 @@ public class ThreeOperandVisitor extends InnerVisitor implements Function<IDBSPI
 
     @Override
     public boolean preorder(DBSPUnaryExpression expression) {
-        DBSPExpression var = this.remap(expression.left);
+        DBSPExpression var = this.remap(expression.source);
         DBSPType type = expression.getNonVoidType();
         DBSPExpression result = new DBSPUnaryExpression(expression.getNode(), type,
                 expression.operation, var);

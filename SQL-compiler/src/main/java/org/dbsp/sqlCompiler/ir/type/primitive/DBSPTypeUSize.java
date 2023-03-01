@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * Represents the usize Rust type.
@@ -82,6 +83,11 @@ public class DBSPTypeUSize extends DBSPTypeBaseType
     @Override
     public DBSPLiteral getMinValue() {
         throw new UnsupportedException(this);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.mayBeNull, 15);
     }
 
     @Override

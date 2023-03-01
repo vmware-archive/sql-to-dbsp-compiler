@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * This type has a single value, NULL.
@@ -55,6 +56,11 @@ public class DBSPTypeNull extends DBSPTypeBaseType {
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.mayBeNull, 10);
     }
 
     @Override

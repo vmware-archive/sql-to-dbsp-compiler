@@ -233,4 +233,22 @@ public class Linq {
                 return false;
         return true;
     }
+
+    public static <T> boolean different(List<T> left, List<T> right) {
+        if (left.size() != right.size())
+            return true;
+        for (int i = 0; i < left.size(); i++)
+            if (left.get(i) != right.get(i))
+                return true;
+        return false;
+    }
+
+    static public <T> boolean different(T[] left, T[] right) {
+        if (left.length != right.length)
+            return true;
+        for (int i = 0; i < left.length; i++)
+            if (left[i] != right[i])
+                return true;
+        return false;
+    }
 }

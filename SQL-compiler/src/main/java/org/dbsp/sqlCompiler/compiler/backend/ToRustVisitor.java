@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.compiler.backend;
 
 import org.dbsp.sqlCompiler.circuit.*;
 import org.dbsp.sqlCompiler.circuit.operator.*;
@@ -160,7 +160,7 @@ public class ToRustVisitor extends CircuitVisitor {
     public void generateBody(DBSPPartialCircuit circuit) {
         this.builder.append("let root = dbsp::RootCircuit::build(|circuit| {")
                 .increase();
-        for (IDBSPNode node : circuit.code)
+        for (IDBSPNode node : circuit.getCode())
             this.processNode(node);
         this.builder.decrease()
                 .append("})")

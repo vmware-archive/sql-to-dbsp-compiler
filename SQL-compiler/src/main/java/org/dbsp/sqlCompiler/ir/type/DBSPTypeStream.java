@@ -25,6 +25,9 @@ package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
+import javax.annotation.Nullable;
+import java.util.Objects;
+
 /**
  * A type of the form 'Stream<_, elementType>'
  */
@@ -46,5 +49,21 @@ public class DBSPTypeStream extends DBSPType {
         if (!visitor.preorder(this)) return;
         this.elementType.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), this.elementType.hashCode());
+    }
+
+    @Override
+    public boolean sameType(@Nullable DBSPType other) {
+        if (!super.sameType(other))
+            return false;
+        assert other != null;
+        DBSPTypeStream oRef = other.as(DBSPTypeStream.class);
+        if (oRef == null)
+            return false;
+        return this.elementType.sameType(oRef.elementType);
     }
 }

@@ -26,6 +26,8 @@ package org.dbsp.sqlCompiler.ir.type;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.Objects;
 
 public class DBSPTypeFunction extends DBSPType {
     @Nullable
@@ -51,5 +53,25 @@ public class DBSPTypeFunction extends DBSPType {
         for (DBSPType arg: this.argumentTypes)
             arg.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(super.hashCode(), resultType);
+        result = 31 * result + Arrays.hashCode(argumentTypes);
+        return result;
+    }
+
+    @Override
+    public boolean sameType(@Nullable DBSPType type) {
+        if (!super.sameType(type))
+            return false;
+        assert type != null;
+        if (!type.is(DBSPTypeFunction.class))
+            return false;
+        DBSPTypeFunction other = type.to(DBSPTypeFunction.class);
+        if (!DBSPType.sameType(this.resultType, other.resultType))
+            return false;
+        return DBSPType.sameTypes(this.argumentTypes, other.argumentTypes);
     }
 }

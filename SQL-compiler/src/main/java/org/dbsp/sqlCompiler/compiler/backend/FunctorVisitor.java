@@ -21,37 +21,25 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.compiler.backend;
 
-import org.dbsp.sqlCompiler.circuit.operator.*;
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+
+import java.util.function.Function;
 
 /**
- * This visitor converts a DBSPCircuit into a new circuit which
- * computes the incremental version of the same query.
- * The generated circuit is not efficient, though, it should be
- * further optimized.
+ * This visitor just applies a user-defined function to a circuit.
  */
-public class IncrementalizeVisitor extends CircuitCloneVisitor {
-    public IncrementalizeVisitor() {
+public class FunctorVisitor extends CircuitVisitor {
+    private final Function<DBSPCircuit, DBSPCircuit> transformation;
+    public FunctorVisitor(Function<DBSPCircuit, DBSPCircuit> transform) {
         super(false);
+        this.transformation = transform;
     }
 
     @Override
-    public void postorder(DBSPSourceOperator operator) {
-        if (this.visited.contains(operator))
-            return;
-        this.addOperator(operator);
-        DBSPIntegralOperator integral = new DBSPIntegralOperator(null, operator);
-        this.map(operator, integral);
-    }
-
-    @Override
-    public void postorder(DBSPSinkOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPDifferentialOperator diff = new DBSPDifferentialOperator(null, source);
-        DBSPSinkOperator sink = new DBSPSinkOperator(operator.getNode(), operator.outputName,
-                operator.query, operator.comment, diff);
-        this.addOperator(diff);
-        this.map(operator, sink);
+    public DBSPCircuit apply(DBSPCircuit node) {
+        return this.transformation.apply(node);
     }
 }

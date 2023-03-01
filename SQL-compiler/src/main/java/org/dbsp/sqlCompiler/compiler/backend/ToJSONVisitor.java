@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.compiler.backend;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -61,7 +61,7 @@ public class ToJSONVisitor extends CircuitVisitor implements IModule {
     @Override
     public boolean preorder(DBSPPartialCircuit circuit) {
         ArrayNode functions = this.topMapper.createArrayNode();
-        for (IDBSPNode node : circuit.code) {
+        for (IDBSPNode node : circuit.getCode()) {
             IDBSPDeclaration decl = node.as(IDBSPDeclaration.class);
             if (decl != null) {
                 JsonNode tree = this.json(decl);
@@ -71,7 +71,7 @@ public class ToJSONVisitor extends CircuitVisitor implements IModule {
         this.root.set("functions", functions);
 
         ArrayNode operators = this.topMapper.createArrayNode();
-        for (IDBSPNode node : circuit.code) {
+        for (IDBSPNode node : circuit.getCode()) {
             DBSPOperator op = node.as(DBSPOperator.class);
             if (op != null) {
                 op.accept(this);

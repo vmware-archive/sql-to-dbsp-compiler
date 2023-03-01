@@ -32,6 +32,7 @@ import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 public class DBSPTypeDecimal extends DBSPTypeBaseType
         implements IsNumericType {
@@ -96,6 +97,11 @@ public class DBSPTypeDecimal extends DBSPTypeBaseType
     @Override
     public String shortName() {
         return "decimal";
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), precision, scale);
     }
 
     @Override

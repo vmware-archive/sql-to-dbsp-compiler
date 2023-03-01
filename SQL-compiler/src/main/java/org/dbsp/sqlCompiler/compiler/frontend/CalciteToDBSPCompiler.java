@@ -38,7 +38,7 @@ import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
 import org.dbsp.sqlCompiler.compiler.sqlparser.*;
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIsNullExpression;
@@ -530,7 +530,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         if (!shouldFilter) return input;
 
         DBSPVariablePath var = rowType.ref().var("r");
-        DBSPSomeExpression some = new DBSPSomeExpression(var.applyClone());
+        DBSPExpression some = var.applyClone().some();
         DBSPLiteral none = DBSPLiteral.none(some.getNonVoidType());
         // Build a condition that checks whether any of the key fields is null.
         @Nullable

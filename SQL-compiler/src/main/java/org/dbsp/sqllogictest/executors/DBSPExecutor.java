@@ -26,11 +26,9 @@ package org.dbsp.sqllogictest.executors;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.backend.*;
 import org.dbsp.sqlCompiler.compiler.frontend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
-import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
-import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -40,7 +38,6 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
-import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.sqllogictest.*;
 import org.dbsp.util.*;
@@ -383,7 +380,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
 
         String rust = ToRustVisitor.circuitToRustString(dbsp);
         if (this.validateJson)
-            ToJSONVisitor.validateJson(dbsp);
+            ToJitVisitor.validateJson(dbsp);
         DBSPFunction func = createTesterCode(
                 "tester" + suffix, dbsp,
                 inputGeneratingFunction,

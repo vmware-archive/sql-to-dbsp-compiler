@@ -21,28 +21,16 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.expression;
-
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.path.DBSPPath;
-
 /**
- * Convenient shortcut to wrap an expression into a Some() constructor.
+ * Package that doesn't allow null values as method parameters.
  */
-public class DBSPSomeExpression extends DBSPStructExpression {
-    public DBSPSomeExpression(DBSPExpression argument) {
-        super(argument.getNonVoidType().setMayBeNull(true).path(
-                new DBSPPath("Some")), argument.getNonVoidType().setMayBeNull(true), argument);
-    }
 
-    @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        if (this.type != null)
-            this.type.accept(visitor);
-        this.function.accept(visitor);
-        for (DBSPExpression arg: this.arguments)
-            arg.accept(visitor);
-        visitor.postorder(this);
-    }
-}
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqlCompiler.compiler.backend;
+
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
+
+import javax.annotation.ParametersAreNonnullByDefault;

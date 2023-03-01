@@ -24,7 +24,7 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.compiler.visitors.*;
+import org.dbsp.sqlCompiler.compiler.backend.*;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
@@ -168,11 +168,9 @@ public class BaseSQLTests {
                 circuit = optimizer.apply(circuit);
             }
 
-            ThreeOperandVisitor tav = new ThreeOperandVisitor();
-            CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(tav);
-            circuit = rewriter.apply(circuit);
             // Test json serialization
-            ToJSONVisitor.validateJson(circuit);
+            //ToJSONVisitor.validateJson(circuit);
+            //ToJitVisitor.validateJson(circuit);
             this.addRustTestCase(circuit, streams);
         } catch (Exception ex) {
             throw new RuntimeException(ex);

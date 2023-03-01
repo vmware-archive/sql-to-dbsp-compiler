@@ -47,9 +47,13 @@ public class NameGen {
             nextId.put(this.prefix, 0);
     }
 
+    public int getNext() {
+        return nextId.get(this.prefix);
+    }
+
     @Override
     public String toString() {
-        int id = nextId.get(this.prefix);
+        int id = this.getNext();
         nextId.put(this.prefix, id+1);
         return this.prefix + id;
     }

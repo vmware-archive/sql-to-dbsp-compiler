@@ -32,6 +32,7 @@ import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * Models the SQL Interval type for days-seconds.
@@ -57,6 +58,11 @@ public class DBSPTypeMillisInterval extends DBSPTypeBaseType implements IsNumeri
         if (this.mayBeNull == mayBeNull)
             return this;
         return new DBSPTypeMillisInterval(this.getNode(), mayBeNull);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.mayBeNull, 8);
     }
 
     @Override

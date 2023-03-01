@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.compiler.backend;
 
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;

@@ -30,6 +30,7 @@ import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.util.IndentStream;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
     /**
@@ -64,10 +65,35 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
         return left.sameType(right);
     }
 
+    /**
+     * This is like 'equals', but it always takes a DBSPType.
+     */
     public boolean sameType(@Nullable DBSPType other) {
         if (other == null)
             return false;
         return this.mayBeNull == other.mayBeNull;
+    }
+
+    public static boolean sameTypes(DBSPType[] left, DBSPType[] right) {
+        if (left.length != right.length)
+            return false;
+        for (int i = 0; i < left.length; i++) {
+            if (!DBSPType.sameType(left[i], right[i]))
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof DBSPType))
+            return false;
+        return this.sameType((DBSPType)obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(this.mayBeNull);
     }
 
     /**
@@ -111,7 +137,6 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
             return this;
         return this.to(DBSPTypeRef.class).type;
     }
-
 
     /**
      * True if this type has a Rust 'copy' method.

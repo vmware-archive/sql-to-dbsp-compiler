@@ -61,4 +61,6 @@ public class DBSPTypeZSet extends DBSPTypeUser {
         this.weightType.accept(visitor);
         visitor.postorder(this);
     }
+
+    // sameType and hashCode inherited from TypeUser
 }

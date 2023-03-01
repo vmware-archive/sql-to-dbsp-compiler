@@ -110,14 +110,6 @@ public class DBSPTypeTuple extends DBSPType {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DBSPTypeTuple that = (DBSPTypeTuple) o;
-        return Arrays.equals(tupFields, that.tupFields);
-    }
-
-    @Override
     public int hashCode() {
         return Arrays.hashCode(tupFields);
     }
@@ -130,12 +122,7 @@ public class DBSPTypeTuple extends DBSPType {
         if (!type.is(DBSPTypeTuple.class))
             return false;
         DBSPTypeTuple other = type.to(DBSPTypeTuple.class);
-        if (this.tupFields.length != other.tupFields.length)
-            return false;
-        for (int i = 0; i < this.tupFields.length; i++)
-            if (!this.tupFields[i].sameType(other.tupFields[i]))
-                return false;
-        return true;
+        return DBSPType.sameTypes(this.tupFields, other.tupFields);
     }
 
     public DBSPTypeTuple slice(int start, int endExclusive) {

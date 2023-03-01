@@ -29,7 +29,7 @@ import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
 import org.dbsp.sqlCompiler.compiler.errors.SourcePositionRange;
-import org.dbsp.sqlCompiler.compiler.visitors.*;
+import org.dbsp.sqlCompiler.compiler.backend.*;
 
 import javax.annotation.Nullable;
 import java.io.*;

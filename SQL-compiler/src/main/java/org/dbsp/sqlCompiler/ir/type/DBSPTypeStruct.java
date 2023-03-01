@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -54,7 +55,7 @@ public class DBSPTypeStruct extends DBSPType {
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, type);
+            return Objects.hash(this.name, this.type.hashCode());
         }
 
         @Override
@@ -62,8 +63,8 @@ public class DBSPTypeStruct extends DBSPType {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Field that = (Field) o;
-            return name.equals(that.name) &&
-                    type.sameType(that.type);
+            return this.name.equals(that.name) &&
+                    this.type.sameType(that.type);
         }
 
         @Override
@@ -122,6 +123,11 @@ public class DBSPTypeStruct extends DBSPType {
             if (!this.args.get(i).equals(other.args.get(i)))
                 return false;
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), this.name, this.fields.hashCode());
     }
 
     @JsonIgnore

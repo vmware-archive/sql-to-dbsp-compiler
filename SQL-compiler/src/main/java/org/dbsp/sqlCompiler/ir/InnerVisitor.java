@@ -342,7 +342,6 @@ public abstract class InnerVisitor {
         else return true;
     }
 
-    @SuppressWarnings("RedundantCast")
     public boolean preorder(DBSPComparatorExpression node) {
         if (this.visitSuper) return this.preorder((DBSPExpression) node);
         else return true;

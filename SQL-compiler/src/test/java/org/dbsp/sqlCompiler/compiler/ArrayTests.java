@@ -24,9 +24,7 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.util.Logger;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.junit.Test;
 
 public class ArrayTests extends BaseSQLTests {

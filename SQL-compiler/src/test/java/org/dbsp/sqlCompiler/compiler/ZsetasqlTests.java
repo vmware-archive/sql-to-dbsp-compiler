@@ -27,7 +27,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.calcite.config.Lex;
 import org.dbsp.Zetatest;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeZSet;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;

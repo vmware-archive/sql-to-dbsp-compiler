@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class DBSPTypeBool extends DBSPTypeBaseType {
     public DBSPTypeBool(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
@@ -36,6 +37,11 @@ public class DBSPTypeBool extends DBSPTypeBaseType {
         if (this.mayBeNull == mayBeNull)
             return this;
         return new DBSPTypeBool(this.getNode(), mayBeNull);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.mayBeNull, 2);
     }
 
     @Override

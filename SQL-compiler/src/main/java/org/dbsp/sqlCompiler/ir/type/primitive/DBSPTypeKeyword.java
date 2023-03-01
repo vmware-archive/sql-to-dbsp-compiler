@@ -28,6 +28,7 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * This corresponds to the Calcite 'SYMBOL' type,
@@ -54,6 +55,11 @@ public class DBSPTypeKeyword extends DBSPTypeBaseType {
     @Override
     public String shortName() {
         throw new UnsupportedException(this);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.mayBeNull, 7);
     }
 
     @Override

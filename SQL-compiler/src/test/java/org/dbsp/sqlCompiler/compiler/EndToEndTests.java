@@ -1,7 +1,6 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPSomeExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
@@ -232,16 +231,15 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT ST_POINT(0, 0)";
         this.testQuery(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(
-                        new DBSPSomeExpression(new DBSPGeoPointLiteral(null,
-                                new DBSPDoubleLiteral(0), new DBSPDoubleLiteral(0))))));
+                        new DBSPGeoPointLiteral(null,
+                                new DBSPDoubleLiteral(0), new DBSPDoubleLiteral(0)).some())));
     }
 
     @Test
     public void geoDistanceTest() {
         String query = "SELECT ST_DISTANCE(ST_POINT(0, 0), ST_POINT(0,1))";
         this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(
-                        new DBSPSomeExpression(new DBSPDoubleLiteral(1)))));
+                new DBSPTupleExpression(new DBSPDoubleLiteral(1).some())));
     }
 
     @Test

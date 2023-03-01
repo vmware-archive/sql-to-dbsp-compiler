@@ -21,9 +21,10 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.compiler.backend;
 
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
+import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
@@ -58,13 +59,13 @@ public class CircuitFunctionRewriter extends CircuitCloneVisitor {
 
     @Override
     public boolean preorder(DBSPPartialCircuit circuit) {
-        for (IDBSPNode node : circuit.code) {
+        for (IDBSPNode node : circuit.getCode()) {
             DBSPOperator op = node.as(DBSPOperator.class);
             if (op != null)
                 op.accept(this);
             else {
                 IDBSPInnerNode result = this.transform.apply(node.to(IDBSPInnerNode.class));
-                this.getResult().code.add(result);
+                this.getResult().declare(result.to(IDBSPDeclaration.class));
             }
         }
         return false;

@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public abstract class DBSPStatement
         extends DBSPNode

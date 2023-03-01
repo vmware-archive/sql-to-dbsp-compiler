@@ -37,7 +37,7 @@ import java.util.Objects;
 public class DBSPTypeInteger extends DBSPTypeBaseType
         implements IsNumericType {
     private final int width;
-    private final boolean signed;
+    public final boolean signed;
 
     public static final DBSPTypeInteger SIGNED_16 = new DBSPTypeInteger(null, 16, true,false);
     public static final DBSPTypeInteger SIGNED_32 = new DBSPTypeInteger(null, 32, true,false);
@@ -56,7 +56,7 @@ public class DBSPTypeInteger extends DBSPTypeBaseType
 
     @Override
     public int hashCode() {
-        return Objects.hash(width);
+        return Objects.hash(this.width, this.signed);
     }
 
     @Override

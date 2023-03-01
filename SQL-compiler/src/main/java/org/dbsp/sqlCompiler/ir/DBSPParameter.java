@@ -39,10 +39,9 @@ import javax.annotation.Nullable;
 
 public class DBSPParameter extends DBSPNode implements IHasType, IDBSPInnerNode {
     public final DBSPPattern pattern;
-    @Nullable
     public final DBSPType type;
 
-    public DBSPParameter(DBSPPattern pattern, @Nullable DBSPType type) {
+    public DBSPParameter(DBSPPattern pattern, DBSPType type) {
         super(null);
         this.pattern = pattern;
         this.type = type;
@@ -69,8 +68,7 @@ public class DBSPParameter extends DBSPNode implements IHasType, IDBSPInnerNode 
     @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        if (this.type != null)
-            this.type.accept(visitor);
+        this.type.accept(visitor);
         this.pattern.accept(visitor);
         visitor.postorder(this);
     }

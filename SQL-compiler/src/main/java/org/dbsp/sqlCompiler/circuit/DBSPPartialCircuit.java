@@ -23,7 +23,7 @@
 
 package org.dbsp.sqlCompiler.circuit;
 
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
@@ -98,6 +98,8 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
         this.code.add(operator);
     }
 
+    public Iterable<IDBSPNode> getCode() { return this.code; }
+
     public void declare(IDBSPDeclaration declaration) {
         this.code.add(declaration);
         this.declarations.put(declaration.getName(), declaration);
@@ -113,6 +115,10 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
     @Nullable
     public DBSPOperator getOperator(String tableName) {
         return this.operatorDeclarations.get(tableName);
+    }
+
+    public IDBSPDeclaration getDefinition(String name) {
+        return Utilities.getExists(this.declarations, name);
     }
 
     @Override
