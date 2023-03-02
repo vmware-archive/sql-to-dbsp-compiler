@@ -234,27 +234,6 @@ public class SqlRuntimeLibrary {
 
     void generateProgram() {
         List<IDBSPDeclaration> declarations = new ArrayList<>();
-        DBSPParameter arg = new DBSPParameter(
-                "b", DBSPTypeBool.NULLABLE_INSTANCE);
-        declarations.add(
-                new DBSPFunction("wrap_bool",
-                        Collections.singletonList(arg),
-                        DBSPTypeBool.INSTANCE,
-                        new DBSPMatchExpression(
-                                arg.getNonVoidType().var("b"),
-                                Arrays.asList(
-                                    new DBSPMatchExpression.Case(
-                                            DBSPTupleStructPattern.somePattern(
-                                                    new DBSPIdentifierPattern("x")),
-                                            DBSPTypeBool.INSTANCE.var("x")
-                                    ),
-                                    new DBSPMatchExpression.Case(
-                                            DBSPWildcardPattern.INSTANCE,
-                                            new DBSPBoolLiteral(false)
-                                    )
-                                ),
-                                DBSPTypeBool.INSTANCE)));
-
         DBSPType[] numericTypes = new DBSPType[] {
                 DBSPTypeInteger.SIGNED_16,
                 DBSPTypeInteger.SIGNED_32,

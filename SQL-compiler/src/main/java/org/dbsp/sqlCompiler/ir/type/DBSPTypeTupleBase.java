@@ -21,34 +21,40 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.expression;
-
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.util.TranslationException;
+package org.dbsp.sqlCompiler.ir.type;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
-public class DBSPUnaryExpression extends DBSPExpression {
-    public final DBSPExpression source;
-    public final String operation;
+public abstract class DBSPTypeTupleBase extends DBSPType {
+    public final DBSPType[] tupFields;
 
-    @SuppressWarnings("ConstantConditions")
-    public DBSPUnaryExpression(@Nullable Object node, DBSPType type, String operation, DBSPExpression operand) {
-        super(node, type);
-        this.operation = operation;
-        this.source = operand;
-        if (this.source == null)
-            throw new TranslationException("Null operand", node);
+    protected DBSPTypeTupleBase(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
+        super(node, mayBeNull);
+        this.tupFields = tupFields;
     }
 
-    @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        if (this.type != null)
-            this.type.accept(visitor);
-        this.source.accept(visitor);
-        visitor.postorder(this);
+    protected DBSPTypeTupleBase(@Nullable Object node, DBSPType... tupFields) {
+        this(node, false, tupFields);
     }
 
+    protected DBSPTypeTupleBase(DBSPType... tupFields) {
+        this(null, tupFields);
+    }
+
+    protected DBSPTypeTupleBase(@Nullable Object node, List<DBSPType> tupFields) {
+        this(node, tupFields.toArray(new DBSPType[0]));
+    }
+
+    protected DBSPTypeTupleBase(List<DBSPType> tupFields) {
+        this(null, tupFields);
+    }
+
+    public DBSPType getFieldType(int index) {
+        return this.tupFields[index];
+    }
+
+    public int size() {
+        return this.tupFields.length;
+    }
 }

@@ -33,7 +33,9 @@ import java.util.List;
 /**
  * A Raw Rust tuple.
  */
-public class DBSPTypeRawTuple extends DBSPTypeTuple {
+public class DBSPTypeRawTuple extends DBSPTypeTupleBase {
+    public static final DBSPTypeRawTuple EMPTY_TUPLE_TYPE = new DBSPTypeRawTuple();
+
     private DBSPTypeRawTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupArgs) {
         super(node, mayBeNull, tupArgs);
     }

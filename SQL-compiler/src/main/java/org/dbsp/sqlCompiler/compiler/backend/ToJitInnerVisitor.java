@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.*;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPI32Literal;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPI64Literal;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
@@ -137,11 +134,12 @@ public class ToJitInnerVisitor extends InnerVisitor {
     }
 
     /**
-     * Name of a fictitious parameter that is added to closures that return structs.
+     * Prefix of the name of the fictitious parameters that are added to closures that return structs.
      * The JIT only supports returning scalar values, so a closure that returns a
      * tuple actually receives an additional parameter that is "output" (equivalent to a "mut").
+     * Moreover, a closure that returns a RawTuple will return one value for each field of the raw tuple.
      */
-    private static final String RETURN_PARAMETER_NAME = "$retval";
+    private static final String RETURN_PARAMETER_PREFIX = "$retval";
     /**
      * Used to allocate ids for expressions and blocks.
      */
@@ -276,6 +274,11 @@ public class ToJitInnerVisitor extends InnerVisitor {
 
     /////////////////////////// Code generation
 
+    @Override
+    public boolean preorder(DBSPExpression expression) {
+        throw new Unimplemented(expression);
+    }
+
     boolean createIntegerLiteral(DBSPLiteral expression, String type, @Nullable Long value) {
         ExpressionRepresentation ev = this.insertInstruction(expression);
         if (expression.isNull) {
@@ -359,7 +362,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         opNames.put("<", "LessThan");
         opNames.put(">", "GreaterThan");
         opNames.put("<=", "LessThanOrEqual");
-        opNames.put(">=", "GreaterThanOrEqlual");
+        opNames.put(">=", "GreaterThanOrEqual");
         opNames.put("&", "And");
         opNames.put("&&", "And");
         opNames.put("|", "Or");
@@ -465,14 +468,26 @@ public class ToJitInnerVisitor extends InnerVisitor {
             this.declare(identifier.identifier, needsNull(param.type));
         }
         DBSPType ret = expression.getResultType();
+        int variablesToAdd = 0;
         if (!ToJitVisitor.isScalarType(ret)) {
-            this.declare(RETURN_PARAMETER_NAME, ret.mayBeNull);
-            this.variableAssigned.add(RETURN_PARAMETER_NAME);
+            // If the closure returns a RawTuple, create a variable for each field of the tuple.
+            List<DBSPTypeTuple> fields = ToJitVisitor.TypeCatalog.expandToTuples(ret);
+            variablesToAdd = fields.size();
+            for (int i = 0; i < variablesToAdd; i++) {
+                DBSPType type = fields.get(i);
+                String varName = RETURN_PARAMETER_PREFIX + "_" + i;
+                // For the outermost closure this will assign the same expression
+                // ids to these variables as were assigned to the "output" parameters
+                // by ToJitVisitor.createFunction.  So assigning to these expressions
+                // will in fact assign to the "output" parameters.
+                this.declare(varName, type.mayBeNull);
+                this.variableAssigned.add(varName);
+            }
         }
         expression.body.accept(this);
-        if (!ToJitVisitor.isScalarType(ret)) {
+        for (int i = 0; i < variablesToAdd; i++) {
             String removed = Utilities.removeLast(this.variableAssigned);
-            if (!removed.equals(RETURN_PARAMETER_NAME))
+            if (!removed.startsWith(RETURN_PARAMETER_PREFIX))
                 throw new RuntimeException("Unexpected variable removed " + removed);
         }
         return false;
@@ -522,6 +537,14 @@ public class ToJitInnerVisitor extends InnerVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPCloneExpression expression) {
+        // Treat clone as a noop.
+        ExpressionIds source = this.accept(expression.expression);
+        Utilities.putNew(this.expressionId, expression, source.id);
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPIfExpression expression) {
         // "Branch": {
         //    "cond": {
@@ -540,6 +563,24 @@ public class ToJitInnerVisitor extends InnerVisitor {
         ExpressionIds negId = this.accept(expression.negative);
         branch.put("truthy", posId.id);
         branch.put("falsy", negId.id);
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPRawTupleExpression expression) {
+        // Each field is assigned to a different variable.
+        // Remove the last n variables
+        List<String> tail = new ArrayList<>();
+        for (DBSPExpression ignored: expression.fields)
+            tail.add(Utilities.removeLast(this.variableAssigned));
+        for (DBSPExpression field: expression.fields) {
+            // Add each variable and process the corresponding field.
+            this.variableAssigned.add(Utilities.removeLast(tail));
+            // Convert RawTuples inside RawTuples to regular Tuples
+            if (field.is(DBSPRawTupleExpression.class))
+                field = new DBSPTupleExpression(field.to(DBSPRawTupleExpression.class).fields);
+            field.accept(this);
+        }
         return false;
     }
 

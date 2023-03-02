@@ -34,7 +34,7 @@ public class DBSPForExpression extends DBSPExpression {
 
     public DBSPForExpression(DBSPPattern pattern, DBSPExpression iterated, DBSPBlockExpression block) {
         // TODO: is the type always ()?
-        super(null, DBSPTypeRawTuple.emptyTupleType);
+        super(null, DBSPTypeRawTuple.EMPTY_TUPLE_TYPE);
         this.pattern = pattern;
         this.iterated = iterated;
         this.block = block;

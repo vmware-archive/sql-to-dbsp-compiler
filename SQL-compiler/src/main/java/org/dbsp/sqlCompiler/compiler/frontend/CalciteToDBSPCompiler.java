@@ -604,9 +604,8 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             DBSPVariablePath t = resultType.ref().var("t");
             ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.calciteCompiler);
             condition = expressionCompiler.compile(leftOver);
-            if (condition.getNonVoidType().mayBeNull) {
-                condition = new DBSPApplyExpression("wrap_bool", condition.getNonVoidType().setMayBeNull(false), condition);
-            }
+            if (condition.getNonVoidType().mayBeNull)
+                condition = ExpressionCompiler.wrapBoolIfNeeded(condition);
             originalCondition = condition;
             condition = new DBSPClosureExpression(join.getCondition(), condition, t.asParameter());
             condition = this.declare("cond", condition);
@@ -816,8 +815,8 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                         t.applyClone(),
                         new DBSPRawTupleExpression()).closure(
                 t.asParameter());
-        DBSPVariablePath l = DBSPTypeRawTuple.emptyTupleType.ref().var("l");
-        DBSPVariablePath r = DBSPTypeRawTuple.emptyTupleType.ref().var("r");
+        DBSPVariablePath l = DBSPTypeRawTuple.EMPTY_TUPLE_TYPE.ref().var("l");
+        DBSPVariablePath r = DBSPTypeRawTuple.EMPTY_TUPLE_TYPE.ref().var("r");
         DBSPVariablePath k = inputRowType.ref().var("k");
 
         DBSPClosureExpression closure = k.applyClone().closure(

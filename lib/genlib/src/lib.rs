@@ -3,14 +3,6 @@
 #![allow(non_snake_case)]
 use dbsp::algebra::{F32, F64};
 
-pub fn wrap_bool(b: Option<bool>) -> bool
-{
-    (match b {
-        Some(x) => x,
-        _ => false,
-    })
-}
-
 #[inline(always)]
 pub fn minus_i16_i16(left: i16, right: i16) -> i16
 {
