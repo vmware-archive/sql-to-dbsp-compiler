@@ -428,7 +428,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         // }
         ExpressionIds leftId = this.accept(expression.source);
         ExpressionRepresentation er = this.insertInstruction(expression);
-        ObjectNode binOp = er.instruction.putObject("UnOp");
+        ObjectNode op = er.instruction.putObject("UnOp");
         String kind;
         switch (expression.operation) {
             case "-":
@@ -437,17 +437,18 @@ public class ToJitInnerVisitor extends InnerVisitor {
             case "!":
                 kind = "Not";
                 break;
+            case "wrap_bool":
             default:
                 throw new Unimplemented(expression);
         }
-        binOp.put("value", leftId.id);
-        binOp.put("kind", kind);
-        binOp.put("value_ty", baseTypeName(expression.source));
+        op.put("value", leftId.id);
+        op.put("kind", kind);
+        op.put("value_ty", baseTypeName(expression.source));
         if (leftId.hasNull()) {
             int leftNullId = leftId.isNullId;
-            binOp = er.getNullObject().putObject("CopyVal");
-            binOp.put("value", leftNullId);
-            binOp.put("value_ty", "Bool");
+            op = er.getNullObject().putObject("CopyVal");
+            op.put("value", leftNullId);
+            op.put("value_ty", "Bool");
         }
         return false;
     }

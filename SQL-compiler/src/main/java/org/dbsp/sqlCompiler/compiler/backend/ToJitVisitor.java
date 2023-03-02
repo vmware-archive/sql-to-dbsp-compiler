@@ -110,6 +110,8 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
     }
 
     static String baseTypeName(DBSPType type) {
+        if (type.sameType(new DBSPTypeTuple()))
+            return "Unit";
         DBSPTypeBaseType base = type.as(DBSPTypeBaseType.class);
         if (base == null)
             throw new RuntimeException("Expected a base type, got " + type);
@@ -128,14 +130,22 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
                 return "F32";
             case "s":
                 return "String";
+            case "date":
+                return "Date";
+            case "timestamp":
+                return "Timestamp";
             default:
                 break;
         }
         throw new Unimplemented(type);
     }
 
-    void addTuple(DBSPTypeTuple type, int id) {
+    void addTuple(DBSPTypeTupleBase type, int id) {
         ObjectNode result = this.topMapper.createObjectNode();
+        if (type.tupFields.length == 0) {
+            result.put("ty", "Unit");
+            return;
+        }
         ArrayNode columns = this.topMapper.createArrayNode();
         result.set("columns", columns);
         this.structs.set(Integer.toString(id), result);
@@ -171,9 +181,19 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         return false;
     }
 
+    // Indexed with the number of inputs of the operator.
+    static final String[][] OPERATOR_INPUT_NAMES = new String[][] {
+            {},
+            { "input" },
+            { "lhs", "rhs" },
+    };
+
     void addInputs(ObjectNode node, DBSPOperator operator) {
+        String[] names = OPERATOR_INPUT_NAMES[operator.inputs.size()];
+        int index = 0;
         for (DBSPOperator sources: operator.inputs) {
-            node.put("input", sources.id);
+            String name = names[index++];
+            node.put(name, sources.id);
         }
     }
 
@@ -246,7 +266,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
             DBSPType type = entry.getKey();
             if (type.is(DBSPTypeRef.class))
                 type = type.to(DBSPTypeRef.class).deref();
-            DBSPTypeTuple tuple = type.to(DBSPTypeTuple.class);
+            DBSPTypeTupleBase tuple = type.to(DBSPTypeTupleBase.class);
             this.addTuple(tuple, entry.getValue());
         }
     }
@@ -317,12 +337,24 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     @Override
     public boolean preorder(DBSPIndexOperator operator) {
-        this.createOperator(operator, "IndexWith", "index_fn");
+        ObjectNode node = this.createOperator(operator, "IndexWith", "index_fn");
+        node.put("key_layout", this.typeCatalog.getTypeId(operator.keyType));
+        node.put("value_layout", this.typeCatalog.getTypeId(operator.elementType));
         return false;
     }
 
     public boolean preorder(DBSPJoinOperator operator) {
-        this.createOperator(operator, "JoinCore", "join_fn");
+        ObjectNode node = this.createOperator(operator, "JoinCore", "join_fn");
+        node.put("value_layout", this.typeCatalog.getTypeId(
+                new DBSPTypeTuple(new DBSPTypeTuple())));
+        node.put("key_layout", this.typeCatalog.getTypeId(operator.elementResultType));
+        node.put("output_kind", "Set");
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPNegateOperator operator) {
+        this.createOperator(operator, "Neg", "");
         return false;
     }
 
@@ -349,7 +381,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     public static void validateJson(DBSPCircuit circuit) {
         try {
-            System.out.println(ToRustVisitor.circuitToRustString(circuit));
+            //System.out.println(ToRustVisitor.circuitToRustString(circuit));
             String json = ToJitVisitor.circuitToJSON(circuit);
             System.out.println(json);
             ObjectMapper mapper = new ObjectMapper();

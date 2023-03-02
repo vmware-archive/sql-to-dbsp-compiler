@@ -159,6 +159,10 @@ public class BaseSQLTests {
         try {
             query = "CREATE VIEW V AS " + query;
             DBSPCompiler compiler = this.compileQuery(query);
+            if (compiler.hasErrors()) {
+                compiler.showErrors(System.err);
+                throw new RuntimeException("Aborting test");
+            }
             DBSPCircuit circuit = getCircuit(compiler);
             circuit = new OptimizeDistinctVisitor().apply(circuit);
             if (incremental)

@@ -41,6 +41,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeUser;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.IModule;
+import org.dbsp.util.Linq;
 import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 import org.junit.Assert;
@@ -294,7 +295,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         Assert.assertTrue(success);
     }
 
-    File createInputScript(String[] contents) throws FileNotFoundException, UnsupportedEncodingException {
+    File createInputScript(String... contents) throws FileNotFoundException, UnsupportedEncodingException {
         String inputScript = rustDirectory + "/script.sql";
         PrintWriter script = new PrintWriter(inputScript, "UTF-8");
         script.println(String.join(";\n", contents));
@@ -384,6 +385,19 @@ public class OtherTests extends BaseSQLTests implements IModule {
         Assert.assertTrue(success);
         success = jpg.delete();
         Assert.assertTrue(success);
+    }
+
+    @Test
+    public void compilerError() throws FileNotFoundException, UnsupportedEncodingException {
+        String statement = "CREATE TABLE T (\n" +
+                "  COL1 INT NOT NULL" +
+                ", COL2 GARBAGE";
+        File file = this.createInputScript(statement);
+        CompilerMessages messages = CompilerMain.execute(file.getPath());
+        Assert.assertEquals(messages.exitCode, 1);
+        Assert.assertEquals(messages.errorCount(), 1);
+        CompilerMessages.Error error = messages.messages.get(0);
+        Assert.assertTrue(error.message.startsWith("Encountered \"<EOF>\""));
     }
 
     @Test

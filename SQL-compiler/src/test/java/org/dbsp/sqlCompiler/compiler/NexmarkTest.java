@@ -27,6 +27,7 @@ import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Test SQL queries from the Nexmark suite.

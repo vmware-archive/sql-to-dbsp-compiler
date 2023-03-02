@@ -27,7 +27,6 @@ import org.dbsp.sqlCompiler.ir.DBSPFile;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.pattern.*;
 import org.dbsp.sqlCompiler.ir.type.*;

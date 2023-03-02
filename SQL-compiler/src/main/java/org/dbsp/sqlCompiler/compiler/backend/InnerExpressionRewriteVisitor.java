@@ -331,7 +331,7 @@ public abstract class InnerExpressionRewriteVisitor
 
     @Override
     public boolean preorder(DBSPStructExpression expression) {
-        DBSPExpression function = this.transform(expression);
+        DBSPExpression function = this.transform(expression.function);
         DBSPExpression[] arguments = Linq.map(expression.arguments, this::transform, DBSPExpression.class);
         DBSPExpression result = expression;
         if (Linq.different(arguments, expression.arguments)) {
