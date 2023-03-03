@@ -21,9 +21,11 @@ TODO: document the implicit casts.
 Predefined functions on integer values
 --------------------------------------
 
-.. list-table:: Predefined functions on decimal values
+.. list-table:: Predefined functions on integer values
   :header-rows: 1
 
+  * - Function
+    - Description
   * - ``ABS(value)``
     - return absolute value.
   * - ``MOD(left, right)``

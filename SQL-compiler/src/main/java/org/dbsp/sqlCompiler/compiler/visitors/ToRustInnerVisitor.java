@@ -98,6 +98,16 @@ public class ToRustInnerVisitor extends InnerVisitor {
     }
 
     @Override
+    public boolean preorder(DBSPIndexExpression expression) {
+        this.builder.append("(");
+        expression.array.accept(this);
+        this.builder.append("[");
+        expression.index.accept(this);
+        this.builder.append("])");
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPFieldComparatorExpression expression) {
         expression.source.accept(this);
         boolean hasSource = expression.source.is(DBSPFieldComparatorExpression.class);

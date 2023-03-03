@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,20 +24,20 @@
 package org.dbsp.sqlCompiler.ir.expression;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
-
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeVec;
 import javax.annotation.Nullable;
-import java.util.List;
 
-public class DBSPBlockExpression extends DBSPExpression {
-    public final List<DBSPStatement> contents;
-    @Nullable
-    public final DBSPExpression lastExpression;
+/**
+ * Index within an array.
+ */
+public class DBSPIndexExpression extends DBSPExpression {
+    public final DBSPExpression array;
+    public final DBSPExpression index;
 
-    public DBSPBlockExpression(List<DBSPStatement> contents, @Nullable DBSPExpression last) {
-        super(null, last != null ? last.getType() : null);
-        this.contents = contents;
-        this.lastExpression = last;
+    public DBSPIndexExpression(@Nullable Object node, DBSPExpression array, DBSPExpression index) {
+        super(node, array.getNonVoidType().to(DBSPTypeVec.class).getElementType());
+        this.array = array;
+        this.index = index;
     }
 
     @Override
@@ -45,10 +45,8 @@ public class DBSPBlockExpression extends DBSPExpression {
         if (!visitor.preorder(this)) return;
         if (this.type != null)
             this.type.accept(visitor);
-        for (DBSPStatement stat: this.contents)
-            stat.accept(visitor);
-        if (this.lastExpression != null)
-            this.lastExpression.accept(visitor);
+        this.array.accept(visitor);
+        this.index.accept(visitor);
         visitor.postorder(this);
     }
 }

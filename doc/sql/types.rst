@@ -30,6 +30,9 @@ The compiler supports the following SQL data types:
 - ``DATE``, a SQL date without a timezone.  A date represents a value
   containing a date (year, month, day).
 - ``GEOMETRY``: geographic data type
+- ``ARRAY``: used as a suffix for another type, as in ``INT ARRAY``.
+  An array with element of the specified type.
+
 
 A suffix of ``NULL`` or ``NOT NULL`` can be appended to a type name to
 indicate the nullability.  A type with no suffix is not nullable by

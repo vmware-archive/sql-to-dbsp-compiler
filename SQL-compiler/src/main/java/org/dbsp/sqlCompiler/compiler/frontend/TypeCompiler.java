@@ -32,6 +32,7 @@ import org.dbsp.util.Unimplemented;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class TypeCompiler {
     public TypeCompiler() {}
@@ -76,12 +77,16 @@ public class TypeCompiler {
                     return DBSPTypeNull.INSTANCE;
                 case SYMBOL:
                     return DBSPTypeKeyword.INSTANCE;
+                case ARRAY: {
+                    RelDataType ct = Objects.requireNonNull(dt.getComponentType());
+                    DBSPType elementType = this.convertType(ct);
+                    return new DBSPTypeVec(elementType);
+                }
                 case BINARY:
                 case VARBINARY:
                 case UNKNOWN:
                 case ANY:
                 case MULTISET:
-                case ARRAY:
                 case MAP:
                 case DISTINCT:
                 case STRUCTURED:

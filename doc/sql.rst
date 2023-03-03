@@ -6,7 +6,7 @@ Unfortunately, the standard leaves underspecified many important
 behaviors.  Thus each SQL implementation is slightly different.
 
 The SQL to DBSP compiler is implemented on top of the `Apache Calcite
-<https://calcite.apache.org/>`_ infrastructure.  While Calcite is a
+<ohttps://calcite.apache.org/>`_ infrastructure.  While Calcite is a
 very flexible and customizable platform, it makes several choices
 regarding the SQL language semantics.  Our implementation mostly
 follows these choices.  This document describes specifics of our
@@ -25,3 +25,4 @@ implementation.
    sql/fp.rst
    sql/string.rst
    sql/datetime.rst
+   sql/array.rst

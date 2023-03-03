@@ -55,6 +55,36 @@ public class EndToEndTests extends BaseSQLTests {
     }
 
     @Test
+    public void testArray() {
+        String query = "SELECT ELEMENT(ARRAY [2])";
+        DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPI32Literal(2)));
+        this.testQuery(query, result);
+    }
+
+    @Test
+    public void testArrayIndex() {
+        String query = "SELECT (ARRAY [2])[1]";
+        DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPI32Literal(2, true)));
+        this.testQuery(query, result);
+    }
+
+    @Test
+    public void testArrayIndexOutOfBounds() {
+        String query = "SELECT (ARRAY [2])[3]";
+        DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.NULLABLE_SIGNED_32)));
+        this.testQuery(query, result);
+    }
+
+    //@Test
+    public void testArrayElement() {
+        // This should return null, but in calcite the result is not nullable!
+        String query = "SELECT ELEMENT(ARRAY [2, 3])";
+        DBSPZSetLiteral result =
+                new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.NULLABLE_SIGNED_32)));
+        this.testQuery(query, result);
+    }
+
+    @Test
     public void testConcatNull() {
         String query = "SELECT T.COL4 || NULL FROM T";
         DBSPExpression lit = new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeString.NULLABLE_INSTANCE));

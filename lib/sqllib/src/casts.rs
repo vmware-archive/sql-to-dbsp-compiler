@@ -1719,6 +1719,13 @@ pub fn cast_to_i32_u(value: usize) -> i32
 /////////// cast to i32N
 
 #[inline]
+// TODO: this will panic when the array is too large.
+pub fn cast_to_i32N_usize(value: usize) -> Option<i32>
+{
+    Some(i32::try_from(value).unwrap())
+}
+
+#[inline]
 pub fn cast_to_i32N_nullN(_value: Option<()>) -> Option<i32>
 {
     None
@@ -2202,4 +2209,16 @@ pub fn cast_to_TimestampN_Timestamp(value: Timestamp) -> Option<Timestamp>
 pub fn cast_to_TimestampN_dateN(value: Option<Date>) -> Option<Timestamp>
 {
     value.map(|v| cast_to_Timestamp_date(v))
+}
+
+/////////// cast to u
+
+#[inline]
+pub fn cast_to_u_i32(value: i32) -> usize {
+    value.try_into().unwrap()
+}
+
+#[inline]
+pub fn cast_to_u_i64(value: i64) -> usize {
+    value.try_into().unwrap()
 }

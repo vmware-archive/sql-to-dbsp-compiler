@@ -46,4 +46,9 @@ public class DBSPTypeVec extends DBSPTypeUser {
             type.accept(visitor);
         visitor.postorder(this);
     }
+
+    @Override
+    public boolean hasCopy() {
+        return false;
+    }
 }

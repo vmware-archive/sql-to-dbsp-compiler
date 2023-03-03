@@ -24,14 +24,15 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.CircuitFunctionRewriter;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ThreeOperandVisitor;
-import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeFloat;
+import org.dbsp.util.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 
 @SuppressWarnings("SpellCheckingInspection")
@@ -56,12 +57,60 @@ public class ComplexQueriesTest extends BaseSQLTests {
                         "                -- 1 hour is 3600  seconds\n" +
                         "                RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip\n" +
                         "FROM green_tripdata";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl);
         compiler.compileStatement(query);
         this.addRustTestCase(getCircuit(compiler));
+    }
+
+    @Test
+    public void testArray() {
+        String ddl = "CREATE TABLE ARR_TABLE (\n"
+                + "ID INTEGER,\n"
+                + "VALS INTEGER ARRAY,\n"
+                + "VALVALS VARCHAR(10) ARRAY)";
+        DBSPCompiler compiler = testCompiler();
+        compiler.compileStatement(ddl);
+        String query = "CREATE VIEW V AS SELECT *, CARDINALITY(VALS), ARRAY[ID, 5], VALS[1] FROM ARR_TABLE";
+        compiler.compileStatements(query);
+        if (compiler.hasErrors())
+            compiler.showErrors(System.err);
+        DBSPCircuit circuit = getCircuit(compiler);
+        this.addRustTestCase(circuit);
+    }
+
+    // @Test
+    public void testUnnest() {
+        // TODO: not yet implemented.
+        String ddl = "CREATE TABLE ARR_TABLE (\n"
+                + "ID INTEGER,\n"
+                + "VALS INTEGER ARRAY)";
+        DBSPCompiler compiler = testCompiler();
+        compiler.compileStatement(ddl);
+        String query = "CREATE VIEW V AS SELECT ID, VAL FROM ARR_TABLE, UNNEST(VALS) AS VAL";
+        Logger.INSTANCE.setDebugLevel(CalciteToDBSPCompiler.class, 3);
+        compiler.compileStatements(query);
+        if (compiler.hasErrors())
+            compiler.showErrors(System.err);
+        DBSPCircuit circuit = getCircuit(compiler);
+        this.addRustTestCase(circuit);
+    }
+
+    //@Test
+    public void test2DArray() {
+        // TODO: not yet implemented
+        String ddl = "CREATE TABLE ARR_TABLE (\n"
+                + "VALS INTEGER ARRAY ARRAY)";
+        DBSPCompiler compiler = testCompiler();
+        compiler.compileStatement(ddl);
+        String query = "CREATE VIEW V AS SELECT *, CARDINALITY(VALS), VALS[1] FROM ARR_TABLE";
+        compiler.compileStatements(query);
+        if (compiler.hasErrors())
+            compiler.showErrors(System.err);
+        DBSPCircuit circuit = getCircuit(compiler);
+        this.addRustTestCase(circuit);
     }
 
     @Test
@@ -84,7 +133,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "      -- 1 hour is 3600  seconds\n" +
                 "      RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip\n" +
                 "FROM green_tripdata;\n";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         compiler.setGenerateInputsFromTables(true);
         compiler.compileStatements(query);
         DBSPCircuit circuit = getCircuit(compiler);
@@ -163,7 +212,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "        FROM  transactions AS t1\n" +
                 "        LEFT JOIN  demographics AS t2\n" +
                 "        ON t1.cc_num = t2.cc_num);";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         compiler.setGenerateInputsFromTables(true);
         compiler.compileStatements(query);
         DBSPZSetLiteral[] inputs = new DBSPZSetLiteral[] {
@@ -231,7 +280,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                         "                RANGE BETWEEN 1800  PRECEDING AND 1 PRECEDING ) AS count_trips_window_30m_dropoff_zip,\n" +
                         "case when extract (ISODOW from  CAST (lpep_dropoff_datetime AS TIMESTAMP))  > 5 then 1 else 0 end as dropoff_is_weekend\n" +
                         "FROM green_tripdata";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl);
@@ -307,7 +356,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "          FROM  transactions AS t1\n" +
                 "          LEFT JOIN  demographics AS t2\n" +
                 "          ON t1.cc_num =t2.cc_num)";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl0);

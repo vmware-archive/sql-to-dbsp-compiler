@@ -163,12 +163,20 @@ public class DBSPCompiler implements IModule {
             }
         } catch (SqlParseException e) {
             this.messages.reportError(e);
+            if (this.options.optimizerOptions.throwOnError)
+                throw new RuntimeException(e);
         } catch (CalciteContextException e) {
             this.messages.reportError(e);
+            if (this.options.optimizerOptions.throwOnError)
+                throw e;
         } catch (Unimplemented e) {
             this.messages.reportError(e);
+            if (this.options.optimizerOptions.throwOnError)
+                throw e;
         } catch (Throwable e) {
             this.messages.reportError(e);
+            if (this.options.optimizerOptions.throwOnError)
+                throw e;
         }
     }
 
