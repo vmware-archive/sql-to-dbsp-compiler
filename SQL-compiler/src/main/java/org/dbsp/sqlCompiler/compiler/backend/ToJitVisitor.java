@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
@@ -35,7 +36,9 @@ import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.DBSPClosureExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPVariablePath;
+import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBaseType;
@@ -165,7 +168,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         DBSPType elementType = set.elementType;
         DBSPTypeTuple tuple = elementType.as(DBSPTypeTuple.class);
         if (tuple == null)
-            throw new RuntimeException("Expected ZSet element type to be a tuple, got " + tuple);
+            throw new RuntimeException("Expected ZSet element type to be a tuple, got " + type);
         return this.typeCatalog.getTypeId(tuple);
     }
 
@@ -361,6 +364,62 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
     @Override
     public boolean preorder(DBSPSinkOperator operator) {
         this.createOperator(operator, "Sink", "");
+        return false;
+    }
+
+    void addLiteral(ObjectNode rows, DBSPLiteral e) {
+        DBSPType type = e.getNonVoidType();
+        String label;
+        if (type.mayBeNull) {
+            label = "Nullable";
+        } else {
+            label = "NonNull";
+        }
+        if (e.isNull) {
+            rows.set(label, NullNode.getInstance());
+        } else {
+            ObjectNode value = rows.putObject(label);
+            if (e.is(DBSPI32Literal.class)) {
+                value.put("I32", e.to(DBSPI32Literal.class).value);
+            } else if (e.is(DBSPI64Literal.class)) {
+                value.put("I64", e.to(DBSPI64Literal.class).value);
+            } else if (e.is(DBSPStringLiteral.class)) {
+                value.put("String", e.to(DBSPStringLiteral.class).value);
+            } else if (e.is(DBSPBoolLiteral.class)) {
+                value.put("Bool", e.to(DBSPBoolLiteral.class).value);
+            } else if (e.is(DBSPDoubleLiteral.class)) {
+                value.put("F64", e.to(DBSPDoubleLiteral.class).value);
+            } else if (e.is(DBSPFloatLiteral.class)) {
+                value.put("F32", e.to(DBSPFloatLiteral.class).value);
+            } else {
+                throw new Unimplemented(e);
+            }
+        }
+    }
+
+    @Override
+    public boolean preorder(DBSPConstantOperator operator) {
+        ObjectNode node = this.topMapper.createObjectNode();
+        ObjectNode data = node.putObject("Constant");
+        DBSPType type = operator.getNonVoidType();
+        DBSPType elementType = type.to(DBSPTypeZSet.class).elementType;
+        ObjectNode layout = data.putObject("layout");
+        layout.put("set", this.typeCatalog.getTypeId(elementType));
+        ObjectNode value = data.putObject("value");
+        ArrayNode set = value.putArray("Set");
+        DBSPZSetLiteral setValue = Objects.requireNonNull(operator.function)
+                .to(DBSPZSetLiteral.class);
+        for (Map.Entry<DBSPExpression, Integer> element : setValue.data.entrySet()) {
+            int weight = element.getValue();
+            ArrayNode row = set.addArray();
+            ObjectNode rows = row.addObject();
+            DBSPTupleExpression elementValue = element.getKey().to(DBSPTupleExpression.class);
+            for (DBSPExpression e: elementValue.fields) {
+                this.addLiteral(rows, e.to(DBSPLiteral.class));
+            }
+            row.add(weight);
+        }
+        this.nodes.set(Long.toString(operator.id), node);
         return false;
     }
 

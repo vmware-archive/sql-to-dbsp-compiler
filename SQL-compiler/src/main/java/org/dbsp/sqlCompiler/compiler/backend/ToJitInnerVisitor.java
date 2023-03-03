@@ -1,7 +1,6 @@
 package org.dbsp.sqlCompiler.compiler.backend;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.*;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -279,16 +278,15 @@ public class ToJitInnerVisitor extends InnerVisitor {
         throw new Unimplemented(expression);
     }
 
-    boolean createIntegerLiteral(DBSPLiteral expression, String type, @Nullable Long value) {
+    boolean createLiteral(DBSPLiteral expression, String type, @Nullable BaseJsonNode value) {
         ExpressionRepresentation ev = this.insertInstruction(expression);
         if (expression.isNull) {
             Objects.requireNonNull(ev.isNullInstruction);
             ObjectNode n = ev.isNullInstruction.putObject("Constant");
             n.put("is_null", true);
         } else {
-            Objects.requireNonNull(value);
             ObjectNode constant = ev.instruction.putObject("Constant");
-            constant.put(type, value);
+            constant.set(type, Objects.requireNonNull(value));
             if (ev.isNullInstruction != null) {
                 ObjectNode n = ev.isNullInstruction.putObject("Constant");
                 n.put("is_null", false);
@@ -299,32 +297,36 @@ public class ToJitInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPI32Literal expression) {
-        return createIntegerLiteral(expression, "I32",
-                expression.value == null ? null : Long.valueOf(expression.value));
+        return createLiteral(expression, "I32",
+                expression.value == null ? null : new IntNode(expression.value));
     }
 
     @Override
     public boolean preorder(DBSPI64Literal expression) {
-        return createIntegerLiteral(expression, "I64", expression.value);
+        return createLiteral(expression, "I64",
+                expression.value == null ? null : new LongNode(expression.value));
     }
 
     @Override
     public boolean preorder(DBSPBoolLiteral expression) {
-        ExpressionRepresentation ev = this.insertInstruction(expression);
-        if (expression.isNull) {
-            Objects.requireNonNull(ev.isNullInstruction);
-            ObjectNode n = ev.isNullInstruction.putObject("Constant");
-            n.put("is_null", true);
-        } else {
-            Objects.requireNonNull(expression.value);
-            ObjectNode constant = ev.instruction.putObject("Constant");
-            constant.put("Bool", expression.value);
-            if (ev.isNullInstruction != null) {
-                ObjectNode n = ev.isNullInstruction.putObject("Constant");
-                n.put("is_null", false);
-            }
-        }
-        return false;
+        return this.createLiteral(expression, "Bool",
+                expression.value == null ? null : BooleanNode.valueOf(expression.value));
+    }
+
+    @Override
+    public boolean preorder(DBSPStringLiteral expression) {
+        return this.createLiteral(expression, "String",
+                expression.value == null ? null : new TextNode(expression.value));
+    }
+
+    public boolean preorder(DBSPDoubleLiteral expression) {
+        return this.createLiteral(expression, "F64",
+                expression.value == null ? null : new DoubleNode(expression.value));
+    }
+
+    public boolean preorder(DBSPFloatLiteral expression) {
+        return this.createLiteral(expression, "F64",
+                expression.value == null ? null : new FloatNode(expression.value));
     }
 
     @Override
