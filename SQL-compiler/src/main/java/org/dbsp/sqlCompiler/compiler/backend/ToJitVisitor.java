@@ -135,7 +135,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
                 return "String";
             case "date":
                 return "Date";
-            case "timestamp":
+            case "Timestamp":
                 return "Timestamp";
             default:
                 break;
