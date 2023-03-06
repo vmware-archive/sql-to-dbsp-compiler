@@ -10,6 +10,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.util.Unimplemented;
 import org.dbsp.util.Utilities;
 
@@ -110,6 +111,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
 
         /**
          * Add a new variable to the current context.
+         *
          * @param varName   Variable name.
          * @param needsNull True if the variable is a scalar nullable variable.
          *                  Then we allocate an extra expression to hold its
@@ -225,7 +227,9 @@ public class ToJitInnerVisitor extends InnerVisitor {
         return ExpressionIds.noNull(id);
     }
 
-    static final DBSPBoolLiteral constantFalse = new DBSPBoolLiteral(false);
+    public ExpressionIds constantBool(boolean value) {
+        return this.accept(new DBSPBoolLiteral(value));
+    }
 
     ExpressionRepresentation insertInstruction(DBSPExpression expression) {
         int id = this.map(expression);
@@ -382,40 +386,40 @@ public class ToJitInnerVisitor extends InnerVisitor {
         // }
         ExpressionIds leftId = this.accept(expression.left);
         ExpressionIds rightId = this.accept(expression.right);
-        ExpressionIds cf = this.accept(constantFalse);
-        ExpressionRepresentation ev = this.insertInstruction(expression);
-        ObjectNode binOp = ev.instruction.putObject("BinOp");
-        binOp.put("lhs", leftId.id);
-        binOp.put("rhs", rightId.id);
-        binOp.put("kind", Utilities.getExists(opNames, expression.operation));
-        binOp.put("operand_ty", baseTypeName(expression.left));
-        if (ev.isNullInstruction != null) {
-            switch (expression.operation) {
-                case "&&":
-                    // TODO
-                    break;
-                case "||":
-                    // TODO
-                    break;
-                default: {
-                    // The result is null if either operand is null.
-                    int leftNullId;
-                    if (leftId.hasNull())
-                        leftNullId = leftId.isNullId;
-                    else
-                        // Not nullable: use false.
-                        leftNullId = cf.id;
-                    int rightNullId;
-                    if (rightId.hasNull())
-                        rightNullId = rightId.isNullId;
-                    else
-                        rightNullId = cf.id;
-                    binOp = ev.isNullInstruction.putObject("BinOp");
-                    binOp.put("lhs", leftNullId);
-                    binOp.put("rhs", rightNullId);
-                    binOp.put("kind", Utilities.getExists(opNames, "||"));
-                    binOp.put("operand_ty", "Bool");
-                }
+        ExpressionIds cf = this.constantBool(false);
+        ExpressionRepresentation er = this.insertInstruction(expression);
+
+        // The following are not used on all execution paths
+        int leftNullId;
+        if (leftId.hasNull())
+            leftNullId = leftId.isNullId;
+        else
+            // Not nullable: use false.
+            leftNullId = cf.id;
+        int rightNullId;
+        if (rightId.hasNull())
+            rightNullId = rightId.isNullId;
+        else
+            rightNullId = cf.id;
+
+        if (expression.operation.equals("||") &&
+                expression.getNonVoidType().is(DBSPTypeBool.class)) {
+           throw new Unimplemented(expression);
+        } else if (expression.operation.equals("&&")) {
+            throw new Unimplemented(expression);
+        } else {
+            ObjectNode binOp = er.instruction.putObject("BinOp");
+            binOp.put("lhs", leftId.id);
+            binOp.put("rhs", rightId.id);
+            binOp.put("kind", Utilities.getExists(opNames, expression.operation));
+            binOp.put("operand_ty", baseTypeName(expression.left));
+            if (er.isNullInstruction != null) {
+                // The result is null if either operand is null.
+                binOp = er.isNullInstruction.putObject("BinOp");
+                binOp.put("lhs", leftNullId);
+                binOp.put("rhs", rightNullId);
+                binOp.put("kind", Utilities.getExists(opNames, "||"));
+                binOp.put("operand_ty", "Bool");
             }
         }
         return false;
@@ -428,9 +432,12 @@ public class ToJitInnerVisitor extends InnerVisitor {
         //   "operand_ty": "I64",
         //   "kind": "Minus"
         // }
+        boolean isWrapBool = expression.operation.equals("wrap_bool");
+        ExpressionIds cf = null;
+        if (isWrapBool)
+            cf = this.constantBool(false);
         ExpressionIds leftId = this.accept(expression.source);
         ExpressionRepresentation er = this.insertInstruction(expression);
-        ObjectNode op = er.instruction.putObject("UnOp");
         String kind;
         switch (expression.operation) {
             case "-":
@@ -439,10 +446,17 @@ public class ToJitInnerVisitor extends InnerVisitor {
             case "!":
                 kind = "Not";
                 break;
-            case "wrap_bool":
+            case "wrap_bool": {
+                ObjectNode cond = er.instruction.putObject("Select");
+                cond.put("cond", leftId.isNullId);
+                cond.put("if_true", cf.id);
+                cond.put("if_false", leftId.id);
+                return false;
+            }
             default:
                 throw new Unimplemented(expression);
         }
+        ObjectNode op = er.instruction.putObject("UnOp");
         op.put("value", leftId.id);
         op.put("kind", kind);
         op.put("value_ty", baseTypeName(expression.source));
