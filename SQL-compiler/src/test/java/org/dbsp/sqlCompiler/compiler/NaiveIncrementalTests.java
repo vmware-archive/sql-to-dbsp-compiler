@@ -291,5 +291,4 @@ public class NaiveIncrementalTests extends EndToEndTests {
         DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.NULLABLE_SIGNED_32)));
         this.testConstantOutput(query, result);
     }
-
 }

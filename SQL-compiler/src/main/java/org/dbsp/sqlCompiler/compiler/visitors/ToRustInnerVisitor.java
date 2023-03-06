@@ -103,7 +103,8 @@ public class ToRustInnerVisitor extends InnerVisitor {
         expression.array.accept(this);
         this.builder.append("[");
         expression.index.accept(this);
-        this.builder.append("])");
+        // Indexes start from 1 in SQL.
+        this.builder.append("- 1])");
         return false;
     }
 
