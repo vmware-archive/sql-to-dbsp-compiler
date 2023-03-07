@@ -132,6 +132,4 @@ public abstract class CreateRelationStatement extends FrontEndStatement {
         }
         return result;
     }
-
-    public abstract boolean isInput();
 }

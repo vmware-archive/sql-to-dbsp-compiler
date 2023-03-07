@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler.sqlparser;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.*;
@@ -502,7 +501,12 @@ public class CalciteCompiler implements IModule {
     }
 
     /**
-     * Compile a SQL statement.  Return a description
+     * Compile a SQL statement.  Return a description.
+     * @param node         Compiled version of the SQL statement.
+     * @param sqlStatement SQL statement as a string to compile.
+     * @param comment      Additional information about the compiled statement.
+     * @param inputs       If not null, add here a JSON description of the tables defined by the statement, if any.
+     * @param outputs      If not null, add here a JSON description of the views defined by the statement, if any.
      */
     public FrontEndStatement compile(
             String sqlStatement,

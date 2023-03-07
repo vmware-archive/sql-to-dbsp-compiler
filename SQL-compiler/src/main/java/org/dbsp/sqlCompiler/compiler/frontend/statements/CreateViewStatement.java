@@ -54,9 +54,4 @@ public class CreateViewStatement extends CreateRelationStatement {
     public RelNode getRelNode() {
         return Objects.requireNonNull(this.compiled).rel;
     }
-
-    @Override
-    public boolean isInput() {
-        return false;
-    }
 }
