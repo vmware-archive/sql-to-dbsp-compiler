@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.compiler.sqlparser;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.*;
 import org.apache.calcite.jdbc.CalciteSchema;
@@ -500,12 +501,19 @@ public class CalciteCompiler implements IModule {
     }
 
     /**
-     * Compile a SQL statement.  Return a description
+     * Compile a SQL statement.  Return a description.
+     * @param node         Compiled version of the SQL statement.
+     * @param sqlStatement SQL statement as a string to compile.
+     * @param comment      Additional information about the compiled statement.
+     * @param inputs       If not null, add here a JSON description of the tables defined by the statement, if any.
+     * @param outputs      If not null, add here a JSON description of the views defined by the statement, if any.
      */
     public FrontEndStatement compile(
             String sqlStatement,
             SqlNode node,
-            @Nullable String comment) {
+            @Nullable String comment,
+            @Nullable ArrayNode inputs,
+            @Nullable ArrayNode outputs) {
         if (SqlKind.DDL.contains(node.getKind())) {
             if (node.getKind().equals(SqlKind.DROP_TABLE)) {
                 SqlDropTable dt = (SqlDropTable) node;
@@ -529,6 +537,8 @@ public class CalciteCompiler implements IModule {
                 }
                 CreateTableStatement table = new CreateTableStatement(node, sqlStatement, tableName, comment, cols);
                 this.catalog.addTable(tableName, table.getEmulatedTable());
+                if (inputs != null)
+                    inputs.add(table.getDefinedObjectSchema());
                 return table;
             }
 
@@ -552,6 +562,8 @@ public class CalciteCompiler implements IModule {
                         columns, cv.query, relRoot);
                 // From Calcite's point of view we treat this view just as another table.
                 this.catalog.addTable(viewName, view.getEmulatedTable());
+                if (outputs != null)
+                    outputs.add(view.getDefinedObjectSchema());
                 return view;
             }
         }

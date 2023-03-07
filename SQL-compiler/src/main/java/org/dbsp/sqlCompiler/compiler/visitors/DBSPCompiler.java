@@ -23,6 +23,9 @@
 
 package org.dbsp.sqlCompiler.compiler.visitors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
@@ -80,12 +83,18 @@ public class DBSPCompiler implements IModule {
         API,
     }
 
+    public final ObjectMapper mapper;
     final CalciteCompiler frontend;
     final CalciteToDBSPCompiler midend;
     public final CompilerOptions options;
     public final CompilerMessages messages;
     public final SourceFileContents sources;
     public InputSource inputSources = InputSource.None;
+    final @Nullable ArrayNode inputs;
+    final @Nullable ArrayNode outputs;
+    public final @Nullable ObjectNode ios;
+
+
     /**
      * Circuit produced by the compiler.  Once a circuit has been produced,
      * no more statements can be compiled.
@@ -94,11 +103,23 @@ public class DBSPCompiler implements IModule {
 
     public DBSPCompiler(CompilerOptions options) {
         this.options = options;
+        this.mapper = new ObjectMapper();
         this.frontend = new CalciteCompiler(options);
         this.midend = new CalciteToDBSPCompiler(this.frontend, true, options, this);
         this.messages = new CompilerMessages(this);
         this.sources = new SourceFileContents();
         this.circuit = null;
+        if (options.ioOptions.emitJsonSchema != null) {
+            this.inputs = this.mapper.createArrayNode();
+            this.outputs = this.mapper.createArrayNode();
+            this.ios = this.mapper.createObjectNode();
+            this.ios.set("inputs", this.inputs);
+            this.ios.set("outputs", this.outputs);
+        } else {
+            this.inputs = null;
+            this.outputs = null;
+            this.ios = null;
+        }
     }
 
     /**
@@ -144,11 +165,12 @@ public class DBSPCompiler implements IModule {
             // Otherwise, we append the statements to the sources.
             this.sources.append(statements);
         }
+
         try {
             if (many) {
                 SqlNodeList nodes = this.frontend.parseStatements(statements);
                 for (SqlNode node : nodes) {
-                    FrontEndStatement fe = this.frontend.compile(node.toString(), node, null);
+                    FrontEndStatement fe = this.frontend.compile(node.toString(), node, null, this.inputs, this.outputs);
                     this.midend.compile(fe);
                 }
             } else {
@@ -158,7 +180,7 @@ public class DBSPCompiler implements IModule {
                         .newline()
                         .append(node.toString())
                         .newline();
-                FrontEndStatement fe = this.frontend.compile(statements, node, comment);
+                FrontEndStatement fe = this.frontend.compile(statements, node, comment, this.inputs, this.outputs);
                 this.midend.compile(fe);
             }
         } catch (SqlParseException e) {

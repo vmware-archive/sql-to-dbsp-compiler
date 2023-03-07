@@ -314,6 +314,28 @@ public class OtherTests extends BaseSQLTests implements IModule {
     }
 
     @Test
+    public void testSchema() throws IOException {
+        String[] statements = new String[]{
+                "CREATE TABLE T (\n" +
+                        "COL1 INT NOT NULL" +
+                        ", COL2 DOUBLE NOT NULL" +
+                        ")",
+                "CREATE VIEW V AS SELECT COL1 FROM T"
+        };
+        File file = this.createInputScript(statements);
+        File json = File.createTempFile("out", ".json", new File("."));
+        CompilerMessages message = CompilerMain.execute("-js", json.getPath(), file.getPath());
+        Assert.assertEquals(message.exitCode, 0);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode parsed = mapper.readTree(json);
+        Assert.assertNotNull(parsed);
+        boolean success = file.delete();
+        Assert.assertTrue(success);
+        success = json.delete();
+        Assert.assertTrue(success);
+    }
+
+    @Test
     public void testCompilerToJson() throws IOException {
         String[] statements = new String[]{
                 "CREATE TABLE T (\n" +
