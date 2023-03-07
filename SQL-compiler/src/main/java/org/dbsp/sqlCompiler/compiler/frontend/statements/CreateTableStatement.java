@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.compiler.frontend.statements;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 
@@ -35,5 +36,10 @@ import java.util.List;
 public class CreateTableStatement extends CreateRelationStatement {
     public CreateTableStatement(@Nullable SqlNode node, String statement, String tableName, @Nullable String comment, List<RelDataTypeField> columns) {
         super(node, statement, tableName, comment, columns);
+    }
+
+    @Override
+    public boolean isInput() {
+        return true;
     }
 }

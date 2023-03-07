@@ -23,6 +23,10 @@
 
 package org.dbsp.sqlCompiler.compiler.frontend.statements;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.rel.type.RelDataType;
@@ -114,4 +118,20 @@ public abstract class CreateRelationStatement extends FrontEndStatement {
                 ", columns=" + this.columns +
                 '}';
     }
+
+    public JsonNode getDefinedObjectSchema() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode result = mapper.createObjectNode();
+        result.put("name", this.tableName);
+        ArrayNode fields = result.putArray("fields");
+        for (RelDataTypeField col: this.columns) {
+            ObjectNode column = fields.addObject();
+            column.put("name", col.getName());
+            column.put("type", col.getType().toString());
+            column.put("nullable", col.getType().isNullable());
+        }
+        return result;
+    }
+
+    public abstract boolean isInput();
 }

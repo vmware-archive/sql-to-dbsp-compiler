@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.compiler.sqlparser;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.*;
 import org.apache.calcite.jdbc.CalciteSchema;
@@ -505,7 +507,9 @@ public class CalciteCompiler implements IModule {
     public FrontEndStatement compile(
             String sqlStatement,
             SqlNode node,
-            @Nullable String comment) {
+            @Nullable String comment,
+            @Nullable ArrayNode inputs,
+            @Nullable ArrayNode outputs) {
         if (SqlKind.DDL.contains(node.getKind())) {
             if (node.getKind().equals(SqlKind.DROP_TABLE)) {
                 SqlDropTable dt = (SqlDropTable) node;
@@ -529,6 +533,8 @@ public class CalciteCompiler implements IModule {
                 }
                 CreateTableStatement table = new CreateTableStatement(node, sqlStatement, tableName, comment, cols);
                 this.catalog.addTable(tableName, table.getEmulatedTable());
+                if (inputs != null)
+                    inputs.add(table.getDefinedObjectSchema());
                 return table;
             }
 
@@ -552,6 +558,8 @@ public class CalciteCompiler implements IModule {
                         columns, cv.query, relRoot);
                 // From Calcite's point of view we treat this view just as another table.
                 this.catalog.addTable(viewName, view.getEmulatedTable());
+                if (outputs != null)
+                    outputs.add(view.getDefinedObjectSchema());
                 return view;
             }
         }

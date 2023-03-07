@@ -35,6 +35,7 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 /**
  * Main entry point of the SQL compiler.
@@ -98,6 +99,17 @@ public class CompilerMain {
         compiler.compileInput();
         if (compiler.hasErrors())
             return compiler.messages;
+        if (this.options.ioOptions.emitJsonSchema != null) {
+            try {
+                PrintStream outputStream = new PrintStream(Files.newOutputStream(Paths.get(this.options.ioOptions.emitJsonSchema)));
+                outputStream.println(Objects.requireNonNull(compiler.ios).toPrettyString());
+                outputStream.close();
+            } catch (IOException e) {
+                compiler.reportError(SourcePositionRange.INVALID, false,
+                        "Error writing to file", e.getMessage());
+                return compiler.messages;
+            }
+        }
 
         compiler.optimize();
         DBSPCircuit dbsp = compiler.getFinalCircuit(this.options.ioOptions.functionName);
