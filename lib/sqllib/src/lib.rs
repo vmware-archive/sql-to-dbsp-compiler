@@ -1069,3 +1069,23 @@ pub fn concat_sN_sN(left: Option<String>, right: Option<String>) -> Option<Strin
         (Some(l), Some(r)) => Some(concat_s_s(l, r)),
     }
 }
+
+pub fn element<T>(array: Vec<T>) -> Option<T>
+where T: Copy
+{
+    if array.len() == 1 {
+        Some(array[0])
+    } else {
+        None
+    }
+}
+
+pub fn elementN<T>(array: Vec<Option<T>>) -> Option<T>
+where T: Copy
+{
+    if array.len() == 1 {
+        array[0]
+    } else {
+        None
+    }
+}

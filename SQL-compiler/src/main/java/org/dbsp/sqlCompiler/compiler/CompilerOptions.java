@@ -48,6 +48,10 @@ public class CompilerOptions {
         public boolean incrementalize = false;
         @Parameter(names = "-O0", description = "Do not optimize")
         public boolean noOptimizations = false;
+        /**
+         * Useful for development
+         */
+        public boolean throwOnError = false;
     }
 
     /**

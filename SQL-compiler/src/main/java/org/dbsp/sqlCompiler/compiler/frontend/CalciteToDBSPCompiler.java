@@ -27,10 +27,7 @@ import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
-import org.apache.calcite.rel.core.Aggregate;
-import org.apache.calcite.rel.core.AggregateCall;
-import org.apache.calcite.rel.core.JoinRelType;
-import org.apache.calcite.rel.core.Window;
+import org.apache.calcite.rel.core.*;
 import org.apache.calcite.rel.logical.*;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.*;
@@ -271,6 +268,15 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPExpression folder = new DBSPApplyExpression(constructor, zero, increment, post);
         return new FoldingDescription(this.declare("folder", folder),
                 new DBSPTupleExpression(defaultZeros));
+    }
+
+    public void visitCorrelate(LogicalCorrelate correlate) {
+        throw new Unimplemented(correlate);
+    }
+
+    public void visitUncollect(Uncollect uncollect) {
+        // This represents an unnest.
+        throw new Unimplemented(uncollect);
     }
 
     public void visitAggregate(LogicalAggregate aggregate) {
@@ -1055,7 +1061,9 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 this.visitIfMatches(node, LogicalJoin.class, this::visitJoin) ||
                 this.visitIfMatches(node, LogicalIntersect.class, this::visitIntersect) ||
                 this.visitIfMatches(node, LogicalWindow.class, this::visitWindow) ||
-                this.visitIfMatches(node, LogicalSort.class, this::visitSort);
+                this.visitIfMatches(node, LogicalSort.class, this::visitSort) ||
+                this.visitIfMatches(node, LogicalCorrelate.class, this::visitCorrelate) ||
+                this.visitIfMatches(node, Uncollect.class, this::visitUncollect);
         if (!success)
             throw new Unimplemented(node);
     }

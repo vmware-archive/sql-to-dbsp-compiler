@@ -30,6 +30,7 @@ import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
@@ -140,7 +141,6 @@ public class BaseSQLTests {
         testsToRun.clear();
     }
 
-    @SuppressWarnings("SpellCheckingInspection")
     public static void generateLib() throws IOException {
         SqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
     }
@@ -184,10 +184,18 @@ public class BaseSQLTests {
         testsToRun.add(test);
     }
 
-    protected final static CompilerOptions options = new CompilerOptions();
+    static CompilerOptions testOptions() {
+        CompilerOptions options = new CompilerOptions();
+        options.optimizerOptions.throwOnError = true;
+        return options;
+    }
+
+    static DBSPCompiler testCompiler() {
+        return new DBSPCompiler(testOptions());
+    }
 
     public DBSPCompiler compileQuery(String query) {
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         // This is necessary if we want queries that do not depend on the input
         // to generate circuits that still have inputs.
         compiler.setGenerateInputsFromTables(true);

@@ -270,4 +270,25 @@ public class NaiveIncrementalTests extends EndToEndTests {
                                 DBSPLiteral.none(DBSPTypeInteger.NULLABLE_SIGNED_32),
                                 DBSPLiteral.none(DBSPTypeDouble.NULLABLE_INSTANCE))));
     }
+
+    @Test
+    public void testArray() {
+        String query = "SELECT ELEMENT(ARRAY [2])";
+        DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPI32Literal(2)));
+        this.testConstantOutput(query, result);
+    }
+
+    @Test
+    public void testArrayIndex() {
+        String query = "SELECT (ARRAY [2])[1]";
+        DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPTupleExpression(new DBSPI32Literal(2, true)));
+        this.testConstantOutput(query, result);
+    }
+
+    @Test
+    public void testArrayIndexOutOfBounds() {
+        String query = "SELECT (ARRAY [2])[3]";
+        DBSPZSetLiteral result = new DBSPZSetLiteral(new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.NULLABLE_SIGNED_32)));
+        this.testConstantOutput(query, result);
+    }
 }

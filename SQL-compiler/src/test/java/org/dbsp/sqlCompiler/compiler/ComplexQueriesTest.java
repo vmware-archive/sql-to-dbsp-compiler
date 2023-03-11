@@ -27,11 +27,9 @@ import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.visitors.CircuitFunctionRewriter;
 import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.visitors.ThreeOperandVisitor;
-import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeFloat;
 import org.junit.Test;
 
 @SuppressWarnings("SpellCheckingInspection")
@@ -56,7 +54,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                         "                -- 1 hour is 3600  seconds\n" +
                         "                RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip\n" +
                         "FROM green_tripdata";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl);
@@ -84,7 +82,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "      -- 1 hour is 3600  seconds\n" +
                 "      RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip\n" +
                 "FROM green_tripdata;\n";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         compiler.setGenerateInputsFromTables(true);
         compiler.compileStatements(query);
         DBSPCircuit circuit = getCircuit(compiler);
@@ -163,7 +161,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "        FROM  transactions AS t1\n" +
                 "        LEFT JOIN  demographics AS t2\n" +
                 "        ON t1.cc_num = t2.cc_num);";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         compiler.setGenerateInputsFromTables(true);
         compiler.compileStatements(query);
         DBSPZSetLiteral[] inputs = new DBSPZSetLiteral[] {
@@ -231,7 +229,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                         "                RANGE BETWEEN 1800  PRECEDING AND 1 PRECEDING ) AS count_trips_window_30m_dropoff_zip,\n" +
                         "case when extract (ISODOW from  CAST (lpep_dropoff_datetime AS TIMESTAMP))  > 5 then 1 else 0 end as dropoff_is_weekend\n" +
                         "FROM green_tripdata";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl);
@@ -307,7 +305,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "          FROM  transactions AS t1\n" +
                 "          LEFT JOIN  demographics AS t2\n" +
                 "          ON t1.cc_num =t2.cc_num)";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = testCompiler();
         compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl0);

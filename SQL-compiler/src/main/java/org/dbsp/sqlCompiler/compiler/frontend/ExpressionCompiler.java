@@ -506,7 +506,22 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                     }
                     case "division":
                         return makeBinaryExpression(call, type, "/", ops);
-
+                    case "cardinality": {
+                        if (call.operands.size() != 1)
+                            throw new Unimplemented(call);
+                        DBSPExpression arg = ops.get(0);
+                        DBSPExpression len = new DBSPApplyMethodExpression("len", DBSPTypeUSize.INSTANCE, arg);
+                        return makeCast(call, len, type);
+                    }
+                    case "element": {
+                        type = type.setMayBeNull(true);  // Why isn't this always nullable?
+                        DBSPExpression arg = ops.get(0);
+                        DBSPTypeVec arrayType = arg.getNonVoidType().to(DBSPTypeVec.class);
+                        String method = "element";
+                        if (arrayType.getElementType().mayBeNull)
+                            method += "N";
+                        return new DBSPApplyExpression(method, type, arg);
+                    }
                 }
                 throw new Unimplemented(call);
             }
@@ -536,6 +551,18 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 String functionName = call.getKind().toString().toLowerCase() + "_" + type.to(IsNumericType.class).getRustString() + "_" + keyword + type.nullableSuffix();
                 return new DBSPApplyExpression(functionName, type, ops.get(0));
             }
+            case ARRAY_VALUE_CONSTRUCTOR: {
+                DBSPTypeVec vec = type.to(DBSPTypeVec.class);
+                DBSPType elemType = vec.getElementType();
+                RexCall finalCall = call;
+                List<DBSPExpression> args = Linq.map(ops, o -> makeCast(finalCall, o, elemType));
+                return new DBSPApplyExpression("vec!", type, args.toArray(new DBSPExpression[0]));
+            }
+            case ITEM: {
+                if (call.operands.size() != 2)
+                    throw new Unimplemented(call);
+                return new DBSPIndexExpression(call, ops.get(0), makeCast(call, ops.get(1), DBSPTypeUSize.INSTANCE));
+            }
             default:
                 throw new Unimplemented(call);
         }
@@ -546,6 +573,9 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 .append("Compiling ")
                 .append(expression.toString())
                 .newline();
-        return expression.accept(this);
+        DBSPExpression result = expression.accept(this);
+        if (result == null)
+            throw new Unimplemented(expression);
+        return result;
     }
 }
