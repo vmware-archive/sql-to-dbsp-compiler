@@ -158,7 +158,7 @@ public class ToRustVisitor extends CircuitVisitor {
     }
 
     public void generateBody(DBSPPartialCircuit circuit) {
-        this.builder.append("let root = Circuit::build(|circuit| {")
+        this.builder.append("let root = dbsp::RootCircuit::build(|circuit| {")
                 .increase();
         for (IDBSPNode node : circuit.code)
             this.processNode(node);
@@ -257,7 +257,7 @@ public class ToRustVisitor extends CircuitVisitor {
                 .append(operator.input().getName())
                 .append(".")
                 .append(operator.operation)
-                .append("::<()>();");
+                .append("();");
         return false;
     }
 
@@ -344,7 +344,7 @@ public class ToRustVisitor extends CircuitVisitor {
         builder.append(operator.input().getName())
                     .append(".");
         builder.append(operator.operation)
-                .append("::<(), _>(");
+                .append("(");
         operator.getFunction().accept(this.innerVisitor);
         builder.append(");");
         return false;
@@ -397,7 +397,6 @@ public class ToRustVisitor extends CircuitVisitor {
             this.builder.append(operator.inputs.get(0).getName())
                     .append(".");
         this.builder.append(operator.operation)
-                .append("::<(), _, _, _>")
                 .append("(&");
         this.builder.append(operator.inputs.get(1).getName());
         this.builder.append(", ");
