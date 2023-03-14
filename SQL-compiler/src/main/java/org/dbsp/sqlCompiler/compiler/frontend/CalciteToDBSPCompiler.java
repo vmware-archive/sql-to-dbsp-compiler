@@ -40,12 +40,12 @@ import org.dbsp.sqlCompiler.compiler.sqlparser.*;
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
+import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIsNullExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
-import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
@@ -179,95 +179,28 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     }
 
     /**
-     * Result returned by the createFoldingFunction below.
-     */
-    static class FoldingDescription {
-        /**
-         * Expression that represents a DBSP Fold object that computes the desired aggregate.
-         */
-        public final DBSPExpression fold;
-        /**
-         * In DBSP the result of aggregating an empty collection is always an empty collection.
-         * But in SQL this is not always true: this is the result that should be returned for an
-         * empty input.
-         */
-        public final DBSPExpression defaultZero;
-
-        FoldingDescription(DBSPExpression fold, DBSPExpression defaultZero) {
-            this.fold = fold;
-            this.defaultZero = defaultZero;
-        }
-    }
-
-    /**
      * Helper function for creating aggregates.
+     * @param node         RelNode that generates this aggregate.
      * @param aggregates   Aggregates to implement.
      * @param groupCount   Number of groupBy variables.
      * @param inputRowType Type of input row.
      * @param resultType   Type of result produced.
      */
-    public FoldingDescription createFoldingFunction(
+    public DBSPAggregate createAggregate(RelNode node,
             List<AggregateCall> aggregates, DBSPTypeTuple resultType,
             DBSPType inputRowType, int groupCount) {
         DBSPVariablePath rowVar = inputRowType.ref().var("v");
+        DBSPAggregate result = new DBSPAggregate(node, rowVar);
         int aggIndex = 0;
-        int parts = aggregates.size();
-        DBSPExpression[] zeros = new DBSPExpression[parts];
-        DBSPExpression[] increments = new DBSPExpression[parts];
-        DBSPExpression[] posts = new DBSPExpression[parts];
-        DBSPExpression[] defaultZeros = new DBSPExpression[parts];
 
-        DBSPType[] accumulatorTypes = new DBSPType[parts];
-        DBSPType[] semigroups = new DBSPType[parts];
         for (AggregateCall call: aggregates) {
             DBSPType resultFieldType = resultType.getFieldType(aggIndex + groupCount);
             AggregateCompiler compiler = new AggregateCompiler(call, resultFieldType, rowVar);
-            AggregateCompiler.AggregateImplementation folder = compiler.compile();
-            DBSPExpression zero = this.declare("zero", folder.zero);
-            zeros[aggIndex] = zero;
-            DBSPExpression increment = this.declare("inc", folder.increment);
-            increments[aggIndex] = increment;
-            DBSPType incType = folder.increment.getResultType();
-            accumulatorTypes[aggIndex] = incType;
-            semigroups[aggIndex] = folder.semigroup;
-            DBSPExpression identity = new DBSPTypeFunction(incType, incType).path(
-                        new DBSPPath(new DBSPSimplePathSegment("identity", incType)));
-            DBSPExpression post = this.declare("post",
-                    folder.postprocess != null ? folder.postprocess : identity);
-            posts[aggIndex] = post;
-            defaultZeros[aggIndex] = folder.emptySetResult;
+            DBSPAggregate.Implementation implementation = compiler.compile();
+            result.add(implementation);
             aggIndex++;
         }
-
-        DBSPExpression zero = this.declare("zero", new DBSPRawTupleExpression(zeros));
-        DBSPTypeRawTuple accumulatorType = new DBSPTypeRawTuple(accumulatorTypes);
-        DBSPVariablePath accumulator = accumulatorType.ref(true).var("a");
-        DBSPVariablePath postAccum = accumulatorType.var("a");
-        for (int i = 0; i < increments.length; i++) {
-            DBSPExpression accumField = accumulator.field(i);
-            increments[i] = new DBSPApplyExpression(increments[i],
-                    accumField, rowVar, weight);
-            DBSPExpression postAccumField = postAccum.field(i);
-            posts[i] = new DBSPApplyExpression(posts[i], postAccumField);
-        }
-        DBSPAssignmentExpression accumBody = new DBSPAssignmentExpression(
-                accumulator.deref(), new DBSPRawTupleExpression(increments));
-        DBSPExpression accumFunction = accumBody.closure(
-                accumulator.asParameter(), rowVar.asParameter(), weight.asParameter());
-        DBSPExpression increment = this.declare("increment", accumFunction);
-        DBSPClosureExpression postClosure = new DBSPTupleExpression(posts).closure(postAccum.asParameter());
-        DBSPExpression post = this.declare("post", postClosure);
-        DBSPExpression constructor = DBSPTypeAny.INSTANCE.path(
-                new DBSPPath(
-                        new DBSPSimplePathSegment("Fold",
-                                DBSPTypeAny.INSTANCE,
-                                new DBSPSemigroupType(semigroups, accumulatorTypes),
-                                DBSPTypeAny.INSTANCE,
-                                DBSPTypeAny.INSTANCE),
-                        new DBSPSimplePathSegment("with_output")));
-        DBSPExpression folder = new DBSPApplyExpression(constructor, zero, increment, post);
-        return new FoldingDescription(this.declare("folder", folder),
-                new DBSPTupleExpression(defaultZeros));
+        return result;
     }
 
     public void visitCorrelate(LogicalCorrelate correlate) {
@@ -280,22 +213,6 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     }
 
     public void visitAggregate(LogicalAggregate aggregate) {
-        // Example for a pair of count+sum aggregations:
-        // let zero_count: isize = 0;
-        // let inc_count = |acc: isize, v: &usize, w: isize| -> isize { acc + 1 * w };
-        // let zero_sum: isize = 0;
-        // let inc_sum = |ac: isize, v: &usize, w: isize| -> isize { acc + (*v as isize) * w) }
-        // let zero = (zero_count, inc_count);
-        // let inc = |acc: &mut (isize, isize), v: &usize, w: isize| {
-        //     *acc = (inc_count(acc.0, v, w), inc_sum(acc.1, v, w))
-        // }
-        // let post_count = identity;
-        // let post_sum = identity;
-        // let post =  move |a: (i32, i32), | -> Tuple2<_, _> {
-        //            Tuple2::new(post_count(a.0), post_sum(a.1)) };
-        // let fold = Fold::with_output((zero_count, zero_sum), inc, post);
-        // let count_sum = input.aggregate(fold);
-        // let result = count_sum.map(|k,v|: (&(), &Tuple1<isize>|) { *v };
         DBSPType type = this.convertType(aggregate.getRowType());
         DBSPTypeTuple tuple = type.to(DBSPTypeTuple.class);
         RelNode input = aggregate.getInput();
@@ -305,7 +222,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPVariablePath t = inputRowType.ref().var("t");
 
         if (!aggregates.isEmpty()) {
-            if (aggregate.getGroupType() != Aggregate.Group.SIMPLE)
+            if (aggregate.getGroupType() != org.apache.calcite.rel.core.Aggregate.Group.SIMPLE)
                 throw new Unimplemented(aggregate);
             DBSPExpression[] groups = new DBSPExpression[aggregate.getGroupCount()];
             int next = 0;
@@ -327,12 +244,12 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                     keyExpression.getNonVoidType(), inputRowType, false, opInput);
             this.circuit.addOperator(index);
             DBSPType groupType = keyExpression.getNonVoidType();
-            FoldingDescription fd = this.createFoldingFunction(aggregates, tuple, inputRowType, aggregate.getGroupCount());
+            DBSPAggregate fold = this.createAggregate(aggregate, aggregates, tuple, inputRowType, aggregate.getGroupCount());
             // The aggregate operator will not return a stream of type aggType, but a stream
             // with a type given by fd.defaultZero.
-            DBSPTypeTuple typeFromAggregate = fd.defaultZero.getNonVoidType().to(DBSPTypeTuple.class);
-            DBSPAggregateOperator agg = new DBSPAggregateOperator(aggregate, fd.fold, groupType,
-                    typeFromAggregate, index);
+            DBSPTypeTuple typeFromAggregate = fold.defaultZeroType();
+            DBSPAggregateOperator agg = new DBSPAggregateOperator(aggregate, groupType,
+                    typeFromAggregate, fold, index);
 
             // Flatten the resulting set
             DBSPVariablePath kResult = groupType.ref().var("k");
@@ -375,13 +292,13 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 //              {z->1}/{c->1}
                 this.circuit.addOperator(map);
                 DBSPVariablePath _t = DBSPTypeAny.INSTANCE.var("_t");
-                DBSPExpression toZero = fd.defaultZero.closure(_t.asParameter());
+                DBSPExpression toZero = fold.defaultZero().closure(_t.asParameter());
                 DBSPOperator map1 = new DBSPMapOperator(aggregate, toZero, type, map);
                 this.circuit.addOperator(map1);
                 DBSPOperator neg = new DBSPNegateOperator(aggregate, map1);
                 this.circuit.addOperator(neg);
                 DBSPOperator constant = new DBSPConstantOperator(
-                        aggregate, new DBSPZSetLiteral(fd.defaultZero), false);
+                        aggregate, new DBSPZSetLiteral(fold.defaultZero()), false);
                 this.circuit.addOperator(constant);
                 DBSPOperator sum = new DBSPSumOperator(aggregate, Linq.list(constant, neg, map));
                 this.assignOperator(aggregate, sum);
@@ -614,10 +531,10 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
 
         DBSPClosureExpression toLeftKey = new DBSPRawTupleExpression(leftKey, DBSPTupleExpression.flatten(l))
                 .closure(l.asParameter());
-        DBSPIndexOperator lindex = new DBSPIndexOperator(
+        DBSPIndexOperator leftIndex = new DBSPIndexOperator(
                 join, this.declare("index", toLeftKey),
                 leftKey.getNonVoidType(), leftElementType, false, filteredLeft);
-        this.circuit.addOperator(lindex);
+        this.circuit.addOperator(leftIndex);
 
         DBSPClosureExpression toRightKey = new DBSPRawTupleExpression(rightKey, DBSPTupleExpression.flatten(r))
                 .closure(r.asParameter());
@@ -631,7 +548,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPClosureExpression makeTuple = allFields.closure(k.asRefParameter(), l.asParameter(), r.asParameter());
         DBSPJoinOperator joinResult = new DBSPJoinOperator(join, resultType,
                 this.declare("pair", makeTuple),
-                left.isMultiset || right.isMultiset, lindex, rIndex);
+                left.isMultiset || right.isMultiset, leftIndex, rIndex);
 
         DBSPOperator inner = joinResult;
         if (originalCondition != null) {
@@ -912,16 +829,16 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             List<AggregateCall> aggregateCalls = group.getAggregateCalls(window);
             List<DBSPType> types = Linq.map(aggregateCalls, c -> this.convertType(c.type));
             DBSPTypeTuple tuple = new DBSPTypeTuple(types);
-            FoldingDescription fd = this.createFoldingFunction(aggregateCalls, tuple, inputRowType, 0);
+            DBSPAggregate fd = this.createAggregate(window, aggregateCalls, tuple, inputRowType, 0);
 
             // Compute aggregates for the window
-            DBSPTypeTuple aggResultType = fd.defaultZero.getNonVoidType().to(DBSPTypeTuple.class);
+            DBSPTypeTuple aggResultType = fd.defaultZeroType().to(DBSPTypeTuple.class);
             // This operator is always incremental, so create the non-incremental version
             // of it by adding a D and an I around it.
             DBSPDifferentialOperator diff = new DBSPDifferentialOperator(window, mapIndex);
             this.circuit.addOperator(diff);
             DBSPWindowAggregateOperator windowAgg = new DBSPWindowAggregateOperator(
-                    group, fd.fold,
+                    group, fd,
                     windowExprVar, partition.getNonVoidType(), sortType,
                     aggResultType, diff);
             this.circuit.addOperator(windowAgg);
@@ -982,15 +899,27 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 new DBSPTypeRawTuple(), inputRowType, opInput.isMultiset, opInput);
         this.circuit.addOperator(index);
         // apply an aggregation function that just creates a vector.
+        DBSPVariablePath row = inputRowType.var("v");
+        DBSPAggregate toVec = new DBSPAggregate(sort, row);
+
         DBSPTypeVec vecType = new DBSPTypeVec(inputRowType);
         DBSPExpression zero = new DBSPApplyExpression(DBSPTypeAny.INSTANCE.path(
                 new DBSPPath(vecType.name, "new")));
         DBSPVariablePath accum = vecType.var("a");
-        DBSPVariablePath row = inputRowType.var("v");
         // An element with weight 'w' is pushed 'w' times into the vector
-        DBSPExpression wPush = new DBSPApplyExpression("weighted_push", null, accum, row, weight);
-        DBSPExpression push = wPush.closure(
+        DBSPExpression wPush = new DBSPApplyExpression("weighted_push", vecType, accum, row, weight);
+        DBSPClosureExpression push = wPush.closure(
                 accum.asRefParameter(true), row.asRefParameter(), CalciteToDBSPCompiler.weight.asParameter());
+        toVec.add(new DBSPAggregate.Implementation(
+                null,
+                zero,
+                push,
+                zero,
+                new DBSPTypeUser(null, "UnimplementedSemigroup",
+                        false, DBSPTypeAny.INSTANCE)
+        ));
+
+        /*
         DBSPExpression constructor = DBSPTypeAny.INSTANCE.path(
             new DBSPPath(
                     new DBSPSimplePathSegment("Fold",
@@ -1002,9 +931,10 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                     new DBSPSimplePathSegment("new")));
 
         DBSPExpression folder = new DBSPApplyExpression(constructor, zero, push);
+         */
+
         DBSPAggregateOperator agg = new DBSPAggregateOperator(sort,
-                this.declare("toVec", folder),
-                new DBSPTypeRawTuple(), new DBSPTypeVec(inputRowType), index);
+                new DBSPTypeRawTuple(), new DBSPTypeVec(inputRowType), toVec, index);
         this.circuit.addOperator(agg);
 
         // Generate comparison function for sorting the vector

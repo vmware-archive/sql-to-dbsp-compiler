@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,30 +21,32 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir;
+package org.dbsp.sqlCompiler.ir.type;
 
-import org.dbsp.sqlCompiler.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
-import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
-
-import java.util.List;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.util.Linq;
 
 /**
- * Abstraction for a (Rust) file containing a series of DBSP declarations.
+ * Represents a Semigroup trait implementation.
  */
-public class DBSPFile extends DBSPNode implements IDBSPInnerNode {
-    public final List<IDBSPDeclaration> declarations;
+public class DBSPTypeSemigroup extends DBSPTypeUser {
+    public DBSPTypeSemigroup(DBSPType[] elementTypes, DBSPType[] semigroupTypes) {
+        super(null, "Semigroup" + elementTypes.length, false,
+                Linq.concat(semigroupTypes, elementTypes));
+        if (elementTypes.length != semigroupTypes.length)
+            throw new RuntimeException("Each element must have a corresponding semigroup, but I have " +
+                    elementTypes.length + " and " + semigroupTypes.length);
+    }
 
-    public DBSPFile(List<IDBSPDeclaration> declarations) {
-        super(null);
-        this.declarations = declarations;
+    public int semigroupSize() {
+        return this.typeArgs.length / 2;
     }
 
     @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
-        for (IDBSPDeclaration decl: this.declarations)
-            decl.accept(visitor);
+        for (DBSPType type: this.typeArgs)
+            type.accept(visitor);
         visitor.postorder(this);
     }
 }

@@ -24,61 +24,41 @@
 package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.util.IIndentStream;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * A Raw Rust tuple.
  */
 public class DBSPTypeTuple extends DBSPTypeTupleBase {
-    /**
-     * Keep track of the tuple sizes that appear in the program to properly generate
-     * Rust macros to instantiate them.
-     * TODO: remove this field and the preamble() function below.
-     */
-    static final Set<Integer> sizesUsed = new HashSet<>();
+    public final DBSPType[] tupFields;
 
-    public DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupArgs) {
-        super(node, mayBeNull, tupArgs);
-        sizesUsed.add(this.tupFields.length);
+    public DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
+        super(node, mayBeNull);
+        this.tupFields = tupFields;
     }
 
-    public DBSPTypeTuple(DBSPType... tupArgs) {
-        this(null, false, tupArgs);
+    public DBSPTypeTuple(@Nullable Object node, DBSPType... tupFields) {
+        this(node, false, tupFields);
     }
 
-    public DBSPTypeTuple(@Nullable Object node, List<DBSPType> tupArgs) {
-        this(node, false, tupArgs.toArray(new DBSPType[0]));
+    public DBSPTypeTuple(DBSPType... tupFields) {
+        this(null, tupFields);
+    }
+
+    public DBSPTypeTuple(@Nullable Object node, List<DBSPType> tupFields) {
+        this(node, tupFields.toArray(new DBSPType[0]));
     }
 
     public DBSPTypeTuple(List<DBSPType> tupFields) {
         this(null, tupFields);
     }
 
-    public static void preamble(IIndentStream stream) {
-        stream.append("declare_tuples! {").increase();
-        for (int i: DBSPTypeTuple.sizesUsed) {
-            if (i == 0)
-                continue;
-            stream.append("Tuple")
-                    .append(i)
-                    .append("<");
-            for (int j = 0; j < i; j++) {
-                if (j > 0)
-                    stream.append(", ");
-                stream.append("T")
-                        .append(j);
-            }
-            stream.append(">,\n");
-        }
-        sizesUsed.clear();
-        stream.decrease().append("}\n\n");
+    public DBSPType getFieldType(int index) {
+        return this.tupFields[index];
     }
 
     public int size() {

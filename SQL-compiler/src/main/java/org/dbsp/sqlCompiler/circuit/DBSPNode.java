@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.circuit;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.dbsp.sqlCompiler.compiler.backend.ToRustInnerVisitor;
 import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
 import org.dbsp.util.IdGen;
 
@@ -52,7 +53,7 @@ public abstract class DBSPNode
     @Override
     public String toString() {
         if (this.is(IDBSPInnerNode.class))
-            return ToRustVisitor.irToRustString(this.to(IDBSPInnerNode.class));
+            return ToRustInnerVisitor.toRustString(this.to(IDBSPInnerNode.class));
         return ToRustVisitor.circuitToRustString(this.to(IDBSPOuterNode.class));
     }
 }

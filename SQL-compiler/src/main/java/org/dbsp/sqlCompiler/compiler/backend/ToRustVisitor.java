@@ -25,12 +25,18 @@ package org.dbsp.sqlCompiler.compiler.backend;
 
 import org.dbsp.sqlCompiler.circuit.*;
 import org.dbsp.sqlCompiler.circuit.operator.*;
+import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.expression.*;
+import org.dbsp.sqlCompiler.ir.path.DBSPPath;
+import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * This visitor generate a Rust implementation of the program.
@@ -39,77 +45,10 @@ public class ToRustVisitor extends CircuitVisitor {
     protected final IndentStream builder;
     public final InnerVisitor innerVisitor;
 
-    @SuppressWarnings("SpellCheckingInspection")
-    static final String rustPreamble =
-            "// Automatically-generated file\n" +
-                    "#![allow(dead_code)]\n" +
-                    "#![allow(non_snake_case)]\n" +
-                    "#![allow(unused_imports)]\n" +
-                    "#![allow(unused_parens)]\n" +
-                    "#![allow(unused_variables)]\n" +
-                    "#![allow(unused_mut)]\n" +
-                    "\n" +
-                    "use dbsp::{\n" +
-                    "    algebra::{ZSet, MulByRef, F32, F64, Semigroup, SemigroupValue,\n" +
-                    "    UnimplementedSemigroup, DefaultSemigroup},\n" +
-                    "    circuit::{Circuit, Stream},\n" +
-                    "    operator::{\n" +
-                    "        Generator,\n" +
-                    "        FilterMap,\n" +
-                    "        Fold,\n" +
-                    "        time_series::{RelRange, RelOffset, OrdPartitionedIndexedZSet},\n" +
-                    "        MaxSemigroup,\n" +
-                    "        MinSemigroup,\n" +
-                    "    },\n" +
-                    "    trace::ord::{OrdIndexedZSet, OrdZSet},\n" +
-                    "    zset,\n" +
-                    "    DBWeight,\n" +
-                    "    DBData,\n" +
-                    "    DBSPHandle,\n" +
-                    "    Runtime,\n" +
-                    "};\n" +
-                    "use dbsp_adapters::Catalog;\n" +
-                    "use sqlx::types::BigDecimal;\n" +
-                    "use genlib::*;\n" +
-                    "use size_of::*;\n" +
-                    "use ::serde::{Deserialize,Serialize};\n" +
-                    "use compare::{Compare, Extract};\n" +
-                    "use std::{\n" +
-                    "    convert::identity,\n" +
-                    "    fmt::{Debug, Formatter, Result as FmtResult},\n" +
-                    "    cell::RefCell,\n" +
-                    "    rc::Rc,\n" +
-                    "    marker::PhantomData,\n" +
-                    "    str::FromStr,\n" +
-                    "};\n" +
-                    "use tuple::declare_tuples;\n" +
-                    "use sqllib::{\n" +
-                    "    casts::*,\n" +
-                    "    geopoint::*,\n" +
-                    "    timestamp::*,\n" +
-                    "    interval::*,\n" +
-                    "};\n" +
-                    "use sqllib::*;\n" +
-                    "use sqlvalue::*;\n" +
-                    "use hashing::*;\n" +
-                    "use readers::*;\n" +
-                    "use sqlx::{AnyConnection, any::AnyRow, Row};\n" +
-                    "type Weight = i64;\n";
-
-
     public ToRustVisitor(IndentStream builder) {
         super(true);
         this.builder = builder;
         this.innerVisitor = new ToRustInnerVisitor(builder);
-    }
-
-    public static String generatePreamble() {
-        IndentStream stream = new IndentStream(new StringBuilder());
-        stream.append(rustPreamble)
-                .newline();
-        DBSPTypeTuple.preamble(stream);
-        DBSPSemigroupType.preamble(stream);
-        return stream.toString();
     }
 
     //////////////// Operators
@@ -304,6 +243,73 @@ public class ToRustVisitor extends CircuitVisitor {
         return false;
     }
 
+    /**
+     * Creates a DBSP Fold object from an Aggregate.
+     */
+    DBSPExpression createAggregator(DBSPAggregate aggregate) {
+        // Example for a pair of count+sum aggregations:
+        // let zero_count: isize = 0;
+        // let inc_count = |acc: isize, v: &usize, w: isize| -> isize { acc + 1 * w };
+        // let zero_sum: isize = 0;
+        // let inc_sum = |ac: isize, v: &usize, w: isize| -> isize { acc + (*v as isize) * w) }
+        // let zero = (zero_count, inc_count);
+        // let inc = |acc: &mut (isize, isize), v: &usize, w: isize| {
+        //     *acc = (inc_count(acc.0, v, w), inc_sum(acc.1, v, w))
+        // }
+        // let post_count = identity;
+        // let post_sum = identity;
+        // let post =  move |a: (i32, i32), | -> Tuple2<_, _> {
+        //            Tuple2::new(post_count(a.0), post_sum(a.1)) };
+        // let fold = Fold::with_output((zero_count, zero_sum), inc, post);
+        // let count_sum = input.aggregate(fold);
+        // let result = count_sum.map(|k,v|: (&(), &Tuple1<isize>|) { *v };
+        int parts = aggregate.components.size();
+        DBSPExpression[] zeros = new DBSPExpression[parts];
+        DBSPExpression[] increments = new DBSPExpression[parts];
+        DBSPExpression[] posts = new DBSPExpression[parts];
+        DBSPType[] accumulatorTypes = new DBSPType[parts];
+        DBSPType[] semigroups = new DBSPType[parts];
+        for (int i = 0; i < parts; i++) {
+            DBSPAggregate.Implementation implementation = aggregate.components.get(i);
+            DBSPType incType = implementation.increment.getResultType();
+            zeros[i] = implementation.zero;
+            increments[i] = implementation.increment;
+            accumulatorTypes[i] = Objects.requireNonNull(incType);
+            semigroups[i] = implementation.semigroup;
+            DBSPExpression identity = new DBSPTypeFunction(incType, incType).path(
+                    new DBSPPath(new DBSPSimplePathSegment("identity", incType)));
+            posts[i] = implementation.postProcess != null ? implementation.postProcess : identity;
+        }
+
+        DBSPTypeRawTuple accumulatorType = new DBSPTypeRawTuple(accumulatorTypes);
+        DBSPVariablePath accumulator = accumulatorType.ref(true).var("a");
+        DBSPVariablePath postAccumulator = accumulatorType.var("a");
+        for (int i = 0; i < parts; i++) {
+            DBSPExpression accumulatorField = accumulator.field(i);
+            increments[i] = new DBSPApplyExpression(increments[i],
+                    accumulatorField, aggregate.rowVar, CalciteToDBSPCompiler.weight);
+            DBSPExpression postAccumulatorField = postAccumulator.field(i);
+            posts[i] = new DBSPApplyExpression(posts[i], postAccumulatorField);
+        }
+        DBSPAssignmentExpression accumulatorBody = new DBSPAssignmentExpression(
+                accumulator.deref(), new DBSPRawTupleExpression(increments));
+        DBSPExpression accumFunction = accumulatorBody.closure(
+                accumulator.asParameter(), aggregate.rowVar.asParameter(),
+                CalciteToDBSPCompiler.weight.asParameter());
+        DBSPClosureExpression postClosure = new DBSPTupleExpression(posts).closure(postAccumulator.asParameter());
+        DBSPExpression constructor = DBSPTypeAny.INSTANCE.path(
+                new DBSPPath(
+                        new DBSPSimplePathSegment("Fold",
+                                DBSPTypeAny.INSTANCE,
+                                new DBSPTypeSemigroup(semigroups, accumulatorTypes),
+                                DBSPTypeAny.INSTANCE,
+                                DBSPTypeAny.INSTANCE),
+                        new DBSPSimplePathSegment("with_output")));
+        return new DBSPApplyExpression(constructor,
+                new DBSPRawTupleExpression(zeros),
+                accumFunction, postClosure);
+    }
+
     @Override
     public boolean preorder(DBSPWindowAggregateOperator operator) {
         // We generate two DBSP operator calls: partitioned_rolling_aggregate
@@ -316,7 +322,8 @@ public class ToRustVisitor extends CircuitVisitor {
                 .append(" = ")
                 .append(operator.input().getName())
                 .append(".partitioned_rolling_aggregate(");
-        operator.aggregator.accept(this.innerVisitor);
+        DBSPExpression aggregator = this.createAggregator(operator.aggregator);
+        aggregator.accept(this.innerVisitor);
         builder.append(", ");
         operator.window.accept(this.innerVisitor);
         builder.append(");")
@@ -329,6 +336,25 @@ public class ToRustVisitor extends CircuitVisitor {
         builder.append(" = " )
                 .append(tmp)
                 .append(".map_index(|(key, (ts, agg))| { ((key.clone(), *ts), agg.unwrap_or_default())});");
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPAggregateOperator operator) {
+        DBSPType streamType = new DBSPTypeStream(operator.outputType);
+        this.writeComments(operator)
+                .append("let ")
+                .append(operator.getName())
+                .append(": ");
+        streamType.accept(this.innerVisitor);
+        this.builder.append(" = ");
+        builder.append(operator.input().getName())
+                .append(".");
+        builder.append(operator.operation)
+                .append("(");
+        DBSPExpression aggregator = this.createAggregator(operator.aggregate);
+        aggregator.accept(this.innerVisitor);
+        builder.append(");");
         return false;
     }
 
@@ -422,14 +448,6 @@ public class ToRustVisitor extends CircuitVisitor {
         IndentStream stream = new IndentStream(builder);
         ToRustVisitor visitor = new ToRustVisitor(stream);
         node.accept(visitor);
-        return builder.toString();
-    }
-
-    public static String irToRustString(IDBSPInnerNode node) {
-        StringBuilder builder = new StringBuilder();
-        IndentStream stream = new IndentStream(builder);
-        ToRustVisitor visitor = new ToRustVisitor(stream);
-        node.accept(visitor.innerVisitor);
         return builder.toString();
     }
 }

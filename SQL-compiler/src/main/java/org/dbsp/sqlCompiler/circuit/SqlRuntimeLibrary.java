@@ -23,14 +23,13 @@
 
 package org.dbsp.sqlCompiler.circuit;
 
-import org.dbsp.sqlCompiler.ir.DBSPFile;
+import org.dbsp.sqlCompiler.compiler.backend.ToRustInnerVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.pattern.*;
 import org.dbsp.sqlCompiler.ir.type.*;
-import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.Unimplemented;
 
@@ -45,9 +44,6 @@ import java.util.*;
  */
 @SuppressWarnings({"FieldCanBeLocal", "MismatchedQueryAndUpdateOfCollection", "SpellCheckingInspection"})
 public class SqlRuntimeLibrary {
-    @Nullable
-    private DBSPFile program;
-
     private final HashSet<String> aggregateFunctions = new HashSet<>();
     private final HashMap<String, String> arithmeticFunctions = new HashMap<>();
     private final HashMap<String, String> dateFunctions = new HashMap<>();
@@ -58,6 +54,7 @@ public class SqlRuntimeLibrary {
     private final Set<String> handWritten = new HashSet<>();
 
     public static final SqlRuntimeLibrary INSTANCE =new SqlRuntimeLibrary();
+    final List<IDBSPDeclaration> declarations = new ArrayList<>();
 
     protected SqlRuntimeLibrary() {
         this.aggregateFunctions.add("count");
@@ -332,7 +329,6 @@ public class SqlRuntimeLibrary {
                 }
             }
         }
-        this.program = new DBSPFile(declarations);
     }
 
     /**
@@ -343,14 +339,15 @@ public class SqlRuntimeLibrary {
         this.generateProgram();
         File file = new File(filename);
         FileWriter writer = new FileWriter(file);
-        if (this.program == null)
-            throw new RuntimeException("No source program for writing the sql library");
         writer.append("// Automatically-generated file\n");
         writer.append("#![allow(unused_parens)]\n");
         writer.append("#![allow(non_snake_case)]\n");
         writer.append("use dbsp::algebra::{F32, F64};\n");
         writer.append("\n");
-        writer.append(ToRustVisitor.irToRustString(this.program));
+        for (IDBSPDeclaration declaration: this.declarations) {
+            writer.append(ToRustInnerVisitor.toRustString(declaration));
+            writer.append("\n\n");
+        }
         writer.close();
     }
 }

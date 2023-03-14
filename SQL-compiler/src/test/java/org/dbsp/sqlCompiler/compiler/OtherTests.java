@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.compiler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.dbsp.sqlCompiler.compiler.backend.RustFileWriter;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
 import org.dbsp.sqlCompiler.CompilerMain;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
@@ -161,10 +162,9 @@ public class OtherTests extends BaseSQLTests implements IModule {
         compiler.compileStatement(statement1);
         compiler.compileStatement(statement2);
         DBSPCircuit circuit = compiler.getFinalCircuit("circuit");
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        writer.println(ToRustVisitor.generatePreamble());
-        writer.println(ToRustVisitor.circuitToRustString(circuit));
-        writer.close();
+        RustFileWriter writer = new RustFileWriter(testFilePath);
+        writer.add(circuit);
+        writer.writeAndClose();
         Utilities.compileAndTestRust(rustDirectory, false);
     }
 
@@ -200,11 +200,9 @@ public class OtherTests extends BaseSQLTests implements IModule {
         DBSPFunction tester = new DBSPFunction("test", new ArrayList<>(), null, body)
                 .addAnnotation("#[test]");
 
-        PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
-        rustWriter.println(ToRustVisitor.generatePreamble());
-        rustWriter.println(ToRustVisitor.circuitToRustString(tester));
-        rustWriter.close();
-
+        RustFileWriter writer = new RustFileWriter(BaseSQLTests.testFilePath);
+        writer.add(tester);
+        writer.writeAndClose();
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
         boolean success = file.delete();
         Assert.assertTrue(success);
@@ -254,11 +252,9 @@ public class OtherTests extends BaseSQLTests implements IModule {
         DBSPFunction tester = new DBSPFunction("test", new ArrayList<>(), null, body)
                 .addAnnotation("#[test]");
 
-        PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
-        rustWriter.println(ToRustVisitor.generatePreamble());
-        rustWriter.println(ToRustVisitor.circuitToRustString(tester));
-        rustWriter.close();
-
+        RustFileWriter writer = new RustFileWriter(BaseSQLTests.testFilePath);
+        writer.add(tester);
+        writer.writeAndClose();
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
         boolean success = new File(filepath).delete();
         Assert.assertTrue(success);
@@ -285,11 +281,10 @@ public class OtherTests extends BaseSQLTests implements IModule {
         DBSPFunction tester = new DBSPFunction("test", new ArrayList<>(), null, body)
                 .addAnnotation("#[test]");
 
-        PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
-        rustWriter.println(ToRustVisitor.generatePreamble());
-        rustWriter.println(ToRustVisitor.circuitToRustString(tester));
-        rustWriter.close();
-
+        PrintStream outputStream = new PrintStream(BaseSQLTests.testFilePath, "UTF-8");
+        RustFileWriter writer = new RustFileWriter(outputStream);
+        writer.add(tester);
+        writer.writeAndClose();
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
         boolean success = file.delete();
         Assert.assertTrue(success);

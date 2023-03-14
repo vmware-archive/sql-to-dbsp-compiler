@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.compiler.backend;
 
 import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.ir.*;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -454,15 +455,6 @@ public class ToRustInnerVisitor extends InnerVisitor {
             statement.initializer.accept(this);
         }
         this.builder.append(";");
-        return false;
-    }
-
-    @Override
-    public boolean preorder(DBSPFile file) {
-        for (IDBSPDeclaration decl: file.declarations) {
-            decl.accept(this);
-            this.builder.append("\n\n");
-        }
         return false;
     }
 
@@ -1055,5 +1047,13 @@ public class ToRustInnerVisitor extends InnerVisitor {
         if (type.mayBeNull)
             this.builder.append(">");
         return false;
+    }
+
+    public static String toRustString(IDBSPInnerNode node) {
+        StringBuilder builder = new StringBuilder();
+        IndentStream stream = new IndentStream(builder);
+        ToRustInnerVisitor visitor = new ToRustInnerVisitor(stream);
+        node.accept(visitor);
+        return builder.toString();
     }
 }

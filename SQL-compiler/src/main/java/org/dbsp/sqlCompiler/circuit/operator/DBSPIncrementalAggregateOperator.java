@@ -24,24 +24,28 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Objects;
 
 public class DBSPIncrementalAggregateOperator extends DBSPUnaryOperator {
     public final DBSPType keyType;
     public final DBSPType outputElementType;
+    public final DBSPAggregate aggregate;
 
-    public DBSPIncrementalAggregateOperator(@Nullable Object node, DBSPExpression function,
-                                            DBSPType keyType, DBSPType outputElementType, DBSPOperator input) {
-        super(node, "aggregate", function,
+    public DBSPIncrementalAggregateOperator(@Nullable Object node,
+                                            DBSPType keyType, DBSPType outputElementType,
+                                            DBSPAggregate aggregate,
+                                            DBSPOperator input) {
+        super(node, "aggregate", null,
                 new DBSPTypeIndexedZSet(node, keyType, outputElementType), false, input);
         this.keyType = keyType;
         this.outputElementType = outputElementType;
+        this.aggregate = aggregate;
     }
 
     @Override
@@ -53,14 +57,14 @@ public class DBSPIncrementalAggregateOperator extends DBSPUnaryOperator {
     @Override
     public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
         return new DBSPIncrementalAggregateOperator(
-                this.getNode(), Objects.requireNonNull(expression), this.keyType, this.outputElementType, this.input());
+                this.getNode(), this.keyType, this.outputElementType, this.aggregate, this.input());
     }
 
     @Override
     public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPIncrementalAggregateOperator(
-                    this.getNode(), this.getFunction(), this.keyType, this.outputElementType, newInputs.get(0));
+                    this.getNode(), this.keyType, this.outputElementType, this.aggregate, newInputs.get(0));
         return this;
     }
 }

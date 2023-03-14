@@ -58,10 +58,10 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
      * exercise it.
      */
     static class ProgramAndTester {
-        public final String program;
+        public final DBSPCircuit program;
         public final DBSPFunction tester;
 
-        ProgramAndTester(String program, DBSPFunction tester) {
+        ProgramAndTester(DBSPCircuit program, DBSPFunction tester) {
             this.program = program;
             this.tester = tester;
         }
@@ -378,7 +378,6 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 throw new RuntimeException("No hash or outputs specified");
         }
 
-        String rust = ToRustVisitor.circuitToRustString(dbsp);
         if (this.validateJson)
             ToJitVisitor.validateJson(dbsp);
         DBSPFunction func = createTesterCode(
@@ -386,7 +385,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 inputGeneratingFunction,
                 compiler.getTableContents(),
                 expectedOutput, testQuery.outputDescription);
-        return new ProgramAndTester(rust, func);
+        return new ProgramAndTester(dbsp, func);
     }
 
     void cleanupFilesystem() {
@@ -645,16 +644,17 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
     ) throws FileNotFoundException, UnsupportedEncodingException {
         String genFileName = testFileName + ".rs";
         String testFilePath = rustDirectory + "/" + genFileName;
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        writer.println(ToRustVisitor.generatePreamble());
+        PrintStream stream = new PrintStream(testFilePath, "UTF-8");
+        RustFileWriter rust = new RustFileWriter(stream);
 
         for (DBSPFunction function: inputFunctions)
-            writer.println(ToRustVisitor.irToRustString(function));
+            rust.add(function);
         for (ProgramAndTester pt: functions) {
-            writer.println(pt.program);
-            writer.println(ToRustVisitor.irToRustString(pt.tester));
+            rust.add(pt.program);
+            rust.add(pt.tester);
         }
-        writer.close();
+        stream.close();
+        rust.write();
         return testFileName;
     }
 }

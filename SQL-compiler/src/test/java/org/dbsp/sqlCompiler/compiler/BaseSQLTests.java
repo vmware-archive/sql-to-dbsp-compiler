@@ -42,7 +42,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,14 +131,14 @@ public class BaseSQLTests {
     public static void runAllTests() throws IOException, InterruptedException {
         if (testsToRun.isEmpty())
             return;
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        writer.println(ToRustVisitor.generatePreamble());
+        PrintStream outputStream = new PrintStream(Files.newOutputStream(Paths.get(testFilePath)));
+        RustFileWriter writer = new RustFileWriter(outputStream);
         for (TestCase test: testsToRun) {
-            writer.println(ToRustVisitor.circuitToRustString(test.circuit));
+            writer.add(test.circuit);
             DBSPFunction tester = test.createTesterCode();
-            writer.println(ToRustVisitor.irToRustString(tester));
+            writer.add(tester);
         }
-        writer.close();
+        writer.writeAndClose();
         Utilities.compileAndTestRust(rustDirectory, false);
         testsToRun.clear();
     }

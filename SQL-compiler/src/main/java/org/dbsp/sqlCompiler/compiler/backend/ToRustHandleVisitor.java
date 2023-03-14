@@ -143,12 +143,4 @@ public class ToRustHandleVisitor extends ToRustVisitor {
                 .newline();
         return false;
     }
-
-    public static String toRustString(IDBSPOuterNode node, String functionName) {
-        StringBuilder builder = new StringBuilder();
-        IndentStream stream = new IndentStream(builder);
-        ToRustVisitor visitor = new ToRustHandleVisitor(stream, functionName);
-        node.accept(visitor);
-        return builder.toString();
-    }
 }

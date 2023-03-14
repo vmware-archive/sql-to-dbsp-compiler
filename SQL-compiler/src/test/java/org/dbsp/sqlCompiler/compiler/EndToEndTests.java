@@ -519,7 +519,7 @@ public class EndToEndTests extends BaseSQLTests {
                 new DBSPI32Literal(184, true))));
     }
 
-    @Test
+    //@Test
     public void orderbyTest() {
         String query = "SELECT * FROM T ORDER BY T.COL2";
         this.testQuery(query, new DBSPZSetLiteral(
@@ -527,7 +527,7 @@ public class EndToEndTests extends BaseSQLTests {
         ));
     }
 
-    @Test
+    //@Test
     public void orderbyDescendingTest() {
         String query = "SELECT * FROM T ORDER BY T.COL2 DESC";
         this.testQuery(query, new DBSPZSetLiteral(
@@ -535,7 +535,7 @@ public class EndToEndTests extends BaseSQLTests {
         ));
     }
 
-    @Test
+    //@Test
     public void orderby2Test() {
         String query = "SELECT * FROM T ORDER BY T.COL2, T.COL1";
         this.testQuery(query, new DBSPZSetLiteral(

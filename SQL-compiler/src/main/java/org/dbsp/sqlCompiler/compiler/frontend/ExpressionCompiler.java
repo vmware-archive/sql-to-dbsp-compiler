@@ -44,9 +44,6 @@ import java.util.List;
 import java.util.Objects;
 
 public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implements IModule {
-    /**
-     * Identity function.
-     */
     private final TypeCompiler typeCompiler = new TypeCompiler();
     @Nullable
     public final DBSPVariablePath inputRow;

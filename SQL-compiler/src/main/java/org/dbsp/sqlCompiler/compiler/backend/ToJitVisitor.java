@@ -434,9 +434,10 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     public static void validateJson(DBSPCircuit circuit) {
         try {
-            //System.out.println(ToRustVisitor.circuitToRustString(circuit));
+            JitNormalizeInnerVisitor norm = new JitNormalizeInnerVisitor();
+            CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(norm);
+            circuit = rewriter.apply(circuit);
             String json = ToJitVisitor.circuitToJSON(circuit);
-            System.out.println(json);
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(json);
             if (root == null)

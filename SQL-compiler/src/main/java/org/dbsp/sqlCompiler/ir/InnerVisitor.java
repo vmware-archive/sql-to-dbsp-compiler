@@ -73,6 +73,16 @@ public abstract class InnerVisitor {
         return true;
     }
 
+    public boolean preorder(DBSPAggregate node) {
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
+        else return true;
+    }
+
+    public boolean preorder(DBSPAggregate.Implementation node) {
+        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
+        else return true;
+    }
+
     public boolean preorder(DBSPExpression node) {
         if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
@@ -125,11 +135,6 @@ public abstract class InnerVisitor {
 
     public boolean preorder(DBSPTypeGeoPoint node) {
         if (this.visitSuper) return this.preorder((DBSPTypeGeo) node);
-        else return true;
-    }
-
-    public boolean preorder(DBSPFile node) {
-        if (this.visitSuper) return this.preorder((IDBSPInnerNode) node);
         else return true;
     }
 
@@ -598,6 +603,14 @@ public abstract class InnerVisitor {
     @SuppressWarnings("EmptyMethod")
     public void postorder(IDBSPInnerNode ignored) {}
 
+    public void postorder(DBSPAggregate node) {
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
+    }
+
+    public void postorder(DBSPAggregate.Implementation node) {
+        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
+    }
+
     public void postorder(DBSPExpression node) {
         if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
@@ -632,10 +645,6 @@ public abstract class InnerVisitor {
 
     public void postorder(DBSPTypeGeoPoint node) {
         if (this.visitSuper) this.postorder((DBSPTypeGeo) node);
-    }
-
-    public void postorder(DBSPFile node) {
-        if (this.visitSuper) this.postorder((IDBSPInnerNode) node);
     }
 
     public void postorder(DBSPFunction node) {

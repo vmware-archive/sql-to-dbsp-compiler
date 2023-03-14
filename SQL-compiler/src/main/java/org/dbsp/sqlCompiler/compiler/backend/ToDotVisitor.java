@@ -37,7 +37,6 @@ import org.dbsp.util.Utilities;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.Objects;
 
 /**
  * This visitor dumps the circuit to a dot file so it can be visualized.
@@ -86,7 +85,7 @@ public class ToDotVisitor extends CircuitVisitor implements IModule {
         if (node.function == null)
             return "";
         DBSPExpression expression = this.getCircuit().circuit.resolve(node.function);
-        return ToRustVisitor.irToRustString(expression);
+        return ToRustInnerVisitor.toRustString(expression);
     }
 
     @Override
