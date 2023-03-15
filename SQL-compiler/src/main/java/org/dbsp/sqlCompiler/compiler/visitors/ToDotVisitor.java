@@ -69,7 +69,7 @@ public class ToDotVisitor extends CircuitVisitor implements IModule {
         this.stream.append("digraph ")
                 .append(circuit.name);
         circuit.circuit.accept(this);
-        return true;
+        return false;
     }
 
     @Override
@@ -86,7 +86,7 @@ public class ToDotVisitor extends CircuitVisitor implements IModule {
                 .newline();
     }
 
-    public static DBSPCircuit toDot(String fileName, boolean toJpg, DBSPCircuit circuit) {
+    public static void toDot(String fileName, boolean toJpg, DBSPCircuit circuit) {
         try {
             Logger.INSTANCE.from("ToDotVisitor", 1)
                     .append("Writing circuit to ")
@@ -103,7 +103,6 @@ public class ToDotVisitor extends CircuitVisitor implements IModule {
             else
                 //noinspection ResultOfMethodCallIgnored
                 tmp.delete();
-            return circuit;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

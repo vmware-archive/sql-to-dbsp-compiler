@@ -116,6 +116,14 @@ public class CompilerMain {
         String output;
         if (this.options.ioOptions.emitJson) {
             output = ToJSONVisitor.circuitToJSON(dbsp);
+        } else if (this.options.ioOptions.emitJpeg) {
+            if (this.options.ioOptions.outputFile == null) {
+                compiler.reportError(SourcePositionRange.INVALID, false, "Invalid output",
+                        "Must specify an output file when outputting jpeg");
+                return compiler.messages;
+            }
+            ToDotVisitor.toDot(this.options.ioOptions.outputFile, true, dbsp);
+            return compiler.messages;
         } else {
             StringBuilder builder = new StringBuilder();
             builder.append(ToRustHandleVisitor.generatePreamble());

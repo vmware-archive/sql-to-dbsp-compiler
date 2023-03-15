@@ -15,11 +15,6 @@ SELECT ( col0 ) DIV - - col0 + - col2 col2 FROM tab2 AS cor0 GROUP BY col0, col2
 // Calcite cannot parse this query
 // test/random/aggregates/slt_good_12.test
 SELECT DISTINCT - 15 - + - 2 FROM ( tab0 AS cor0 CROSS JOIN tab1 AS cor1 )
-// The following two queries trigger a multiplication overflow.
-// Seems like the semantics of overflow is implementation-defined in SQL.
-// test/random/aggregates/slt_good_96.test
-SELECT DISTINCT - + COUNT( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0
-SELECT DISTINCT - + COUNT ( * ) FROM tab1 AS cor0 WHERE NOT - col2 BETWEEN + col0 / 63 + 22 AND + - col2 * - col1 * - col2 * + col2 * + col1 * + - col2 * + + col0
 // MySQL allows updates/deletes in some views
 // test/evidence/slt_lang_createview.test
 DELETE FROM view1 WHERE x>0

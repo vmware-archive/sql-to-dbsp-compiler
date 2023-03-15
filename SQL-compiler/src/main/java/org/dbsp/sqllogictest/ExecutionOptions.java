@@ -143,8 +143,10 @@ public class ExecutionOptions {
                     return String.format("postgresql://localhost?dbname=slt&user=%s&password=%s", this.user,
                                          this.password);
                 case MYSQL:
+                    return String.format("mysql://Server=localhost;Database=slt;Uid=%s;Pwd=%s", this.user,
+                            this.password);
                 default:
-                    throw new Unimplemented();
+                    break;
             }
         }
         throw new Unimplemented(String.format("Unsupported input source or DB dialect: inputSource=%s dialect=%s",
