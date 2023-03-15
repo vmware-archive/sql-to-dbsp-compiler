@@ -229,7 +229,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         // Generates a read_table(<conn>, <table_name>, <mapper from |AnyRow| -> Tuple type>) invocation
         DBSPTypeUser sqliteRowType = new DBSPTypeUser(null, "AnyRow", false);
         DBSPVariablePath rowVariable = new DBSPVariablePath("row", sqliteRowType);
-        DBSPExpression[] fields = BaseSQLTests.e0NoDouble.fields;// Should be the same for e1NoDouble too
+        DBSPExpression[] fields = BaseSQLTests.e0NoDouble.fields; // Should be the same for e1NoDouble too
         final List<DBSPExpression> rowGets = new ArrayList<>(fields.length);
         for (int i = 0; i < fields.length; i++) {
             DBSPApplyMethodExpression rowGet =
