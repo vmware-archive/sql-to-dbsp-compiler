@@ -27,10 +27,24 @@ current version of the DBSP library sources from github
 
 The testing programs use sqllogictest -- see the [section on testing](#testing)
 
-Some tests use Postgres.  To run these tests you need to create a
-database named `slt` and a user account in the database.  In the
-`run-tests.sh` script you should replace the `-u user` with the user
-name you have created, and `-p password` with the user's password.
+Some tests use Postgres (see below the section on testing).  To run
+these tests you need to create a database named `slt` and a user
+account in the database.  In the `run-tests.sh` script you should
+replace the `-u user` with the user name you have created, and `-p
+password` with the user's password.
+
+## Rust compilation errors
+
+If you get Rust compilation errors you should try to make sure you
+have the latest version of the Rust libraries and toolchain:
+
+```
+$ rustup update
+$ cd temp
+$ cargo update
+```
+
+(`temp` is the directory where the tests write the generated Rust code.)
 
 ## Documentation
 
