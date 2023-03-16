@@ -132,10 +132,8 @@ public class Main {
         String[] args = {
                 "-s",                   // do not validate command status
                 "-e", "hybrid",         // hybrid executor DBSP + JDBC
-                //"-b", "psqlsltbugs.txt",// list of tests to exclude
                 //"-i",                 // incremental (streaming) testing
                 //"-j",                 // Validate JSON IR.
-                "-d", "oracle",         // SQL dialect to use
                 "-u", "postgres",       // database user name
                 "-p", "password",       // database password
                 "-l", "db"              // can be csv or db
