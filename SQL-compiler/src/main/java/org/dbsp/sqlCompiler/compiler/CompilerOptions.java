@@ -76,7 +76,7 @@ public class CompilerOptions {
         public String inputFile = null;
         @Parameter(names = "-f", description = "Name of function to generate")
         public String functionName = "circuit";
-        @Parameter(names = "-d",
+        @Parameter(names = "-d", description = "SQL syntax dialect used",
                    converter = SqlLexicalRulesConverter.class)
         public Lex lexicalRules;
 

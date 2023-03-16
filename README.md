@@ -120,14 +120,27 @@ Usage: sql-to-dbsp [options] Input file to compile
   Options:
     -h, --help, -
       Show this message and exit
+    -O0
+      Do not optimize
+      Default: false
     -d
-      Options: [BIG_QUERY, ORACLE, MYSQL, MYSQL_ANSI, SQL_SERVER, JAVA]
+      SQL syntax dialect used
       Default: ORACLE
+      Possible Values: [BIG_QUERY, ORACLE, MYSQL, MYSQL_ANSI, SQL_SERVER, JAVA]
     -f
       Name of function to generate
       Default: circuit
     -i
       Generate an incremental circuit
+      Default: false
+    -j
+      Emit JSON instead of Rust
+      Default: false
+    -je
+      Emit error messages as a JSON array to stderr
+      Default: false
+    -jpg
+      Emit a jpg image of the circuit instead of Rust
       Default: false
     -o
       Output file; stdout if null
@@ -268,9 +281,9 @@ sending the statements and queries to a database to be executed.  Any
 database that supports JDBC and can handle the correct syntax of the
 queries can be used.
 
-To use this executor you have to install Postgres.
+To use this executor you have to install Postgres:
 
-- Download from <https://www.postgresql.org/download/>.
+- Download Postgress from <https://www.postgresql.org/download/>.
 
 - Connecting to Postgres also requires a JDBC driver for your platform.
 The maven pom.xml file already includes the Postgres driver.
