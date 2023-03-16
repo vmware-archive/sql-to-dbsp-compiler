@@ -27,11 +27,24 @@ current version of the DBSP library sources from github
 
 The testing programs use sqllogictest -- see the [section on testing](#testing)
 
-Some tests use MySQL or Postgres.  To run these tests you need to
-create a database named `slt` and a user account in the database.  In
-the `run-tests.sh` script you should replace the `-u user` with the
-user name you have created, and `-p password` with the user's
-password.
+Some tests use Postgres (see below the section on testing).  To run
+these tests you need to create a database named `slt` and a user
+account in the database.  In the `run-tests.sh` script you should
+replace the `-u user` with the user name you have created, and `-p
+password` with the user's password.
+
+## Rust compilation errors
+
+If you get Rust compilation errors you should try to make sure you
+have the latest version of the Rust libraries and toolchain:
+
+```
+$ rustup update
+$ cd temp
+$ cargo update
+```
+
+(`temp` is the directory where the tests write the generated Rust code.)
 
 ## Documentation
 
@@ -121,14 +134,27 @@ Usage: sql-to-dbsp [options] Input file to compile
   Options:
     -h, --help, -
       Show this message and exit
+    -O0
+      Do not optimize
+      Default: false
     -d
-      Options: [BIG_QUERY, ORACLE, MYSQL, MYSQL_ANSI, SQL_SERVER, JAVA]
+      SQL syntax dialect used
       Default: ORACLE
+      Possible Values: [BIG_QUERY, ORACLE, MYSQL, MYSQL_ANSI, SQL_SERVER, JAVA]
     -f
       Name of function to generate
       Default: circuit
     -i
       Generate an incremental circuit
+      Default: false
+    -j
+      Emit JSON instead of Rust
+      Default: false
+    -je
+      Emit error messages as a JSON array to stderr
+      Default: false
+    -jpg
+      Emit a jpg image of the circuit instead of Rust
       Default: false
     -o
       Output file; stdout if null
@@ -269,19 +295,20 @@ sending the statements and queries to a database to be executed.  Any
 database that supports JDBC and can handle the correct syntax of the
 queries can be used.
 
-To use this executor you have to install a suitable database and its
-JDBC connector; we have tested with MySQL and Postgres.
-For example, you can install MySQL:
+To use this executor you have to install Postgres:
 
-- Downloadable from <https://dev.mysql.com/downloads/mysql>.
+- Download Postgress from <https://www.postgresql.org/download/>.
 
-- Connecting to MySQL also requires a JDBC driver for your platform.
-The maven pom.xml file already includes the mysql driver, you should
-add the jar for your favorite DB.
+- Connecting to Postgres also requires a JDBC driver for your platform.
+The maven pom.xml file already includes the Postgres driver.
 
 - If you want to run these tests you need to create a database named
-`slt` (from Sql Logic Test), and an appropriate user account.  Details
-about the account and password are supplied as constructor parameters.
+`slt` (from Sql Logic Test), and an appropriate user account.  The
+following [blog
+post](https://medium.com/@mohammedhammoud/postgresql-create-user-create-database-grant-privileges-access-aabb2507c0aa)]
+explains how do this.  The username and password are supplied as
+command-line parameters to the Java testing program using the `-u user
+-p password` flags.
 
 #### The hybrid `DBSP_JDBC_Executor`
 
@@ -304,7 +331,7 @@ are detailed below.
 | random/select        | 1,120,329/0 |1,120,329/0| 1,120,329/0   |
 | random/groupby       |   118,757/0 |  118,757/0|   118,757/0   |
 | random/expr          | 1,317,682/0 |1,198,926/0| 1,198,926/0   |
-| random/aggregates    | 1,172,825/2 |1,172,825/2| 1,172,825/2   |
+| random/aggregates    | 1,172,825/2 |1,172,825/0| 1,172,825/0   |
 | select1              |     1,000/0 |    1,000/0|     1,000/0   |
 | select2              |     1,000/0 |    1,000/0|     1,000/0   |
 | select3              |     3,320/0 |    3,320/0|     3,320/0   |

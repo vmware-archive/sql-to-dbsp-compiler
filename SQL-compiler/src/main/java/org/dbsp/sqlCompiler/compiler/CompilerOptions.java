@@ -64,6 +64,8 @@ public class CompilerOptions {
         public String outputFile = null;
         @Parameter(names = "-j", description = "Emit JSON instead of Rust")
         public boolean emitJson = false;
+        @Parameter(names = "-jpg", description = "Emit a jpg image of the circuit instead of Rust")
+        public boolean emitJpeg = false;
         @Parameter(names = "-je", description = "Emit error messages as a JSON array to stderr")
         public boolean emitJsonErrors = false;
         @Parameter(names = "-js", description = "File containing schemas of all views and tables involved (in json)")
@@ -74,7 +76,7 @@ public class CompilerOptions {
         public String inputFile = null;
         @Parameter(names = "-f", description = "Name of function to generate")
         public String functionName = "circuit";
-        @Parameter(names = "-d",
+        @Parameter(names = "-d", description = "SQL syntax dialect used",
                    converter = SqlLexicalRulesConverter.class)
         public Lex lexicalRules;
 

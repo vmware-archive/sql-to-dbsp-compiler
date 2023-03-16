@@ -24,7 +24,7 @@ public class EndToEndTests extends BaseSQLTests {
      * | 10 |  1.0 | false | Hi | Some[1] |  0.0 |
      * -------------------------------------------
      *
-     * INSERT INTO T VALUES (10, 12, true, 'Hi'. NULL, NULL);
+     * INSERT INTO T VALUES (10, 12, true, 'Hi', NULL, NULL);
      * INSERT INTO T VALUES (10, 1.0, false, 'Hi', 1, 0.0);
      */
 

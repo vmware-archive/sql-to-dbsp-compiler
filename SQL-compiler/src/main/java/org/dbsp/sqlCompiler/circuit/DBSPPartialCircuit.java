@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSourceOperator;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPVariablePath;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeRawTuple;
@@ -47,6 +48,7 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
     public final List<DBSPSinkOperator> outputOperators = new ArrayList<>();
     // This is the structure that is visited.
     public final List<IDBSPNode> code = new ArrayList<>();
+    public final Map<String, IDBSPDeclaration> declarations = new HashMap<>();
     public final Map<String, DBSPOperator> operatorDeclarations = new HashMap<>();
     public final DBSPCompiler compiler;
 
@@ -98,6 +100,7 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
 
     public void declare(IDBSPDeclaration declaration) {
         this.code.add(declaration);
+        this.declarations.put(declaration.getName(), declaration);
     }
 
     public DBSPLetStatement declareLocal(String prefix, DBSPExpression init) {
@@ -127,6 +130,17 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
         if (this == other)
             return true;
         return Linq.same(this.code, other.code);
+    }
+
+    public DBSPExpression resolve(DBSPExpression expression) {
+        while (expression.is(DBSPVariablePath.class)) {
+            String name = expression.to(DBSPVariablePath.class).variable;
+            if (this.declarations.containsKey(name)) {
+                DBSPLetStatement stat = this.declarations.get(name).to(DBSPLetStatement.class);
+                expression = Objects.requireNonNull(stat.initializer);
+            }
+        }
+        return expression;
     }
 
     /**

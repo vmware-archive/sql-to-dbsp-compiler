@@ -26,7 +26,10 @@ package org.dbsp.sqlCompiler.compiler.visitors;
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPSourceOperator;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.util.IModule;
 import org.dbsp.util.IndentStream;
 import org.dbsp.util.Logger;
@@ -34,6 +37,7 @@ import org.dbsp.util.Utilities;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Objects;
 
 /**
  * This visitor dumps the circuit to a dot file so it can be visualized.
@@ -48,12 +52,16 @@ public class ToDotVisitor extends CircuitVisitor implements IModule {
     }
 
     @Override
-    public boolean preorder(DBSPOperator node) {
+    public boolean preorder(DBSPSourceOperator node) {
         this.stream.append(node.outputName)
                 .append(" [ shape=box,label=\"")
-                .append(node.toString())
+                .append(node.outputName)
                 .append("\" ]")
                 .newline();
+        return false;
+    }
+
+    void addInputs(DBSPOperator node) {
         for (DBSPOperator input: node.inputs) {
             this.stream.append(input.outputName)
                     .append(" -> ")
@@ -61,15 +69,46 @@ public class ToDotVisitor extends CircuitVisitor implements IModule {
                     .append(";")
                     .newline();
         }
+    }
+
+    @Override
+    public boolean preorder(DBSPSinkOperator node) {
+        this.stream.append(node.outputName)
+                .append(" [ shape=box,label=\"")
+                .append(node.outputName)
+                .append("\" ]")
+                .newline();
+        this.addInputs(node);
+        return false;
+    }
+
+    String getFunction(DBSPOperator node) {
+        if (node.function == null)
+            return "";
+        DBSPExpression expression = this.getCircuit().circuit.resolve(node.function);
+        return ToRustVisitor.irToRustString(expression);
+    }
+
+    @Override
+    public boolean preorder(DBSPOperator node) {
+        this.stream.append(node.outputName)
+                .append(" [ shape=box,label=\"")
+                .append(node.operation)
+                .append("(")
+                .append(this.getFunction(node))
+                .append(")\" ]")
+                .newline();
+        this.addInputs(node);
         return false;
     }
 
     @Override
     public boolean preorder(DBSPCircuit circuit) {
+        this.setCircuit(circuit);
         this.stream.append("digraph ")
                 .append(circuit.name);
         circuit.circuit.accept(this);
-        return true;
+        return false;
     }
 
     @Override
@@ -86,7 +125,7 @@ public class ToDotVisitor extends CircuitVisitor implements IModule {
                 .newline();
     }
 
-    public static DBSPCircuit toDot(String fileName, boolean toJpg, DBSPCircuit circuit) {
+    public static void toDot(String fileName, boolean toJpg, DBSPCircuit circuit) {
         try {
             Logger.INSTANCE.from("ToDotVisitor", 1)
                     .append("Writing circuit to ")
@@ -103,7 +142,6 @@ public class ToDotVisitor extends CircuitVisitor implements IModule {
             else
                 //noinspection ResultOfMethodCallIgnored
                 tmp.delete();
-            return circuit;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

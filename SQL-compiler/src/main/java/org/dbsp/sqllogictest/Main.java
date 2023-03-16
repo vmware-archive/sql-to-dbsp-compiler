@@ -105,9 +105,9 @@ public class Main {
     @SuppressWarnings("SpellCheckingInspection")
     public static void main(String[] argv) throws IOException {
         SqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
-        String benchDir = "../../sqllogictest/test";
+        String benchDir = "../../sqllogictest/test/";
         List<String> files = Linq.list(
-                "random/expr/slt_good_7.test"
+                "random/aggregates/slt_good_96.test"
                 /*
                 "random/aggregates",
                 "random/select",
@@ -132,10 +132,8 @@ public class Main {
         String[] args = {
                 "-s",                   // do not validate command status
                 "-e", "hybrid",         // hybrid executor DBSP + JDBC
-                "-b", "psqlsltbugs.txt",// list of tests to exclude
-                "-i",                   // incremental (streaming) testing
-                "-j",                   // Validate JSON IR.
-                "-d", "oracle",         // SQL dialect to use
+                //"-i",                 // incremental (streaming) testing
+                //"-j",                 // Validate JSON IR.
                 "-u", "postgres",       // database user name
                 "-p", "password",       // database password
                 "-l", "db"              // can be csv or db

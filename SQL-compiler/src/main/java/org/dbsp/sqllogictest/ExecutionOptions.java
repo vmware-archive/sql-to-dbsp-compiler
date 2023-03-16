@@ -30,7 +30,6 @@ import com.beust.jcommander.ParameterException;
 import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqllogictest.executors.*;
-import org.dbsp.util.SqlLexicalRulesConverter;
 import org.dbsp.util.Unimplemented;
 import org.dbsp.util.UnsupportedException;
 
@@ -68,8 +67,6 @@ public class ExecutionOptions {
     boolean doNotExecute;
     @Parameter(names = "-e", validateWith = ExecutorValidator.class)
     String executor = "none";
-    @Parameter(names = "-d", converter = SqlLexicalRulesConverter.class)
-    Lex lexicalRules = Lex.ORACLE;
     @Parameter(names = "-u", description = "Name of user to use for database")
     String user = "user";
     @Parameter(names = "-p", description = "Password of user for the database")
@@ -79,10 +76,11 @@ public class ExecutionOptions {
     @Parameter(names = "-b", description = "Load a list of buggy commands to skip from this file")
     @Nullable
     String bugsFile = null;
-    @Parameter(names = "-l", description = "Input source for DBSP program (choices: csv, db)")
+    @Parameter(names = "-l", description = "How the test programs store intermediate data from the database (choices: csv, db)")
     @Nullable
     String inputSource = "csv";
-    @Parameter(names = "-j", description = "Validate JSON IR representation while compiling")
+    // @Parameter(names = "-j", description = "Validate JSON JIT IR representation while compiling")
+    // TODO: reenable this when the JIT compiler works properly
     boolean validateJson = false;
 
     static class PostgresPolicy implements AcceptancePolicy {
@@ -93,17 +91,6 @@ public class ExecutionOptions {
             if (!only.isEmpty())
                 return false;
             return !skip.contains("postgresql");
-        }
-    }
-
-    static class MySqlPolicy implements AcceptancePolicy {
-        @Override
-        public boolean accept(List<String> skip, List<String> only) {
-            if (only.contains("mysql"))
-                return true;
-            if (!only.isEmpty())
-                return false;
-            return !skip.contains("mysql");
         }
     }
 
@@ -123,14 +110,7 @@ public class ExecutionOptions {
     }
 
     String jdbcConnectionString() {
-        switch (this.lexicalRules) {
-            case MYSQL:
-                return "jdbc:mysql://localhost/slt";
-            case ORACLE:
-                return "jdbc:postgresql://localhost/slt";
-            default:
-                throw new RuntimeException();
-        }
+        return "jdbc:postgresql://localhost/slt";
     }
 
     String connectionString() {
@@ -138,32 +118,19 @@ public class ExecutionOptions {
         if (this.inputSource.equals("csv")) {
             return "csv";
         } else if (this.inputSource.equals("db")) {
-            switch (this.lexicalRules) {
-                case ORACLE:
-                    return String.format("postgresql://localhost?dbname=slt&user=%s&password=%s", this.user,
+            return String.format("postgresql://localhost?dbname=slt&user=%s&password=%s", this.user,
                                          this.password);
-                case MYSQL:
-                default:
-                    throw new Unimplemented();
-            }
         }
-        throw new Unimplemented(String.format("Unsupported input source or DB dialect: inputSource=%s dialect=%s",
-                                              this.inputSource, this.lexicalRules));
+        throw new Unimplemented(String.format("Unsupported input source or DB dialect: inputSource=%s",
+                                              this.inputSource));
     }
 
     AcceptancePolicy getAcceptancePolicy() {
-        switch (this.lexicalRules) {
-            case MYSQL:
-                return new MySqlPolicy();
-            case ORACLE:
-                return new PostgresPolicy();
-            default:
-                throw new RuntimeException();
-        }
+        return new PostgresPolicy();
     }
 
     JDBCExecutor jdbcExecutor(HashSet<String> sltBugs) {
-        JDBCExecutor jdbc =  new JDBCExecutor(this.jdbcConnectionString(), this.lexicalRules,
+        JDBCExecutor jdbc =  new JDBCExecutor(this.jdbcConnectionString(),
                 this.user, this.password);
         jdbc.avoid(sltBugs);
         jdbc.setValidateStatus(this.validateStatus);
@@ -177,7 +144,7 @@ public class ExecutionOptions {
         }
 
         CompilerOptions options = new CompilerOptions();
-        options.ioOptions.lexicalRules = this.lexicalRules;
+        options.ioOptions.lexicalRules = Lex.ORACLE;
         options.optimizerOptions.incrementalize = this.incremental;
 
         switch (this.executor) {
@@ -222,7 +189,6 @@ public class ExecutionOptions {
                 ", incremental=" + this.incremental +
                 ", execute=" + !this.doNotExecute +
                 ", executor=" + this.executor +
-                ", dialect=" + this.lexicalRules +
                 '}';
     }
 }

@@ -54,7 +54,8 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
      * @param options Compilation options.
      */
     public DBSP_JDBC_Executor(JDBCExecutor executor,
-                              boolean validateJson, boolean execute, CompilerOptions options,
+                              boolean execute, boolean validateJson,
+                              CompilerOptions options,
                               String connectionString) {
         super(execute, validateJson, options, connectionString);
         this.statementExecutor = executor;

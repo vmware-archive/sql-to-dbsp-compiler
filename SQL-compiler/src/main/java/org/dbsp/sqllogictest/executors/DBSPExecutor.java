@@ -258,6 +258,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         final List<ProgramAndTester> codeGenerated = new ArrayList<>();
         // Create input tables
         this.createTables(compiler);
+        compiler.throwOnError();
         // Create function which generates inputs for all tests in this batch.
         // We know that all these tests consume the same input tables.
         TableValue[] inputSets = this.getInputSets(compiler);
@@ -312,9 +313,11 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         compiler.generateOutputForNextView(false);
         for (SqlStatement view: viewPreparation.definitions()) {
             compiler.compileStatement(view.statement, view.statement);
+            compiler.throwOnError();
         }
         compiler.generateOutputForNextView(true);
         compiler.compileStatement(dbspQuery, testQuery.name);
+        compiler.throwOnError();
         compiler.optimize();
         DBSPCircuit dbsp = compiler.getFinalCircuit("gen" + suffix);
         //ToDotVisitor.toDot("circuit.jpg", true, dbsp);

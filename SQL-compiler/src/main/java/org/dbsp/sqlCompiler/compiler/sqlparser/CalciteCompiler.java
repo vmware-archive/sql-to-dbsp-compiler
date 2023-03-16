@@ -206,6 +206,7 @@ public class CalciteCompiler implements IModule {
         rootSchema.add("INT2", factory -> factory.createSqlType(SqlTypeName.SMALLINT));
         rootSchema.add("INT8", factory -> factory.createSqlType(SqlTypeName.BIGINT));
         rootSchema.add("INT4", factory -> factory.createSqlType(SqlTypeName.INTEGER));
+        rootSchema.add("SIGNED", factory -> factory.createSqlType(SqlTypeName.INTEGER));
         rootSchema.add("INT64", factory -> factory.createSqlType(SqlTypeName.BIGINT));
         rootSchema.add("FLOAT64", factory -> factory.createSqlType(SqlTypeName.DOUBLE));
         rootSchema.add("FLOAT32", factory -> factory.createSqlType(SqlTypeName.FLOAT));

@@ -45,8 +45,13 @@ import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
+import sun.awt.image.FileImageSource;
+import sun.awt.image.ImageFormatException;
+import sun.awt.image.JPEGImageDecoder;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -224,7 +229,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         // Generates a read_table(<conn>, <table_name>, <mapper from |AnyRow| -> Tuple type>) invocation
         DBSPTypeUser sqliteRowType = new DBSPTypeUser(null, "AnyRow", false);
         DBSPVariablePath rowVariable = new DBSPVariablePath("row", sqliteRowType);
-        DBSPExpression[] fields = BaseSQLTests.e0NoDouble.fields;// Should be the same for e1NoDouble too
+        DBSPExpression[] fields = BaseSQLTests.e0NoDouble.fields; // Should be the same for e1NoDouble too
         final List<DBSPExpression> rowGets = new ArrayList<>(fields.length);
         for (int i = 0; i < fields.length; i++) {
             DBSPApplyMethodExpression rowGet =
@@ -354,6 +359,30 @@ public class OtherTests extends BaseSQLTests implements IModule {
         boolean success = file.delete();
         Assert.assertTrue(success);
         success = json.delete();
+        Assert.assertTrue(success);
+    }
+
+    @Test
+    public void testCompilerToJpeg() throws IOException, ImageFormatException {
+        String[] statements = new String[]{
+                "CREATE TABLE T (\n" +
+                        "COL1 INT NOT NULL" +
+                        ", COL2 DOUBLE NOT NULL" +
+                        ")",
+                "CREATE VIEW V AS SELECT COL1 FROM T WHERE COL1 > 5"
+        };
+        File file = this.createInputScript(statements);
+        File jpg = File.createTempFile("out", ".jpg", new File("."));
+        CompilerMessages message = CompilerMain.execute("-jpg", "-o", jpg.getPath(), file.getPath());
+        Assert.assertEquals(message.exitCode, 0);
+        Assert.assertTrue(file.exists());
+        JPEGImageDecoder decoder = new JPEGImageDecoder(
+                new FileImageSource(jpg.getPath()),
+                Files.newInputStream(Paths.get(jpg.getPath())));
+        decoder.produceImage();
+        boolean success = file.delete();
+        Assert.assertTrue(success);
+        success = jpg.delete();
         Assert.assertTrue(success);
     }
 
