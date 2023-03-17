@@ -8,7 +8,7 @@ import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;

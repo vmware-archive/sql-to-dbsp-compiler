@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.compiler.backend;
 
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
@@ -104,7 +104,7 @@ public class ToRustHandleVisitor extends ToRustVisitor {
                 .append("let (circuit, handles) = Runtime::init_circuit(workers, |circuit| {")
                 .increase();
 
-        for (IDBSPNode node : circuit.code)
+        for (IDBSPNode node : circuit.getCode())
             super.processNode(node);
         this.builder.append("(");
         for (int i = 0; i < this.handleCount; i++)
@@ -142,13 +142,5 @@ public class ToRustHandleVisitor extends ToRustVisitor {
                 .append("}")
                 .newline();
         return false;
-    }
-
-    public static String toRustString(IDBSPOuterNode node, String functionName) {
-        StringBuilder builder = new StringBuilder();
-        IndentStream stream = new IndentStream(builder);
-        ToRustVisitor visitor = new ToRustHandleVisitor(stream, functionName);
-        node.accept(visitor);
-        return builder.toString();
     }
 }

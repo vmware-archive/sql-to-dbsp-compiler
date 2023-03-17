@@ -21,30 +21,25 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir;
+package org.dbsp.sqlCompiler.compiler.backend;
 
-import org.dbsp.sqlCompiler.circuit.DBSPNode;
-import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
-import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 
-import java.util.List;
+import java.util.function.Function;
 
 /**
- * Abstraction for a (Rust) file containing a series of DBSP declarations.
+ * This visitor just applies a user-defined function to a circuit.
  */
-public class DBSPFile extends DBSPNode implements IDBSPInnerNode {
-    public final List<IDBSPDeclaration> declarations;
-
-    public DBSPFile(List<IDBSPDeclaration> declarations) {
-        super(null);
-        this.declarations = declarations;
+public class FunctorVisitor extends CircuitVisitor {
+    private final Function<DBSPCircuit, DBSPCircuit> transformation;
+    public FunctorVisitor(Function<DBSPCircuit, DBSPCircuit> transform) {
+        super(false);
+        this.transformation = transform;
     }
 
     @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        for (IDBSPDeclaration decl: this.declarations)
-            decl.accept(visitor);
-        visitor.postorder(this);
+    public DBSPCircuit apply(DBSPCircuit node) {
+        return this.transformation.apply(node);
     }
 }

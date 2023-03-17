@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.ir.type;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * A type of the form &type.
@@ -49,6 +50,11 @@ public class DBSPTypeRef extends DBSPType {
         if (mayBeNull)
             throw new RuntimeException("Reference types cannot be null");
         return this;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), type.hashCode(), mutable);
     }
 
     public boolean sameType(@Nullable DBSPType other) {

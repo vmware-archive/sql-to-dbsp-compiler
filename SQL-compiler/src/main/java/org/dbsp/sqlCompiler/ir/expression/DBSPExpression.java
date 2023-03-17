@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPCloneExpression;
+import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.type.IHasType;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
@@ -65,8 +66,25 @@ public abstract class DBSPExpression
         return new DBSPBorrowExpression(this);
     }
 
+    public DBSPExpression borrow(boolean mutable) {
+        return new DBSPBorrowExpression(this, mutable);
+    }
+
     public DBSPExpression field(int index) {
         return new DBSPFieldExpression(this, index);
+    }
+
+    /**
+     * Convenient shortcut to wrap an expression into a Some() constructor.
+     */
+    public DBSPExpression some() {
+        DBSPType type = this.getNonVoidType();
+        /*
+        if (type.mayBeNull)
+            throw new RuntimeException("Wrapping nullable value in Some " + this);
+         */
+        type = type.setMayBeNull(true);
+        return new DBSPStructExpression(type.path(new DBSPPath("Some")), type, this);
     }
 
     public DBSPClosureExpression closure(DBSPParameter... parameters) {

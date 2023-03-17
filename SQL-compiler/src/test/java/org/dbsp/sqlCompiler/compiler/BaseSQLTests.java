@@ -24,13 +24,12 @@
 package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.compiler.visitors.*;
+import org.dbsp.sqlCompiler.compiler.backend.*;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
-import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
@@ -43,7 +42,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -129,14 +130,14 @@ public class BaseSQLTests {
     public static void runAllTests() throws IOException, InterruptedException {
         if (testsToRun.isEmpty())
             return;
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        writer.println(ToRustVisitor.generatePreamble());
+        PrintStream outputStream = new PrintStream(Files.newOutputStream(Paths.get(testFilePath)));
+        RustFileWriter writer = new RustFileWriter(outputStream);
         for (TestCase test: testsToRun) {
-            writer.println(ToRustVisitor.circuitToRustString(test.circuit));
+            writer.add(test.circuit);
             DBSPFunction tester = test.createTesterCode();
-            writer.println(ToRustVisitor.irToRustString(tester));
+            writer.add(tester);
         }
-        writer.close();
+        writer.writeAndClose();
         Utilities.compileAndTestRust(rustDirectory, false);
         testsToRun.clear();
     }
@@ -159,6 +160,10 @@ public class BaseSQLTests {
         try {
             query = "CREATE VIEW V AS " + query;
             DBSPCompiler compiler = this.compileQuery(query);
+            if (compiler.hasErrors()) {
+                compiler.showErrors(System.err);
+                throw new RuntimeException("Aborting test");
+            }
             DBSPCircuit circuit = getCircuit(compiler);
             circuit = new OptimizeDistinctVisitor().apply(circuit);
             if (incremental)
@@ -168,11 +173,8 @@ public class BaseSQLTests {
                 circuit = optimizer.apply(circuit);
             }
 
-            ThreeOperandVisitor tav = new ThreeOperandVisitor();
-            CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(tav);
-            circuit = rewriter.apply(circuit);
             // Test json serialization
-            ToJSONVisitor.validateJson(circuit);
+            // ToJitVisitor.validateJson(circuit);
             this.addRustTestCase(circuit, streams);
         } catch (Exception ex) {
             throw new RuntimeException(ex);

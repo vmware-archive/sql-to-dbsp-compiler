@@ -26,11 +26,9 @@ package org.dbsp.sqllogictest.executors;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.backend.*;
 import org.dbsp.sqlCompiler.compiler.frontend.ExpressionCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
-import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
-import org.dbsp.sqlCompiler.compiler.visitors.ToJSONVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -40,7 +38,6 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
-import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.sqllogictest.*;
 import org.dbsp.util.*;
@@ -61,10 +58,10 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
      * exercise it.
      */
     static class ProgramAndTester {
-        public final String program;
+        public final DBSPCircuit program;
         public final DBSPFunction tester;
 
-        ProgramAndTester(String program, DBSPFunction tester) {
+        ProgramAndTester(DBSPCircuit program, DBSPFunction tester) {
             this.program = program;
             this.tester = tester;
         }
@@ -143,9 +140,9 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             seen.add(tables[i].tableName);
         }
 
-        // If the data is large write it to a set of CSV files and read it at runtime.
         if (totalSize > 10) {
             if (connectionString.equals("csv")) {
+                // If the data is large write, it to a set of CSV files and read it at runtime.
                 for (int i = 0; i < tables.length; i++) {
                     String fileName = (rustDirectory + tables[i].tableName) + ".csv";
                     ToCsvVisitor.toCsv(fileName, tables[i].contents);
@@ -381,15 +378,14 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 throw new RuntimeException("No hash or outputs specified");
         }
 
-        String rust = ToRustVisitor.circuitToRustString(dbsp);
         if (this.validateJson)
-            ToJSONVisitor.validateJson(dbsp);
+            ToJitVisitor.validateJson(dbsp);
         DBSPFunction func = createTesterCode(
                 "tester" + suffix, dbsp,
                 inputGeneratingFunction,
                 compiler.getTableContents(),
                 expectedOutput, testQuery.outputDescription);
-        return new ProgramAndTester(rust, func);
+        return new ProgramAndTester(dbsp, func);
     }
 
     void cleanupFilesystem() {
@@ -648,16 +644,16 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
     ) throws FileNotFoundException, UnsupportedEncodingException {
         String genFileName = testFileName + ".rs";
         String testFilePath = rustDirectory + "/" + genFileName;
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        writer.println(ToRustVisitor.generatePreamble());
+        PrintStream stream = new PrintStream(testFilePath, "UTF-8");
+        RustFileWriter rust = new RustFileWriter(stream);
 
         for (DBSPFunction function: inputFunctions)
-            writer.println(ToRustVisitor.irToRustString(function));
+            rust.add(function);
         for (ProgramAndTester pt: functions) {
-            writer.println(pt.program);
-            writer.println(ToRustVisitor.irToRustString(pt.tester));
+            rust.add(pt.program);
+            rust.add(pt.tester);
         }
-        writer.close();
+        rust.writeAndClose();
         return testFileName;
     }
 }

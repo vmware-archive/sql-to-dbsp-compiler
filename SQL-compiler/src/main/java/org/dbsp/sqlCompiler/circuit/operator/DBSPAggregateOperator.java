@@ -24,24 +24,32 @@
 package org.dbsp.sqlCompiler.circuit.operator;
 
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Objects;
 
 public class DBSPAggregateOperator extends DBSPUnaryOperator {
     public final DBSPType keyType;
     public final DBSPType outputElementType;
+    @Nullable
+    public final DBSPAggregate aggregate;
 
-    public DBSPAggregateOperator(@Nullable Object node, DBSPExpression function,
-                                 DBSPType keyType, DBSPType outputElementType, DBSPOperator input) {
+    public DBSPAggregateOperator(@Nullable Object node,
+                                 DBSPType keyType, DBSPType outputElementType,
+                                 @Nullable
+                                 DBSPExpression function,
+                                 @Nullable
+                                 DBSPAggregate aggregate,
+                                 DBSPOperator input) {
         super(node, "stream_aggregate", function,
                 new DBSPTypeIndexedZSet(node, keyType, outputElementType), false, input);
         this.keyType = keyType;
         this.outputElementType = outputElementType;
+        this.aggregate = aggregate;
     }
 
     @Override
@@ -52,15 +60,17 @@ public class DBSPAggregateOperator extends DBSPUnaryOperator {
 
     @Override
     public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
-        return new DBSPAggregateOperator(this.getNode(), Objects.requireNonNull(expression),
-                this.keyType, this.outputElementType, this.input());
+        return new DBSPAggregateOperator(this.getNode(),
+                this.keyType, this.outputElementType, expression,
+                this.aggregate, this.input());
     }
 
     @Override
     public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPAggregateOperator(
-                    this.getNode(), this.getFunction(), this.keyType, this.outputElementType, newInputs.get(0));
+                    this.getNode(), this.keyType, this.outputElementType, this.function,
+                    this.aggregate, newInputs.get(0));
         return this;
     }
 }

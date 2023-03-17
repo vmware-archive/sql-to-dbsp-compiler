@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeTupleBase;
 
 import javax.annotation.Nullable;
 
@@ -52,7 +52,7 @@ public class DBSPFieldExpression extends DBSPExpression {
     static DBSPType getFieldType(DBSPType type, int fieldNo) {
         if (type.is(DBSPTypeAny.class))
             return type;
-        DBSPTypeTuple tuple = type.toRef(DBSPTypeTuple.class);
+        DBSPTypeTupleBase tuple = type.toRef(DBSPTypeTupleBase.class);
         return tuple.getFieldType(fieldNo);
     }
 

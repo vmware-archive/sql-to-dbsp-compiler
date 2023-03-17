@@ -26,12 +26,13 @@ package org.dbsp.sqlCompiler.compiler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.dbsp.sqlCompiler.compiler.backend.RustFileWriter;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
 import org.dbsp.sqlCompiler.CompilerMain;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.visitors.ToCsvVisitor;
-import org.dbsp.sqlCompiler.compiler.visitors.ToRustVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.backend.ToCsvVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -160,10 +161,9 @@ public class OtherTests extends BaseSQLTests implements IModule {
         compiler.compileStatement(statement1);
         compiler.compileStatement(statement2);
         DBSPCircuit circuit = compiler.getFinalCircuit("circuit");
-        PrintWriter writer = new PrintWriter(testFilePath, "UTF-8");
-        writer.println(ToRustVisitor.generatePreamble());
-        writer.println(ToRustVisitor.circuitToRustString(circuit));
-        writer.close();
+        RustFileWriter writer = new RustFileWriter(testFilePath);
+        writer.add(circuit);
+        writer.writeAndClose();
         Utilities.compileAndTestRust(rustDirectory, false);
     }
 
@@ -199,11 +199,9 @@ public class OtherTests extends BaseSQLTests implements IModule {
         DBSPFunction tester = new DBSPFunction("test", new ArrayList<>(), null, body)
                 .addAnnotation("#[test]");
 
-        PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
-        rustWriter.println(ToRustVisitor.generatePreamble());
-        rustWriter.println(ToRustVisitor.circuitToRustString(tester));
-        rustWriter.close();
-
+        RustFileWriter writer = new RustFileWriter(BaseSQLTests.testFilePath);
+        writer.add(tester);
+        writer.writeAndClose();
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
         boolean success = file.delete();
         Assert.assertTrue(success);
@@ -253,11 +251,9 @@ public class OtherTests extends BaseSQLTests implements IModule {
         DBSPFunction tester = new DBSPFunction("test", new ArrayList<>(), null, body)
                 .addAnnotation("#[test]");
 
-        PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
-        rustWriter.println(ToRustVisitor.generatePreamble());
-        rustWriter.println(ToRustVisitor.circuitToRustString(tester));
-        rustWriter.close();
-
+        RustFileWriter writer = new RustFileWriter(BaseSQLTests.testFilePath);
+        writer.add(tester);
+        writer.writeAndClose();
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
         boolean success = new File(filepath).delete();
         Assert.assertTrue(success);
@@ -284,17 +280,16 @@ public class OtherTests extends BaseSQLTests implements IModule {
         DBSPFunction tester = new DBSPFunction("test", new ArrayList<>(), null, body)
                 .addAnnotation("#[test]");
 
-        PrintWriter rustWriter = new PrintWriter(BaseSQLTests.testFilePath, "UTF-8");
-        rustWriter.println(ToRustVisitor.generatePreamble());
-        rustWriter.println(ToRustVisitor.circuitToRustString(tester));
-        rustWriter.close();
-
+        PrintStream outputStream = new PrintStream(BaseSQLTests.testFilePath, "UTF-8");
+        RustFileWriter writer = new RustFileWriter(outputStream);
+        writer.add(tester);
+        writer.writeAndClose();
         Utilities.compileAndTestRust(BaseSQLTests.rustDirectory, false);
         boolean success = file.delete();
         Assert.assertTrue(success);
     }
 
-    File createInputScript(String[] contents) throws FileNotFoundException, UnsupportedEncodingException {
+    File createInputScript(String... contents) throws FileNotFoundException, UnsupportedEncodingException {
         String inputScript = rustDirectory + "/script.sql";
         PrintWriter script = new PrintWriter(inputScript, "UTF-8");
         script.println(String.join(";\n", contents));
@@ -329,7 +324,9 @@ public class OtherTests extends BaseSQLTests implements IModule {
         };
         File file = this.createInputScript(statements);
         File json = File.createTempFile("out", ".json", new File("."));
-        CompilerMessages message = CompilerMain.execute("-js", json.getPath(), file.getPath());
+        File tmp = File.createTempFile("out", ".rs", new File("."));
+        CompilerMessages message = CompilerMain.execute(
+                "-js", json.getPath(), "-o", tmp.getPath(), file.getPath());
         Assert.assertEquals(message.exitCode, 0);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode parsed = mapper.readTree(json);
@@ -337,6 +334,8 @@ public class OtherTests extends BaseSQLTests implements IModule {
         boolean success = file.delete();
         Assert.assertTrue(success);
         success = json.delete();
+        Assert.assertTrue(success);
+        success = tmp.delete();
         Assert.assertTrue(success);
     }
 
@@ -363,7 +362,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
     }
 
     @Test
-    public void testCompilerToJpeg() throws IOException, ImageFormatException {
+    public void testCompilerToJpeg() throws IOException {
         String[] statements = new String[]{
                 "CREATE TABLE T (\n" +
                         "COL1 INT NOT NULL" +
@@ -379,11 +378,28 @@ public class OtherTests extends BaseSQLTests implements IModule {
         JPEGImageDecoder decoder = new JPEGImageDecoder(
                 new FileImageSource(jpg.getPath()),
                 Files.newInputStream(Paths.get(jpg.getPath())));
-        decoder.produceImage();
+        try {
+            decoder.produceImage();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         boolean success = file.delete();
         Assert.assertTrue(success);
         success = jpg.delete();
         Assert.assertTrue(success);
+    }
+
+    @Test
+    public void compilerError() throws FileNotFoundException, UnsupportedEncodingException {
+        String statement = "CREATE TABLE T (\n" +
+                "  COL1 INT NOT NULL" +
+                ", COL2 GARBAGE";
+        File file = this.createInputScript(statement);
+        CompilerMessages messages = CompilerMain.execute(file.getPath());
+        Assert.assertEquals(messages.exitCode, 1);
+        Assert.assertEquals(messages.errorCount(), 1);
+        CompilerMessages.Error error = messages.messages.get(0);
+        Assert.assertTrue(error.message.startsWith("Encountered \"<EOF>\""));
     }
 
     @Test

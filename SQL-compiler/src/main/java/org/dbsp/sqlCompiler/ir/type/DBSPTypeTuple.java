@@ -24,54 +24,18 @@
 package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.path.DBSPPath;
-import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
-import org.dbsp.util.IIndentStream;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-public class DBSPTypeTuple extends DBSPType {
-    /**
-     * Keep track of the tuple sizes that appear in the program to properly generate
-     * Rust macros to instantiate them.
-     */
-    static final Set<Integer> sizesUsed = new HashSet<>();
-
-    public final DBSPType[] tupFields;
-
-    @SuppressWarnings("unused")
-    public static final DBSPTypeTuple emptyTupleType = new DBSPTypeTuple();
-
+/**
+ * A Raw Rust tuple.
+ */
+public class DBSPTypeTuple extends DBSPTypeTupleBase {
     public DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
-        super(node, mayBeNull);
-        this.tupFields = tupFields;
-        sizesUsed.add(this.tupFields.length);
-    }
-
-    public static IIndentStream preamble(IIndentStream stream) {
-        stream.append("declare_tuples! {").increase();
-        for (int i: DBSPTypeTuple.sizesUsed) {
-            if (i == 0)
-                continue;
-            stream.append("Tuple")
-                    .append(i)
-                    .append("<");
-            for (int j = 0; j < i; j++) {
-                if (j > 0)
-                    stream.append(", ");
-                stream.append("T")
-                        .append(j);
-            }
-            stream.append(">,\n");
-        }
-        sizesUsed.clear();
-        return stream.decrease()
-                .append("}\n\n");
+        super(node, mayBeNull, tupFields);
     }
 
     public DBSPTypeTuple(@Nullable Object node, DBSPType... tupFields) {
@@ -98,23 +62,11 @@ public class DBSPTypeTuple extends DBSPType {
         return this.tupFields.length;
     }
 
-    public DBSPPath toPath() {
-        return new DBSPPath(new DBSPSimplePathSegment("Tuple" + this.tupFields.length, this.tupFields));
-    }
-
     @Override
     public DBSPType setMayBeNull(boolean mayBeNull) {
         if (mayBeNull == this.mayBeNull)
             return this;
         return new DBSPTypeTuple(this.getNode(), mayBeNull, this.tupFields);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DBSPTypeTuple that = (DBSPTypeTuple) o;
-        return Arrays.equals(tupFields, that.tupFields);
     }
 
     @Override
@@ -130,12 +82,7 @@ public class DBSPTypeTuple extends DBSPType {
         if (!type.is(DBSPTypeTuple.class))
             return false;
         DBSPTypeTuple other = type.to(DBSPTypeTuple.class);
-        if (this.tupFields.length != other.tupFields.length)
-            return false;
-        for (int i = 0; i < this.tupFields.length; i++)
-            if (!this.tupFields[i].sameType(other.tupFields[i]))
-                return false;
-        return true;
+        return DBSPType.sameTypes(this.tupFields, other.tupFields);
     }
 
     public DBSPTypeTuple slice(int start, int endExclusive) {

@@ -21,28 +21,24 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.expression;
+package org.dbsp.sqlCompiler.compiler.backend;
 
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.path.DBSPPath;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPIntegralOperator;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 
 /**
- * Convenient shortcut to wrap an expression into a Some() constructor.
+ * This visitor throws if a circuit contains an integration operator.
+ * This is usually a sign that the optimizer didn't do its job properly
+ * (but there are legit streaming query circuits which would have to include integrals).
  */
-public class DBSPSomeExpression extends DBSPStructExpression {
-    public DBSPSomeExpression(DBSPExpression argument) {
-        super(argument.getNonVoidType().setMayBeNull(true).path(
-                new DBSPPath("Some")), argument.getNonVoidType().setMayBeNull(true), argument);
+public class NoIntegralVisitor extends CircuitVisitor {
+    public NoIntegralVisitor() {
+        super(false);
     }
 
     @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        if (this.type != null)
-            this.type.accept(visitor);
-        this.function.accept(visitor);
-        for (DBSPExpression arg: this.arguments)
-            arg.accept(visitor);
-        visitor.postorder(this);
+    public boolean preorder(DBSPIntegralOperator node) {
+        ToDotVisitor.toDot("circuit.jpg", true, this.getCircuit());
+        throw new RuntimeException("Circuit contains an integration operator " + node);
     }
 }

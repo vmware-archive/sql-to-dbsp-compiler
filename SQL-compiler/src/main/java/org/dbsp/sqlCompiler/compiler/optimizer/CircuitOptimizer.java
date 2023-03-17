@@ -25,7 +25,7 @@ package org.dbsp.sqlCompiler.compiler.optimizer;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
-import org.dbsp.sqlCompiler.compiler.visitors.*;
+import org.dbsp.sqlCompiler.compiler.backend.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 
 import java.util.ArrayList;

@@ -30,17 +30,15 @@ import org.dbsp.util.TranslationException;
 import javax.annotation.Nullable;
 
 public class DBSPUnaryExpression extends DBSPExpression {
-    public final DBSPExpression left;
+    public final DBSPExpression source;
     public final String operation;
 
     @SuppressWarnings("ConstantConditions")
     public DBSPUnaryExpression(@Nullable Object node, DBSPType type, String operation, DBSPExpression operand) {
         super(node, type);
         this.operation = operation;
-        this.left = operand;
-        if (operand.getNonVoidType().mayBeNull && !type.mayBeNull)
-            throw new RuntimeException("Unary operation produces non-nullable from nullable " + this);
-        if (this.left == null)
+        this.source = operand;
+        if (this.source == null)
             throw new TranslationException("Null operand", node);
     }
 
@@ -49,7 +47,7 @@ public class DBSPUnaryExpression extends DBSPExpression {
         if (!visitor.preorder(this)) return;
         if (this.type != null)
             this.type.accept(visitor);
-        this.left.accept(visitor);
+        this.source.accept(visitor);
         visitor.postorder(this);
     }
 

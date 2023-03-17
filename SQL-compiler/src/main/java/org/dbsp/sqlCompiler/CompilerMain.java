@@ -29,7 +29,7 @@ import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
 import org.dbsp.sqlCompiler.compiler.errors.SourcePositionRange;
-import org.dbsp.sqlCompiler.compiler.visitors.*;
+import org.dbsp.sqlCompiler.compiler.backend.*;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -64,15 +64,15 @@ public class CompilerMain {
         }
     }
 
-    void writeToOutput(String program, @Nullable String outputFile) throws IOException {
+    PrintStream getOutputStream() throws IOException {
         PrintStream outputStream;
+        @Nullable String outputFile = this.options.ioOptions.outputFile;
         if (outputFile == null) {
             outputStream = System.out;
         } else {
             outputStream = new PrintStream(Files.newOutputStream(Paths.get(outputFile)));
         }
-        outputStream.print(program);
-        outputStream.close();
+        return outputStream;
     }
 
     InputStream getInputFile(@Nullable String inputFile) throws IOException {
@@ -113,10 +113,7 @@ public class CompilerMain {
 
         compiler.optimize();
         DBSPCircuit dbsp = compiler.getFinalCircuit(this.options.ioOptions.functionName);
-        String output;
-        if (this.options.ioOptions.emitJson) {
-            output = ToJSONVisitor.circuitToJSON(dbsp);
-        } else if (this.options.ioOptions.emitJpeg) {
+        if (this.options.ioOptions.emitJpeg) {
             if (this.options.ioOptions.outputFile == null) {
                 compiler.reportError(SourcePositionRange.INVALID, false, "Invalid output",
                         "Must specify an output file when outputting jpeg");
@@ -124,15 +121,18 @@ public class CompilerMain {
             }
             ToDotVisitor.toDot(this.options.ioOptions.outputFile, true, dbsp);
             return compiler.messages;
-        } else {
-            StringBuilder builder = new StringBuilder();
-            builder.append(ToRustHandleVisitor.generatePreamble());
-            String circuit = ToRustHandleVisitor.toRustString(dbsp, this.options.ioOptions.functionName);
-            builder.append(circuit);
-            output = builder.toString();
         }
         try {
-            this.writeToOutput(output, this.options.ioOptions.outputFile);
+            PrintStream stream = this.getOutputStream();
+            if (this.options.ioOptions.emitJson) {
+                String output = ToJitVisitor.circuitToJson(dbsp);
+                stream.println(output);
+            } else {
+                RustFileWriter writer = new RustFileWriter(stream);
+                writer.add(dbsp);
+                writer.write();
+            }
+            stream.close();
         } catch (IOException e) {
             compiler.reportError(SourcePositionRange.INVALID,
                     false, "Error writing to file", e.getMessage());

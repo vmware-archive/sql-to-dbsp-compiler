@@ -44,9 +44,6 @@ import java.util.List;
 import java.util.Objects;
 
 public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implements IModule {
-    /**
-     * Identity function.
-     */
     private final TypeCompiler typeCompiler = new TypeCompiler();
     @Nullable
     public final DBSPVariablePath inputRow;
@@ -285,8 +282,9 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
     public static DBSPExpression wrapBoolIfNeeded(DBSPExpression expression) {
         DBSPType type = expression.getNonVoidType();
         if (type.mayBeNull) {
-            return new DBSPApplyExpression(
-                    "wrap_bool", type.setMayBeNull(false), expression);
+            return new DBSPUnaryExpression(
+                    expression.getNode(), type.setMayBeNull(false),
+                    "wrap_bool", expression);
         }
         return expression;
     }

@@ -30,6 +30,7 @@ import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType {
     protected DBSPTypeDouble(@Nullable Object node, boolean mayBeNull) { super(node, mayBeNull); }
@@ -55,6 +56,11 @@ public class DBSPTypeDouble extends DBSPTypeFP implements IsNumericType {
             return false;
         assert type != null;
         return type.is(DBSPTypeDouble.class);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.mayBeNull, 4);
     }
 
     @Override

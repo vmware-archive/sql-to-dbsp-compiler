@@ -21,9 +21,10 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.compiler.backend;
 
 import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.ir.*;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -399,10 +400,16 @@ public class ToRustInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPUnaryExpression expression) {
-        if (expression.left.getNonVoidType().mayBeNull) {
+        if (expression.operation.equals("wrap_bool")) {
+            this.builder.append("wrap_bool(");
+            expression.source.accept(this);
+            this.builder.append(")");
+            return false;
+        }
+        if (expression.source.getNonVoidType().mayBeNull) {
             this.builder.append("(")
                     .append("match ");
-            expression.left.accept(this);
+            expression.source.accept(this);
             this.builder.append(" {").increase()
                     .append("Some(x) => Some(")
                     .append(expression.operation)
@@ -414,7 +421,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
         } else {
             this.builder.append("(")
                     .append(expression.operation);
-            expression.left.accept(this);
+            expression.source.accept(this);
             this.builder.append(")");
         }
         return false;
@@ -448,15 +455,6 @@ public class ToRustInnerVisitor extends InnerVisitor {
             statement.initializer.accept(this);
         }
         this.builder.append(";");
-        return false;
-    }
-
-    @Override
-    public boolean preorder(DBSPFile file) {
-        for (IDBSPDeclaration decl: file.declarations) {
-            decl.accept(this);
-            this.builder.append("\n\n");
-        }
         return false;
     }
 
@@ -1049,5 +1047,13 @@ public class ToRustInnerVisitor extends InnerVisitor {
         if (type.mayBeNull)
             this.builder.append(">");
         return false;
+    }
+
+    public static String toRustString(IDBSPInnerNode node) {
+        StringBuilder builder = new StringBuilder();
+        IndentStream stream = new IndentStream(builder);
+        ToRustInnerVisitor visitor = new ToRustInnerVisitor(stream);
+        node.accept(visitor);
+        return builder.toString();
     }
 }

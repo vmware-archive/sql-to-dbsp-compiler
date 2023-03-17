@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class DBSPTypeTime extends DBSPTypeBaseType implements IsNumericType, IsDateType {
     public static final DBSPTypeTime INSTANCE =new DBSPTypeTime(null, false);
@@ -77,6 +78,11 @@ public class DBSPTypeTime extends DBSPTypeBaseType implements IsNumericType, IsD
     @Override
     public DBSPLiteral getMinValue() {
         throw new UnsupportedException(this);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.mayBeNull, 13);
     }
 
     @Override

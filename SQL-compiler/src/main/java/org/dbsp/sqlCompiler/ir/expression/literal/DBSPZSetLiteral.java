@@ -37,6 +37,7 @@ import java.util.Map;
  * Represents a (constant) ZSet described by its elements.
  * A ZSet is a map from tuples to integer weights.
  * In general weights should not be zero.
+ * TODO: check for weight overflow?
  */
 public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
     public final Map<DBSPExpression, Integer> data;

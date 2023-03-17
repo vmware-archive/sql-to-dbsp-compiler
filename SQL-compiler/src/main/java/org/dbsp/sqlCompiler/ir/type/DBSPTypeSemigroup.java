@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.
+ * Copyright 2023 VMware, Inc.
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,16 +21,32 @@
  * SOFTWARE.
  */
 
+package org.dbsp.sqlCompiler.ir.type;
+
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.util.Linq;
+
 /**
- * Package that doesn't allow null values as method parameters.
+ * Represents a Semigroup trait implementation.
  */
+public class DBSPTypeSemigroup extends DBSPTypeUser {
+    public DBSPTypeSemigroup(DBSPType[] elementTypes, DBSPType[] semigroupTypes) {
+        super(null, "Semigroup" + elementTypes.length, false,
+                Linq.concat(semigroupTypes, elementTypes));
+        if (elementTypes.length != semigroupTypes.length)
+            throw new RuntimeException("Each element must have a corresponding semigroup, but I have " +
+                    elementTypes.length + " and " + semigroupTypes.length);
+    }
 
-@ParametersAreNonnullByDefault
-@FieldsAreNonnullByDefault
-@MethodsAreNonnullByDefault
-package org.dbsp.sqlCompiler.compiler.visitors;
+    public int semigroupSize() {
+        return this.typeArgs.length / 2;
+    }
 
-import org.dbsp.util.FieldsAreNonnullByDefault;
-import org.dbsp.util.MethodsAreNonnullByDefault;
-
-import javax.annotation.ParametersAreNonnullByDefault;
+    @Override
+    public void accept(InnerVisitor visitor) {
+        if (!visitor.preorder(this)) return;
+        for (DBSPType type: this.typeArgs)
+            type.accept(visitor);
+        visitor.postorder(this);
+    }
+}

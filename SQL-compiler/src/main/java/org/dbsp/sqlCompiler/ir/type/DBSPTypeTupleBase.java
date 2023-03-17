@@ -21,37 +21,40 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.visitors;
+package org.dbsp.sqlCompiler.ir.type;
 
-import org.dbsp.sqlCompiler.circuit.operator.*;
+import javax.annotation.Nullable;
+import java.util.List;
 
-/**
- * This visitor converts a DBSPCircuit into a new circuit which
- * computes the incremental version of the same query.
- * The generated circuit is not efficient, though, it should be
- * further optimized.
- */
-public class IncrementalizeVisitor extends CircuitCloneVisitor {
-    public IncrementalizeVisitor() {
-        super(false);
+public abstract class DBSPTypeTupleBase extends DBSPType {
+    public final DBSPType[] tupFields;
+
+    protected DBSPTypeTupleBase(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
+        super(node, mayBeNull);
+        this.tupFields = tupFields;
     }
 
-    @Override
-    public void postorder(DBSPSourceOperator operator) {
-        if (this.visited.contains(operator))
-            return;
-        this.addOperator(operator);
-        DBSPIntegralOperator integral = new DBSPIntegralOperator(null, operator);
-        this.map(operator, integral);
+    protected DBSPTypeTupleBase(@Nullable Object node, DBSPType... tupFields) {
+        this(node, false, tupFields);
     }
 
-    @Override
-    public void postorder(DBSPSinkOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPDifferentialOperator diff = new DBSPDifferentialOperator(null, source);
-        DBSPSinkOperator sink = new DBSPSinkOperator(operator.getNode(), operator.outputName,
-                operator.query, operator.comment, diff);
-        this.addOperator(diff);
-        this.map(operator, sink);
+    protected DBSPTypeTupleBase(DBSPType... tupFields) {
+        this(null, tupFields);
+    }
+
+    protected DBSPTypeTupleBase(@Nullable Object node, List<DBSPType> tupFields) {
+        this(node, tupFields.toArray(new DBSPType[0]));
+    }
+
+    protected DBSPTypeTupleBase(List<DBSPType> tupFields) {
+        this(null, tupFields);
+    }
+
+    public DBSPType getFieldType(int index) {
+        return this.tupFields[index];
+    }
+
+    public int size() {
+        return this.tupFields.length;
     }
 }

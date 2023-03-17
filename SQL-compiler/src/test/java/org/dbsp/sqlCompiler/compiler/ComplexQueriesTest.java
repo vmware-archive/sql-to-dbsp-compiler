@@ -23,13 +23,11 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.compiler.visitors.CircuitFunctionRewriter;
-import org.dbsp.sqlCompiler.compiler.visitors.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.visitors.ThreeOperandVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
+import org.junit.Assert;
 import org.junit.Test;
 
 @SuppressWarnings("SpellCheckingInspection")
@@ -59,37 +57,22 @@ public class ComplexQueriesTest extends BaseSQLTests {
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl);
         compiler.compileStatement(query);
+        Assert.assertFalse(compiler.hasErrors());
         this.addRustTestCase(getCircuit(compiler));
     }
 
-    @Test
-    public void simpleOver() {
-        String query = "CREATE TABLE green_tripdata\n" +
-                "(\n" +
-                "    lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
-                "    lpep_dropoff_datetime TIMESTAMP NOT NULL,\n" +
-                "    pickup_location_id BIGINT NOT NULL,\n" +
-                "    dropoff_location_id BIGINT NOT NULL,\n" +
-                "    trip_distance DOUBLE PRECISION,\n" +
-                "    fare_amount DOUBLE PRECISION\n" +
-                ");\n" +
-                "\n" +
-                "CREATE VIEW FEATURES as SELECT\n" +
-                "    *,\n" +
-                "    COUNT(*) OVER(\n" +
-                "      PARTITION BY  pickup_location_id\n" +
-                "      ORDER BY extract (EPOCH from  CAST (lpep_pickup_datetime AS TIMESTAMP) )\n" +
-                "      -- 1 hour is 3600  seconds\n" +
-                "      RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip\n" +
-                "FROM green_tripdata;\n";
+    //@Test
+    // not yet supported.
+    public void testArray() {
+        String ddl = "CREATE TABLE ARR_TABLE2 (\n"
+                + "ID INTEGER,\n"
+                + "VALS INTEGER ARRAY,\n"
+                + "VALVALS VARCHAR(10) ARRAY)";
         DBSPCompiler compiler = testCompiler();
-        compiler.setGenerateInputsFromTables(true);
-        compiler.compileStatements(query);
-        DBSPCircuit circuit = getCircuit(compiler);
-        ThreeOperandVisitor tav = new ThreeOperandVisitor();
-        CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(tav);
-        circuit = rewriter.apply(circuit);
-        this.addRustTestCase(circuit);
+        compiler.compileStatement(ddl);
+        if (compiler.hasErrors())
+            compiler.showErrors(System.err);
+        Assert.assertFalse(compiler.hasErrors());
     }
 
     @Test

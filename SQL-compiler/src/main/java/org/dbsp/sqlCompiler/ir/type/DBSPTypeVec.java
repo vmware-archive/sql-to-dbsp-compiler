@@ -51,4 +51,6 @@ public class DBSPTypeVec extends DBSPTypeUser {
     public boolean hasCopy() {
         return false;
     }
+
+    // sameType and hashCode inherited from TypeUser.
 }

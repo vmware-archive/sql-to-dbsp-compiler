@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class DBSPTypeStr extends DBSPTypeBaseType {
     public static final DBSPTypeStr INSTANCE =new DBSPTypeStr(null,false);
@@ -51,6 +52,11 @@ public class DBSPTypeStr extends DBSPTypeBaseType {
             return false;
         assert type != null;
         return type.is(DBSPTypeStr.class);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.mayBeNull, 11);
     }
 
     @Override

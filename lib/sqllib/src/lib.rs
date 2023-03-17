@@ -47,6 +47,15 @@ where
 }
 
 #[inline(always)]
+pub fn wrap_bool(b: Option<bool>) -> bool
+{
+    match b {
+        Some(x) => x,
+        _ => false,
+    }
+}
+
+#[inline(always)]
 pub fn or_b_b(left: bool, right: bool) -> bool
 {
     left || right

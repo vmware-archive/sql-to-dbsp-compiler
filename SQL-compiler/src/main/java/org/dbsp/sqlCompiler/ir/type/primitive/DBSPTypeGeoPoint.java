@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class DBSPTypeGeoPoint extends DBSPTypeGeo {
     public static final DBSPTypeGeoPoint INSTANCE =new DBSPTypeGeoPoint(null, false);
@@ -47,6 +48,11 @@ public class DBSPTypeGeoPoint extends DBSPTypeGeo {
         if (this.mayBeNull == mayBeNull)
             return this;
         return new DBSPTypeGeoPoint(this.getNode(), mayBeNull);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.mayBeNull, 6);
     }
 
     @Override

@@ -25,6 +25,9 @@ package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
+import javax.annotation.Nullable;
+import java.util.Objects;
+
 /**
  * An unknown type, represented in code as _.
  */
@@ -41,8 +44,21 @@ public class DBSPTypeAny extends DBSPType {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(this.mayBeNull, 1);
+    }
+
+    @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);
+    }
+
+    @Override
+    public boolean sameType(@Nullable DBSPType other) {
+        if (!super.sameType(other))
+            return false;
+        assert other != null;
+        return other.is(DBSPTypeAny.class);
     }
 }

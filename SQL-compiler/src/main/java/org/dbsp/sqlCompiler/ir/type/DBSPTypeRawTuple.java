@@ -33,7 +33,9 @@ import java.util.List;
 /**
  * A Raw Rust tuple.
  */
-public class DBSPTypeRawTuple extends DBSPTypeTuple {
+public class DBSPTypeRawTuple extends DBSPTypeTupleBase {
+    public static final DBSPTypeRawTuple EMPTY_TUPLE_TYPE = new DBSPTypeRawTuple();
+
     private DBSPTypeRawTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupArgs) {
         super(node, mayBeNull, tupArgs);
     }
@@ -57,14 +59,6 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
         return new DBSPTypeRawTuple(this.getNode(), mayBeNull, this.tupFields);
     }
 
-    @Override
-    public boolean equals(@Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DBSPTypeRawTuple that = (DBSPTypeRawTuple) o;
-        return Arrays.equals(tupFields, that.tupFields);
-    }
-
     public DBSPTypeRawTuple concat(DBSPTypeRawTuple with) {
         DBSPType[] args = Linq.concat(this.tupFields, with.tupFields);
         return new DBSPTypeRawTuple(args);
@@ -83,12 +77,7 @@ public class DBSPTypeRawTuple extends DBSPTypeTuple {
         if (!type.is(DBSPTypeRawTuple.class))
             return false;
         DBSPTypeRawTuple other = type.to(DBSPTypeRawTuple.class);
-        if (this.tupFields.length != other.tupFields.length)
-            return false;
-        for (int i = 0; i < this.tupFields.length; i++)
-            if (!this.tupFields[i].sameType(other.tupFields[i]))
-                return false;
-        return true;
+        return DBSPType.sameTypes(this.tupFields, other.tupFields);
     }
 
     @Override

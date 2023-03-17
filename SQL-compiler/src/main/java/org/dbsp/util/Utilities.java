@@ -109,7 +109,6 @@ public class Utilities {
      * @param value  Value to insert in map.
      * @return       The inserted value.
      */
-    @SuppressWarnings("UnusedReturnValue")
     public static <K, V, VE extends V> VE putNew(Map<K, V> map, K key, VE value) {
         V previous = map.put(Objects.requireNonNull(key), Objects.requireNonNull(value));
         if (previous != null)
@@ -135,6 +134,12 @@ public class Utilities {
         if (i > 0)
             return filename.substring(i+1);
         return null;
+    }
+
+    public static <T> T removeLast(List<T> data) {
+        if (data.isEmpty())
+            throw new RuntimeException("Removing from empty list");
+        return data.remove(data.size() - 1);
     }
 
     public static <T> T[] arraySlice(T[] data, int start, int endExclusive) {

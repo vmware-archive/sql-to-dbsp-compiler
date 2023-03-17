@@ -42,7 +42,7 @@ public class DBSPBinaryExpression extends DBSPExpression {
     @JsonIgnore
     public final boolean primitive;
 
-    protected DBSPBinaryExpression(@Nullable Object node, DBSPType type, String operation,
+    public DBSPBinaryExpression(@Nullable Object node, DBSPType type, String operation,
                                 DBSPExpression left, DBSPExpression right, boolean primitive) {
         super(node, type);
         this.operation = operation;

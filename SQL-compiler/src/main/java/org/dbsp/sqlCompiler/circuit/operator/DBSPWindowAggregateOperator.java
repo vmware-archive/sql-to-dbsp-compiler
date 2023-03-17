@@ -23,13 +23,13 @@
 
 package org.dbsp.sqlCompiler.circuit.operator;
 
+import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.type.*;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * This operator does not correspond to any standard DBSP operator currently.
@@ -40,18 +40,18 @@ public class DBSPWindowAggregateOperator extends DBSPUnaryOperator {
     public final DBSPType partitionKeyType;
     public final DBSPType timestampType;
     public final DBSPType aggregateType;
-    public final DBSPExpression aggregator;
+    public final DBSPAggregate aggregate;
     public final DBSPExpression window;
 
     public DBSPWindowAggregateOperator(
-            @Nullable Object node, DBSPExpression aggregator, DBSPExpression window,
+            @Nullable Object node, DBSPAggregate aggregate, DBSPExpression window,
             DBSPType partitionKeyType, DBSPType timestampType, DBSPType aggregateType,
             DBSPOperator input) {
         super(node, "window_aggregate", null,
                 new DBSPTypeIndexedZSet(node, new DBSPTypeRawTuple(partitionKeyType, timestampType), aggregateType),
                 true, input);
         this.window = window;
-        this.aggregator = aggregator;
+        this.aggregate = aggregate;
         this.partitionKeyType = partitionKeyType;
         this.timestampType = timestampType;
         this.aggregateType = aggregateType;
@@ -60,7 +60,7 @@ public class DBSPWindowAggregateOperator extends DBSPUnaryOperator {
     @Override
     public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
         return new DBSPWindowAggregateOperator(
-                this.getNode(), Objects.requireNonNull(expression), this.window,
+                this.getNode(), this.aggregate, this.window,
                 this.partitionKeyType, this.timestampType, this.aggregateType,
                 this.input());
     }
@@ -69,7 +69,7 @@ public class DBSPWindowAggregateOperator extends DBSPUnaryOperator {
     public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPWindowAggregateOperator(
-                    this.getNode(), this.aggregator, this.window,
+                    this.getNode(), this.aggregate, this.window,
                     this.partitionKeyType, this.timestampType, this.aggregateType,
                     newInputs.get(0));
         return this;
