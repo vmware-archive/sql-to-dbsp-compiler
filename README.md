@@ -33,6 +33,9 @@ account in the database.  In the `run-tests.sh` script you should
 replace the `-u user` with the user name you have created, and `-p
 password` with the user's password.
 
+If you want to generate images of the query plans you need
+to also install graphviz as described here <https://graphviz.org/download/>.
+
 ## Rust compilation errors
 
 If you get Rust compilation errors you should try to make sure you

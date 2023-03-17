@@ -362,7 +362,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
     }
 
     @Test
-    public void testCompilerToJpeg() throws IOException, ImageFormatException {
+    public void testCompilerToJpeg() throws IOException {
         String[] statements = new String[]{
                 "CREATE TABLE T (\n" +
                         "COL1 INT NOT NULL" +
@@ -378,7 +378,11 @@ public class OtherTests extends BaseSQLTests implements IModule {
         JPEGImageDecoder decoder = new JPEGImageDecoder(
                 new FileImageSource(jpg.getPath()),
                 Files.newInputStream(Paths.get(jpg.getPath())));
-        decoder.produceImage();
+        try {
+            decoder.produceImage();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         boolean success = file.delete();
         Assert.assertTrue(success);
         success = jpg.delete();
