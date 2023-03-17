@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 import javax.annotation.Nullable;
@@ -43,7 +42,6 @@ public class DBSPTypeUser extends DBSPType {
         this.typeArgs = typeArgs;
     }
 
-    @JsonIgnore
     public DBSPType getTypeArg(int index) {
         return this.typeArgs[index];
     }

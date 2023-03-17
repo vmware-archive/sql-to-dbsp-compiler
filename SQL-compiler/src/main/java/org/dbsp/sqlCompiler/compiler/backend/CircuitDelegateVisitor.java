@@ -1,9 +1,6 @@
 package org.dbsp.sqlCompiler.compiler.backend;
 
-import org.dbsp.sqlCompiler.circuit.operator.DBSPAggregateOperator;
-import org.dbsp.sqlCompiler.circuit.operator.DBSPIncrementalAggregateOperator;
-import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
-import org.dbsp.sqlCompiler.circuit.operator.DBSPWindowAggregateOperator;
+import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
@@ -37,19 +34,7 @@ public class CircuitDelegateVisitor extends CircuitVisitor {
     }
 
     @Override
-    public void postorder(DBSPAggregateOperator node) {
-        this.doAggregate(node.aggregate);
-        this.doFunction(node);
-    }
-
-    @Override
-    public void postorder(DBSPIncrementalAggregateOperator node) {
-        this.doAggregate(node.aggregate);
-        this.doFunction(node);
-    }
-
-    @Override
-    public void postorder(DBSPWindowAggregateOperator node) {
+    public void postorder(DBSPAggregateOperatorBase node) {
         this.doAggregate(node.aggregate);
         this.doFunction(node);
     }

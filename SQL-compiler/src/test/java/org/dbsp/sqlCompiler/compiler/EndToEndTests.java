@@ -18,6 +18,7 @@ import org.junit.Test;
 public class EndToEndTests extends BaseSQLTests {
     /*
      * T is
+     *  col1  col2   col3   col4  col5      col6
      * -------------------------------------------
      * | 10 | 12.0 | true  | Hi | NULL    | NULL |
      * | 10 |  1.0 | false | Hi | Some[1] |  0.0 |
@@ -30,6 +31,14 @@ public class EndToEndTests extends BaseSQLTests {
     void testQuery(String query, DBSPZSetLiteral expectedOutput) {
         DBSPZSetLiteral input = this.createInput();
         super.testQueryBase(query, false, false, new InputOutputPair(input, expectedOutput));
+    }
+
+    @Test
+    public void testNullableBoolean() {
+        String query = "SELECT T.COL5 > 10 AND T.COL3 FROM T";
+        this.testQuery(query, new DBSPZSetLiteral(
+                new DBSPTupleExpression(DBSPBoolLiteral.NONE),
+                new DBSPTupleExpression(DBSPBoolLiteral.NULLABLE_FALSE)));
     }
 
     @Test
@@ -152,8 +161,8 @@ public class EndToEndTests extends BaseSQLTests {
         String query = "SELECT T.COL3 FROM T";
         this.testQuery(query,
                 new DBSPZSetLiteral(
-                        new DBSPTupleExpression(DBSPBoolLiteral.True),
-                        new DBSPTupleExpression(DBSPBoolLiteral.False)));
+                        new DBSPTupleExpression(DBSPBoolLiteral.TRUE),
+                        new DBSPTupleExpression(DBSPBoolLiteral.FALSE)));
     }
 
     @Test
@@ -207,10 +216,10 @@ public class EndToEndTests extends BaseSQLTests {
     public void joinTest() {
         String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 JOIN T AS T2 ON T1.COL1 = T2.COL1";
         this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(DBSPBoolLiteral.False, DBSPBoolLiteral.False),
-                new DBSPTupleExpression(DBSPBoolLiteral.False, DBSPBoolLiteral.True),
-                new DBSPTupleExpression(DBSPBoolLiteral.True,  DBSPBoolLiteral.False),
-                new DBSPTupleExpression(DBSPBoolLiteral.True,  DBSPBoolLiteral.True)));
+                new DBSPTupleExpression(DBSPBoolLiteral.FALSE, DBSPBoolLiteral.FALSE),
+                new DBSPTupleExpression(DBSPBoolLiteral.FALSE, DBSPBoolLiteral.TRUE),
+                new DBSPTupleExpression(DBSPBoolLiteral.TRUE,  DBSPBoolLiteral.FALSE),
+                new DBSPTupleExpression(DBSPBoolLiteral.TRUE,  DBSPBoolLiteral.TRUE)));
     }
 
     @Test
@@ -246,8 +255,8 @@ public class EndToEndTests extends BaseSQLTests {
     public void leftOuterJoinTest() {
         String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 LEFT JOIN T AS T2 ON T1.COL1 = T2.COL5";
         this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(DBSPBoolLiteral.False, DBSPBoolLiteral.None),
-                new DBSPTupleExpression(DBSPBoolLiteral.True, DBSPBoolLiteral.None)
+                new DBSPTupleExpression(DBSPBoolLiteral.FALSE, DBSPBoolLiteral.NONE),
+                new DBSPTupleExpression(DBSPBoolLiteral.TRUE, DBSPBoolLiteral.NONE)
         ));
     }
 
@@ -255,8 +264,8 @@ public class EndToEndTests extends BaseSQLTests {
     public void rightOuterJoinTest() {
         String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 RIGHT JOIN T AS T2 ON T1.COL1 = T2.COL5";
         this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(DBSPBoolLiteral.None, DBSPBoolLiteral.False),
-                new DBSPTupleExpression(DBSPBoolLiteral.None, DBSPBoolLiteral.True)
+                new DBSPTupleExpression(DBSPBoolLiteral.NONE, DBSPBoolLiteral.FALSE),
+                new DBSPTupleExpression(DBSPBoolLiteral.NONE, DBSPBoolLiteral.TRUE)
         ));
     }
 
@@ -264,10 +273,10 @@ public class EndToEndTests extends BaseSQLTests {
     public void fullOuterJoinTest() {
         String query = "SELECT T1.COL3, T2.COL3 FROM T AS T1 FULL OUTER JOIN T AS T2 ON T1.COL1 = T2.COL5";
         this.testQuery(query, new DBSPZSetLiteral(
-                new DBSPTupleExpression(DBSPBoolLiteral.NullableFalse, DBSPBoolLiteral.None),
-                new DBSPTupleExpression(DBSPBoolLiteral.NullableTrue, DBSPBoolLiteral.None),
-                new DBSPTupleExpression(DBSPBoolLiteral.None, DBSPBoolLiteral.NullableFalse),
-                new DBSPTupleExpression(DBSPBoolLiteral.None, DBSPBoolLiteral.NullableTrue)
+                new DBSPTupleExpression(DBSPBoolLiteral.NULLABLE_FALSE, DBSPBoolLiteral.NONE),
+                new DBSPTupleExpression(DBSPBoolLiteral.NULLABLE_TRUE, DBSPBoolLiteral.NONE),
+                new DBSPTupleExpression(DBSPBoolLiteral.NONE, DBSPBoolLiteral.NULLABLE_FALSE),
+                new DBSPTupleExpression(DBSPBoolLiteral.NONE, DBSPBoolLiteral.NULLABLE_TRUE)
         ));
     }
 

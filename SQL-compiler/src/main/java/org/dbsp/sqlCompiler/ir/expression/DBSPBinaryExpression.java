@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
@@ -39,7 +38,6 @@ public class DBSPBinaryExpression extends DBSPExpression {
      * Primitive operations are only used to generate the sources for the genlib
      * runtime library.
      */
-    @JsonIgnore
     public final boolean primitive;
 
     public DBSPBinaryExpression(@Nullable Object node, DBSPType type, String operation,

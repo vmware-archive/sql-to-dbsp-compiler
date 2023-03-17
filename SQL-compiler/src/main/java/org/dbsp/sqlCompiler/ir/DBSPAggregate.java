@@ -1,6 +1,5 @@
 package org.dbsp.sqlCompiler.ir;
 
-import org.apache.calcite.plan.Convention;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
@@ -43,6 +42,10 @@ public class DBSPAggregate extends DBSPNode implements IDBSPInnerNode {
 
     public DBSPExpression defaultZero() {
         return new DBSPTupleExpression(Linq.map(this.components, c -> c.emptySetResult), false);
+    }
+
+    public DBSPExpression getZero() {
+        return new DBSPTupleExpression(Linq.map(this.components, c -> c.zero), false);
     }
 
     @Override

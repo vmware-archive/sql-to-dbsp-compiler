@@ -23,8 +23,6 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import javax.annotation.Nullable;
 
 /**
@@ -34,7 +32,6 @@ public interface IHasType {
     @Nullable
     DBSPType getType();
 
-    @JsonIgnore
     default DBSPType getNonVoidType() {
         // void is represented as Java null.
         DBSPType type = this.getType();

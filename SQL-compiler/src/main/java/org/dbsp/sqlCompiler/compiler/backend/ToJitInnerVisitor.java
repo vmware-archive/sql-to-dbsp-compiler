@@ -59,6 +59,11 @@ public class ToJitInnerVisitor extends InnerVisitor {
         boolean hasNull() {
             return isLegalId(this.isNullId);
         }
+
+        @Override
+        public String toString() {
+            return this.id + "," + this.isNullId;
+        }
     }
 
     static class ExpressionJsonRepresentation {
@@ -232,18 +237,26 @@ public class ToJitInnerVisitor extends InnerVisitor {
         return this.accept(new DBSPBoolLiteral(value));
     }
 
-    ExpressionJsonRepresentation insertInstruction(DBSPExpression expression) {
-        int id = this.map(expression);
+    ExpressionJsonRepresentation insertInstruction(int id, boolean needsNull) {
         ArrayNode instruction = Objects.requireNonNull(this.currentBlockBody).addArray();
         instruction.add(id);
         ObjectNode isNull = null;
-        if (needsNull(expression.getNonVoidType())) {
+        if (needsNull) {
             ArrayNode isNullInstr = this.currentBlockBody.addArray();
             id = this.nextExpressionId();
             isNullInstr.add(id);
             isNull = isNullInstr.addObject();
         }
         return new ExpressionJsonRepresentation(instruction.addObject(), id, isNull);
+    }
+
+    ExpressionJsonRepresentation insertNewInstruction() {
+        return this.insertInstruction(this.nextExpressionId(), false);
+    }
+
+    ExpressionJsonRepresentation insertInstruction(DBSPExpression expression) {
+        int id = this.map(expression);
+        return this.insertInstruction(id, needsNull(expression.getNonVoidType()));
     }
 
     static String baseTypeName(DBSPExpression expression) {
@@ -330,7 +343,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
     }
 
     public boolean preorder(DBSPFloatLiteral expression) {
-        return this.createJsonLiteral(expression, "F64",
+        return this.createJsonLiteral(expression, "F32",
                 expression.value == null ? null : new FloatNode(expression.value));
     }
 
@@ -388,9 +401,6 @@ public class ToJitInnerVisitor extends InnerVisitor {
         ExpressionIds leftId = this.accept(expression.left);
         ExpressionIds rightId = this.accept(expression.right);
         ExpressionIds cf = this.constantBool(false);
-        ExpressionJsonRepresentation er = this.insertInstruction(expression);
-
-        // The following are not used on all execution paths
         int leftNullId;
         if (leftId.hasNull())
             leftNullId = leftId.isNullId;
@@ -402,19 +412,93 @@ public class ToJitInnerVisitor extends InnerVisitor {
             rightNullId = rightId.isNullId;
         else
             rightNullId = cf.id;
+        int exprIsNullable = -1;
+        if (needsNull(expression.getNonVoidType())) {
+            // Special case: Boolean operations with some nullable operand.
+            if (expression.getNonVoidType().is(DBSPTypeBool.class) &&
+                    (expression.operation.equals("&&") || expression.operation.equals("||"))) {
+                if (expression.operation.equals("&&")) {
+                    // (a && b).is_null = a.is_null ? (b.is_null ? true : !b)
+                    //                              : (b.is_null ? !a   : false)
 
-        if (expression.operation.equals("||") &&
-                expression.getNonVoidType().is(DBSPTypeBool.class)) {
-           throw new Unimplemented(expression);
-        } else if (expression.operation.equals("&&")) {
-            throw new Unimplemented(expression);
-        } else {
-            ObjectNode binOp = er.instruction.putObject("BinOp");
-            binOp.put("lhs", leftId.id);
-            binOp.put("rhs", rightId.id);
-            binOp.put("kind", Utilities.getExists(opNames, expression.operation));
-            binOp.put("operand_ty", baseTypeName(expression.left));
-            if (er.isNullInstruction != null) {
+                    // !b
+                    ExpressionJsonRepresentation notB = this.insertNewInstruction();
+                    ObjectNode op = notB.instruction.putObject("UnOp");
+                    op.put("value", rightId.id);
+                    op.put("kind", "Not");
+                    op.put("value_ty", "Bool");
+                    // true
+                    ExpressionIds trueLit = this.constantBool(true);
+                    // cond1 = (b.is_null ? true : !b)
+                    ExpressionJsonRepresentation cond1 = this.insertNewInstruction();
+                    ObjectNode cond = cond1.instruction.putObject("Select");
+                    cond.put("cond", rightNullId);
+                    cond.put("if_true", trueLit.id);
+                    cond.put("if_false", notB.instructionId);
+                    // false
+                    ExpressionIds falseLit = this.constantBool(false);
+                    // !a
+                    ExpressionJsonRepresentation notA = this.insertNewInstruction();
+                    op = notA.instruction.putObject("UnOp");
+                    op.put("value", leftId.id);
+                    op.put("kind", "Not");
+                    op.put("value_ty", "Bool");
+                    // cond2 = (b.is_null ? !a   : false)
+                    ExpressionJsonRepresentation cond2 = this.insertNewInstruction();
+                    cond = cond2.instruction.putObject("Select");
+                    cond.put("cond", rightNullId);
+                    cond.put("if_true", notA.instructionId);
+                    cond.put("if_false", falseLit.id);
+                    // Top-level condition
+                    ExpressionJsonRepresentation topCond = this.insertNewInstruction();
+                    cond = topCond.instruction.putObject("Select");
+                    cond.put("cond", leftNullId);
+                    cond.put("if_true", cond1.instructionId);
+                    cond.put("if_false", cond2.instructionId);
+                    exprIsNullable = topCond.instructionId;
+                } else { // operation is ||
+                    // (a || b).is_null = a.is_null ? (b.is_null ? true : b)
+                    //                              : (b.is_null ? a    : false)
+                    // true
+                    ExpressionIds trueLit = this.constantBool(true);
+                    // cond1 = (b.is_null ? true : b)
+                    ExpressionJsonRepresentation cond1 = this.insertNewInstruction();
+                    ObjectNode cond = cond1.instruction.putObject("Select");
+                    cond.put("cond", rightNullId);
+                    cond.put("if_true", trueLit.id);
+                    cond.put("if_false", rightId.id);
+                    // false
+                    ExpressionIds falseLit = this.constantBool(false);
+                    // cond2 = (b.is_null ? a   : false)
+                    ExpressionJsonRepresentation cond2 = this.insertNewInstruction();
+                    cond = cond2.instruction.putObject("Select");
+                    cond.put("cond", rightNullId);
+                    cond.put("if_true", leftId.id);
+                    cond.put("if_false", falseLit.id);
+                    // Top-level condition
+                    ExpressionJsonRepresentation topCond = this.insertNewInstruction();
+                    cond = topCond.instruction.putObject("Select");
+                    cond.put("cond", leftNullId);
+                    cond.put("if_true", cond1.instructionId);
+                    cond.put("if_false", cond2.instructionId);
+                    exprIsNullable = topCond.instructionId;
+                }
+            }
+        }
+
+        ExpressionJsonRepresentation er = this.insertInstruction(expression);
+        ObjectNode binOp = er.instruction.putObject("BinOp");
+        binOp.put("lhs", leftId.id);
+        binOp.put("rhs", rightId.id);
+        binOp.put("kind", Utilities.getExists(opNames, expression.operation));
+        binOp.put("operand_ty", baseTypeName(expression.left));
+        if (er.isNullInstruction != null) {
+            if (isLegalId(exprIsNullable)) {
+                // One of the two special cases above.
+                ObjectNode op = er.isNullInstruction.putObject("CopyVal");
+                op.put("value", exprIsNullable);
+                binOp.put("Value_ty", "Bool");
+            } else {
                 // The result is null if either operand is null.
                 binOp = er.isNullInstruction.putObject("BinOp");
                 binOp.put("lhs", leftNullId);
@@ -551,6 +635,13 @@ public class ToJitInnerVisitor extends InnerVisitor {
             isNull.put("target_layout", typeId);
             isNull.put("column", expression.fieldNo);
         }
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPIsNullExpression expression) {
+        ExpressionIds sourceId = this.accept(expression.expression);
+        Utilities.putNew(this.expressionId, expression, sourceId.isNullId);
         return false;
     }
 

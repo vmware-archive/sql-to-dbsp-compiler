@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
@@ -40,12 +39,11 @@ public class DBSPClosureExpression extends DBSPExpression {
     public final DBSPExpression body;
     public final DBSPParameter[] parameters;
 
-    @JsonIgnore
     public DBSPTypeFunction getFunctionType() {
         return this.getNonVoidType().to(DBSPTypeFunction.class);
     }
 
-    @Nullable @JsonIgnore
+    @Nullable
     public DBSPType getResultType() {
         return this.getFunctionType().resultType;
     }

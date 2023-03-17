@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.ir;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
 import org.dbsp.sqlCompiler.ir.expression.DBSPApplyExpression;
@@ -95,7 +94,6 @@ public class DBSPFunction extends DBSPNode implements IHasType, IDBSPDeclaration
         visitor.postorder(this);
     }
 
-    @JsonIgnore
     public DBSPExpression getReference() {
         return this.type.var(this.name);
     }

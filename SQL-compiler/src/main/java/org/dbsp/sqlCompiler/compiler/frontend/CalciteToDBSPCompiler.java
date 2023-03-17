@@ -456,7 +456,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         for (int i = 0; i < rowType.size(); i++) {
             if (keyFields.contains(i)) {
                 DBSPFieldExpression field = new DBSPFieldExpression(join, var, i);
-                DBSPExpression expr = new DBSPIsNullExpression(join, field);
+                DBSPExpression expr = field.is_null();
                 if (condition == null)
                     condition = expr;
                 else

@@ -36,22 +36,21 @@ import java.util.List;
  * It is implemented as a sequence of 2 DBSP operators: partitioned_rolling_aggregate and
  * map_index.
  */
-public class DBSPWindowAggregateOperator extends DBSPUnaryOperator {
+public class DBSPWindowAggregateOperator extends DBSPAggregateOperatorBase {
     public final DBSPType partitionKeyType;
     public final DBSPType timestampType;
     public final DBSPType aggregateType;
-    public final DBSPAggregate aggregate;
     public final DBSPExpression window;
 
     public DBSPWindowAggregateOperator(
             @Nullable Object node, DBSPAggregate aggregate, DBSPExpression window,
             DBSPType partitionKeyType, DBSPType timestampType, DBSPType aggregateType,
             DBSPOperator input) {
-        super(node, "window_aggregate", null,
+        super(node, "window_aggregate",
                 new DBSPTypeIndexedZSet(node, new DBSPTypeRawTuple(partitionKeyType, timestampType), aggregateType),
+                null, aggregate,
                 true, input);
         this.window = window;
-        this.aggregate = aggregate;
         this.partitionKeyType = partitionKeyType;
         this.timestampType = timestampType;
         this.aggregateType = aggregateType;
@@ -60,7 +59,7 @@ public class DBSPWindowAggregateOperator extends DBSPUnaryOperator {
     @Override
     public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
         return new DBSPWindowAggregateOperator(
-                this.getNode(), this.aggregate, this.window,
+                this.getNode(), this.getAggregate(), this.window,
                 this.partitionKeyType, this.timestampType, this.aggregateType,
                 this.input());
     }
@@ -69,7 +68,7 @@ public class DBSPWindowAggregateOperator extends DBSPUnaryOperator {
     public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPWindowAggregateOperator(
-                    this.getNode(), this.aggregate, this.window,
+                    this.getNode(), this.getAggregate(), this.window,
                     this.partitionKeyType, this.timestampType, this.aggregateType,
                     newInputs.get(0));
         return this;

@@ -69,6 +69,35 @@ public class DBSPCompilerTests {
     }
 
     @Test
+    public void floatJitTest() throws JsonProcessingException {
+        String ddl = "CREATE TABLE bid (\n" +
+                "    auction BIGINT,\n" +
+                "    bidder BIGINT,\n" +
+                "    price BIGINT,\n" +
+                "    channel VARCHAR,\n" +
+                "    url VARCHAR,\n" +
+                "    dateTime TIMESTAMP(3),\n" +
+                "    extra VARCHAR\n" +
+                ");\n" +
+                "\n" +
+                "CREATE VIEW q2 AS\n" +
+                "SELECT\n" +
+                "    auction,\n" +
+                "    bidder,\n" +
+                "    CAST(0.908 AS FLOAT) * price as price, -- convert dollar to euro\n" +
+                "    dateTime,\n" +
+                "    extra\n" +
+                "FROM bid;";
+        DBSPCompiler compiler = new DBSPCompiler(options);
+        compiler.compileStatements(ddl);
+        DBSPCircuit circuit = compiler.getFinalCircuit("circuit");
+        String json = ToJitVisitor.circuitToJson(circuit);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(json);
+        Assert.assertNotNull(root);
+    }
+
+    @Test
     public void DDLAndInsertTest() {
         DBSPCompiler compiler = new DBSPCompiler(options);
         String insert = "INSERT INTO T VALUES(0, 0.0, true, 'Hi')";

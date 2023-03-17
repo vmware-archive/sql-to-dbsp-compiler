@@ -217,7 +217,7 @@ public class BaseSQLTests {
     public static final DBSPTupleExpression e0 = new DBSPTupleExpression(
             new DBSPI32Literal(10),
             new DBSPDoubleLiteral(12.0),
-            DBSPBoolLiteral.True,
+            DBSPBoolLiteral.TRUE,
             new DBSPStringLiteral("Hi"),
             DBSPLiteral.none(DBSPTypeInteger.NULLABLE_SIGNED_32),
             DBSPLiteral.none(DBSPTypeDouble.NULLABLE_INSTANCE)
@@ -225,7 +225,7 @@ public class BaseSQLTests {
     public static final DBSPTupleExpression e1 = new DBSPTupleExpression(
             new DBSPI32Literal(10),
             new DBSPDoubleLiteral(1.0),
-            DBSPBoolLiteral.False,
+            DBSPBoolLiteral.FALSE,
             new DBSPStringLiteral("Hi"),
             new DBSPI32Literal(1, true),
             new DBSPDoubleLiteral(0.0, true)
@@ -233,13 +233,13 @@ public class BaseSQLTests {
 
     public static final DBSPTupleExpression e0NoDouble = new DBSPTupleExpression(
             new DBSPI32Literal(10),
-            DBSPBoolLiteral.True,
+            DBSPBoolLiteral.TRUE,
             new DBSPStringLiteral("Hi"),
             DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true))
     );
     public static final DBSPTupleExpression e1NoDouble = new DBSPTupleExpression(
             new DBSPI32Literal(10),
-            DBSPBoolLiteral.False,
+            DBSPBoolLiteral.FALSE,
             new DBSPStringLiteral("Hi"),
             new DBSPI32Literal(1, true)
     );

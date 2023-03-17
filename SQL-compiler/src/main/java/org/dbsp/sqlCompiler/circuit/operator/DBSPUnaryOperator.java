@@ -47,6 +47,7 @@ public abstract class DBSPUnaryOperator extends DBSPOperator {
         this.addInput(source);
     }
 
+    // Default implementation.
     @Override
     public DBSPOperator withFunction(@Nullable DBSPExpression unused) {
         return this;
