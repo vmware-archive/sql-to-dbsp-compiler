@@ -17,14 +17,10 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
-<<<<<<< HEAD
  * Base class for Inner visitors which rewrite expressions and statements.
  * This class recurses over the structure of expressions and statements
  * and if any fields have changed builds a new version of the same expression
  * or statement.
-=======
- * Base class for Inner visitors which rewrite expressions.
->>>>>>> WIP
  */
 public abstract class InnerExpressionRewriteVisitor
         extends InnerVisitor
@@ -155,7 +151,7 @@ public abstract class InnerExpressionRewriteVisitor
         DBSPExpression right = this.transform(expression.right);
         DBSPExpression result = expression;
         if (left != expression.left || right != expression.right)
-            result = new DBSPBinaryExpression(expression.getNonVoidType(),
+            result = new DBSPBinaryExpression(expression.getNode(), expression.getNonVoidType(),
                     expression.operation, left, right, expression.primitive);
         this.map(expression, result);
         return false;

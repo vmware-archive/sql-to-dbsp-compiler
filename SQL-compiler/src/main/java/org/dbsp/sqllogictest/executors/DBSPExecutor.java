@@ -142,7 +142,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
 
         if (totalSize > 10) {
             if (connectionString.equals("csv")) {
-                // If the data is large write it to a set of CSV files and read it at runtime.
+                // If the data is large write, it to a set of CSV files and read it at runtime.
                 for (int i = 0; i < tables.length; i++) {
                     String fileName = (rustDirectory + tables[i].tableName) + ".csv";
                     ToCsvVisitor.toCsv(fileName, tables[i].contents);

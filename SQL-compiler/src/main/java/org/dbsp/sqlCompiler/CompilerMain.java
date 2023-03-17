@@ -125,7 +125,7 @@ public class CompilerMain {
         try {
             PrintStream stream = this.getOutputStream();
             if (this.options.ioOptions.emitJson) {
-                String output = ToJSONVisitor.circuitToJSON(dbsp);
+                String output = ToJitVisitor.circuitToJson(dbsp);
                 stream.println(output);
             } else {
                 RustFileWriter writer = new RustFileWriter(stream);

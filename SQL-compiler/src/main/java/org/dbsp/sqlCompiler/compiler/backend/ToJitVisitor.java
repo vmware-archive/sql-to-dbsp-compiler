@@ -137,15 +137,14 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         throw new Unimplemented(type);
     }
 
-    void addTuple(DBSPTypeTupleBase type, int id) {
-        ObjectNode result = this.topMapper.createObjectNode();
+    void addToJson(DBSPTypeTupleBase type, int id) {
+        ObjectNode result = this.structs.putObject(Integer.toString(id));
         if (type.tupFields.length == 0) {
             result.put("ty", "Unit");
             return;
         }
         ArrayNode columns = this.topMapper.createArrayNode();
         result.set("columns", columns);
-        this.structs.set(Integer.toString(id), result);
         for (DBSPType colType: type.tupFields) {
             ObjectNode col = this.topMapper.createObjectNode();
             col.put("nullable", colType.mayBeNull);
@@ -155,7 +154,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         }
     }
 
-    public int addElementType(DBSPType type) {
+    public int addElementTypeToCatalog(DBSPType type) {
         DBSPTypeZSet set = type.as(DBSPTypeZSet.class);
         if (set == null)
             throw new RuntimeException("Expected a ZSet type, got " + type);
@@ -168,13 +167,12 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     @Override
     public boolean preorder(DBSPSourceOperator operator) {
-        ObjectNode node = this.topMapper.createObjectNode();
+        ObjectNode node = this.nodes.putObject(Long.toString(operator.id));
         DBSPType type = operator.getNonVoidType();
-        int typeId = this.addElementType(type);
-        ObjectNode data = this.topMapper.createObjectNode();
+        int typeId = this.addElementTypeToCatalog(type);
+        ObjectNode data = node.putObject("Source");
         data.put("layout", typeId);
         node.set("Source", data);
-        this.nodes.set(Long.toString(operator.id), node);
         return false;
     }
 
@@ -209,15 +207,13 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         throw new Unimplemented("Convertion to Tuple", type);
     }
 
-    ObjectNode createFunction(DBSPClosureExpression function) {
+    ObjectNode functionToJson(DBSPClosureExpression function) {
         ObjectNode result = this.topMapper.createObjectNode();
         DBSPType resultType = function.getResultType();
-        ArrayNode params = this.topMapper.createArrayNode();
-        result.set("args", params);
+        ArrayNode params = result.putArray("args");
         int index = 1;
         for (DBSPParameter param: function.parameters) {
-            ObjectNode paramNode = this.topMapper.createObjectNode();
-            params.add(paramNode);
+            ObjectNode paramNode = params.addObject();
             paramNode.put("id", index);
             DBSPTypeTuple type = makeTupleType(param.getNonVoidType());
             int typeId = this.typeCatalog.getTypeId(type);
@@ -238,8 +234,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
             result.put("ret", "Unit");
             List<DBSPTypeTuple> types = TypeCatalog.expandToTuples(resultType);
             for (DBSPTypeTuple type: types) {
-                ObjectNode paramNode = this.topMapper.createObjectNode();
-                params.add(paramNode);
+                ObjectNode paramNode = params.addObject();
                 paramNode.put("id", index);
                 int typeId = this.typeCatalog.getTypeId(type);
                 paramNode.put("layout", typeId);
@@ -248,27 +243,27 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
             }
         }
         result.put("entry_block", 1);
-        ObjectNode blocks = this.topMapper.createObjectNode();
+        ObjectNode blocks = result.putObject("blocks");
         ToJitInnerVisitor.convertClosure(function, blocks, this.typeCatalog);
-        result.set("blocks", blocks);
         return result;
     }
 
     public static boolean isScalarType(@Nullable DBSPType type) {
-        return type == null || type.is(DBSPTypeBaseType.class);
+        return type == null || type.is(DBSPTypeBaseType.class) ||
+                (type.is(DBSPTypeTupleBase.class) && type.to(DBSPTypeTupleBase.class).size() == 0);
     }
 
-    void addTypes() {
+    void addTypesToJson() {
         for (Map.Entry<DBSPType, Integer> entry: this.typeCatalog.typeId.entrySet()) {
             DBSPType type = entry.getKey();
             if (type.is(DBSPTypeRef.class))
                 type = type.to(DBSPTypeRef.class).deref();
             DBSPTypeTupleBase tuple = type.to(DBSPTypeTupleBase.class);
-            this.addTuple(tuple, entry.getValue());
+            this.addToJson(tuple, entry.getValue());
         }
     }
 
-    ObjectNode createOperator(DBSPOperator operator, String kind, String function) {
+    ObjectNode operatorToJson(DBSPOperator operator, String kind, String function) {
         ObjectNode node = this.topMapper.createObjectNode();
         ObjectNode data = node.putObject(kind);
         this.addInputs(data, operator);
@@ -281,7 +276,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
                 func = Objects.requireNonNull(stat.initializer);
             }
             DBSPClosureExpression closure = func.to(DBSPClosureExpression.class);
-            ObjectNode funcNode = this.createFunction(closure);
+            ObjectNode funcNode = this.functionToJson(closure);
             data.set(function, funcNode);
         }
         this.nodes.set(Long.toString(operator.id), node);
@@ -290,13 +285,13 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     @Override
     public boolean preorder(DBSPFilterOperator operator) {
-        this.createOperator(operator, "Filter", "filter_fn");
+        this.operatorToJson(operator, "Filter", "filter_fn");
         return false;
     }
 
     @Override
     public boolean preorder(DBSPMapOperator operator) {
-        ObjectNode map = this.createOperator(operator, "Map", "map_fn");
+        ObjectNode map = this.operatorToJson(operator, "Map", "map_fn");
         DBSPType type = operator.outputElementType;
         map.put("layout", this.typeCatalog.getTypeId(type));
         return false;
@@ -304,44 +299,44 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     @Override
     public boolean preorder(DBSPSumOperator operator) {
-        this.createOperator(operator, "Sum", "");
+        this.operatorToJson(operator, "Sum", "");
         return false;
     }
 
     @Override
     public boolean preorder(DBSPDistinctOperator operator) {
-        this.createOperator(operator, "Distinct", "");
+        this.operatorToJson(operator, "Distinct", "");
         return false;
     }
 
     @Override
     public boolean preorder(DBSPSubtractOperator operator) {
-        this.createOperator(operator, "Minus", "");
+        this.operatorToJson(operator, "Minus", "");
         return false;
     }
 
     @Override
     public boolean preorder(DBSPIntegralOperator operator) {
-        this.createOperator(operator, "Integrate", "");
+        this.operatorToJson(operator, "Integrate", "");
         return false;
     }
 
     @Override
     public boolean preorder(DBSPDifferentialOperator operator) {
-        this.createOperator(operator, "Differentiate", "");
+        this.operatorToJson(operator, "Differentiate", "");
         return false;
     }
 
     @Override
     public boolean preorder(DBSPIndexOperator operator) {
-        ObjectNode node = this.createOperator(operator, "IndexWith", "index_fn");
+        ObjectNode node = this.operatorToJson(operator, "IndexWith", "index_fn");
         node.put("key_layout", this.typeCatalog.getTypeId(operator.keyType));
         node.put("value_layout", this.typeCatalog.getTypeId(operator.elementType));
         return false;
     }
 
     public boolean preorder(DBSPJoinOperator operator) {
-        ObjectNode node = this.createOperator(operator, "JoinCore", "join_fn");
+        ObjectNode node = this.operatorToJson(operator, "JoinCore", "join_fn");
         node.put("value_layout", this.typeCatalog.getTypeId(
                 new DBSPTypeTuple(new DBSPTypeTuple())));
         node.put("key_layout", this.typeCatalog.getTypeId(operator.elementResultType));
@@ -351,17 +346,17 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     @Override
     public boolean preorder(DBSPNegateOperator operator) {
-        this.createOperator(operator, "Neg", "");
+        this.operatorToJson(operator, "Neg", "");
         return false;
     }
 
     @Override
     public boolean preorder(DBSPSinkOperator operator) {
-        this.createOperator(operator, "Sink", "");
+        this.operatorToJson(operator, "Sink", "");
         return false;
     }
 
-    void addLiteral(ObjectNode rows, DBSPLiteral e) {
+    void addLiteralToJson(ObjectNode rows, DBSPLiteral e) {
         DBSPType type = e.getNonVoidType();
         String label;
         if (type.mayBeNull) {
@@ -409,7 +404,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
             ObjectNode rows = row.addObject();
             DBSPTupleExpression elementValue = element.getKey().to(DBSPTupleExpression.class);
             for (DBSPExpression e: elementValue.fields) {
-                this.addLiteral(rows, e.to(DBSPLiteral.class));
+                this.addLiteralToJson(rows, e.to(DBSPLiteral.class));
             }
             row.add(weight);
         }
@@ -422,13 +417,13 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         throw new Unimplemented(operator);
     }
 
-    public static String circuitToJSON(DBSPCircuit circuit) {
+    public static String circuitToJson(DBSPCircuit circuit) {
         JitNormalizeInnerVisitor norm = new JitNormalizeInnerVisitor();
         CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(norm);
         circuit = rewriter.apply(circuit);
         ToJitVisitor visitor = new ToJitVisitor();
         circuit.accept(visitor);
-        visitor.addTypes();
+        visitor.addTypesToJson();
         return visitor.root.toPrettyString();
     }
 
@@ -437,7 +432,8 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
             JitNormalizeInnerVisitor norm = new JitNormalizeInnerVisitor();
             CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(norm);
             circuit = rewriter.apply(circuit);
-            String json = ToJitVisitor.circuitToJSON(circuit);
+            String json = ToJitVisitor.circuitToJson(circuit);
+            System.out.println(json);
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(json);
             if (root == null)

@@ -34,11 +34,8 @@ import java.util.List;
  * A Raw Rust tuple.
  */
 public class DBSPTypeTuple extends DBSPTypeTupleBase {
-    public final DBSPType[] tupFields;
-
     public DBSPTypeTuple(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
-        super(node, mayBeNull);
-        this.tupFields = tupFields;
+        super(node, mayBeNull, tupFields);
     }
 
     public DBSPTypeTuple(@Nullable Object node, DBSPType... tupFields) {

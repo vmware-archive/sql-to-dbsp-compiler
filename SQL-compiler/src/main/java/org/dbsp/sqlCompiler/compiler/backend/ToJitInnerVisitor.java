@@ -61,7 +61,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         }
     }
 
-    static class ExpressionRepresentation {
+    static class ExpressionJsonRepresentation {
         /**
          * The json instruction that computes the value of the expression.
          */
@@ -76,7 +76,8 @@ public class ToJitInnerVisitor extends InnerVisitor {
          */
         public final @Nullable ObjectNode isNullInstruction;
 
-        public ExpressionRepresentation(ObjectNode instruction, int id, @Nullable ObjectNode isNullInstruction) {
+        public ExpressionJsonRepresentation(ObjectNode instruction, int id,
+                                            @Nullable ObjectNode isNullInstruction) {
             this.instruction = instruction;
             this.instructionId = id;
             this.isNullInstruction = isNullInstruction;
@@ -117,7 +118,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
          *                  Then we allocate an extra expression to hold its
          *                  nullability.
          */
-        ExpressionIds add(String varName, boolean needsNull) {
+        ExpressionIds addVariable(String varName, boolean needsNull) {
             if (this.variables.containsKey(varName)) {
                 throw new RuntimeException("Duplicate declaration " + varName);
             }
@@ -231,7 +232,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         return this.accept(new DBSPBoolLiteral(value));
     }
 
-    ExpressionRepresentation insertInstruction(DBSPExpression expression) {
+    ExpressionJsonRepresentation insertInstruction(DBSPExpression expression) {
         int id = this.map(expression);
         ArrayNode instruction = Objects.requireNonNull(this.currentBlockBody).addArray();
         instruction.add(id);
@@ -242,7 +243,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
             isNullInstr.add(id);
             isNull = isNullInstr.addObject();
         }
-        return new ExpressionRepresentation(instruction.addObject(), id, isNull);
+        return new ExpressionJsonRepresentation(instruction.addObject(), id, isNull);
     }
 
     static String baseTypeName(DBSPExpression expression) {
@@ -262,12 +263,12 @@ public class ToJitInnerVisitor extends InnerVisitor {
     }
 
     ExpressionIds declare(String var, boolean needsNull) {
-        return this.getCurrentContext().add(var, needsNull);
+        return this.getCurrentContext().addVariable(var, needsNull);
     }
 
     /**
-     * True if this type needs to store a "is_null" value in a separate place.
-     * Tuples don't.  Only scalar nullable types do.
+     * True if this type needs to store an "is_null" value in a separate place.
+     * Tuples don't.  Only scalar nullable types may.
      */
     static boolean needsNull(DBSPType type) {
         if (type.is(DBSPTypeTuple.class))
@@ -282,8 +283,8 @@ public class ToJitInnerVisitor extends InnerVisitor {
         throw new Unimplemented(expression);
     }
 
-    boolean createLiteral(DBSPLiteral expression, String type, @Nullable BaseJsonNode value) {
-        ExpressionRepresentation ev = this.insertInstruction(expression);
+    boolean createJsonLiteral(DBSPLiteral expression, String type, @Nullable BaseJsonNode value) {
+        ExpressionJsonRepresentation ev = this.insertInstruction(expression);
         if (expression.isNull) {
             Objects.requireNonNull(ev.isNullInstruction);
             ObjectNode n = ev.isNullInstruction.putObject("Constant");
@@ -301,35 +302,35 @@ public class ToJitInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPI32Literal expression) {
-        return createLiteral(expression, "I32",
+        return createJsonLiteral(expression, "I32",
                 expression.value == null ? null : new IntNode(expression.value));
     }
 
     @Override
     public boolean preorder(DBSPI64Literal expression) {
-        return createLiteral(expression, "I64",
+        return createJsonLiteral(expression, "I64",
                 expression.value == null ? null : new LongNode(expression.value));
     }
 
     @Override
     public boolean preorder(DBSPBoolLiteral expression) {
-        return this.createLiteral(expression, "Bool",
+        return this.createJsonLiteral(expression, "Bool",
                 expression.value == null ? null : BooleanNode.valueOf(expression.value));
     }
 
     @Override
     public boolean preorder(DBSPStringLiteral expression) {
-        return this.createLiteral(expression, "String",
+        return this.createJsonLiteral(expression, "String",
                 expression.value == null ? null : new TextNode(expression.value));
     }
 
     public boolean preorder(DBSPDoubleLiteral expression) {
-        return this.createLiteral(expression, "F64",
+        return this.createJsonLiteral(expression, "F64",
                 expression.value == null ? null : new DoubleNode(expression.value));
     }
 
     public boolean preorder(DBSPFloatLiteral expression) {
-        return this.createLiteral(expression, "F64",
+        return this.createJsonLiteral(expression, "F64",
                 expression.value == null ? null : new FloatNode(expression.value));
     }
 
@@ -341,7 +342,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         //    "to": "I64"
         //  }
         ExpressionIds sourceId = this.accept(expression.source);
-        ExpressionRepresentation ev = this.insertInstruction(expression);
+        ExpressionJsonRepresentation ev = this.insertInstruction(expression);
         ObjectNode cast = ev.instruction.putObject("Cast");
         cast.put("value", sourceId.id);
         cast.put("from", baseTypeName(expression.source));
@@ -387,7 +388,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         ExpressionIds leftId = this.accept(expression.left);
         ExpressionIds rightId = this.accept(expression.right);
         ExpressionIds cf = this.constantBool(false);
-        ExpressionRepresentation er = this.insertInstruction(expression);
+        ExpressionJsonRepresentation er = this.insertInstruction(expression);
 
         // The following are not used on all execution paths
         int leftNullId;
@@ -437,7 +438,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         if (isWrapBool)
             cf = this.constantBool(false);
         ExpressionIds leftId = this.accept(expression.source);
-        ExpressionRepresentation er = this.insertInstruction(expression);
+        ExpressionJsonRepresentation er = this.insertInstruction(expression);
         String kind;
         switch (expression.operation) {
             case "-":
@@ -536,7 +537,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         //   "column": 1,
         //   "column_type": "I32"
         // }
-        ExpressionRepresentation er = this.insertInstruction(expression);
+        ExpressionJsonRepresentation er = this.insertInstruction(expression);
         ObjectNode load = er.instruction.putObject("Load");
         ExpressionIds sourceId = this.accept(expression.expression);
         load.put("source", sourceId.id);
@@ -572,7 +573,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         // }
         // TODO: handle nulls
         ExpressionIds condId = this.accept(expression.condition);
-        ExpressionRepresentation er = this.insertInstruction(expression);
+        ExpressionJsonRepresentation er = this.insertInstruction(expression);
         ObjectNode branch = er.instruction.putObject("Branch");
         ObjectNode branchExpr = branch.putObject("cond");
         branchExpr.put("Expr", condId.id);

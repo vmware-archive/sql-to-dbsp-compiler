@@ -26,12 +26,16 @@ public class JitNormalizeInnerVisitor
 
     @Override
     public boolean preorder(DBSPClosureExpression expression) {
-        if (expression.body.is(DBSPBlockExpression.class))
-            return false;
         expression.body.accept(this);
         DBSPExpression newBody = this.getResultExpression();
-        DBSPBlockExpression block = new DBSPBlockExpression(Linq.list(), newBody);
-        DBSPExpression result = new DBSPClosureExpression(expression.getNode(),
+        DBSPBlockExpression block ;
+        if (!newBody.is(DBSPBlockExpression.class))
+            block = new DBSPBlockExpression(Linq.list(), newBody);
+        else
+            block = newBody.to(DBSPBlockExpression.class);
+        DBSPExpression result = expression;
+        if (block != expression.body)
+            result = new DBSPClosureExpression(expression.getNode(),
                 block, expression.parameters);
         this.map(expression, result);
         return false;
