@@ -246,7 +246,10 @@ public class ToRustVisitor extends CircuitVisitor {
     /**
      * Creates a DBSP Fold object from an Aggregate.
      */
-    DBSPExpression createAggregator(DBSPAggregate aggregate) {
+    DBSPExpression createAggregator(@Nullable DBSPExpression function, @Nullable DBSPAggregate aggregate) {
+        if (function != null)
+            return function;
+        Objects.requireNonNull(aggregate);
         // Example for a pair of count+sum aggregations:
         // let zero_count: isize = 0;
         // let inc_count = |acc: isize, v: &usize, w: isize| -> isize { acc + 1 * w };
@@ -322,7 +325,7 @@ public class ToRustVisitor extends CircuitVisitor {
                 .append(" = ")
                 .append(operator.input().getName())
                 .append(".partitioned_rolling_aggregate(");
-        DBSPExpression aggregator = this.createAggregator(operator.aggregator);
+        DBSPExpression aggregator = this.createAggregator(operator.function, operator.aggregate);
         aggregator.accept(this.innerVisitor);
         builder.append(", ");
         operator.window.accept(this.innerVisitor);
@@ -352,7 +355,7 @@ public class ToRustVisitor extends CircuitVisitor {
                 .append(".");
         builder.append(operator.operation)
                 .append("(");
-        DBSPExpression aggregator = this.createAggregator(operator.aggregate);
+        DBSPExpression aggregator = this.createAggregator(operator.function, operator.aggregate);
         aggregator.accept(this.innerVisitor);
         builder.append(");");
         return false;
@@ -371,7 +374,8 @@ public class ToRustVisitor extends CircuitVisitor {
                     .append(".");
         builder.append(operator.operation)
                 .append("(");
-        operator.getFunction().accept(this.innerVisitor);
+        DBSPExpression aggregator = this.createAggregator(operator.function, operator.aggregate);
+        aggregator.accept(this.innerVisitor);
         builder.append(");");
         return false;
     }

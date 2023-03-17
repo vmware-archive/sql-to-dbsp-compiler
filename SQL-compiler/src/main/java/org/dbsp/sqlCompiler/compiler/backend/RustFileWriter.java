@@ -8,7 +8,6 @@ import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeUser;
 import org.dbsp.util.IndentStream;
 import org.dbsp.util.Linq;
 
@@ -62,7 +61,7 @@ public class RustFileWriter {
      * Find resources used.
      */
     FindResources finder = new FindResources();
-    CircuitDelegateVisitor scanInner = new CircuitDelegateVisitor(finder);
+    CircuitDelegateVisitor findInCircuit = new CircuitDelegateVisitor(this.finder);
 
     @SuppressWarnings("SpellCheckingInspection")
     static final String rustPreamble =
@@ -229,7 +228,7 @@ public class RustFileWriter {
 
     public void add(DBSPCircuit circuit) {
         this.toWrite.add(circuit);
-        circuit.accept(this.scanInner);
+        circuit.accept(this.findInCircuit);
     }
 
     public void add(DBSPFunction function) {

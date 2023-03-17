@@ -42,7 +42,6 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeUser;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.IModule;
-import org.dbsp.util.Linq;
 import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 import org.junit.Assert;
@@ -325,7 +324,9 @@ public class OtherTests extends BaseSQLTests implements IModule {
         };
         File file = this.createInputScript(statements);
         File json = File.createTempFile("out", ".json", new File("."));
-        CompilerMessages message = CompilerMain.execute("-js", json.getPath(), file.getPath());
+        File tmp = File.createTempFile("out", ".rs", new File("."));
+        CompilerMessages message = CompilerMain.execute(
+                "-js", json.getPath(), "-o", tmp.getPath(), file.getPath());
         Assert.assertEquals(message.exitCode, 0);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode parsed = mapper.readTree(json);
@@ -333,6 +334,8 @@ public class OtherTests extends BaseSQLTests implements IModule {
         boolean success = file.delete();
         Assert.assertTrue(success);
         success = json.delete();
+        Assert.assertTrue(success);
+        success = tmp.delete();
         Assert.assertTrue(success);
     }
 

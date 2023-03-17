@@ -35,13 +35,17 @@ import java.util.List;
 public class DBSPIncrementalAggregateOperator extends DBSPUnaryOperator {
     public final DBSPType keyType;
     public final DBSPType outputElementType;
+    @Nullable
     public final DBSPAggregate aggregate;
 
     public DBSPIncrementalAggregateOperator(@Nullable Object node,
                                             DBSPType keyType, DBSPType outputElementType,
+                                            @Nullable
+                                            DBSPExpression function,
+                                            @Nullable
                                             DBSPAggregate aggregate,
                                             DBSPOperator input) {
-        super(node, "aggregate", null,
+        super(node, "aggregate", function,
                 new DBSPTypeIndexedZSet(node, keyType, outputElementType), false, input);
         this.keyType = keyType;
         this.outputElementType = outputElementType;
@@ -57,14 +61,14 @@ public class DBSPIncrementalAggregateOperator extends DBSPUnaryOperator {
     @Override
     public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
         return new DBSPIncrementalAggregateOperator(
-                this.getNode(), this.keyType, this.outputElementType, this.aggregate, this.input());
+                this.getNode(), this.keyType, this.outputElementType, expression, this.aggregate, this.input());
     }
 
     @Override
     public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPIncrementalAggregateOperator(
-                    this.getNode(), this.keyType, this.outputElementType, this.aggregate, newInputs.get(0));
+                    this.getNode(), this.keyType, this.outputElementType, this.function, this.aggregate, newInputs.get(0));
         return this;
     }
 }

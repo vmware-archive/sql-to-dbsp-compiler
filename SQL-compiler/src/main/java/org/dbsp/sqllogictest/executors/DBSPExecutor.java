@@ -140,9 +140,9 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             seen.add(tables[i].tableName);
         }
 
-        // If the data is large write it to a set of CSV files and read it at runtime.
         if (totalSize > 10) {
             if (connectionString.equals("csv")) {
+                // If the data is large write it to a set of CSV files and read it at runtime.
                 for (int i = 0; i < tables.length; i++) {
                     String fileName = (rustDirectory + tables[i].tableName) + ".csv";
                     ToCsvVisitor.toCsv(fileName, tables[i].contents);
@@ -653,8 +653,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             rust.add(pt.program);
             rust.add(pt.tester);
         }
-        stream.close();
-        rust.write();
+        rust.writeAndClose();
         return testFileName;
     }
 }

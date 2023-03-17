@@ -40,18 +40,18 @@ public class DBSPWindowAggregateOperator extends DBSPUnaryOperator {
     public final DBSPType partitionKeyType;
     public final DBSPType timestampType;
     public final DBSPType aggregateType;
-    public final DBSPAggregate aggregator;
+    public final DBSPAggregate aggregate;
     public final DBSPExpression window;
 
     public DBSPWindowAggregateOperator(
-            @Nullable Object node, DBSPAggregate aggregator, DBSPExpression window,
+            @Nullable Object node, DBSPAggregate aggregate, DBSPExpression window,
             DBSPType partitionKeyType, DBSPType timestampType, DBSPType aggregateType,
             DBSPOperator input) {
         super(node, "window_aggregate", null,
                 new DBSPTypeIndexedZSet(node, new DBSPTypeRawTuple(partitionKeyType, timestampType), aggregateType),
                 true, input);
         this.window = window;
-        this.aggregator = aggregator;
+        this.aggregate = aggregate;
         this.partitionKeyType = partitionKeyType;
         this.timestampType = timestampType;
         this.aggregateType = aggregateType;
@@ -60,7 +60,7 @@ public class DBSPWindowAggregateOperator extends DBSPUnaryOperator {
     @Override
     public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
         return new DBSPWindowAggregateOperator(
-                this.getNode(), this.aggregator, this.window,
+                this.getNode(), this.aggregate, this.window,
                 this.partitionKeyType, this.timestampType, this.aggregateType,
                 this.input());
     }
@@ -69,7 +69,7 @@ public class DBSPWindowAggregateOperator extends DBSPUnaryOperator {
     public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPWindowAggregateOperator(
-                    this.getNode(), this.aggregator, this.window,
+                    this.getNode(), this.aggregate, this.window,
                     this.partitionKeyType, this.timestampType, this.aggregateType,
                     newInputs.get(0));
         return this;

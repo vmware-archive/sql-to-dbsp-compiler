@@ -32,6 +32,7 @@ import org.dbsp.sqlCompiler.ir.pattern.*;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.Unimplemented;
+import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -54,7 +55,7 @@ public class SqlRuntimeLibrary {
     private final Set<String> handWritten = new HashSet<>();
 
     public static final SqlRuntimeLibrary INSTANCE =new SqlRuntimeLibrary();
-    final List<IDBSPDeclaration> declarations = new ArrayList<>();
+    final LinkedHashMap<String, IDBSPDeclaration> declarations = new LinkedHashMap<>();
 
     protected SqlRuntimeLibrary() {
         this.aggregateFunctions.add("count");
@@ -229,7 +230,7 @@ public class SqlRuntimeLibrary {
     }
 
     void generateProgram() {
-        List<IDBSPDeclaration> declarations = new ArrayList<>();
+        this.declarations.clear();
         DBSPType[] numericTypes = new DBSPType[] {
                 DBSPTypeInteger.SIGNED_16,
                 DBSPTypeInteger.SIGNED_32,
@@ -324,7 +325,7 @@ public class SqlRuntimeLibrary {
                         }
                         DBSPFunction func = new DBSPFunction(function.function, Arrays.asList(left, right), type, def);
                         func.addAnnotation("#[inline(always)]");
-                        declarations.add(func);
+                        Utilities.putNew(this.declarations, func.name, func);
                     }
                 }
             }
@@ -338,13 +339,13 @@ public class SqlRuntimeLibrary {
     public void writeSqlLibrary(String filename) throws IOException {
         this.generateProgram();
         File file = new File(filename);
-        FileWriter writer = new FileWriter(file);
+        FileWriter writer = new FileWriter(file, false);
         writer.append("// Automatically-generated file\n");
         writer.append("#![allow(unused_parens)]\n");
         writer.append("#![allow(non_snake_case)]\n");
         writer.append("use dbsp::algebra::{F32, F64};\n");
         writer.append("\n");
-        for (IDBSPDeclaration declaration: this.declarations) {
+        for (IDBSPDeclaration declaration: this.declarations.values()) {
             writer.append(ToRustInnerVisitor.toRustString(declaration));
             writer.append("\n\n");
         }

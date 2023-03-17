@@ -47,6 +47,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.expression.*;
+import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
@@ -249,7 +250,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             // with a type given by fd.defaultZero.
             DBSPTypeTuple typeFromAggregate = fold.defaultZeroType();
             DBSPAggregateOperator agg = new DBSPAggregateOperator(aggregate, groupType,
-                    typeFromAggregate, fold, index);
+                    typeFromAggregate, null, fold, index);
 
             // Flatten the resulting set
             DBSPVariablePath kResult = groupType.ref().var("k");
@@ -899,27 +900,15 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 new DBSPTypeRawTuple(), inputRowType, opInput.isMultiset, opInput);
         this.circuit.addOperator(index);
         // apply an aggregation function that just creates a vector.
-        DBSPVariablePath row = inputRowType.var("v");
-        DBSPAggregate toVec = new DBSPAggregate(sort, row);
-
         DBSPTypeVec vecType = new DBSPTypeVec(inputRowType);
         DBSPExpression zero = new DBSPApplyExpression(DBSPTypeAny.INSTANCE.path(
                 new DBSPPath(vecType.name, "new")));
         DBSPVariablePath accum = vecType.var("a");
+        DBSPVariablePath row = inputRowType.var("v");
         // An element with weight 'w' is pushed 'w' times into the vector
-        DBSPExpression wPush = new DBSPApplyExpression("weighted_push", vecType, accum, row, weight);
-        DBSPClosureExpression push = wPush.closure(
+        DBSPExpression wPush = new DBSPApplyExpression("weighted_push", null, accum, row, weight);
+        DBSPExpression push = wPush.closure(
                 accum.asRefParameter(true), row.asRefParameter(), CalciteToDBSPCompiler.weight.asParameter());
-        toVec.add(new DBSPAggregate.Implementation(
-                null,
-                zero,
-                push,
-                zero,
-                new DBSPTypeUser(null, "UnimplementedSemigroup",
-                        false, DBSPTypeAny.INSTANCE)
-        ));
-
-        /*
         DBSPExpression constructor = DBSPTypeAny.INSTANCE.path(
             new DBSPPath(
                     new DBSPSimplePathSegment("Fold",
@@ -931,10 +920,10 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                     new DBSPSimplePathSegment("new")));
 
         DBSPExpression folder = new DBSPApplyExpression(constructor, zero, push);
-         */
-
         DBSPAggregateOperator agg = new DBSPAggregateOperator(sort,
-                new DBSPTypeRawTuple(), new DBSPTypeVec(inputRowType), toVec, index);
+                new DBSPTypeRawTuple(), new DBSPTypeVec(inputRowType),
+                this.declare("toVec", folder), null,
+                index);
         this.circuit.addOperator(agg);
 
         // Generate comparison function for sorting the vector

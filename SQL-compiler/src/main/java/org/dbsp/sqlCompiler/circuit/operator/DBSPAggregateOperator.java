@@ -35,13 +35,17 @@ import java.util.List;
 public class DBSPAggregateOperator extends DBSPUnaryOperator {
     public final DBSPType keyType;
     public final DBSPType outputElementType;
+    @Nullable
     public final DBSPAggregate aggregate;
 
     public DBSPAggregateOperator(@Nullable Object node,
                                  DBSPType keyType, DBSPType outputElementType,
+                                 @Nullable
+                                 DBSPExpression function,
+                                 @Nullable
                                  DBSPAggregate aggregate,
                                  DBSPOperator input) {
-        super(node, "stream_aggregate", null,
+        super(node, "stream_aggregate", function,
                 new DBSPTypeIndexedZSet(node, keyType, outputElementType), false, input);
         this.keyType = keyType;
         this.outputElementType = outputElementType;
@@ -57,7 +61,7 @@ public class DBSPAggregateOperator extends DBSPUnaryOperator {
     @Override
     public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
         return new DBSPAggregateOperator(this.getNode(),
-                this.keyType, this.outputElementType,
+                this.keyType, this.outputElementType, expression,
                 this.aggregate, this.input());
     }
 
@@ -65,7 +69,7 @@ public class DBSPAggregateOperator extends DBSPUnaryOperator {
     public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPAggregateOperator(
-                    this.getNode(), this.keyType, this.outputElementType,
+                    this.getNode(), this.keyType, this.outputElementType, this.function,
                     this.aggregate, newInputs.get(0));
         return this;
     }

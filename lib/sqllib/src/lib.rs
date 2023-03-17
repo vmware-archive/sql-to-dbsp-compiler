@@ -602,7 +602,7 @@ pub fn is_distinct_N_<T>(left: Option<T>, right: T) -> bool
 }
 
 
-pub fn weighted_push<'a, T, W>(vec: &'a mut Vec<T>, value: &T, weight: W) -> &'a mut Vec<T>
+pub fn weighted_push<T, W>(vec: &mut Vec<T>, value: &T, weight: W)
 where
     W: ZRingValue,
     T: Clone,
@@ -613,7 +613,6 @@ where
         vec.push(value.clone());
         w = w.add_by_ref(&negone);
     }
-    vec
 }
 
 pub fn st_distance__(left: GeoPoint, right: GeoPoint) -> F64
