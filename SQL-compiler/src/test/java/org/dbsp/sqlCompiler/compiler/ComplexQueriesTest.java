@@ -61,20 +61,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
         this.addRustTestCase(getCircuit(compiler));
     }
 
-    //@Test
-    // not yet supported.
-    public void testArray() {
-        String ddl = "CREATE TABLE ARR_TABLE2 (\n"
-                + "ID INTEGER,\n"
-                + "VALS INTEGER ARRAY,\n"
-                + "VALVALS VARCHAR(10) ARRAY)";
-        DBSPCompiler compiler = testCompiler();
-        compiler.compileStatement(ddl);
-        if (compiler.hasErrors())
-            compiler.showErrors(System.err);
-        Assert.assertFalse(compiler.hasErrors());
-    }
-
     @Test
     public void demographicsTest() {
         String query =

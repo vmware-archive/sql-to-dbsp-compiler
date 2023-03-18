@@ -115,7 +115,7 @@ public abstract class InnerExpressionRewriteVisitor
         DBSPExpression function = this.transform(expression.function);
         DBSPExpression result = expression;
         if (function != expression.function || Linq.different(arguments, expression.arguments))
-            result = new DBSPApplyExpression(function, arguments);
+            result = new DBSPApplyExpression(function, expression.getType(), arguments);
         this.map(expression, result);
         return false;
     }
@@ -195,9 +195,8 @@ public abstract class InnerExpressionRewriteVisitor
     public boolean preorder(DBSPClosureExpression expression) {
         DBSPExpression body = this.transform(expression.body);
         DBSPExpression result = expression;
-        if (body != expression.body) {
-            result = new DBSPClosureExpression(body, expression.parameters);
-        }
+        if (body != expression.body)
+            result = body.closure(expression.parameters);
         this.map(expression, result);
         return false;
     }
@@ -212,9 +211,8 @@ public abstract class InnerExpressionRewriteVisitor
     public boolean preorder(DBSPDerefExpression expression) {
         DBSPExpression source = this.transform(expression.expression);
         DBSPExpression result = expression;
-        if (source != expression.expression) {
+        if (source != expression.expression)
             result = new DBSPDerefExpression(source);
-        }
         this.map(expression, result);
         return false;
     }
@@ -229,9 +227,8 @@ public abstract class InnerExpressionRewriteVisitor
     public boolean preorder(DBSPFieldExpression expression) {
         DBSPExpression source = this.transform(expression.expression);
         DBSPExpression result = expression;
-        if (source != expression.expression) {
+        if (source != expression.expression)
             result = source.field(expression.fieldNo);
-        }
         this.map(expression, result);
         return false;
     }

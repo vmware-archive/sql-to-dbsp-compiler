@@ -191,14 +191,14 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             List<AggregateCall> aggregates, DBSPTypeTuple resultType,
             DBSPType inputRowType, int groupCount) {
         DBSPVariablePath rowVar = inputRowType.ref().var("v");
-        DBSPAggregate result = new DBSPAggregate(node, rowVar);
+        DBSPAggregate result = new DBSPAggregate(node, rowVar, aggregates.size());
         int aggIndex = 0;
 
         for (AggregateCall call: aggregates) {
             DBSPType resultFieldType = resultType.getFieldType(aggIndex + groupCount);
             AggregateCompiler compiler = new AggregateCompiler(call, resultFieldType, rowVar);
             DBSPAggregate.Implementation implementation = compiler.compile();
-            result.add(implementation);
+            result.set(aggIndex, implementation);
             aggIndex++;
         }
         return result;
@@ -901,8 +901,8 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         this.circuit.addOperator(index);
         // apply an aggregation function that just creates a vector.
         DBSPTypeVec vecType = new DBSPTypeVec(inputRowType);
-        DBSPExpression zero = new DBSPApplyExpression(DBSPTypeAny.INSTANCE.path(
-                new DBSPPath(vecType.name, "new")));
+        DBSPExpression zero = DBSPTypeAny.INSTANCE.path(
+                new DBSPPath(vecType.name, "new")).call();
         DBSPVariablePath accum = vecType.var("a");
         DBSPVariablePath row = inputRowType.var("v");
         // An element with weight 'w' is pushed 'w' times into the vector
@@ -919,7 +919,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                         DBSPTypeAny.INSTANCE),
                     new DBSPSimplePathSegment("new")));
 
-        DBSPExpression folder = new DBSPApplyExpression(constructor, zero, push);
+        DBSPExpression folder = constructor.call(zero, push);
         DBSPAggregateOperator agg = new DBSPAggregateOperator(sort,
                 new DBSPTypeRawTuple(), new DBSPTypeVec(inputRowType),
                 this.declare("toVec", folder), null,

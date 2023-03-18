@@ -100,7 +100,7 @@ public class BaseSQLTests {
             list.add(circ);
             for (InputOutputPair pairs: this.data) {
                 DBSPLetStatement out = new DBSPLetStatement("output",
-                        new DBSPApplyExpression(circ.getVarReference(), pairs.inputs));
+                        circ.getVarReference().call(pairs.inputs));
                 list.add(out);
                 for (int i = 0; i < pairs.outputs.length; i++) {
                     list.add(

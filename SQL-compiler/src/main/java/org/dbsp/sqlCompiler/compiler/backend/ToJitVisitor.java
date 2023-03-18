@@ -30,8 +30,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -351,8 +353,9 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         if (operator.function != null)
             throw new RuntimeException("Didn't expect the Aggregate to have a function");
         ObjectNode node = this.operatorToJson(operator, "Fold", "");
+        DBSPAggregate aggregate = operator.getAggregate();
         // Initial value
-        DBSPExpression initial = this.resolve(operator.getAggregate().getZero());
+        DBSPExpression initial = this.resolve(aggregate.getZero());
         ObjectNode init = node.putObject("init");
         ArrayNode rows = init.putArray("rows");
         ObjectNode row = rows.addObject();
@@ -360,8 +363,21 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         for (DBSPExpression e: elementValue.fields) {
             this.addLiteralToJson(row, e.to(DBSPLiteral.class));
         }
-        throw new Unimplemented(operator);
-        //return false;
+
+        DBSPClosureExpression closure = aggregate.getIncrement();
+        BetaReduction reducer = new BetaReduction();
+        IDBSPInnerNode reduced = reducer.apply(closure);
+        System.out.println(closure + "\n" + reduced);
+        closure = Objects.requireNonNull(reduced).to(DBSPClosureExpression.class);
+        ObjectNode increment = this.functionToJson(closure);
+        node.set("step_fn", increment);
+
+        closure = aggregate.getPostprocessing();
+        reduced = reducer.apply(closure);
+        closure = Objects.requireNonNull(reduced).to(DBSPClosureExpression.class);
+        ObjectNode post = this.functionToJson(closure);
+        node.set("finish_fn", post);
+        return false;
     }
 
     @Override

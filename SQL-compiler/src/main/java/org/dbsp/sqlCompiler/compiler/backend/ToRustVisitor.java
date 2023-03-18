@@ -266,33 +266,35 @@ public class ToRustVisitor extends CircuitVisitor {
         // let fold = Fold::with_output((zero_count, zero_sum), inc, post);
         // let count_sum = input.aggregate(fold);
         // let result = count_sum.map(|k,v|: (&(), &Tuple1<isize>|) { *v };
-        int parts = aggregate.components.size();
+        int parts = aggregate.components.length;
         DBSPExpression[] zeros = new DBSPExpression[parts];
         DBSPExpression[] increments = new DBSPExpression[parts];
         DBSPExpression[] posts = new DBSPExpression[parts];
         DBSPType[] accumulatorTypes = new DBSPType[parts];
         DBSPType[] semigroups = new DBSPType[parts];
         for (int i = 0; i < parts; i++) {
-            DBSPAggregate.Implementation implementation = aggregate.components.get(i);
+            DBSPAggregate.Implementation implementation = aggregate.components[i];
             DBSPType incType = implementation.increment.getResultType();
             zeros[i] = implementation.zero;
             increments[i] = implementation.increment;
             accumulatorTypes[i] = Objects.requireNonNull(incType);
             semigroups[i] = implementation.semigroup;
-            DBSPExpression identity = new DBSPTypeFunction(incType, incType).path(
-                    new DBSPPath(new DBSPSimplePathSegment("identity", incType)));
-            posts[i] = implementation.postProcess != null ? implementation.postProcess : identity;
+            posts[i] = implementation.getPostprocessing();
         }
 
         DBSPTypeRawTuple accumulatorType = new DBSPTypeRawTuple(accumulatorTypes);
         DBSPVariablePath accumulator = accumulatorType.ref(true).var("a");
         DBSPVariablePath postAccumulator = accumulatorType.var("a");
+
+        BetaReduction reducer = new BetaReduction();
         for (int i = 0; i < parts; i++) {
             DBSPExpression accumulatorField = accumulator.field(i);
-            increments[i] = new DBSPApplyExpression(increments[i],
+            DBSPExpression expr = increments[i].call(
                     accumulatorField, aggregate.rowVar, CalciteToDBSPCompiler.weight);
+            increments[i] = Objects.requireNonNull(reducer.apply(expr)).to(DBSPExpression.class);
             DBSPExpression postAccumulatorField = postAccumulator.field(i);
-            posts[i] = new DBSPApplyExpression(posts[i], postAccumulatorField);
+            expr = posts[i].call(postAccumulatorField);
+            posts[i] = Objects.requireNonNull(reducer.apply(expr)).to(DBSPExpression.class);
         }
         DBSPAssignmentExpression accumulatorBody = new DBSPAssignmentExpression(
                 accumulator.deref(), new DBSPRawTupleExpression(increments));
@@ -308,7 +310,7 @@ public class ToRustVisitor extends CircuitVisitor {
                                 DBSPTypeAny.INSTANCE,
                                 DBSPTypeAny.INSTANCE),
                         new DBSPSimplePathSegment("with_output")));
-        return new DBSPApplyExpression(constructor,
+        return constructor.call(
                 new DBSPRawTupleExpression(zeros),
                 accumFunction, postClosure);
     }

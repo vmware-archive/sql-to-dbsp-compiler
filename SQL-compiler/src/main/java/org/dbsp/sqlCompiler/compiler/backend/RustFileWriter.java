@@ -50,7 +50,7 @@ public class RustFileWriter {
 
         @Override
         public void postorder(DBSPAggregate aggregate) {
-            int size = aggregate.components.size();
+            int size = aggregate.components.length;
             RustFileWriter.this.used.semigroupSizesUsed.add(size);
             // This will appear in the code generated for the Fold
             RustFileWriter.this.used.tupleSizesUsed.add(size);

@@ -201,9 +201,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         List<DBSPStatement> statements = new ArrayList<>();
         statements.add(input);
         DBSPLetStatement let = new DBSPLetStatement(vec.variable,
-                new DBSPApplyExpression(DBSPTypeAny.INSTANCE.path(
-                        new DBSPPath("Vec", "new"))),
-                true);
+                DBSPTypeAny.INSTANCE.path(new DBSPPath("Vec", "new")).call(), true);
         statements.add(let);
         if (this.options.optimizerOptions.incrementalize) {
             for (int i = 0; i < inputType.tupFields.length; i++) {
@@ -579,7 +577,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                                         output0.borrow(),
                                         columnTypes,
                                         sort),
-                                new DBSPApplyExpression(zset_to_strings,
+                                 zset_to_strings.call(
                                         output.borrow(),
                                         columnTypes,
                                         sort))));

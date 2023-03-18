@@ -95,4 +95,8 @@ public abstract class DBSPExpression
     public DBSPExpression is_null() {
         return new DBSPIsNullExpression(this.getNode(), this);
     }
+
+    public DBSPExpression call(DBSPExpression... arguments) {
+        return new DBSPApplyExpression(this, arguments);
+    }
 }
