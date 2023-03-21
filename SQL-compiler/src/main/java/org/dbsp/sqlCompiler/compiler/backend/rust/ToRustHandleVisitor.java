@@ -21,11 +21,10 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.backend.rust;
 
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
-import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;

@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.backend.ToJitVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.junit.Assert;

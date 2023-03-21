@@ -25,7 +25,11 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.*;
-import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.optimize.*;
+import org.dbsp.sqlCompiler.compiler.backend.rust.RustSqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.compiler.backend.rust.RustFileWriter;
+import org.dbsp.sqlCompiler.compiler.backend.visitors.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -143,7 +147,7 @@ public class BaseSQLTests {
     }
 
     public static void generateLib() throws IOException {
-        SqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
+        RustSqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
     }
 
     CircuitVisitor getOptimizer() {

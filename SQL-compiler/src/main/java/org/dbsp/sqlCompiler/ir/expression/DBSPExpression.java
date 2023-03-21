@@ -99,4 +99,12 @@ public abstract class DBSPExpression
     public DBSPExpression call(DBSPExpression... arguments) {
         return new DBSPApplyExpression(this, arguments);
     }
+
+    public DBSPExpression cast(DBSPType to) {
+        DBSPType fromType = this.getNonVoidType();
+        if (fromType.sameType(to)) {
+            return this;
+        }
+        return new DBSPCastExpression(this.getNode(), this, to);
+    }
 }

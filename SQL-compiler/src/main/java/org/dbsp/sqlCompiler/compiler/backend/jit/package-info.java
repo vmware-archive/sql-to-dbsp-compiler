@@ -21,38 +21,16 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.circuit;
-
-import org.dbsp.sqlCompiler.compiler.backend.rust.ToRustInnerVisitor;
-import org.dbsp.sqlCompiler.compiler.backend.rust.ToRustVisitor;
-import org.dbsp.util.IdGen;
-
-import javax.annotation.Nullable;
-
 /**
- * Base interface for all DBSP nodes.
+ * Package that doesn't allow null values as method parameters.
  */
-public abstract class DBSPNode
-        extends IdGen
-        implements IDBSPNode {
 
-    /**
-     * Original query Sql node that produced this node.
-     */
-    private final @Nullable
-    Object node;
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqlCompiler.compiler.backend.jit;
 
-    protected DBSPNode(@Nullable Object node) {
-        this.node = node;
-    }
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
 
-    @Nullable
-    public Object getNode() { return this.node; }
-
-    @Override
-    public String toString() {
-        if (this.is(IDBSPInnerNode.class))
-            return ToRustInnerVisitor.toRustString(this.to(IDBSPInnerNode.class));
-        return ToRustVisitor.toRustString(this.to(IDBSPOuterNode.class));
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

@@ -21,9 +21,9 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.circuit;
+package org.dbsp.sqlCompiler.compiler.backend.rust;
 
-import org.dbsp.sqlCompiler.compiler.backend.ToRustInnerVisitor;
+import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -44,7 +44,7 @@ import java.util.*;
  * SQL semantics.
  */
 @SuppressWarnings({"FieldCanBeLocal", "MismatchedQueryAndUpdateOfCollection", "SpellCheckingInspection"})
-public class SqlRuntimeLibrary {
+public class RustSqlRuntimeLibrary {
     private final HashSet<String> aggregateFunctions = new HashSet<>();
     private final HashMap<String, String> arithmeticFunctions = new HashMap<>();
     private final HashMap<String, String> dateFunctions = new HashMap<>();
@@ -54,10 +54,10 @@ public class SqlRuntimeLibrary {
     private final Set<String> comparisons = new HashSet<>();
     private final Set<String> handWritten = new HashSet<>();
 
-    public static final SqlRuntimeLibrary INSTANCE =new SqlRuntimeLibrary();
+    public static final RustSqlRuntimeLibrary INSTANCE =new RustSqlRuntimeLibrary();
     final LinkedHashMap<String, IDBSPDeclaration> declarations = new LinkedHashMap<>();
 
-    protected SqlRuntimeLibrary() {
+    protected RustSqlRuntimeLibrary() {
         this.aggregateFunctions.add("count");
         this.aggregateFunctions.add("sum");
         this.aggregateFunctions.add("avg");
@@ -88,6 +88,10 @@ public class SqlRuntimeLibrary {
         this.arithmeticFunctions.put("min", "min");
         this.arithmeticFunctions.put("max", "max");
         this.arithmeticFunctions.put("is_distinct", "is_distinct");
+        this.arithmeticFunctions.put("agg_plus", "agg_plus");
+        this.arithmeticFunctions.put("agg_min", "agg_min");
+        this.arithmeticFunctions.put("agg_max", "agg_max");
+        this.arithmeticFunctions.put("mul_by_ref", "mul_weight");
 
         this.handWritten.add("is_false");
         this.handWritten.add("is_not_true");
@@ -100,6 +104,10 @@ public class SqlRuntimeLibrary {
         this.handWritten.add("/");
         this.handWritten.add("is_distinct");
         this.handWritten.add("is_not_distinct");
+        this.handWritten.add("agg_max");
+        this.handWritten.add("agg_plus");
+        this.handWritten.add("agg_min");
+        this.handWritten.add("mul_weight");
 
         this.doubleFunctions.put("eq", "==");
         this.doubleFunctions.put("neq", "!=");
@@ -137,7 +145,8 @@ public class SqlRuntimeLibrary {
         this.booleanFunctions.put("is_not_true", "is_not_true");
         this.booleanFunctions.put("is_true", "is_true");
         this.booleanFunctions.put("is_not_false", "is_not_false");
-        this.arithmeticFunctions.put("is_distinct", "is_distinct");
+        this.booleanFunctions.put("agg_min", "agg_min");
+        this.booleanFunctions.put("agg_max", "agg_max");
 
         this.comparisons.add("==");
         this.comparisons.add("!=");
@@ -173,9 +182,10 @@ public class SqlRuntimeLibrary {
                     '}';
         }
     }
-    
-    public FunctionDescription getFunction(
-            String op, @Nullable DBSPType expectedReturnType, DBSPType ltype, @Nullable DBSPType rtype, boolean aggregate) {
+
+    public FunctionDescription getImplementation(
+            String op, @Nullable DBSPType expectedReturnType, DBSPType ltype, @Nullable DBSPType rtype) {
+        boolean isAggregate = op.startsWith("agg_");
         if (ltype.is(DBSPTypeAny.class) || (rtype != null && rtype.is(DBSPTypeAny.class)))
             throw new RuntimeException("Unexpected type _ for operand of " + op);
         HashMap<String, String> map = null;
@@ -196,7 +206,7 @@ public class SqlRuntimeLibrary {
             }
         } else if (ltype.is(IsNumericType.class)) {
             map = this.arithmeticFunctions;
-        } else if (ltype.is(DBSPTypeString.class)){
+        } else if (ltype.is(DBSPTypeString.class)) {
             map = this.stringFunctions;
         }
         if (isComparison(op))
@@ -212,7 +222,7 @@ public class SqlRuntimeLibrary {
         String suffixr = rtype == null ? "" : rtype.nullableSuffix();
         String tsuffixl;
         String tsuffixr;
-        if (aggregate || op.equals("is_distinct")) {
+        if (isAggregate || op.equals("is_distinct")) {
             tsuffixl = "";
             tsuffixr = "";
         } else {
@@ -223,7 +233,9 @@ public class SqlRuntimeLibrary {
             throw new Unimplemented(op);
         for (String k: map.keySet()) {
             if (map.get(k).equals(op)) {
-                return new FunctionDescription(k + "_" + tsuffixl + suffixl + "_" + tsuffixr + suffixr + suffixReturn, returnType);
+                return new FunctionDescription(
+                        k + "_" + tsuffixl + suffixl + "_" + tsuffixr + suffixr + suffixReturn,
+                        returnType);
             }
         }
         throw new Unimplemented("Could not find `" + op + "` for type " + ltype);
@@ -295,7 +307,7 @@ public class SqlRuntimeLibrary {
                         */
 
                         // The general rule is: if any operand is NULL, the result is NULL.
-                        FunctionDescription function = this.getFunction(op, null, leftType, rightType, false);
+                        FunctionDescription function = this.getImplementation(op, null, leftType, rightType);
                         DBSPParameter left = new DBSPParameter("left", leftType);
                         DBSPParameter right = new DBSPParameter("right", rightType);
                         DBSPType type = function.returnType;

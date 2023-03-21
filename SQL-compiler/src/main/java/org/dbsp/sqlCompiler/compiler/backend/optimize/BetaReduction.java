@@ -1,11 +1,10 @@
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.backend.optimize;
 
-import org.apache.commons.lang3.tuple.Pair;
+import org.dbsp.sqlCompiler.compiler.backend.visitors.InnerExpressionRewriteVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
-import org.dbsp.util.Unimplemented;
 import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;

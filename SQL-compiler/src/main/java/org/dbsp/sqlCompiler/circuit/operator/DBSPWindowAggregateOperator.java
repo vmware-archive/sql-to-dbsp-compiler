@@ -43,12 +43,14 @@ public class DBSPWindowAggregateOperator extends DBSPAggregateOperatorBase {
     public final DBSPExpression window;
 
     public DBSPWindowAggregateOperator(
-            @Nullable Object node, DBSPAggregate aggregate, DBSPExpression window,
+            @Nullable Object node,
+            @Nullable DBSPExpression function, @Nullable DBSPAggregate aggregate,
+            DBSPExpression window,
             DBSPType partitionKeyType, DBSPType timestampType, DBSPType aggregateType,
             DBSPOperator input) {
         super(node, "window_aggregate",
                 new DBSPTypeIndexedZSet(node, new DBSPTypeRawTuple(partitionKeyType, timestampType), aggregateType),
-                null, aggregate,
+                function, aggregate,
                 true, input);
         this.window = window;
         this.partitionKeyType = partitionKeyType;
@@ -59,7 +61,7 @@ public class DBSPWindowAggregateOperator extends DBSPAggregateOperatorBase {
     @Override
     public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
         return new DBSPWindowAggregateOperator(
-                this.getNode(), this.getAggregate(), this.window,
+                this.getNode(), expression, this.getAggregate(), this.window,
                 this.partitionKeyType, this.timestampType, this.aggregateType,
                 this.input());
     }
@@ -68,7 +70,7 @@ public class DBSPWindowAggregateOperator extends DBSPAggregateOperatorBase {
     public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPWindowAggregateOperator(
-                    this.getNode(), this.getAggregate(), this.window,
+                    this.getNode(), this.function, this.getAggregate(), this.window,
                     this.partitionKeyType, this.timestampType, this.aggregateType,
                     newInputs.get(0));
         return this;

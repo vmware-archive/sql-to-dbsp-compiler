@@ -26,13 +26,13 @@ package org.dbsp.sqlCompiler.compiler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.dbsp.sqlCompiler.compiler.backend.RustFileWriter;
+import org.dbsp.sqlCompiler.compiler.backend.rust.RustFileWriter;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
 import org.dbsp.sqlCompiler.CompilerMain;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.backend.ToCsvVisitor;
-import org.dbsp.sqlCompiler.compiler.backend.ToRustVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.rust.ToRustVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -47,7 +47,6 @@ import org.dbsp.util.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.awt.image.FileImageSource;
-import sun.awt.image.ImageFormatException;
 import sun.awt.image.JPEGImageDecoder;
 
 import java.io.*;
@@ -90,7 +89,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         try {
             query = "CREATE VIEW V AS " + query;
             DBSPCircuit circuit = this.queryToCircuit(query);
-            String rust = ToRustVisitor.circuitToRustString(circuit);
+            String rust = ToRustVisitor.toRustString(circuit);
             Assert.assertNotNull(rust);
         } catch (Exception ex) {
             throw new RuntimeException(ex);

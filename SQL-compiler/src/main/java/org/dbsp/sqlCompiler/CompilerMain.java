@@ -27,6 +27,8 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.rust.RustFileWriter;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
 import org.dbsp.sqlCompiler.compiler.errors.SourcePositionRange;
 import org.dbsp.sqlCompiler.compiler.backend.*;

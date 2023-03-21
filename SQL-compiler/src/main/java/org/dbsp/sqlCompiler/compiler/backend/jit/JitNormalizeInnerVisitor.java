@@ -1,9 +1,8 @@
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.backend.jit;
 
+import org.dbsp.sqlCompiler.compiler.backend.visitors.InnerExpressionRewriteVisitor;
 import org.dbsp.sqlCompiler.ir.expression.*;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Linq;
 

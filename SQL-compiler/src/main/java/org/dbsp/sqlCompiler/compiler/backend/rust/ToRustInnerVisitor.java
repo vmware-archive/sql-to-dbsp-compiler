@@ -21,10 +21,9 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.backend.rust;
 
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
-import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.ir.*;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -368,12 +367,18 @@ public class ToRustInnerVisitor extends InnerVisitor {
                 this.builder.append(")");
             }
         } else {
-            SqlRuntimeLibrary.FunctionDescription function = SqlRuntimeLibrary.INSTANCE.getFunction(
+            if (expression.operation.equals("mul_weight")) {
+                expression.left.accept(this);
+                this.builder.append(".mul_by_ref(");
+                expression.right.accept(this);
+                this.builder.append(")");
+                return false;
+            }
+            RustSqlRuntimeLibrary.FunctionDescription function = RustSqlRuntimeLibrary.INSTANCE.getImplementation(
                     expression.operation,
                     expression.getNonVoidType(),
                     expression.left.getNonVoidType(),
-                    expression.right.getNonVoidType(),
-                    false);
+                    expression.right.getNonVoidType());
             this.builder.append(function.function).append("(");
             expression.left.accept(this);
             this.builder.append(", ");
@@ -404,7 +409,14 @@ public class ToRustInnerVisitor extends InnerVisitor {
             expression.source.accept(this);
             this.builder.append(")");
             return false;
+        } else if (expression.operation.startsWith("is_")) {
+            this.builder.append(expression.operation)
+                    .append("(");
+            expression.source.accept(this);
+            this.builder.append(")");
+            return false;
         }
+
         if (expression.source.getNonVoidType().mayBeNull) {
             this.builder.append("(")
                     .append("match ");
@@ -563,10 +575,8 @@ public class ToRustInnerVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPParameter parameter) {
         parameter.pattern.accept(this);
-        if (parameter.type != null) {
-            this.builder.append(": ");
-            parameter.type.accept(this);
-        }
+        this.builder.append(": ");
+        parameter.type.accept(this);
         return false;
     }
 

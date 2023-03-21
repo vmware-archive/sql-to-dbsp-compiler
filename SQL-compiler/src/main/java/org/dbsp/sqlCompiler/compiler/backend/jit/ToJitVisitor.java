@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.backend.jit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,6 +32,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
+import org.dbsp.sqlCompiler.compiler.backend.optimize.BetaReduction;
+import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitFunctionRewriter;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
@@ -134,6 +136,10 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
                 return "Date";
             case "Timestamp":
                 return "Timestamp";
+            case "u":
+                return "Usize";
+            case "i":
+                return "Isize";
             default:
                 break;
         }

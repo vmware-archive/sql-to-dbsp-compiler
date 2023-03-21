@@ -106,7 +106,7 @@ public class AggregateCompiler {
      */
     DBSPClosureExpression makeRowClosure(DBSPExpression body, DBSPVariablePath accum) {
         return body.closure(
-                accum.asParameter(), this.v.asParameter(), CalciteToDBSPCompiler.weight.asParameter());
+                accum.asParameter(), this.v.asParameter(), CalciteToDBSPCompiler.WEIGHT_VAR.asParameter());
     }
 
     void processCount(SqlCountAggFunction function) {
@@ -133,10 +133,10 @@ public class AggregateCompiler {
         } else {
             increment = ExpressionCompiler.aggregateOperation(
                     function, "+", this.resultType,
-                    accum, new DBSPApplyMethodExpression("mul_by_ref",
-                            DBSPTypeInteger.SIGNED_64,
+                    accum, new DBSPBinaryExpression(function, DBSPTypeInteger.SIGNED_64,
+                            "mul_weight",
                             argument,
-                            CalciteToDBSPCompiler.weight.borrow()));
+                            CalciteToDBSPCompiler.WEIGHT_VAR.borrow()));
         }
         DBSPType semigroup = new DBSPTypeUser(null, "DefaultSemigroup", false, this.resultType);
         this.foldingFunction = new DBSPAggregate.Implementation(
@@ -188,10 +188,11 @@ public class AggregateCompiler {
         } else {
             increment = ExpressionCompiler.aggregateOperation(
                     function, "+", this.nullableResultType,
-                    accum, new DBSPApplyMethodExpression("mul_by_ref",
+                    accum, new DBSPBinaryExpression(function, 
                             aggregatedValue.getNonVoidType(),
+                            "mul_weight",
                             aggregatedValue,
-                            CalciteToDBSPCompiler.weight.borrow()));
+                            CalciteToDBSPCompiler.WEIGHT_VAR.borrow()));
         }
         DBSPType semigroup = new DBSPTypeUser(null, "DefaultOptSemigroup", false, accum.getNonVoidType().setMayBeNull(false));
         this.foldingFunction = new DBSPAggregate.Implementation(
@@ -210,10 +211,12 @@ public class AggregateCompiler {
         } else {
             increment = ExpressionCompiler.aggregateOperation(
                     function, "+", this.resultType,
-                    accum, new DBSPApplyMethodExpression("mul_by_ref",
+                    accum, new DBSPBinaryExpression(
+                            function,
                             aggregatedValue.getNonVoidType(),
+                            "mul_weight",
                             aggregatedValue,
-                            CalciteToDBSPCompiler.weight.borrow()));
+                            CalciteToDBSPCompiler.WEIGHT_VAR.borrow()));
         }
         String semigroupName = "DefaultSemigroup";
         if (accum.getNonVoidType().mayBeNull)
@@ -235,7 +238,7 @@ public class AggregateCompiler {
         final int countIndex = 1;
         DBSPExpression countAccumulator = accum.field(countIndex);
         DBSPExpression sumAccumulator = accum.field(sumIndex);
-        DBSPExpression aggregatedValue = ExpressionCompiler.makeCast(function, this.getAggregatedValue(), i64);
+        DBSPExpression aggregatedValue = this.getAggregatedValue().cast(i64);
         DBSPExpression plusOne = new DBSPI64Literal(1L);
         if (aggregatedValueType.mayBeNull)
             plusOne = new DBSPApplyExpression("indicator", DBSPTypeInteger.SIGNED_64, aggregatedValue);
@@ -247,16 +250,20 @@ public class AggregateCompiler {
         } else {
             count = ExpressionCompiler.aggregateOperation(
                     function, "+", i64,
-                    countAccumulator, new DBSPApplyMethodExpression("mul_by_ref",
+                    countAccumulator, new DBSPBinaryExpression(
+                            function,
                             DBSPTypeInteger.SIGNED_64.setMayBeNull(plusOne.getNonVoidType().mayBeNull),
+                            "mul_weight",
                             plusOne,
-                            CalciteToDBSPCompiler.weight.borrow()));
+                            CalciteToDBSPCompiler.WEIGHT_VAR.borrow()));
             sum = ExpressionCompiler.aggregateOperation(
                     function, "+", i64,
-                    sumAccumulator, new DBSPApplyMethodExpression("mul_by_ref",
+                    sumAccumulator, new DBSPBinaryExpression(
+                            function,
                             i64,
+                            "mul_weight",
                             aggregatedValue,
-                            CalciteToDBSPCompiler.weight.borrow()));
+                            CalciteToDBSPCompiler.WEIGHT_VAR.borrow()));
         }
 
         DBSPExpression increment = new DBSPRawTupleExpression(sum, count);
@@ -264,7 +271,7 @@ public class AggregateCompiler {
         DBSPExpression divide = ExpressionCompiler.makeBinaryExpression(
                 function, this.resultType, "/",
                 Linq.list(a.field(sumIndex), a.field(countIndex)));
-        divide = ExpressionCompiler.makeCast(function, divide, this.nullableResultType);
+        divide = divide.cast(this.nullableResultType);
         DBSPClosureExpression post = new DBSPClosureExpression(
                 null, divide, a.asParameter());
         DBSPExpression postZero = DBSPLiteral.none(this.nullableResultType);

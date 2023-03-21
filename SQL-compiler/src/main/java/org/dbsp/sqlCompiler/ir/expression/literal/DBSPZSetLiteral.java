@@ -65,7 +65,7 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
     }
 
     public DBSPZSetLiteral(DBSPExpression... data) {
-        this(DBSPTypeZSet.defaultWeightType, data);
+        this(DBSPTypeZSet.WEIGHT_TYPE, data);
     }
 
     protected DBSPZSetLiteral(Map<DBSPExpression, Integer> data,

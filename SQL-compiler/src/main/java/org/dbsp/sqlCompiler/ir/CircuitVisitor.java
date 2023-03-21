@@ -71,6 +71,7 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
         this.startVisit(node);
         node.accept(this);
         this.endVisit();
+        this.circuit = null;
         return node;
     }
 
@@ -224,9 +225,11 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
 
     ////////////////////////////////////
 
-    public void postorder(DBSPPartialCircuit circuit) {
+    public void postorder(DBSPCircuit ignored) {
         this.circuit = null;
     }
+
+    public void postorder(DBSPPartialCircuit circuit) {}
 
     public void postorder(DBSPOperator ignored) {}
 

@@ -27,7 +27,8 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.backend.*;
-import org.dbsp.sqlCompiler.compiler.frontend.ExpressionCompiler;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.rust.RustFileWriter;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -358,7 +359,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 else
                     throw new RuntimeException("Unexpected type " + colType);
                 if (!colType.sameType(field.getNonVoidType()))
-                    field = ExpressionCompiler.makeCast(null, field, colType);
+                    field = field.cast(colType);
                 fields.add(field);
                 col++;
                 if (col == outputElementType.size()) {
@@ -550,9 +551,9 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
             }
             list.add(new DBSPExpressionStatement(
                     new DBSPApplyExpression("assert_eq!", null,
-                            new DBSPAsExpression(count, DBSPTypeZSet.defaultWeightType), new DBSPAsExpression(
+                            new DBSPAsExpression(count, DBSPTypeZSet.WEIGHT_TYPE), new DBSPAsExpression(
                                     new DBSPI32Literal(description.getExpectedOutputSize()),
-                            DBSPTypeZSet.defaultWeightType))));
+                            DBSPTypeZSet.WEIGHT_TYPE))));
         }if (output != null) {
             if (description.columnTypes != null) {
                 DBSPExpression columnTypes = new DBSPStringLiteral(description.columnTypes);
