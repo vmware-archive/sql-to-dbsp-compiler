@@ -24,7 +24,6 @@
 package org.dbsp.sqlCompiler.ir.type;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 public abstract class DBSPTypeTupleBase extends DBSPType {
     public final DBSPType[] tupFields;
@@ -32,22 +31,6 @@ public abstract class DBSPTypeTupleBase extends DBSPType {
     protected DBSPTypeTupleBase(@Nullable Object node, boolean mayBeNull, DBSPType... tupFields) {
         super(node, mayBeNull);
         this.tupFields = tupFields;
-    }
-
-    protected DBSPTypeTupleBase(@Nullable Object node, DBSPType... tupFields) {
-        this(node, false, tupFields);
-    }
-
-    protected DBSPTypeTupleBase(DBSPType... tupFields) {
-        this(null, tupFields);
-    }
-
-    protected DBSPTypeTupleBase(@Nullable Object node, List<DBSPType> tupFields) {
-        this(node, tupFields.toArray(new DBSPType[0]));
-    }
-
-    protected DBSPTypeTupleBase(List<DBSPType> tupFields) {
-        this(null, tupFields);
     }
 
     public DBSPType getFieldType(int index) {

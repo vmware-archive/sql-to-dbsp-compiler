@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.backend.ToJitVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
 import org.dbsp.sqlCompiler.compiler.frontend.TableContents;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.junit.Assert;
@@ -63,6 +63,35 @@ public class DBSPCompilerTests {
         compiler.compileStatement("CREATE VIEW V AS SELECT T.COL1 FROM T WHERE COL1 > 5");
         DBSPCircuit dbsp = compiler.getFinalCircuit("circuit");
         String json = ToJitVisitor.circuitToJson(dbsp);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(json);
+        Assert.assertNotNull(root);
+    }
+
+    @Test
+    public void floatJitTest() throws JsonProcessingException {
+        String ddl = "CREATE TABLE bid (\n" +
+                "    auction BIGINT,\n" +
+                "    bidder BIGINT,\n" +
+                "    price BIGINT,\n" +
+                "    channel VARCHAR,\n" +
+                "    url VARCHAR,\n" +
+                "    dateTime TIMESTAMP(3),\n" +
+                "    extra VARCHAR\n" +
+                ");\n" +
+                "\n" +
+                "CREATE VIEW q2 AS\n" +
+                "SELECT\n" +
+                "    auction,\n" +
+                "    bidder,\n" +
+                "    CAST(0.908 AS FLOAT) * price as price, -- convert dollar to euro\n" +
+                "    dateTime,\n" +
+                "    extra\n" +
+                "FROM bid;";
+        DBSPCompiler compiler = new DBSPCompiler(options);
+        compiler.compileStatements(ddl);
+        DBSPCircuit circuit = compiler.getFinalCircuit("circuit");
+        String json = ToJitVisitor.circuitToJson(circuit);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(json);
         Assert.assertNotNull(root);

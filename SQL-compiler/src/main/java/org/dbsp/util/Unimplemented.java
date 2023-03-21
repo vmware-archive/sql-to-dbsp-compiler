@@ -40,12 +40,12 @@ public class Unimplemented extends RuntimeException {
     }
 
     public Unimplemented(Object obj) {
-        super("Not yet implemented: " + obj.getClass().toString() + ":" + obj);
+        super("Not yet implemented: " + obj.getClass().getSimpleName() + ":" + obj);
         this.object = obj;
     }
 
     public Unimplemented(String message, Object obj) {
-        super("Not yet implemented: " + message + obj.getClass().toString() + ":" + obj);
+        super("Not yet implemented: " + message + " " + obj.getClass().getSimpleName() + ":" + obj);
         this.object = obj;
     }
 

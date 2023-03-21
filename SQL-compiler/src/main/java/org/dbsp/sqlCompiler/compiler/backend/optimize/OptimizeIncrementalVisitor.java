@@ -21,9 +21,10 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.backend.optimize;
 
 import org.dbsp.sqlCompiler.circuit.operator.*;
+import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitCloneVisitor;
 import org.dbsp.util.Linq;
 import org.dbsp.util.UnsupportedException;
 

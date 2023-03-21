@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.circuit.operator;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
@@ -157,7 +156,6 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
         return this.outputType;
     }
 
-    @JsonIgnore
     public DBSPExpression getFunction() {
         return Objects.requireNonNull(this.function);
     }

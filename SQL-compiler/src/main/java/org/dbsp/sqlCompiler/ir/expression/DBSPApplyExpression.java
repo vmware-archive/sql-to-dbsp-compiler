@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
@@ -53,7 +52,7 @@ public class DBSPApplyExpression extends DBSPExpression {
         this.checkArgs();
     }
 
-    @Nullable @JsonIgnore
+    @Nullable
     public static DBSPType getReturnType(DBSPType type) {
         if (type.is(DBSPTypeAny.class))
             return type;
@@ -82,5 +81,4 @@ public class DBSPApplyExpression extends DBSPExpression {
             arg.accept(visitor);
         visitor.postorder(this);
     }
-
 }

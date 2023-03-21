@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.backend.jit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,13 +30,15 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
-import org.dbsp.sqlCompiler.circuit.IDBSPDeclaration;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
+import org.dbsp.sqlCompiler.compiler.backend.optimize.BetaReduction;
+import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitFunctionRewriter;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
+import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
-import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBaseType;
 import org.dbsp.util.IModule;
@@ -50,6 +52,9 @@ import java.util.*;
  * can be read by the JIT compiler from DBSP.
  */
 public class ToJitVisitor extends CircuitVisitor implements IModule {
+    /**
+     * Maps each tuple type to an integer id.
+     */
     static class TypeCatalog {
         public final Map<DBSPType, Integer> typeId;
 
@@ -131,6 +136,10 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
                 return "Date";
             case "Timestamp":
                 return "Timestamp";
+            case "u":
+                return "Usize";
+            case "i":
+                return "Isize";
             default:
                 break;
         }
@@ -268,13 +277,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         ObjectNode data = node.putObject(kind);
         this.addInputs(data, operator);
         if (operator.function != null) {
-            DBSPExpression func = operator.function;
-            if (operator.function.is(DBSPVariablePath.class)) {
-                DBSPVariablePath path = operator.function.to(DBSPVariablePath.class);
-                IDBSPDeclaration definition = this.getCircuit().circuit.getDefinition(path.variable);
-                DBSPLetStatement stat = definition.to(DBSPLetStatement.class);
-                func = Objects.requireNonNull(stat.initializer);
-            }
+            DBSPExpression func = this.resolve(operator.function);
             DBSPClosureExpression closure = func.to(DBSPClosureExpression.class);
             ObjectNode funcNode = this.functionToJson(closure);
             data.set(function, funcNode);
@@ -294,6 +297,12 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         ObjectNode map = this.operatorToJson(operator, "Map", "map_fn");
         DBSPType type = operator.outputElementType;
         map.put("layout", this.typeCatalog.getTypeId(type));
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPFlatMapOperator operator) {
+        this.operatorToJson(operator, "FlatMap", "flat_map");
         return false;
     }
 
@@ -335,12 +344,45 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         return false;
     }
 
+    @Override
     public boolean preorder(DBSPJoinOperator operator) {
         ObjectNode node = this.operatorToJson(operator, "JoinCore", "join_fn");
         node.put("value_layout", this.typeCatalog.getTypeId(
                 new DBSPTypeTuple(new DBSPTypeTuple())));
         node.put("key_layout", this.typeCatalog.getTypeId(operator.elementResultType));
         node.put("output_kind", "Set");
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPAggregateOperator operator) {
+        if (operator.function != null)
+            throw new RuntimeException("Didn't expect the Aggregate to have a function");
+        ObjectNode node = this.operatorToJson(operator, "Fold", "");
+        DBSPAggregate aggregate = operator.getAggregate();
+        // Initial value
+        DBSPExpression initial = this.resolve(aggregate.getZero());
+        ObjectNode init = node.putObject("init");
+        ArrayNode rows = init.putArray("rows");
+        ObjectNode row = rows.addObject();
+        DBSPTupleExpression elementValue = initial.to(DBSPTupleExpression.class);
+        for (DBSPExpression e: elementValue.fields) {
+            this.addLiteralToJson(row, e.to(DBSPLiteral.class));
+        }
+
+        DBSPClosureExpression closure = aggregate.getIncrement();
+        BetaReduction reducer = new BetaReduction();
+        IDBSPInnerNode reduced = reducer.apply(closure);
+        System.out.println(closure + "\n" + reduced);
+        closure = Objects.requireNonNull(reduced).to(DBSPClosureExpression.class);
+        ObjectNode increment = this.functionToJson(closure);
+        node.set("step_fn", increment);
+
+        closure = aggregate.getPostprocessing();
+        reduced = reducer.apply(closure);
+        closure = Objects.requireNonNull(reduced).to(DBSPClosureExpression.class);
+        ObjectNode post = this.functionToJson(closure);
+        node.set("finish_fn", post);
         return false;
     }
 
@@ -429,9 +471,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     public static void validateJson(DBSPCircuit circuit) {
         try {
-            JitNormalizeInnerVisitor norm = new JitNormalizeInnerVisitor();
-            CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(norm);
-            circuit = rewriter.apply(circuit);
+            System.out.println(circuit);
             String json = ToJitVisitor.circuitToJson(circuit);
             System.out.println(json);
             ObjectMapper mapper = new ObjectMapper();

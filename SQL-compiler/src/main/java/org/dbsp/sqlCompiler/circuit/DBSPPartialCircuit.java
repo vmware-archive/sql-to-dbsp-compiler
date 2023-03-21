@@ -138,6 +138,10 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
         return Linq.same(this.code, other.code);
     }
 
+    /**
+     * If an expression is a variable name, resolve it's value by looking it
+     * up in the declarations of the current circuit.
+     */
     public DBSPExpression resolve(DBSPExpression expression) {
         while (expression.is(DBSPVariablePath.class)) {
             String name = expression.to(DBSPVariablePath.class).variable;

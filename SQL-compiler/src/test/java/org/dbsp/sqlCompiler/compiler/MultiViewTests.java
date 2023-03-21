@@ -64,8 +64,8 @@ public class MultiViewTests extends BaseSQLTests {
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {
                         new DBSPZSetLiteral(
-                                new DBSPTupleExpression(DBSPBoolLiteral.True),
-                                new DBSPTupleExpression(DBSPBoolLiteral.False)),
+                                new DBSPTupleExpression(DBSPBoolLiteral.TRUE),
+                                new DBSPTupleExpression(DBSPBoolLiteral.FALSE)),
                         new DBSPZSetLiteral(
                                 new DBSPTupleExpression(new DBSPDoubleLiteral(12.0)),
                                 new DBSPTupleExpression(new DBSPDoubleLiteral(1.0)))
@@ -93,11 +93,11 @@ public class MultiViewTests extends BaseSQLTests {
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {
                         new DBSPZSetLiteral(
-                                new DBSPTupleExpression(DBSPBoolLiteral.True),
-                                new DBSPTupleExpression(DBSPBoolLiteral.False)),
+                                new DBSPTupleExpression(DBSPBoolLiteral.TRUE),
+                                new DBSPTupleExpression(DBSPBoolLiteral.FALSE)),
                         new DBSPZSetLiteral(
-                                new DBSPTupleExpression(DBSPBoolLiteral.True),
-                                new DBSPTupleExpression(DBSPBoolLiteral.False))
+                                new DBSPTupleExpression(DBSPBoolLiteral.TRUE),
+                                new DBSPTupleExpression(DBSPBoolLiteral.FALSE))
                 }
         );
         this.addRustTestCase(circuit, stream);
@@ -122,8 +122,8 @@ public class MultiViewTests extends BaseSQLTests {
                 new DBSPZSetLiteral[] { this.createInput() },
                 new DBSPZSetLiteral[] {
                         new DBSPZSetLiteral(
-                                new DBSPTupleExpression(DBSPBoolLiteral.True),
-                                new DBSPTupleExpression(DBSPBoolLiteral.False)),
+                                new DBSPTupleExpression(DBSPBoolLiteral.TRUE),
+                                new DBSPTupleExpression(DBSPBoolLiteral.FALSE)),
                         new DBSPZSetLiteral(
                                 new DBSPTupleExpression(new DBSPI32Literal(10)))
                 }

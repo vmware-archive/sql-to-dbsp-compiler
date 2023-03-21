@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPCloneExpression;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIsNullExpression;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.type.IHasType;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
@@ -89,5 +90,21 @@ public abstract class DBSPExpression
 
     public DBSPClosureExpression closure(DBSPParameter... parameters) {
         return new DBSPClosureExpression(this, parameters);
+    }
+
+    public DBSPExpression is_null() {
+        return new DBSPIsNullExpression(this.getNode(), this);
+    }
+
+    public DBSPExpression call(DBSPExpression... arguments) {
+        return new DBSPApplyExpression(this, arguments);
+    }
+
+    public DBSPExpression cast(DBSPType to) {
+        DBSPType fromType = this.getNonVoidType();
+        if (fromType.sameType(to)) {
+            return this;
+        }
+        return new DBSPCastExpression(this.getNode(), this, to);
     }
 }

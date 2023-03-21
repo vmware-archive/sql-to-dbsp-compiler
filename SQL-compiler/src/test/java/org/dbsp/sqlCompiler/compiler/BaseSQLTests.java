@@ -25,7 +25,11 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.*;
-import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.optimize.*;
+import org.dbsp.sqlCompiler.compiler.backend.rust.RustSqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.compiler.backend.rust.RustFileWriter;
+import org.dbsp.sqlCompiler.compiler.backend.visitors.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -100,7 +104,7 @@ public class BaseSQLTests {
             list.add(circ);
             for (InputOutputPair pairs: this.data) {
                 DBSPLetStatement out = new DBSPLetStatement("output",
-                        new DBSPApplyExpression(circ.getVarReference(), pairs.inputs));
+                        circ.getVarReference().call(pairs.inputs));
                 list.add(out);
                 for (int i = 0; i < pairs.outputs.length; i++) {
                     list.add(
@@ -143,7 +147,7 @@ public class BaseSQLTests {
     }
 
     public static void generateLib() throws IOException {
-        SqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
+        RustSqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
     }
 
     CircuitVisitor getOptimizer() {
@@ -217,7 +221,7 @@ public class BaseSQLTests {
     public static final DBSPTupleExpression e0 = new DBSPTupleExpression(
             new DBSPI32Literal(10),
             new DBSPDoubleLiteral(12.0),
-            DBSPBoolLiteral.True,
+            DBSPBoolLiteral.TRUE,
             new DBSPStringLiteral("Hi"),
             DBSPLiteral.none(DBSPTypeInteger.NULLABLE_SIGNED_32),
             DBSPLiteral.none(DBSPTypeDouble.NULLABLE_INSTANCE)
@@ -225,7 +229,7 @@ public class BaseSQLTests {
     public static final DBSPTupleExpression e1 = new DBSPTupleExpression(
             new DBSPI32Literal(10),
             new DBSPDoubleLiteral(1.0),
-            DBSPBoolLiteral.False,
+            DBSPBoolLiteral.FALSE,
             new DBSPStringLiteral("Hi"),
             new DBSPI32Literal(1, true),
             new DBSPDoubleLiteral(0.0, true)
@@ -233,13 +237,13 @@ public class BaseSQLTests {
 
     public static final DBSPTupleExpression e0NoDouble = new DBSPTupleExpression(
             new DBSPI32Literal(10),
-            DBSPBoolLiteral.True,
+            DBSPBoolLiteral.TRUE,
             new DBSPStringLiteral("Hi"),
             DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true))
     );
     public static final DBSPTupleExpression e1NoDouble = new DBSPTupleExpression(
             new DBSPI32Literal(10),
-            DBSPBoolLiteral.False,
+            DBSPBoolLiteral.FALSE,
             new DBSPStringLiteral("Hi"),
             new DBSPI32Literal(1, true)
     );

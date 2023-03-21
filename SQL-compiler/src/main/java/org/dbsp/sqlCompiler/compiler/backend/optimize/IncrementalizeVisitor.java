@@ -21,34 +21,38 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
+package org.dbsp.sqlCompiler.compiler.backend.optimize;
 
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.circuit.operator.*;
+import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitCloneVisitor;
 
 /**
- * Represents the type of a Rust Vec as a TypeUser.
+ * This visitor converts a DBSPCircuit into a new circuit which
+ * computes the incremental version of the same query.
+ * The generated circuit is not efficient, though, it should be
+ * further optimized.
  */
-public class DBSPTypeVec extends DBSPTypeUser {
-    public DBSPTypeVec(DBSPType vectorElementType) {
-        super(null, "Vec", false, vectorElementType);
-    }
-
-    public DBSPType getElementType() {
-        return this.getTypeArg(0);
+public class IncrementalizeVisitor extends CircuitCloneVisitor {
+    public IncrementalizeVisitor() {
+        super(false);
     }
 
     @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        for (DBSPType type: this.typeArgs)
-            type.accept(visitor);
-        visitor.postorder(this);
+    public void postorder(DBSPSourceOperator operator) {
+        if (this.visited.contains(operator))
+            return;
+        this.addOperator(operator);
+        DBSPIntegralOperator integral = new DBSPIntegralOperator(null, operator);
+        this.map(operator, integral);
     }
 
     @Override
-    public boolean hasCopy() {
-        return false;
+    public void postorder(DBSPSinkOperator operator) {
+        DBSPOperator source = this.mapped(operator.input());
+        DBSPDifferentialOperator diff = new DBSPDifferentialOperator(null, source);
+        DBSPSinkOperator sink = new DBSPSinkOperator(operator.getNode(), operator.outputName,
+                operator.query, operator.comment, diff);
+        this.addOperator(diff);
+        this.map(operator, sink);
     }
-
-    // sameType and hashCode inherited from TypeUser.
 }

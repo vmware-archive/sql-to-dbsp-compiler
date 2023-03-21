@@ -21,34 +21,16 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.type;
-
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-
 /**
- * Represents the type of a Rust Vec as a TypeUser.
+ * Package that doesn't allow null values as method parameters.
  */
-public class DBSPTypeVec extends DBSPTypeUser {
-    public DBSPTypeVec(DBSPType vectorElementType) {
-        super(null, "Vec", false, vectorElementType);
-    }
 
-    public DBSPType getElementType() {
-        return this.getTypeArg(0);
-    }
+@ParametersAreNonnullByDefault
+@FieldsAreNonnullByDefault
+@MethodsAreNonnullByDefault
+package org.dbsp.sqlCompiler.compiler.backend.rust;
 
-    @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        for (DBSPType type: this.typeArgs)
-            type.accept(visitor);
-        visitor.postorder(this);
-    }
+import org.dbsp.util.FieldsAreNonnullByDefault;
+import org.dbsp.util.MethodsAreNonnullByDefault;
 
-    @Override
-    public boolean hasCopy() {
-        return false;
-    }
-
-    // sameType and hashCode inherited from TypeUser.
-}
+import javax.annotation.ParametersAreNonnullByDefault;

@@ -26,9 +26,10 @@
 package org.dbsp.sqllogictest;
 
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqlCompiler.circuit.SqlRuntimeLibrary;
+import org.dbsp.sqlCompiler.compiler.backend.rust.RustSqlRuntimeLibrary;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 import org.dbsp.util.TestStatistics;
 import org.dbsp.util.Utilities;
 
@@ -104,20 +105,20 @@ public class Main {
 
     @SuppressWarnings("SpellCheckingInspection")
     public static void main(String[] argv) throws IOException {
-        SqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
+        RustSqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         String benchDir = "../../sqllogictest/test/";
         List<String> files = Linq.list(
-                "random/aggregates/slt_good_96.test"
+                "random/select"
                 /*
-                "random/aggregates",
-                "random/select",
-                "random/groupby",
                 "select1.test",
-                "select2.test",  
-                "select3.test",  
-                "select4.test",  
+                "select2.test",
+                "select3.test",
+                "select4.test",
                 "select5.test",
-                "index/orderby", 
+                "random/aggregates",
+                "random/groupby",
+                "random/expr",
+                "index/orderby",
                 "index/between",
                 "index/view/",
                 "index/in",      
@@ -134,7 +135,7 @@ public class Main {
                 "-e", "hybrid",         // hybrid executor DBSP + JDBC
                 //"-i",                 // incremental (streaming) testing
                 //"-j",                 // Validate JSON IR.
-                "-u", "postgres",       // database user name
+                "-u", "user0",          // database user name
                 "-p", "password",       // database password
                 "-l", "db"              // can be csv or db
         };

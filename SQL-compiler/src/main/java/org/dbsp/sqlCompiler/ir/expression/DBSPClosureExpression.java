@@ -23,15 +23,19 @@
 
 package org.dbsp.sqlCompiler.ir.expression;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
+import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeFunction;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An expression of the form |param0, param1, ...| body.
@@ -40,12 +44,11 @@ public class DBSPClosureExpression extends DBSPExpression {
     public final DBSPExpression body;
     public final DBSPParameter[] parameters;
 
-    @JsonIgnore
     public DBSPTypeFunction getFunctionType() {
         return this.getNonVoidType().to(DBSPTypeFunction.class);
     }
 
-    @Nullable @JsonIgnore
+    @Nullable
     public DBSPType getResultType() {
         return this.getFunctionType().resultType;
     }
@@ -69,6 +72,54 @@ public class DBSPClosureExpression extends DBSPExpression {
         return new DBSPFunction(name, Linq.list(parameters), this.getResultType(), this.body);
     }
 
+    /**
+     * Given a list of closure expressions with the same number of arguments,
+     * create a closure that calls all of them and assembles the results in a tuple.
+     */
+    public static DBSPClosureExpression parallelClosure(DBSPClosureExpression... closures) {
+        DBSPParameter[][] allParams = Linq.map(closures, c -> c.parameters, DBSPParameter[].class);
+        int paramCount = -1;
+        for (DBSPParameter[] params: allParams) {
+            if (paramCount == -1)
+                paramCount = params.length;
+            else if (paramCount != params.length)
+                throw new RuntimeException("Closures cannot be combined");
+        }
+
+        DBSPVariablePath[] resultParams = new DBSPVariablePath[paramCount];
+        for (int i = 0; i < paramCount; i++) {
+            int finalI = i;
+            DBSPParameter[] first = Linq.map(allParams, p -> p[finalI], DBSPParameter.class);
+            String name = "p" + i;
+            DBSPVariablePath pi = new DBSPVariablePath(name, new DBSPTypeTuple(Linq.map(first, p -> p.type, DBSPType.class)));
+            resultParams[i] = pi;
+        }
+
+        List<DBSPStatement> body = new ArrayList<>();
+        List<DBSPExpression> tmps = new ArrayList<>();
+        for (int i = 0; i < closures.length; i++) {
+            DBSPClosureExpression closure = closures[i];
+            String tmp = "tmp" + i;
+            int finalI = i;
+            DBSPExpression[] args = Linq.map(resultParams, p -> p.field(finalI), DBSPExpression.class);
+            DBSPExpression init = closure.call(args);
+            DBSPLetStatement stat = new DBSPLetStatement(tmp, init);
+            tmps.add(new DBSPVariablePath(tmp, init.getNonVoidType()));
+            body.add(stat);
+        }
+
+        DBSPExpression last = new DBSPTupleExpression(tmps, false);
+        DBSPBlockExpression block = new DBSPBlockExpression(body, last);
+        DBSPParameter[] params = Linq.map(resultParams, DBSPVariablePath::asParameter, DBSPParameter.class);
+        return new DBSPClosureExpression(block, params);
+    }
+
+    public DBSPExpression call(DBSPExpression... arguments) {
+        if (arguments.length != this.parameters.length)
+            throw new RuntimeException("Received " + arguments.length + " but need " + this.parameters.length);
+        return new DBSPApplyExpression(this, arguments);
+    }
+
     @Override
     public void accept(InnerVisitor visitor) {
         if (!visitor.preorder(this)) return;
@@ -79,5 +130,4 @@ public class DBSPClosureExpression extends DBSPExpression {
         this.body.accept(visitor);
         visitor.postorder(this);
     }
-
 }

@@ -32,11 +32,9 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeIndexedZSet;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class DBSPAggregateOperator extends DBSPUnaryOperator {
+public class DBSPAggregateOperator extends DBSPAggregateOperatorBase {
     public final DBSPType keyType;
     public final DBSPType outputElementType;
-    @Nullable
-    public final DBSPAggregate aggregate;
 
     public DBSPAggregateOperator(@Nullable Object node,
                                  DBSPType keyType, DBSPType outputElementType,
@@ -45,11 +43,11 @@ public class DBSPAggregateOperator extends DBSPUnaryOperator {
                                  @Nullable
                                  DBSPAggregate aggregate,
                                  DBSPOperator input) {
-        super(node, "stream_aggregate", function,
-                new DBSPTypeIndexedZSet(node, keyType, outputElementType), false, input);
+        super(node, "stream_aggregate",
+                new DBSPTypeIndexedZSet(node, keyType, outputElementType),
+                function, aggregate, false, input);
         this.keyType = keyType;
         this.outputElementType = outputElementType;
-        this.aggregate = aggregate;
     }
 
     @Override

@@ -21,37 +21,25 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.backend.optimize;
 
-import org.dbsp.sqlCompiler.circuit.operator.*;
+import org.dbsp.sqlCompiler.circuit.operator.DBSPIntegralOperator;
+import org.dbsp.sqlCompiler.compiler.backend.ToDotVisitor;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 
 /**
- * This visitor converts a DBSPCircuit into a new circuit which
- * computes the incremental version of the same query.
- * The generated circuit is not efficient, though, it should be
- * further optimized.
+ * This visitor throws if a circuit contains an integration operator.
+ * This is usually a sign that the optimizer didn't do its job properly
+ * (but there are legit streaming query circuits which would have to include integrals).
  */
-public class IncrementalizeVisitor extends CircuitCloneVisitor {
-    public IncrementalizeVisitor() {
+public class NoIntegralVisitor extends CircuitVisitor {
+    public NoIntegralVisitor() {
         super(false);
     }
 
     @Override
-    public void postorder(DBSPSourceOperator operator) {
-        if (this.visited.contains(operator))
-            return;
-        this.addOperator(operator);
-        DBSPIntegralOperator integral = new DBSPIntegralOperator(null, operator);
-        this.map(operator, integral);
-    }
-
-    @Override
-    public void postorder(DBSPSinkOperator operator) {
-        DBSPOperator source = this.mapped(operator.input());
-        DBSPDifferentialOperator diff = new DBSPDifferentialOperator(null, source);
-        DBSPSinkOperator sink = new DBSPSinkOperator(operator.getNode(), operator.outputName,
-                operator.query, operator.comment, diff);
-        this.addOperator(diff);
-        this.map(operator, sink);
+    public boolean preorder(DBSPIntegralOperator node) {
+        ToDotVisitor.toDot("circuit.jpg", true, this.getCircuit());
+        throw new RuntimeException("Circuit contains an integration operator " + node);
     }
 }

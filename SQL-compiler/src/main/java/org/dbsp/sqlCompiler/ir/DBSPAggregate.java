@@ -1,6 +1,5 @@
 package org.dbsp.sqlCompiler.ir;
 
-import org.apache.calcite.plan.Convention;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
@@ -14,8 +13,7 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -25,16 +23,16 @@ import java.util.List;
  */
 public class DBSPAggregate extends DBSPNode implements IDBSPInnerNode {
     public final DBSPVariablePath rowVar;
-    public final List<Implementation> components;
+    public final Implementation[] components;
 
-    public DBSPAggregate(RelNode node, DBSPVariablePath rowVar) {
+    public DBSPAggregate(RelNode node, DBSPVariablePath rowVar, int size) {
         super(node);
         this.rowVar = rowVar;
-        this.components = new ArrayList<>();
+        this.components = new Implementation[size];
     }
 
-    public void add(Implementation implementation) {
-        this.components.add(implementation);
+    public void set(int i, Implementation implementation) {
+        this.components[i] = implementation;
     }
 
     public DBSPTypeTuple defaultZeroType() {
@@ -42,7 +40,11 @@ public class DBSPAggregate extends DBSPNode implements IDBSPInnerNode {
     }
 
     public DBSPExpression defaultZero() {
-        return new DBSPTupleExpression(Linq.map(this.components, c -> c.emptySetResult), false);
+        return new DBSPTupleExpression(Linq.map(this.components, c -> c.emptySetResult, DBSPExpression.class));
+    }
+
+    public DBSPExpression getZero() {
+        return new DBSPTupleExpression(Linq.map(this.components, c -> c.zero, DBSPExpression.class));
     }
 
     @Override
@@ -52,6 +54,16 @@ public class DBSPAggregate extends DBSPNode implements IDBSPInnerNode {
             impl.accept(visitor);
         }
         visitor.postorder(this);
+    }
+
+    public DBSPClosureExpression getIncrement() {
+        DBSPClosureExpression[] closures = Linq.map(this.components, c -> c.increment, DBSPClosureExpression.class);
+        return DBSPClosureExpression.parallelClosure(closures);
+    }
+
+    public DBSPClosureExpression getPostprocessing() {
+        DBSPClosureExpression[] closures = Linq.map(this.components, c -> c.postProcess, DBSPClosureExpression.class);
+        return DBSPClosureExpression.parallelClosure(closures);
     }
 
     /**
@@ -142,6 +154,13 @@ public class DBSPAggregate extends DBSPNode implements IDBSPInnerNode {
                 this.postProcess.accept(visitor);
             this.emptySetResult.accept(visitor);
             visitor.postorder(this);
+        }
+
+        public DBSPClosureExpression getPostprocessing() {
+            if (this.postProcess != null)
+                return this.postProcess;
+            DBSPVariablePath var = new DBSPVariablePath("x", Objects.requireNonNull(this.increment.getResultType()));
+            return var.closure(var.asParameter());
         }
     }
 }

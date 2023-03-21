@@ -1,4 +1,4 @@
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.backend.visitors;
 
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
@@ -53,7 +53,7 @@ public abstract class InnerExpressionRewriteVisitor
      * Replace the 'old' IR node with the 'newOp' IR node.
      * @param old     only used for debugging.
      */
-    void map(IDBSPInnerNode old, IDBSPInnerNode newOp) {
+    protected void map(IDBSPInnerNode old, IDBSPInnerNode newOp) {
         Logger.INSTANCE.from(this, 1)
                 .append(this.toString())
                 .append(":")
@@ -70,24 +70,24 @@ public abstract class InnerExpressionRewriteVisitor
         return false;
     }
 
-    DBSPExpression getResultExpression() {
+    protected DBSPExpression getResultExpression() {
         return this.getResult().to(DBSPExpression.class);
     }
 
     @Nullable
-    DBSPExpression transformN(@Nullable DBSPExpression expression) {
+    protected DBSPExpression transformN(@Nullable DBSPExpression expression) {
         if (expression == null)
             return null;
         expression.accept(this);
         return this.getResultExpression();
     }
 
-    DBSPExpression transform(DBSPExpression expression) {
+    protected DBSPExpression transform(DBSPExpression expression) {
         expression.accept(this);
         return this.getResultExpression();
     }
 
-    DBSPStatement transform(DBSPStatement statement) {
+    protected DBSPStatement transform(DBSPStatement statement) {
         statement.accept(this);
         return this.getResult().to(DBSPStatement.class);
     }
@@ -115,7 +115,7 @@ public abstract class InnerExpressionRewriteVisitor
         DBSPExpression function = this.transform(expression.function);
         DBSPExpression result = expression;
         if (function != expression.function || Linq.different(arguments, expression.arguments))
-            result = new DBSPApplyExpression(function, arguments);
+            result = new DBSPApplyExpression(function, expression.getType(), arguments);
         this.map(expression, result);
         return false;
     }
@@ -185,7 +185,7 @@ public abstract class InnerExpressionRewriteVisitor
         DBSPExpression source = this.transform(expression.source);
         DBSPExpression result = expression;
         if (source != expression.source) {
-            result = new DBSPCastExpression(expression.getNode(), source, expression.destinationType);
+            result = source.cast(expression.destinationType);
         }
         this.map(expression, result);
         return false;
@@ -195,9 +195,8 @@ public abstract class InnerExpressionRewriteVisitor
     public boolean preorder(DBSPClosureExpression expression) {
         DBSPExpression body = this.transform(expression.body);
         DBSPExpression result = expression;
-        if (body != expression.body) {
-            result = new DBSPClosureExpression(body, expression.parameters);
-        }
+        if (body != expression.body)
+            result = body.closure(expression.parameters);
         this.map(expression, result);
         return false;
     }
@@ -212,9 +211,8 @@ public abstract class InnerExpressionRewriteVisitor
     public boolean preorder(DBSPDerefExpression expression) {
         DBSPExpression source = this.transform(expression.expression);
         DBSPExpression result = expression;
-        if (source != expression.expression) {
+        if (source != expression.expression)
             result = new DBSPDerefExpression(source);
-        }
         this.map(expression, result);
         return false;
     }
@@ -229,9 +227,8 @@ public abstract class InnerExpressionRewriteVisitor
     public boolean preorder(DBSPFieldExpression expression) {
         DBSPExpression source = this.transform(expression.expression);
         DBSPExpression result = expression;
-        if (source != expression.expression) {
+        if (source != expression.expression)
             result = source.field(expression.fieldNo);
-        }
         this.map(expression, result);
         return false;
     }

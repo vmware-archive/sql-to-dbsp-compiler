@@ -36,21 +36,21 @@ public class ComplexQueriesTest extends BaseSQLTests {
     public void smallTaxiTest() {
         String ddl = "CREATE TABLE green_tripdata\n" +
                 "(\n" +
-                "        lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
-                "        lpep_dropoff_datetime TIMESTAMP NOT NULL,\n" +
-                "        pickup_location_id BIGINT NOT NULL,\n" +
-                "        dropoff_location_id BIGINT NOT NULL,\n" +
-                "        trip_distance DOUBLE PRECISION,\n" +
-                "        fare_amount DOUBLE PRECISION \n" +
+                "  lpep_pickup_datetime TIMESTAMP NOT NULL,\n" +
+                "  lpep_dropoff_datetime TIMESTAMP NOT NULL,\n" +
+                "  pickup_location_id BIGINT NOT NULL,\n" +
+                "  dropoff_location_id BIGINT NOT NULL,\n" +
+                "  trip_distance DOUBLE PRECISION,\n" +
+                "  fare_amount DOUBLE PRECISION \n" +
                 ")";
         String query =
                 "SELECT\n" +
                         "*,\n" +
                         "COUNT(*) OVER(\n" +
-                        "                PARTITION BY  pickup_location_id\n" +
-                        "                ORDER BY  extract (EPOCH from  CAST (lpep_pickup_datetime AS TIMESTAMP) ) \n" +
-                        "                -- 1 hour is 3600  seconds\n" +
-                        "                RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip\n" +
+                        "   PARTITION BY  pickup_location_id\n" +
+                        "   ORDER BY  extract (EPOCH from  CAST (lpep_pickup_datetime AS TIMESTAMP) ) \n" +
+                        "   -- 1 hour is 3600  seconds\n" +
+                        "   RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip\n" +
                         "FROM green_tripdata";
         DBSPCompiler compiler = testCompiler();
         compiler.setGenerateInputsFromTables(true);
@@ -59,20 +59,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
         compiler.compileStatement(query);
         Assert.assertFalse(compiler.hasErrors());
         this.addRustTestCase(getCircuit(compiler));
-    }
-
-    //@Test
-    // not yet supported.
-    public void testArray() {
-        String ddl = "CREATE TABLE ARR_TABLE2 (\n"
-                + "ID INTEGER,\n"
-                + "VALS INTEGER ARRAY,\n"
-                + "VALVALS VARCHAR(10) ARRAY)";
-        DBSPCompiler compiler = testCompiler();
-        compiler.compileStatement(ddl);
-        if (compiler.hasErrors())
-            compiler.showErrors(System.err);
-        Assert.assertFalse(compiler.hasErrors());
     }
 
     @Test

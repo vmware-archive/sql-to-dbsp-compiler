@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.backend.visitors;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
@@ -48,14 +48,14 @@ import java.util.function.Function;
 public class CircuitCloneVisitor extends CircuitVisitor
         implements Function<DBSPCircuit, DBSPCircuit>, IModule {
     @Nullable
-    DBSPPartialCircuit result;
+    protected DBSPPartialCircuit result;
     /**
      * For each operator in the original circuit an operator in the
      * result circuit which computes the same result.
      */
-    final Map<DBSPOperator, DBSPOperator> remap;
-    final boolean force;
-    final Set<DBSPOperator> visited = new HashSet<>();
+    protected final Map<DBSPOperator, DBSPOperator> remap;
+    protected final boolean force;
+    protected final Set<DBSPOperator> visited = new HashSet<>();
 
     public CircuitCloneVisitor(boolean force) {
         super(true);
@@ -67,7 +67,7 @@ public class CircuitCloneVisitor extends CircuitVisitor
         return Utilities.getExists(this.remap, original);
     }
 
-    void map(DBSPOperator old, DBSPOperator newOp, boolean add) {
+    protected void map(DBSPOperator old, DBSPOperator newOp, boolean add) {
         Logger.INSTANCE.from(this, 1)
                 .append(this.toString())
                 .append(":")
@@ -80,11 +80,11 @@ public class CircuitCloneVisitor extends CircuitVisitor
             this.addOperator(newOp);
     }
 
-    void map(DBSPOperator old, DBSPOperator newOp) {
+    protected void map(DBSPOperator old, DBSPOperator newOp) {
         this.map(old, newOp, true);
     }
 
-    void addOperator(DBSPOperator operator) {
+    protected void addOperator(DBSPOperator operator) {
         Logger.INSTANCE.from(this, 1)
                 .append(this.toString())
                 .append(" adding ")

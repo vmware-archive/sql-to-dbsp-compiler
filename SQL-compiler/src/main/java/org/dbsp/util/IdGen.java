@@ -25,14 +25,11 @@
 
 package org.dbsp.util;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 /**
  * Base class for objects that have unique Ids.
  */
 public class IdGen {
     static long idGen = 0;
-    @JsonIgnore
     public final long id;
 
     public IdGen() {

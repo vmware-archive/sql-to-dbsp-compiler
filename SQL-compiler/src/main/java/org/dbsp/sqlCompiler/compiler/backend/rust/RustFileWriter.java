@@ -1,23 +1,22 @@
-package org.dbsp.sqlCompiler.compiler.backend;
+package org.dbsp.sqlCompiler.compiler.backend.rust;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
-import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
+import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitDelegateVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.IndentStream;
 import org.dbsp.util.Linq;
 
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.IntStream;
 
 /**
@@ -50,7 +49,7 @@ public class RustFileWriter {
 
         @Override
         public void postorder(DBSPAggregate aggregate) {
-            int size = aggregate.components.size();
+            int size = aggregate.components.length;
             RustFileWriter.this.used.semigroupSizesUsed.add(size);
             // This will appear in the code generated for the Fold
             RustFileWriter.this.used.tupleSizesUsed.add(size);
@@ -62,6 +61,9 @@ public class RustFileWriter {
      */
     FindResources finder = new FindResources();
     CircuitDelegateVisitor findInCircuit = new CircuitDelegateVisitor(this.finder);
+    LowerCircuitVisitor lower = new LowerCircuitVisitor();
+
+    public static final DBSPType WEIGHT_TYPE_IMPLEMENTATION = DBSPTypeInteger.SIGNED_64;
 
     @SuppressWarnings("SpellCheckingInspection")
     static final String rustPreamble =
@@ -117,8 +119,7 @@ public class RustFileWriter {
                     "use sqlvalue::*;\n" +
                     "use hashing::*;\n" +
                     "use readers::*;\n" +
-                    "use sqlx::{AnyConnection, any::AnyRow, Row};\n" +
-                    "type Weight = i64;\n";
+                    "use sqlx::{AnyConnection, any::AnyRow, Row};\n";
 
     public RustFileWriter(PrintStream outputStream) {
         this.toWrite = new ArrayList<>();
@@ -222,6 +223,10 @@ public class RustFileWriter {
         IndentStream stream = new IndentStream(new StringBuilder());
         stream.append(rustPreamble)
                 .newline();
+        stream.append("type Weight = ")
+                .append(WEIGHT_TYPE_IMPLEMENTATION.toString())
+                .append(";")
+                .newline();
         generateStructures(used, stream);
         return stream.toString();
     }
@@ -244,8 +249,9 @@ public class RustFileWriter {
             if (inner != null) {
                 str = ToRustInnerVisitor.toRustString(inner);
             } else {
-                IDBSPOuterNode outer = node.to(IDBSPOuterNode.class);
-                str = ToRustVisitor.circuitToRustString(outer);
+                DBSPCircuit outer = node.to(DBSPCircuit.class);
+                outer = this.lower.apply(outer);
+                str = ToRustVisitor.toRustString(outer);
             }
             this.outputStream.println(str);
         }

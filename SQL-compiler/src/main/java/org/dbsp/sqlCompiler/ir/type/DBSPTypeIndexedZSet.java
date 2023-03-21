@@ -40,7 +40,7 @@ public class DBSPTypeIndexedZSet extends DBSPTypeUser {
     }
 
     public DBSPTypeIndexedZSet(@Nullable Object node, DBSPType keyType, DBSPType elementType) {
-        this(node, keyType, elementType, DBSPTypeZSet.defaultWeightType);
+        this(node, keyType, elementType, DBSPTypeZSet.WEIGHT_TYPE);
     }
 
     @Override

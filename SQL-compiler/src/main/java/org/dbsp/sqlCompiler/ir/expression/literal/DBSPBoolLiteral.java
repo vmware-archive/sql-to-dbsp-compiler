@@ -32,11 +32,11 @@ public class DBSPBoolLiteral extends DBSPLiteral {
     @Nullable
     public final Boolean value;
 
-    public static final DBSPBoolLiteral None = new DBSPBoolLiteral();
-    public static final DBSPBoolLiteral True = new DBSPBoolLiteral(true);
-    public static final DBSPBoolLiteral False = new DBSPBoolLiteral(false);
-    public static final DBSPBoolLiteral NullableTrue = new DBSPBoolLiteral(true, true);
-    public static final DBSPBoolLiteral NullableFalse = new DBSPBoolLiteral(false, true);
+    public static final DBSPBoolLiteral NONE = new DBSPBoolLiteral();
+    public static final DBSPBoolLiteral TRUE = new DBSPBoolLiteral(true);
+    public static final DBSPBoolLiteral FALSE = new DBSPBoolLiteral(false);
+    public static final DBSPBoolLiteral NULLABLE_TRUE = new DBSPBoolLiteral(true, true);
+    public static final DBSPBoolLiteral NULLABLE_FALSE = new DBSPBoolLiteral(false, true);
 
     public DBSPBoolLiteral() {
         this(null, true);

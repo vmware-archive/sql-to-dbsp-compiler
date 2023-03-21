@@ -42,7 +42,6 @@ import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIsNullExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
@@ -92,7 +91,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     /**
      * Variable that refers to the weight of the row in the z-set.
      */
-    public static final DBSPVariablePath weight = DBSPTypeZSet.defaultWeightType.var("w");
+    public static final DBSPVariablePath WEIGHT_VAR = DBSPTypeZSet.WEIGHT_TYPE.var("w");
 
     // Result is deposited here
     private DBSPPartialCircuit circuit;
@@ -191,14 +190,14 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             List<AggregateCall> aggregates, DBSPTypeTuple resultType,
             DBSPType inputRowType, int groupCount) {
         DBSPVariablePath rowVar = inputRowType.ref().var("v");
-        DBSPAggregate result = new DBSPAggregate(node, rowVar);
+        DBSPAggregate result = new DBSPAggregate(node, rowVar, aggregates.size());
         int aggIndex = 0;
 
         for (AggregateCall call: aggregates) {
             DBSPType resultFieldType = resultType.getFieldType(aggIndex + groupCount);
             AggregateCompiler compiler = new AggregateCompiler(call, resultFieldType, rowVar);
             DBSPAggregate.Implementation implementation = compiler.compile();
-            result.add(implementation);
+            result.set(aggIndex, implementation);
             aggIndex++;
         }
         return result;
@@ -262,8 +261,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 DBSPExpression flattenField = vResult.field(i);
                 // Here we correct from the type produced by the Folder (typeFromAggregate) to the
                 // actual expected type aggType (which is the tuple of aggTypes).
-                flattenFields[aggregate.getGroupCount() + i] = ExpressionCompiler.makeCast(
-                        aggregate, flattenField, aggTypes[i]);
+                flattenFields[aggregate.getGroupCount() + i] = flattenField.cast(aggTypes[i]);
             }
             DBSPExpression mapper = new DBSPTupleExpression(flattenFields).closure(
                     new DBSPParameter(kResult, vResult));
@@ -373,7 +371,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 DBSPType expectedType = tuple.getFieldType(index);
                 if (!exp.getNonVoidType().sameType(expectedType)) {
                     // Calcite's optimizations do not preserve types!
-                    exp = ExpressionCompiler.makeCast(project, exp, expectedType);
+                    exp = exp.cast(expectedType);
                 }
                 resultColumns.add(exp);
                 index++;
@@ -456,7 +454,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         for (int i = 0; i < rowType.size(); i++) {
             if (keyFields.contains(i)) {
                 DBSPFieldExpression field = new DBSPFieldExpression(join, var, i);
-                DBSPExpression expr = new DBSPIsNullExpression(join, field);
+                DBSPExpression expr = field.is_null();
                 if (condition == null)
                     condition = expr;
                 else
@@ -507,10 +505,10 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPTupleExpression lr = DBSPTupleExpression.flatten(l, r);
         List<DBSPExpression> leftKeyFields = Linq.map(
                 decomposition.comparisons,
-                c -> ExpressionCompiler.makeCast(join, l.field(c.leftColumn), c.resultType));
+                c -> l.field(c.leftColumn).cast(c.resultType));
         List<DBSPExpression> rightKeyFields = Linq.map(
                 decomposition.comparisons,
-                c -> ExpressionCompiler.makeCast(join, r.field(c.rightColumn), c.resultType));
+                c -> r.field(c.rightColumn).cast(c.resultType));
         DBSPExpression leftKey = new DBSPRawTupleExpression(leftKeyFields);
         DBSPExpression rightKey = new DBSPRawTupleExpression(rightKeyFields);
 
@@ -693,7 +691,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                         expr = DBSPLiteral.none(resultFieldType);
                 }
                 if (!expr.getNonVoidType().sameType(resultFieldType)) {
-                    DBSPExpression cast = ExpressionCompiler.makeCast(values, expr, resultFieldType);
+                    DBSPExpression cast = expr.cast(resultFieldType);
                     expressions.add(cast);
                 } else {
                     expressions.add(expr);
@@ -767,7 +765,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             numericBound = numType.getZero();
         else {
             DBSPExpression value = eComp.compile(Objects.requireNonNull(bound.getOffset()));
-            numericBound = ExpressionCompiler.makeCast(bound, value, boundType);
+            numericBound = value.cast(boundType);
         }
         String beforeAfter = bound.isPreceding() ? "Before" : "After";
         return new DBSPStructExpression(DBSPTypeAny.INSTANCE.path(
@@ -839,7 +837,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             DBSPDifferentialOperator diff = new DBSPDifferentialOperator(window, mapIndex);
             this.circuit.addOperator(diff);
             DBSPWindowAggregateOperator windowAgg = new DBSPWindowAggregateOperator(
-                    group, fd,
+                    group, null, fd,
                     windowExprVar, partition.getNonVoidType(), sortType,
                     aggResultType, diff);
             this.circuit.addOperator(windowAgg);
@@ -868,8 +866,8 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 // Calcite is very smart and sometimes infers non-nullable result types
                 // for these aggregates.  So we have to cast the results to whatever
                 // Calcite says they will be.
-                allFields[i + currentTupleType.size()] = ExpressionCompiler.makeCast(window,
-                        right.field(i), windowResultType.getFieldType(windowFieldIndex));
+                allFields[i + currentTupleType.size()] = right.field(i).cast(
+                        windowResultType.getFieldType(windowFieldIndex));
                 windowFieldIndex++;
             }
             DBSPTupleExpression addExtraFieldBody = new DBSPTupleExpression(allFields);
@@ -901,14 +899,14 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         this.circuit.addOperator(index);
         // apply an aggregation function that just creates a vector.
         DBSPTypeVec vecType = new DBSPTypeVec(inputRowType);
-        DBSPExpression zero = new DBSPApplyExpression(DBSPTypeAny.INSTANCE.path(
-                new DBSPPath(vecType.name, "new")));
+        DBSPExpression zero = DBSPTypeAny.INSTANCE.path(
+                new DBSPPath(vecType.name, "new")).call();
         DBSPVariablePath accum = vecType.var("a");
         DBSPVariablePath row = inputRowType.var("v");
         // An element with weight 'w' is pushed 'w' times into the vector
-        DBSPExpression wPush = new DBSPApplyExpression("weighted_push", null, accum, row, weight);
+        DBSPExpression wPush = new DBSPApplyExpression("weighted_push", null, accum, row, WEIGHT_VAR);
         DBSPExpression push = wPush.closure(
-                accum.asRefParameter(true), row.asRefParameter(), CalciteToDBSPCompiler.weight.asParameter());
+                accum.asRefParameter(true), row.asRefParameter(), CalciteToDBSPCompiler.WEIGHT_VAR.asParameter());
         DBSPExpression constructor = DBSPTypeAny.INSTANCE.path(
             new DBSPPath(
                     new DBSPSimplePathSegment("Fold",
@@ -919,7 +917,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                         DBSPTypeAny.INSTANCE),
                     new DBSPSimplePathSegment("new")));
 
-        DBSPExpression folder = new DBSPApplyExpression(constructor, zero, push);
+        DBSPExpression folder = constructor.call(zero, push);
         DBSPAggregateOperator agg = new DBSPAggregateOperator(sort,
                 new DBSPTypeRawTuple(), new DBSPTypeVec(inputRowType),
                 this.declare("toVec", folder), null,

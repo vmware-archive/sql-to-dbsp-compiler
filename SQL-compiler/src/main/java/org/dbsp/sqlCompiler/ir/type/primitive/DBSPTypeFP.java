@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.ir.type.primitive;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.IsNumericType;
 
@@ -38,12 +37,10 @@ public abstract class DBSPTypeFP extends DBSPTypeBaseType implements IsNumericTy
     /**
      * Width in bits.
      */
-    @JsonIgnore
     public abstract int getWidth();
     /**
      * Rust string describing this type, e.g., f32.
      */
-    @Override @JsonIgnore
     public String getRustString() { return "f" + this.getWidth(); }
 
     @Override

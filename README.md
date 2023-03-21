@@ -306,12 +306,24 @@ To use this executor you have to install Postgres:
 The maven pom.xml file already includes the Postgres driver.
 
 - If you want to run these tests you need to create a database named
-`slt` (from Sql Logic Test), and an appropriate user account.  The
-following [blog
-post](https://medium.com/@mohammedhammoud/postgresql-create-user-create-database-grant-privileges-access-aabb2507c0aa)]
-explains how do this.  The username and password are supplied as
-command-line parameters to the Java testing program using the `-u user
--p password` flags.
+`slt` (from Sql Logic Test), and an appropriate user account.  Here
+is how you can do it:
+
+```
+# Create a database
+sudo -u postgres createdb slt
+# Create a user named 'user0'
+sudo -u postgres createuser user0
+# Change password for this user to 'password' and grand privileges
+sudo -u postgres psql
+psql=# alter user user0 with encrypted password 'password';
+psql=# grand all privileges on database slt to user0;
+psql=# exit
+```
+
+After this you should edit the last line in the script
+`./SQL-compiler/run-tests.sh` inserting the correct user name (user0)
+and password (password).
 
 #### The hybrid `DBSP_JDBC_Executor`
 
