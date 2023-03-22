@@ -27,8 +27,8 @@ public abstract class InnerExpressionRewriteVisitor
         extends InnerVisitor
         implements Function<IDBSPInnerNode, IDBSPInnerNode>, IModule {
 
-    protected InnerExpressionRewriteVisitor(boolean visitSuper) {
-        super(visitSuper);
+    protected InnerExpressionRewriteVisitor() {
+        super(true);
     }
 
     /**

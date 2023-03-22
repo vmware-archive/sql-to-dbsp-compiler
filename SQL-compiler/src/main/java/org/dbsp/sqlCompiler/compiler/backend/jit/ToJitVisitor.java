@@ -34,11 +34,14 @@ import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.compiler.backend.optimize.BetaReduction;
 import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitFunctionRewriter;
+import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
+import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBaseType;
 import org.dbsp.util.IModule;
@@ -111,7 +114,20 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         this.typeCatalog = new TypeCatalog();
     }
 
+    @Nullable
+    public static DBSPType resolveType(@Nullable DBSPType type) {
+        if (type == null)
+            return type;
+        if (type.is(DBSPTypeUser.class)) {
+            DBSPTypeUser user = type.to(DBSPTypeUser.class);
+            if (user.name.equals(TypeCompiler.WEIGHT_TYPE_NAME))
+                type = TypeCompiler.WEIGHT_TYPE_IMPLEMENTATION;
+        }
+        return type;
+    }
+
     static String baseTypeName(DBSPType type) {
+        type = Objects.requireNonNull(resolveType(type));
         if (type.sameType(new DBSPTypeTuple()))
             return "Unit";
         DBSPTypeBaseType base = type.as(DBSPTypeBaseType.class);
@@ -213,7 +229,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
             return type.to(DBSPTypeTuple.class);
         else if (type.is(DBSPTypeRawTuple.class))
             return new DBSPTypeTuple(type.to(DBSPTypeRawTuple.class).tupFields);
-        throw new Unimplemented("Convertion to Tuple", type);
+        throw new Unimplemented("Conversion to Tuple", type);
     }
 
     ObjectNode functionToJson(DBSPClosureExpression function) {
@@ -240,6 +256,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
                 result.put("ret", baseTypeName(base));
             }
         } else {
+            Objects.requireNonNull(resultType);
             result.put("ret", "Unit");
             List<DBSPTypeTuple> types = TypeCatalog.expandToTuples(resultType);
             for (DBSPTypeTuple type: types) {
@@ -258,8 +275,12 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
     }
 
     public static boolean isScalarType(@Nullable DBSPType type) {
-        return type == null || type.is(DBSPTypeBaseType.class) ||
-                (type.is(DBSPTypeTupleBase.class) && type.to(DBSPTypeTupleBase.class).size() == 0);
+        type = resolveType(type);
+        if (type == null)
+            return true;
+        if (type.is(DBSPTypeBaseType.class))
+            return true;
+        return type.is(DBSPTypeTupleBase.class) && type.to(DBSPTypeTupleBase.class).size() == 0;
     }
 
     void addTypesToJson() {
@@ -354,6 +375,41 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         return false;
     }
 
+    /**
+     * Given a closure expression, convert each parameter with a scalar type
+     * into a parameter with a 1-dimensional tuple type.  E.g.
+     * (t: Tuple1<i32>, u: i32) { body }
+     * is converted to
+     * (t: Tuple1<i32>, u: tuple1<i32>) { let u: i32 = u.0; body }
+     * Pre-condition: the closure body is a BlockExpression.
+     * The JIT representation only supports tuples for closure parameters.
+     */
+    DBSPClosureExpression tupleParameters(DBSPClosureExpression closure) {
+        List<DBSPStatement> statements = new ArrayList<>();
+        DBSPParameter[] newParams = new DBSPParameter[closure.parameters.length];
+        int index = 0;
+        for (DBSPParameter param: closure.parameters) {
+            if (isScalarType(param.type)) {
+                DBSPParameter tuple = new DBSPParameter(param.pattern, new DBSPTypeRawTuple(param.type));
+                statements.add(new DBSPLetStatement(
+                        tuple.asVariableReference().variable,
+                        new DBSPTupleExpression(param.asVariableReference())));
+                newParams[index] = tuple;
+            } else {
+                newParams[index] = param;
+            }
+            index++;
+        }
+        if (statements.isEmpty())
+            return closure;
+        DBSPBlockExpression block = closure.body.to(DBSPBlockExpression.class);
+        statements.addAll(block.contents);
+        DBSPBlockExpression newBlock = new DBSPBlockExpression(
+                statements,
+                block.lastExpression);
+        return newBlock.closure(newParams);
+    }
+
     @Override
     public boolean preorder(DBSPAggregateOperator operator) {
         if (operator.function != null)
@@ -373,14 +429,15 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         DBSPClosureExpression closure = aggregate.getIncrement();
         BetaReduction reducer = new BetaReduction();
         IDBSPInnerNode reduced = reducer.apply(closure);
-        System.out.println(closure + "\n" + reduced);
         closure = Objects.requireNonNull(reduced).to(DBSPClosureExpression.class);
+        closure = this.tupleParameters(closure);
         ObjectNode increment = this.functionToJson(closure);
         node.set("step_fn", increment);
 
         closure = aggregate.getPostprocessing();
         reduced = reducer.apply(closure);
         closure = Objects.requireNonNull(reduced).to(DBSPClosureExpression.class);
+        closure = this.tupleParameters(closure);
         ObjectNode post = this.functionToJson(closure);
         node.set("finish_fn", post);
         return false;
@@ -460,7 +517,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
     }
 
     public static String circuitToJson(DBSPCircuit circuit) {
-        JitNormalizeInnerVisitor norm = new JitNormalizeInnerVisitor();
+        BlockClosures norm = new BlockClosures();
         CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(norm);
         circuit = rewriter.apply(circuit);
         ToJitVisitor visitor = new ToJitVisitor();

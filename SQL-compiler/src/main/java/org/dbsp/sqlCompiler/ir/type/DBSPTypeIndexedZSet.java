@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
+import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 import javax.annotation.Nullable;
@@ -40,7 +41,7 @@ public class DBSPTypeIndexedZSet extends DBSPTypeUser {
     }
 
     public DBSPTypeIndexedZSet(@Nullable Object node, DBSPType keyType, DBSPType elementType) {
-        this(node, keyType, elementType, DBSPTypeZSet.WEIGHT_TYPE);
+        this(node, keyType, elementType, TypeCompiler.WEIGHT_TYPE);
     }
 
     @Override

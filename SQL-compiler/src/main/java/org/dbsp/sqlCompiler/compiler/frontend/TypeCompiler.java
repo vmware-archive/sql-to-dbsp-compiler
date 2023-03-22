@@ -39,9 +39,19 @@ import java.util.Objects;
 
 public class TypeCompiler implements ICompilerComponent {
     final DBSPCompiler compiler;
+
     public TypeCompiler(DBSPCompiler parent) {
         this.compiler = parent;
     }
+    public static final String WEIGHT_TYPE_NAME = "Weight";
+    /**
+     * Default weight type.
+     */
+    public static final DBSPType WEIGHT_TYPE = new DBSPTypeUser(null, WEIGHT_TYPE_NAME, false);
+    /**
+     * Default implementation of the weight type.
+     */
+    public static final DBSPType WEIGHT_TYPE_IMPLEMENTATION = DBSPTypeInteger.SIGNED_64;
 
     public static DBSPType makeZSet(DBSPType elementType) {
         return new DBSPTypeZSet(elementType.getNode(), elementType);

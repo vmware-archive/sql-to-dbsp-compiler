@@ -99,7 +99,7 @@ public class BetaReduction extends InnerExpressionRewriteVisitor {
     final Context context;
 
     public BetaReduction() {
-        super(true);
+        super();
         this.context = new Context();
     }
 

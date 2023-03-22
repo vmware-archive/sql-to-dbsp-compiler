@@ -408,19 +408,15 @@ public class ToRustInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPUnaryExpression expression) {
-        if (expression.operation.equals("wrap_bool")) {
-            this.builder.append("wrap_bool(");
-            expression.source.accept(this);
-            this.builder.append(")");
-            return false;
-        } else if (expression.operation.startsWith("is_")) {
+        if (expression.operation.equals("wrap_bool") ||
+            expression.operation.equals("indicator") ||
+            expression.operation.startsWith("is_")) {
             this.builder.append(expression.operation)
                     .append("(");
             expression.source.accept(this);
             this.builder.append(")");
             return false;
         }
-
         if (expression.source.getNonVoidType().mayBeNull) {
             this.builder.append("(")
                     .append("match ");

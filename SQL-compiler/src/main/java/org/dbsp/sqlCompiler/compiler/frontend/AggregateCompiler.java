@@ -32,9 +32,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPI64Literal;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.ir.expression.*;
-import org.dbsp.util.ICastable;
-import org.dbsp.util.Linq;
-import org.dbsp.util.Unimplemented;
+import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -70,6 +68,7 @@ public class AggregateCompiler {
     // null only for COUNT(*)
     @Nullable
     private final DBSPExpression aggArgument;
+    private final NameGen generator;
 
     public AggregateCompiler(
             AggregateCall call, DBSPType resultType,
@@ -81,6 +80,7 @@ public class AggregateCompiler {
         this.isDistinct = call.isDistinct();
         this.aggFunction = call.getAggregation();
         this.call = call;
+        this.generator = new NameGen("a");
         List<Integer> argList = call.getArgList();
         if (argList.size() == 0) {
             this.aggArgument = null;
@@ -90,6 +90,10 @@ public class AggregateCompiler {
         } else {
             throw new Unimplemented(call);
         }
+    }
+
+    public String genAccumulatorName() {
+        return this.generator.toString();
     }
 
     <T> boolean process(SqlAggFunction function, Class<T> clazz, Consumer<T> method) {
@@ -121,12 +125,12 @@ public class AggregateCompiler {
         } else {
             DBSPExpression agg = this.getAggregatedValue();
             if (agg.getNonVoidType().mayBeNull)
-                argument = new DBSPApplyExpression("indicator", this.resultType.setMayBeNull(false), agg);
+                argument = new DBSPUnaryExpression(function, this.resultType.setMayBeNull(false), "indicator", agg);
             else
                 argument = one;
         }
 
-        DBSPVariablePath accum = this.resultType.var("a");
+        DBSPVariablePath accum = this.resultType.var(this.genAccumulatorName());
         if (this.isDistinct) {
             increment = ExpressionCompiler.aggregateOperation(
                     function, "+", this.resultType, accum, argument);
@@ -168,7 +172,7 @@ public class AggregateCompiler {
                 throw new Unimplemented(this.call);
         }
         DBSPExpression aggregatedValue = this.getAggregatedValue();
-        DBSPVariablePath accum = this.nullableResultType.var("a");
+        DBSPVariablePath accum = this.nullableResultType.var(this.genAccumulatorName());
         DBSPExpression increment = ExpressionCompiler.aggregateOperation(
                 function, call, this.nullableResultType, accum, aggregatedValue);
         DBSPType semigroup = new DBSPTypeUser(null, semigroupName, false, accum.getNonVoidType());
@@ -180,7 +184,7 @@ public class AggregateCompiler {
         DBSPExpression zero = DBSPLiteral.none(this.nullableResultType);
         DBSPExpression increment;
         DBSPExpression aggregatedValue = this.getAggregatedValue();
-        DBSPVariablePath accum = this.nullableResultType.var("a");
+        DBSPVariablePath accum = this.nullableResultType.var(this.genAccumulatorName());
 
         if (this.isDistinct) {
             increment = ExpressionCompiler.aggregateOperation(
@@ -203,7 +207,7 @@ public class AggregateCompiler {
         DBSPExpression zero = this.resultType.to(IsNumericType.class).getZero();
         DBSPExpression increment;
         DBSPExpression aggregatedValue = this.getAggregatedValue();
-        DBSPVariablePath accum = this.resultType.var("a");
+        DBSPVariablePath accum = this.resultType.var(this.genAccumulatorName());
 
         if (this.isDistinct) {
             increment = ExpressionCompiler.aggregateOperation(
@@ -233,7 +237,7 @@ public class AggregateCompiler {
                 DBSPLiteral.none(i64), DBSPLiteral.none(i64));
         DBSPType pairType = zero.getNonVoidType();
         DBSPExpression count, sum;
-        DBSPVariablePath accum = pairType.var("a");
+        DBSPVariablePath accum = pairType.var(this.genAccumulatorName());
         final int sumIndex = 0;
         final int countIndex = 1;
         DBSPExpression countAccumulator = accum.field(countIndex);
@@ -241,7 +245,8 @@ public class AggregateCompiler {
         DBSPExpression aggregatedValue = this.getAggregatedValue().cast(i64);
         DBSPExpression plusOne = new DBSPI64Literal(1L);
         if (aggregatedValueType.mayBeNull)
-            plusOne = new DBSPApplyExpression("indicator", DBSPTypeInteger.SIGNED_64, aggregatedValue);
+            plusOne = new DBSPUnaryExpression(function, DBSPTypeInteger.SIGNED_64,
+                    "indicator", aggregatedValue);
         if (this.isDistinct) {
             count = ExpressionCompiler.aggregateOperation(
                     function, "+", i64, countAccumulator, plusOne);
@@ -265,9 +270,9 @@ public class AggregateCompiler {
                             aggregatedValue,
                             CalciteToDBSPCompiler.WEIGHT_VAR.borrow()));
         }
-
         DBSPExpression increment = new DBSPRawTupleExpression(sum, count);
-        DBSPVariablePath a = pairType.var("a");
+
+        DBSPVariablePath a = pairType.var(this.genAccumulatorName());
         DBSPExpression divide = ExpressionCompiler.makeBinaryExpression(
                 function, this.resultType, "/",
                 Linq.list(a.field(sumIndex), a.field(countIndex)));

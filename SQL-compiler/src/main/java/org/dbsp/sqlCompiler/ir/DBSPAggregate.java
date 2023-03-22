@@ -4,15 +4,16 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
-import org.dbsp.sqlCompiler.ir.expression.DBSPClosureExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
-import org.dbsp.sqlCompiler.ir.expression.DBSPVariablePath;
+import org.dbsp.sqlCompiler.ir.expression.*;
+import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
+import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 
@@ -57,13 +58,84 @@ public class DBSPAggregate extends DBSPNode implements IDBSPInnerNode {
     }
 
     public DBSPClosureExpression getIncrement() {
+        // Here we rely on the fact that all increment functions have the following signature:
+        // closure0 = (a0: AccumType0, v: Row, w: Weight) -> AccumType9 { body0 }
+        // closure1 = (a1: AccumType1, v: Row, w: Weight) -> AccumType1 { body1 }
+        // And all accumulators have distinct names.
+        // We generate the following closure:
+        // (a: (AccumumType0, AccumType1), v: Row, W: Weight) -> (AccumType0, AccumType1) {
+        //    let tmp0 = closure0(a.0, v, row);
+        //    let tmp1 = closure1(a.1, v, row);
+        //    (tmp0, tmp1)
+        // }
+        if (this.components.length == 0)
+            throw new RuntimeException("Empty aggregation components");
         DBSPClosureExpression[] closures = Linq.map(this.components, c -> c.increment, DBSPClosureExpression.class);
-        return DBSPClosureExpression.parallelClosure(closures);
+        for (DBSPClosureExpression expr: closures) {
+            if (expr.parameters.length != 3)
+                throw new RuntimeException("Expected exactly 3 parameters for increment closure" + expr);
+        }
+        DBSPType[] accumTypes = Linq.map(closures, c -> c.parameters[0].getNonVoidType(), DBSPType.class);
+        DBSPVariablePath accumParam = new DBSPTypeTuple(accumTypes).var("a");
+        DBSPParameter accumulator = accumParam.asParameter();
+        DBSPParameter row = closures[0].parameters[1];
+        DBSPParameter weight = closures[0].parameters[2];
+
+        List<DBSPStatement> body = new ArrayList<>();
+        List<DBSPExpression> tmps = new ArrayList<>();
+        for (int i = 0; i < closures.length; i++) {
+            DBSPClosureExpression closure = closures[i];
+            String tmp = "tmp" + i;
+            DBSPExpression init = closure.call(
+                    accumParam.field(i), row.asVariableReference(), weight.asVariableReference());
+            DBSPLetStatement stat = new DBSPLetStatement(tmp, init);
+            tmps.add(new DBSPVariablePath(tmp, init.getNonVoidType()));
+            body.add(stat);
+        }
+
+        DBSPExpression last = new DBSPTupleExpression(tmps, false);
+        DBSPBlockExpression block = new DBSPBlockExpression(body, last);
+        return new DBSPClosureExpression(block, accumulator, row, weight);
     }
 
     public DBSPClosureExpression getPostprocessing() {
-        DBSPClosureExpression[] closures = Linq.map(this.components, c -> c.postProcess, DBSPClosureExpression.class);
-        return DBSPClosureExpression.parallelClosure(closures);
+        DBSPClosureExpression[] closures = Linq.map(
+                this.components, Implementation::getPostprocessing, DBSPClosureExpression.class);
+        DBSPParameter[][] allParams = Linq.map(closures, c -> c.parameters, DBSPParameter[].class);
+        int paramCount = -1;
+        for (DBSPParameter[] params: allParams) {
+            if (paramCount == -1)
+                paramCount = params.length;
+            else if (paramCount != params.length)
+                throw new RuntimeException("Closures cannot be combined");
+        }
+
+        DBSPVariablePath[] resultParams = new DBSPVariablePath[paramCount];
+        for (int i = 0; i < paramCount; i++) {
+            int finalI = i;
+            DBSPParameter[] first = Linq.map(allParams, p -> p[finalI], DBSPParameter.class);
+            String name = "p" + i;
+            DBSPVariablePath pi = new DBSPVariablePath(name, new DBSPTypeTuple(Linq.map(first, p -> p.type, DBSPType.class)));
+            resultParams[i] = pi;
+        }
+
+        List<DBSPStatement> body = new ArrayList<>();
+        List<DBSPExpression> tmps = new ArrayList<>();
+        for (int i = 0; i < closures.length; i++) {
+            DBSPClosureExpression closure = closures[i];
+            String tmp = "tmp" + i;
+            int finalI = i;
+            DBSPExpression[] args = Linq.map(resultParams, p -> p.field(finalI), DBSPExpression.class);
+            DBSPExpression init = closure.call(args);
+            DBSPLetStatement stat = new DBSPLetStatement(tmp, init);
+            tmps.add(new DBSPVariablePath(tmp, init.getNonVoidType()));
+            body.add(stat);
+        }
+
+        DBSPExpression last = new DBSPTupleExpression(tmps, false);
+        DBSPBlockExpression block = new DBSPBlockExpression(body, last);
+        DBSPParameter[] params = Linq.map(resultParams, DBSPVariablePath::asParameter, DBSPParameter.class);
+        return new DBSPClosureExpression(block, params);
     }
 
     /**

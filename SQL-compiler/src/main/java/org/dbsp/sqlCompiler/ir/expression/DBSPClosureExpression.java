@@ -72,48 +72,6 @@ public class DBSPClosureExpression extends DBSPExpression {
         return new DBSPFunction(name, Linq.list(parameters), this.getResultType(), this.body);
     }
 
-    /**
-     * Given a list of closure expressions with the same number of arguments,
-     * create a closure that calls all of them and assembles the results in a tuple.
-     */
-    public static DBSPClosureExpression parallelClosure(DBSPClosureExpression... closures) {
-        DBSPParameter[][] allParams = Linq.map(closures, c -> c.parameters, DBSPParameter[].class);
-        int paramCount = -1;
-        for (DBSPParameter[] params: allParams) {
-            if (paramCount == -1)
-                paramCount = params.length;
-            else if (paramCount != params.length)
-                throw new RuntimeException("Closures cannot be combined");
-        }
-
-        DBSPVariablePath[] resultParams = new DBSPVariablePath[paramCount];
-        for (int i = 0; i < paramCount; i++) {
-            int finalI = i;
-            DBSPParameter[] first = Linq.map(allParams, p -> p[finalI], DBSPParameter.class);
-            String name = "p" + i;
-            DBSPVariablePath pi = new DBSPVariablePath(name, new DBSPTypeTuple(Linq.map(first, p -> p.type, DBSPType.class)));
-            resultParams[i] = pi;
-        }
-
-        List<DBSPStatement> body = new ArrayList<>();
-        List<DBSPExpression> tmps = new ArrayList<>();
-        for (int i = 0; i < closures.length; i++) {
-            DBSPClosureExpression closure = closures[i];
-            String tmp = "tmp" + i;
-            int finalI = i;
-            DBSPExpression[] args = Linq.map(resultParams, p -> p.field(finalI), DBSPExpression.class);
-            DBSPExpression init = closure.call(args);
-            DBSPLetStatement stat = new DBSPLetStatement(tmp, init);
-            tmps.add(new DBSPVariablePath(tmp, init.getNonVoidType()));
-            body.add(stat);
-        }
-
-        DBSPExpression last = new DBSPTupleExpression(tmps, false);
-        DBSPBlockExpression block = new DBSPBlockExpression(body, last);
-        DBSPParameter[] params = Linq.map(resultParams, DBSPVariablePath::asParameter, DBSPParameter.class);
-        return new DBSPClosureExpression(block, params);
-    }
-
     public DBSPExpression call(DBSPExpression... arguments) {
         if (arguments.length != this.parameters.length)
             throw new RuntimeException("Received " + arguments.length + " but need " + this.parameters.length);

@@ -41,7 +41,6 @@ import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
 import org.dbsp.sqlCompiler.compiler.sqlparser.*;
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
-import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
@@ -82,7 +81,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
     /**
      * Variable that refers to the weight of the row in the z-set.
      */
-    public static final DBSPVariablePath WEIGHT_VAR = DBSPTypeZSet.WEIGHT_TYPE.var("w");
+    public static final DBSPVariablePath WEIGHT_VAR = TypeCompiler.WEIGHT_TYPE.var("w");
 
     // Result is deposited here
     private DBSPPartialCircuit circuit;
@@ -332,19 +331,18 @@ public class CalciteToDBSPCompiler extends RelVisitor
                     typeFromAggregate, null, fold, index);
 
             // Flatten the resulting set
-            DBSPVariablePath kResult = groupType.ref().var("k");
-            DBSPVariablePath vResult = typeFromAggregate.ref().var("v");
+            DBSPTypeRawTuple kvType = new DBSPTypeRawTuple(groupType.ref(), typeFromAggregate.ref());
+            DBSPVariablePath kv = kvType.var("kv");
             DBSPExpression[] flattenFields = new DBSPExpression[aggregate.getGroupCount() + aggType.size()];
             for (int i = 0; i < aggregate.getGroupCount(); i++)
-                flattenFields[i] = kResult.field(i);
+                flattenFields[i] = kv.field(0).field(i);
             for (int i = 0; i < aggType.size(); i++) {
-                DBSPExpression flattenField = vResult.field(i);
+                DBSPExpression flattenField = kv.field(1).field(i);
                 // Here we correct from the type produced by the Folder (typeFromAggregate) to the
                 // actual expected type aggType (which is the tuple of aggTypes).
                 flattenFields[aggregate.getGroupCount() + i] = flattenField.cast(aggTypes[i]);
             }
-            DBSPExpression mapper = new DBSPTupleExpression(flattenFields).closure(
-                    new DBSPParameter(kResult, vResult));
+            DBSPExpression mapper = new DBSPTupleExpression(flattenFields).closure(kv.asParameter());
             this.circuit.addOperator(agg);
             DBSPMapOperator map = new DBSPMapOperator(aggregate,
                     this.declare("flatten", mapper), tuple, agg);
