@@ -59,7 +59,7 @@ public class DBSPTypeDecimal extends DBSPTypeBaseType
 
     @Override
     public String getRustString() {
-        return "BigDecimal";
+        return "Decimal";
     }
 
     @Override

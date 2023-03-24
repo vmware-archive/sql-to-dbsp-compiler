@@ -201,7 +201,7 @@ public class RustSqlRuntimeLibrary {
                 if (ltype.is(DBSPTypeTimestamp.class) || ltype.is(DBSPTypeDate.class)) {
                     assert expectedReturnType != null;
                     returnType = expectedReturnType;
-                    suffixReturn = "_" + returnType.to(DBSPTypeBaseType.class).shortName() + returnType.nullableSuffix();
+                    suffixReturn = "_" + returnType.baseTypeWithSuffix();
                 }
             }
         } else if (ltype.is(IsNumericType.class)) {

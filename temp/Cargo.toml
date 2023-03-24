@@ -19,7 +19,8 @@ size-of = { version = "0.1.1" }
 readers = { path = "../lib/readers" }
 geo = { version = "0.23" }
 geo-types = { version = "0.7" }
-sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls", "sqlite", "any", "bigdecimal" ] }
+sqlx = { version = "0.6", features = [ "runtime-async-std-native-tls", "sqlite", "any" ] }
+rust_decimal = { version = "1.29" }
 
 [lib]
 path = "src/lib.rs"
@@ -28,4 +29,5 @@ doctest = false
 # Incremental builds sometimes crash the compiler
 [profile.test]
 incremental = false
+# Without this in debug builds overflows cause panics
 overflow-checks = false

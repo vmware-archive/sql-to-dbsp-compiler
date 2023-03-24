@@ -299,7 +299,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
         DBSPTypeDecimal type = literal.getNonVoidType().to(DBSPTypeDecimal.class);
         if (type.mayBeNull)
             this.builder.append("Some(");
-        this.builder.append("BigDecimal::from_str(\"")
+        this.builder.append("Decimal::from_str(\"")
                 .append(literal.value.toString())
                 .append("\").unwrap()");
         if (type.mayBeNull)
@@ -872,7 +872,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPTypeDecimal type) {
-        type.wrapOption(this.builder,"BigDecimal");
+        type.wrapOption(this.builder,"Decimal");
         return false;
     }
 

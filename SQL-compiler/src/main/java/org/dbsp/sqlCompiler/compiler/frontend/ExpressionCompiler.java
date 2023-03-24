@@ -455,7 +455,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                         if (!rightType.is(DBSPTypeInteger.class))
                             throw new Unimplemented("ROUND expects a constant second argument", call);
                         String function = "round_" +
-                                leftType.to(DBSPTypeBaseType.class).shortName() + leftType.nullableSuffix();
+                                leftType.baseTypeWithSuffix();
                         return new DBSPApplyExpression(function, type, left, right);
                     }
                     case "abs": {
@@ -463,7 +463,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                             throw new Unimplemented(call);
                         DBSPExpression arg = ops.get(0);
                         DBSPType argType = arg.getNonVoidType();
-                        String function = "abs_" + argType.to(DBSPTypeBaseType.class).shortName() + argType.nullableSuffix() + "_";
+                        String function = "abs_" + argType.baseTypeWithSuffix();
                         return new DBSPApplyExpression(function, type, arg);
                     }
                     case "st_distance": {
@@ -492,6 +492,15 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                         if (arrayType.getElementType().mayBeNull)
                             method += "N";
                         return new DBSPApplyExpression(method, type, arg);
+                    }
+                    case "power": {
+                        DBSPType leftType = ops.get(0).getNonVoidType();
+                        DBSPType rightType = ops.get(1).getNonVoidType();
+                        if (call.operands.size() != 2)
+                            throw new Unimplemented(call);
+                        String functionName = "power_" + leftType.baseTypeWithSuffix() +
+                                "_" + rightType.baseTypeWithSuffix();
+                        return new DBSPApplyExpression(functionName, type, ops.get(0), ops.get(1));
                     }
                 }
                 throw new Unimplemented(call);

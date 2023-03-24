@@ -27,6 +27,7 @@ import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBaseType;
 import org.dbsp.util.IndentStream;
 
 import javax.annotation.Nullable;
@@ -152,5 +153,13 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
      */
     public String nullableSuffix() {
         return this.mayBeNull ? "N" : "";
+    }
+
+    /**
+     * The name of the type as used in the runtime library.
+     * Only defined for base types.
+     */
+    public String baseTypeWithSuffix() {
+        return this.to(DBSPTypeBaseType.class).shortName() + this.nullableSuffix();
     }
 }

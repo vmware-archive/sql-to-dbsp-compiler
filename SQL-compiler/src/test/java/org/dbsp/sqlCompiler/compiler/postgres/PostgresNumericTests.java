@@ -635,4 +635,16 @@ public class PostgresNumericTests extends BaseSQLTests {
                 "    AND t1.results != round(t2.expected, 10)";
         this.testQuery(intermediate, last);
     }
+
+    //@Test
+    public void squareRootTest() {
+        String intermediate = "CREATE VIEW num_result AS SELECT id AS ID1, 0 as ID2, CAST(SQRT(ABS(val)) AS NUMERIC(" +
+                    width + ", 10)) AS results\n" +
+                "    FROM num_data\n";
+        String last = "CREATE VIEW E AS SELECT t1.id1, t1.results, t2.expected\n" +
+                "    FROM num_result t1, num_exp_sqrt t2\n" +
+                "    WHERE t1.id1 = t2.id\n" +
+                "    AND t1.results != t2.expected";
+        this.testQuery(intermediate, last);
+    }
 }
