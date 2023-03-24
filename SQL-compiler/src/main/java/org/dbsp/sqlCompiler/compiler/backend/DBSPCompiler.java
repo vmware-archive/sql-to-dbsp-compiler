@@ -36,6 +36,7 @@ import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
 import org.dbsp.sqlCompiler.compiler.errors.SourceFileContents;
 import org.dbsp.sqlCompiler.compiler.errors.SourcePositionRange;
+import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
 import org.dbsp.sqlCompiler.compiler.optimizer.CircuitOptimizer;
 import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
@@ -84,7 +85,7 @@ public class DBSPCompiler implements IModule {
     }
 
     public final ObjectMapper mapper;
-    final CalciteCompiler frontend;
+    public final CalciteCompiler frontend;
     final CalciteToDBSPCompiler midend;
     public final CompilerOptions options;
     public final CompilerMessages messages;
@@ -93,7 +94,7 @@ public class DBSPCompiler implements IModule {
     final @Nullable ArrayNode inputs;
     final @Nullable ArrayNode outputs;
     public final @Nullable ObjectNode ios;
-
+    public final TypeCompiler typeCompiler;
 
     /**
      * Circuit produced by the compiler.
@@ -108,6 +109,7 @@ public class DBSPCompiler implements IModule {
         this.messages = new CompilerMessages(this);
         this.sources = new SourceFileContents();
         this.circuit = null;
+        this.typeCompiler = new TypeCompiler(this);
         if (options.ioOptions.emitJsonSchema != null) {
             this.inputs = this.mapper.createArrayNode();
             this.outputs = this.mapper.createArrayNode();
@@ -119,6 +121,10 @@ public class DBSPCompiler implements IModule {
             this.outputs = null;
             this.ios = null;
         }
+    }
+
+    public TypeCompiler getTypeCompiler() {
+        return this.typeCompiler;
     }
 
     /**

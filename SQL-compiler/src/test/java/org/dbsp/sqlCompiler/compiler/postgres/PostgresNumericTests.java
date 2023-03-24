@@ -635,4 +635,56 @@ public class PostgresNumericTests extends BaseSQLTests {
                 "    AND t1.results != round(t2.expected, 10)";
         this.testQuery(intermediate, last);
     }
+
+    @Test
+    public void squareRootTest() {
+        String intermediate = "CREATE VIEW num_result AS SELECT id AS ID1, 0 as ID2, CAST(SQRT(ABS(val)) AS NUMERIC(" +
+                    width + ", 10)) AS results\n" +
+                "    FROM num_data\n";
+        String last = "CREATE VIEW E AS SELECT t1.id1, t1.results, t2.expected\n" +
+                "    FROM num_result t1, num_exp_sqrt t2\n" +
+                "    WHERE t1.id1 = t2.id\n" +
+                "    AND t1.results != t2.expected";
+        this.testQuery(intermediate, last);
+    }
+
+    @Test
+    public void logarithmTest() {
+        String intermediate = "CREATE VIEW num_result AS SELECT id AS ID1, 0, CAST(LN(ABS(val)) AS NUMERIC(" +
+                width + ", 10)) AS results\n" +
+                "    FROM num_data\n" +
+                "    WHERE val != '0.0'";
+        String last = "CREATE VIEW E AS SELECT t1.id1, t1.results, t2.expected\n" +
+                "    FROM num_result t1, num_exp_ln t2\n" +
+                "    WHERE t1.id1 = t2.id\n" +
+                "    AND t1.results != t2.expected";
+        this.testQuery(intermediate, last);
+    }
+
+    @Test
+    public void logarithm10Test() {
+        String intermediate = "CREATE VIEW num_result AS SELECT id AS ID1, 0, CAST(LOG10(ABS(val)) AS NUMERIC(" +
+                width + ", 10)) AS results\n" +
+                "    FROM num_data\n" +
+                "    WHERE val != '0.0'";
+        String last = "CREATE VIEW E AS SELECT t1.id1, t1.results, t2.expected\n" +
+                "    FROM num_result t1, num_exp_log10 t2\n" +
+                "    WHERE t1.id1 = t2.id\n" +
+                "    AND t1.results != t2.expected";
+        this.testQuery(intermediate, last);
+    }
+
+    //@Test
+    // This test fails because Postgres has higher precision than we support
+    public void power10Test() {
+        String intermediate = "CREATE VIEW num_result AS SELECT id AS ID1, 0, CAST(POWER(10, LN(ABS(round(val,200)))) AS NUMERIC(" +
+                width + ", 10)) AS results\n" +
+                "    FROM num_data\n" +
+                "    WHERE val != '0.0'";
+        String last = "CREATE VIEW E AS SELECT t1.id1, t1.results, t2.expected\n" +
+                "    FROM num_result t1, num_exp_power_10_ln t2\n" +
+                "    WHERE t1.id1 = t2.id\n" +
+                "    AND t1.results != t2.expected";
+        this.testQuery(intermediate, last);
+    }
 }

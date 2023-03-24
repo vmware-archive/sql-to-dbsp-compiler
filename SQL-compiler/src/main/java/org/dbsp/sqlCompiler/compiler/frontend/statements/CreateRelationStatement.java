@@ -97,8 +97,7 @@ public abstract class CreateRelationStatement extends FrontEndStatement {
         throw new TranslationException("Column not found", id);
     }
 
-    public DBSPTypeTuple getRowType() {
-        TypeCompiler compiler = new TypeCompiler();
+    public DBSPTypeTuple getRowType(TypeCompiler compiler) {
         List<DBSPType> fields = new ArrayList<>();
         for (RelDataTypeField col: this.columns) {
             DBSPType fType = compiler.convertType(col.getType());
@@ -107,8 +106,8 @@ public abstract class CreateRelationStatement extends FrontEndStatement {
         return new DBSPTypeTuple(fields);
     }
 
-    public DBSPType getTableType() {
-        return new DBSPTypeZSet(this.node, this.getRowType());
+    public DBSPType getTableType(TypeCompiler compiler) {
+        return new DBSPTypeZSet(this.node, this.getRowType(compiler));
     }
 
     @Override

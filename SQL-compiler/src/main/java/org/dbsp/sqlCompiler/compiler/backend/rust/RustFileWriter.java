@@ -95,7 +95,6 @@ public class RustFileWriter {
                     "    Runtime,\n" +
                     "};\n" +
                     "use dbsp_adapters::Catalog;\n" +
-                    "use sqlx::types::BigDecimal;\n" +
                     "use genlib::*;\n" +
                     "use size_of::*;\n" +
                     "use ::serde::{Deserialize,Serialize};\n" +
@@ -108,6 +107,7 @@ public class RustFileWriter {
                     "    marker::PhantomData,\n" +
                     "    str::FromStr,\n" +
                     "};\n" +
+                    "use rust_decimal::Decimal;\n" +
                     "use tuple::declare_tuples;\n" +
                     "use sqllib::{\n" +
                     "    casts::*,\n" +

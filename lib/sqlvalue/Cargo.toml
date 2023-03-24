@@ -6,5 +6,5 @@ edition = "2021"
 [dependencies]
 #dbsp = { path = "../../../database-stream-processor.git" }
 dbsp = { git = "https://github.com/vmware/database-stream-processor.git", default-features = false }
-sqlx = { version = "0.6.2" }
+rust_decimal = { version = "1.29" }
 sqllib = { path = "../sqllib" }
