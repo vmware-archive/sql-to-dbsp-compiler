@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.compiler.frontend;
 
+import org.dbsp.sqlCompiler.compiler.ICompilerComponent;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.CreateTableStatement;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.DropTableStatement;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.FrontEndStatement;
@@ -42,7 +44,7 @@ import java.util.Map;
  * It gives an instantaneous view of the table contents, after the execution
  * of a sequence of statements.
  */
-public class TableContents {
+public class TableContents implements ICompilerComponent {
     public final List<String> tablesCreated = new ArrayList<>();
     /**
      * Remember the last statement that created each table.
@@ -53,8 +55,10 @@ public class TableContents {
      */
     @Nullable
     final Map<String, DBSPZSetLiteral> tableContents;
+    final DBSPCompiler compiler;
 
-    public TableContents(boolean trackTableContents) {
+    public TableContents(DBSPCompiler compiler, boolean trackTableContents) {
+        this.compiler = compiler;
         if (trackTableContents)
             this.tableContents = new HashMap<>();
         else
@@ -73,7 +77,8 @@ public class TableContents {
             Utilities.putNew(this.tableCreation, create.tableName, create);
             this.tablesCreated.add(create.tableName);
             if (this.tableContents != null)
-                Utilities.putNew(this.tableContents, create.tableName, new DBSPZSetLiteral(create.getTableType()));
+                Utilities.putNew(this.tableContents, create.tableName,
+                        new DBSPZSetLiteral(create.getTableType(this.compiler.getTypeCompiler())));
         } else if (statement.is(DropTableStatement.class)) {
             DropTableStatement drop = statement.to(DropTableStatement.class);
             this.tableCreation.remove(drop.tableName);
@@ -98,5 +103,10 @@ public class TableContents {
             if (this.tablesCreated.get(i).equals(tableName))
                 return i;
         throw new RuntimeException("No table named " + tableName);
+    }
+
+    @Override
+    public DBSPCompiler getCompiler() {
+        return this.compiler;
     }
 }

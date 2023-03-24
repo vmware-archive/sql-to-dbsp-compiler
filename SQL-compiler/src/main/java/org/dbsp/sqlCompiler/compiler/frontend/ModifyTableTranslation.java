@@ -26,6 +26,8 @@ package org.dbsp.sqlCompiler.compiler.frontend;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.dbsp.sqlCompiler.compiler.ICompilerComponent;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.CreateTableStatement;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.TableModifyStatement;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
@@ -46,7 +48,7 @@ import java.util.Objects;
 /**
  * Information used to translate INSERT or DELETE SQL statements
  */
-class ModifyTableTranslation {
+class ModifyTableTranslation implements ICompilerComponent {
     /**
      * Result of the VALUES expression.
      */
@@ -63,14 +65,17 @@ class ModifyTableTranslation {
     @Nullable
     DBSPTypeTuple resultType;
     final TableModifyStatement statement;
+    final DBSPCompiler compiler;
 
     public ModifyTableTranslation(TableModifyStatement statement,
                                   CreateTableStatement tableDefinition,
-                                  @Nullable SqlNodeList columnList) {
+                                  @Nullable SqlNodeList columnList,
+                                  DBSPCompiler compiler) {
         this.valuesTranslation = null;
+        this.compiler = compiler;
         this.columnPermutation = null;
         this.statement = statement;
-        DBSPTypeTuple sourceType = tableDefinition.getRowType();
+        DBSPTypeTuple sourceType = tableDefinition.getRowType(this.compiler.getTypeCompiler());
         if (columnList != null) {
             // The column list specifies an order for the columns that are assigned,
             // which may not be the order of the columns in the table.  We need to
@@ -134,5 +139,10 @@ class ModifyTableTranslation {
         if (this.valuesTranslation != null)
             throw new RuntimeException("Overwriting logical value translation");
         this.valuesTranslation = this.permuteColumns(literal);
+    }
+
+    @Override
+    public DBSPCompiler getCompiler() {
+        return this.compiler;
     }
 }

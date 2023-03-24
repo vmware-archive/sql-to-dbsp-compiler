@@ -35,6 +35,7 @@ import org.apache.calcite.sql.*;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
+import org.dbsp.sqlCompiler.compiler.ICompilerComponent;
 import org.dbsp.sqlCompiler.compiler.frontend.statements.*;
 import org.dbsp.sqlCompiler.compiler.sqlparser.*;
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
@@ -66,7 +67,8 @@ import java.util.function.Consumer;
  * The function generateOutputForNextView can be used to prevent
  * some views from generating outputs.
  */
-public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
+public class CalciteToDBSPCompiler extends RelVisitor
+        implements IModule, ICompilerComponent {
     /**
      * Number of first day of the week.
      * This should be selected by the SQL dialect, but it seems
@@ -99,7 +101,6 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     public final CalciteCompiler calciteCompiler;
     // Map each compiled RelNode operator to its DBSP implementation.
     final Map<RelNode, DBSPOperator> nodeOperator;
-    final TypeCompiler typeCompiler;
     final TableContents tableContents;
     final CompilerOptions options;
     final DBSPCompiler compiler;
@@ -115,15 +116,19 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                                  CompilerOptions options, DBSPCompiler compiler) {
         this.circuit = new DBSPPartialCircuit(compiler);
         this.compiler = compiler;
-        this.typeCompiler = new TypeCompiler();
         this.calciteCompiler = calciteCompiler;
         this.nodeOperator = new HashMap<>();
-        this.tableContents = new TableContents(trackTableContents);
+        this.tableContents = new TableContents(compiler, trackTableContents);
         this.options = options;
     }
 
+    @Override
+    public DBSPCompiler getCompiler() {
+        return this.compiler;
+    }
+
     private DBSPType convertType(RelDataType dt) {
-        return this.typeCompiler.convertType(dt);
+        return this.compiler.getTypeCompiler().convertType(dt);
     }
 
     private DBSPType makeZSet(DBSPType type) {
@@ -359,7 +364,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPTypeTuple tuple = outputType.to(DBSPTypeTuple.class);
         DBSPType inputType = this.convertType(project.getInput().getRowType());
         DBSPVariablePath row = inputType.ref().var("t");
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(row, this.calciteCompiler);
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(row, this.compiler);
 
         List<DBSPExpression> resultColumns = new ArrayList<>();
         int index = 0;
@@ -429,7 +434,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
     public void visitFilter(LogicalFilter filter) {
         DBSPType type = this.convertType(filter.getRowType());
         DBSPVariablePath t = type.ref().var("t");
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.calciteCompiler);
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.compiler);
         DBSPExpression condition = expressionCompiler.compile(filter.getCondition());
         condition = ExpressionCompiler.wrapBoolIfNeeded(condition);
         condition = new DBSPClosureExpression(filter.getCondition(), condition, t.asParameter());
@@ -484,7 +489,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 .to(DBSPTypeTuple.class);
 
         JoinConditionAnalyzer analyzer = new JoinConditionAnalyzer(
-                leftElementType.to(DBSPTypeTuple.class).size(), this.typeCompiler);
+                leftElementType.to(DBSPTypeTuple.class).size(), this.compiler.getTypeCompiler());
         JoinConditionAnalyzer.ConditionDecomposition decomposition = analyzer.analyze(join.getCondition());
         // If any key field is nullable we need to filter the inputs; this will make key columns non-nullable
         DBSPOperator filteredLeft = this.filterNonNullKeys(join, Linq.map(decomposition.comparisons, c -> c.leftColumn), left);
@@ -518,7 +523,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPExpression originalCondition = null;
         if (leftOver != null) {
             DBSPVariablePath t = resultType.ref().var("t");
-            ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.calciteCompiler);
+            ExpressionCompiler expressionCompiler = new ExpressionCompiler(t, this.compiler);
             condition = expressionCompiler.compile(leftOver);
             if (condition.getNonVoidType().mayBeNull)
                 condition = ExpressionCompiler.wrapBoolIfNeeded(condition);
@@ -661,7 +666,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
      * This can be invoked by a DDM statement, or by a SQL query that computes a constant result.
      */
     public void visitLogicalValues(LogicalValues values) {
-        ExpressionCompiler expressionCompiler = new ExpressionCompiler(null, this.calciteCompiler);
+        ExpressionCompiler expressionCompiler = new ExpressionCompiler(null, this.compiler);
         DBSPTypeTuple sourceType = this.convertType(values.getRowType()).to(DBSPTypeTuple.class);
         DBSPTypeTuple resultType;
         if (this.modifyTableTranslation != null) {
@@ -779,7 +784,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
         DBSPOperator input = this.getInputAs(window.getInput(0), true);
         DBSPTypeTuple inputRowType = this.convertType(inputNode.getRowType()).to(DBSPTypeTuple.class);
         DBSPVariablePath inputRowRefVar = inputRowType.ref().var("t");
-        ExpressionCompiler eComp = new ExpressionCompiler(inputRowRefVar, window.constants, this.calciteCompiler);
+        ExpressionCompiler eComp = new ExpressionCompiler(inputRowRefVar, window.constants, this.compiler);
         int windowFieldIndex = inputRowType.size();
         DBSPVariablePath previousRowRefVar = inputRowRefVar;
 
@@ -1020,7 +1025,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
                 // in the circuit.
                 String tableName = create.tableName;
                 CreateTableStatement def = this.tableContents.getTableDefinition(tableName);
-                DBSPType rowType = def.getRowType();
+                DBSPType rowType = def.getRowType(this.compiler.getTypeCompiler());
                 DBSPSourceOperator result = new DBSPSourceOperator(
                         create, this.makeZSet(rowType), def.statement, tableName);
                 this.circuit.addOperator(result);
@@ -1035,7 +1040,7 @@ public class CalciteToDBSPCompiler extends RelVisitor implements IModule {
             assert insert != null;
             CreateTableStatement def = this.tableContents.getTableDefinition(modify.tableName);
             this.modifyTableTranslation = new ModifyTableTranslation(
-                    modify, def, insert.getTargetColumnList());
+                    modify, def, insert.getTargetColumnList(), this.compiler);
             if (modify.rel instanceof LogicalTableScan) {
                 // Support for INSERT INTO table (SELECT * FROM otherTable)
                 LogicalTableScan scan = (LogicalTableScan) modify.rel;

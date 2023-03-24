@@ -499,6 +499,30 @@ pub fn abs_decimalN(left: Option<Decimal>) -> Option<Decimal>
 }
 
 #[inline(always)]
+pub fn ln_decimal(left: Decimal) -> F64
+{
+    F64::new(left.ln().to_f64().unwrap())
+}
+
+#[inline(always)]
+pub fn ln_decimalN(left: Option<Decimal>) -> Option<F64>
+{
+    left.map(|l| ln_decimal(l))
+}
+
+#[inline(always)]
+pub fn log10_decimal(left: Decimal) -> F64
+{
+    F64::new(left.log10().to_f64().unwrap())
+}
+
+#[inline(always)]
+pub fn log10_decimalN(left: Option<Decimal>) -> Option<F64>
+{
+    left.map(|l| log10_decimal(l))
+}
+
+#[inline(always)]
 pub fn is_true_b_(left: bool) -> bool
 {
     left
@@ -1096,6 +1120,16 @@ where T: Copy
     }
 }
 
+pub fn power_i32_d(left: i32, right: F64) -> F64
+{
+    F64::new((left as f64).powf(right.into_inner()))
+}
+
+pub fn power_i32_dN(left: i32, right: Option<F64>) -> Option<F64>
+{
+    right.map(|r| power_i32_d(left, r))
+}
+
 pub fn power_d_d(left: F64, right: F64) -> F64
 {
     F64::new(left.into_inner().powf(right.into_inner()))
@@ -1103,7 +1137,12 @@ pub fn power_d_d(left: F64, right: F64) -> F64
 
 pub fn power_decimal_decimal(left: Decimal, right: Decimal) -> F64
 {
-    F64::from(left.powd(right).to_f64().unwrap())
+    if right == Decimal::new(5, 1) {
+        // special case for sqrt, has higher precision than pow
+        F64::from(left.sqrt().unwrap().to_f64().unwrap())
+    } else {
+        F64::from(left.powd(right).to_f64().unwrap())
+    }
 }
 
 pub fn power_decimalN_decimal(left: Option<Decimal>, right: Decimal) -> Option<F64>

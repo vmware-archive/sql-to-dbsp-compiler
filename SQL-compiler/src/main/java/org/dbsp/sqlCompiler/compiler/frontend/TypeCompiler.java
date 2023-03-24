@@ -26,6 +26,9 @@ package org.dbsp.sqlCompiler.compiler.frontend;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.dbsp.sqlCompiler.compiler.ICompilerComponent;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.errors.SourcePositionRange;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.Unimplemented;
@@ -34,8 +37,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class TypeCompiler {
-    public TypeCompiler() {}
+public class TypeCompiler implements ICompilerComponent {
+    final DBSPCompiler compiler;
+    public TypeCompiler(DBSPCompiler parent) {
+        this.compiler = parent;
+    }
 
     public static DBSPType makeZSet(DBSPType elementType) {
         return new DBSPTypeZSet(elementType.getNode(), elementType);
@@ -63,8 +69,28 @@ public class TypeCompiler {
                     return new DBSPTypeInteger(tn, 32, true, nullable);
                 case BIGINT:
                     return new DBSPTypeInteger(tn, 64, true, nullable);
-                case DECIMAL:
-                    return new DBSPTypeDecimal(tn, dt.getPrecision(), dt.getScale(), nullable);
+                case DECIMAL: {
+                    int precision = dt.getPrecision();
+                    int scale = dt.getScale();
+                    if (precision >= DBSPTypeDecimal.MAX_PRECISION) {
+                        // This would sure benefit from source position information, but we don't have any!
+                        compiler.reportError(SourcePositionRange.INVALID, true, "Out of bounds",
+                                "DECIMAL value precision " + precision +
+                                        " is larger than the maximum supported precision; truncating to " +
+                                        DBSPTypeDecimal.MAX_PRECISION
+                                );
+                        precision = DBSPTypeDecimal.MAX_PRECISION;
+                    }
+                    if (scale > DBSPTypeDecimal.MAX_SCALE) {
+                        compiler.reportError(SourcePositionRange.INVALID, true, "Out of bounds",
+                                "DECIMAL value scale " + scale +
+                                        " is larger than the maximum supported scale; truncating to " +
+                                        DBSPTypeDecimal.MAX_SCALE
+                        );
+                        scale = DBSPTypeDecimal.MAX_SCALE;
+                    }
+                    return new DBSPTypeDecimal(tn, precision, scale, nullable);
+                }
                 case FLOAT:
                 case REAL:
                     return DBSPTypeFloat.INSTANCE.setMayBeNull(nullable);
@@ -124,5 +150,10 @@ public class TypeCompiler {
             }
         }
         throw new Unimplemented(dt);
+    }
+
+    @Override
+    public DBSPCompiler getCompiler() {
+        return this.compiler;
     }
 }

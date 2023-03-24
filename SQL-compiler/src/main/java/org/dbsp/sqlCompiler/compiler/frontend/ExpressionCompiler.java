@@ -28,8 +28,9 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.util.DateString;
 import org.apache.calcite.util.TimestampString;
+import org.dbsp.sqlCompiler.compiler.ICompilerComponent;
+import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.backend.rust.RustSqlRuntimeLibrary;
-import org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.*;
@@ -43,15 +44,16 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 
-public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implements IModule {
-    private final TypeCompiler typeCompiler = new TypeCompiler();
+public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implements IModule, ICompilerComponent {
+    private final TypeCompiler typeCompiler;
     @Nullable
     public final DBSPVariablePath inputRow;
     private final RexBuilder rexBuilder;
     private final List<RexLiteral> constants;
+    private final DBSPCompiler compiler;
 
-    public ExpressionCompiler(@Nullable DBSPVariablePath inputRow, CalciteCompiler calciteCompiler) {
-        this(inputRow, Linq.list(), calciteCompiler);
+    public ExpressionCompiler(@Nullable DBSPVariablePath inputRow, DBSPCompiler compiler) {
+        this(inputRow, Linq.list(), compiler);
     }
 
     /**
@@ -62,16 +64,17 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
      *                         within the row.  Calcite seems to number constants
      *                         as additional fields within the row, after the end of
      *                         the input row.
-     * @param calciteCompiler  Handle to the Calcite compiler, in case we need
-     *                         to do some more preprocessing of the expressions.
+     * @param compiler         Handle to the compiler.
      */
     public ExpressionCompiler(@Nullable DBSPVariablePath inputRow,
                               List<RexLiteral> constants,
-                              CalciteCompiler calciteCompiler) {
+                              DBSPCompiler compiler) {
         super(true);
         this.inputRow = inputRow;
         this.constants = constants;
-        this.rexBuilder = calciteCompiler.getRexBuilder();
+        this.rexBuilder = compiler.frontend.getRexBuilder();
+        this.compiler = compiler;
+        this.typeCompiler = compiler.getTypeCompiler();
         if (inputRow != null &&
                 !inputRow.getNonVoidType().is(DBSPTypeRef.class))
             throw new TranslationException("Expected a reference type for row", inputRow.getNode());
@@ -458,12 +461,14 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                                 leftType.baseTypeWithSuffix();
                         return new DBSPApplyExpression(function, type, left, right);
                     }
+                    case "log10":
+                    case "ln":
                     case "abs": {
                         if (call.operands.size() != 1)
                             throw new Unimplemented(call);
                         DBSPExpression arg = ops.get(0);
                         DBSPType argType = arg.getNonVoidType();
-                        String function = "abs_" + argType.baseTypeWithSuffix();
+                        String function = opName + "_" + argType.baseTypeWithSuffix();
                         return new DBSPApplyExpression(function, type, arg);
                     }
                     case "st_distance": {
@@ -557,5 +562,10 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
         if (result == null)
             throw new Unimplemented(expression);
         return result;
+    }
+
+    @Override
+    public DBSPCompiler getCompiler() {
+        return this.compiler;
     }
 }
