@@ -134,8 +134,7 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
         }
         rs.close();
         if (rows.size() == 0)
-            return new DBSPZSetLiteral(
-                    new DBSPTypeZSet(new DBSPTypeTuple(colTypes)));
+            return DBSPZSetLiteral.emptyWithElementType(new DBSPTypeTuple(colTypes));
         return new DBSPZSetLiteral(rows.toArray(new DBSPExpression[0]));
     }
 

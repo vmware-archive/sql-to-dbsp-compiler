@@ -27,7 +27,6 @@ import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.BaseSQLTests;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
-import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
@@ -537,12 +536,11 @@ public class PostgresNumericTests extends BaseSQLTests {
         InputOutputPair streams = new InputOutputPair(
                 inputs,
                 new DBSPZSetLiteral[] {
-                new DBSPZSetLiteral(
-                        TypeCompiler.makeZSet(new DBSPTypeTuple(
-                                DBSPTypeInteger.SIGNED_32,
-                                DBSPTypeInteger.SIGNED_64,
-                                new DBSPTypeDecimal(null, width, 10, false),
-                                new DBSPTypeDecimal(null, width, 10, false)))
+                DBSPZSetLiteral.emptyWithElementType(new DBSPTypeTuple(
+                    DBSPTypeInteger.SIGNED_32,
+                    DBSPTypeInteger.SIGNED_64,
+                    new DBSPTypeDecimal(null, width, 10, false),
+                    new DBSPTypeDecimal(null, width, 10, false))
                 )}
         );
         this.addRustTestCase(circuit, streams);

@@ -41,7 +41,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
     void testQuery(String query,
                    DBSPZSetLiteral firstOutput) {
         DBSPZSetLiteral input = this.createInput();
-        DBSPZSetLiteral secondOutput = new DBSPZSetLiteral(firstOutput.getNonVoidType());
+        DBSPZSetLiteral secondOutput = DBSPZSetLiteral.emptyWithType(firstOutput.getNonVoidType());
         DBSPZSetLiteral thirdOutput = secondOutput.minus(firstOutput);
         this.invokeTestQueryBase(query,
                 // Add first input
@@ -56,7 +56,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
     void testConstantOutput(String query,
                             DBSPZSetLiteral output) {
         DBSPZSetLiteral input = this.createInput();
-        DBSPZSetLiteral e = new DBSPZSetLiteral(output.getNonVoidType());
+        DBSPZSetLiteral e = DBSPZSetLiteral.emptyWithType(output.getNonVoidType());
         this.invokeTestQueryBase(query,
                 // Add first input
                 new InputOutputPair(input, output),
@@ -71,7 +71,7 @@ public class NaiveIncrementalTests extends EndToEndTests {
                        DBSPZSetLiteral firstOutput,
                        DBSPZSetLiteral outputForEmptyInput) {
         DBSPZSetLiteral input = this.createInput();
-        DBSPZSetLiteral secondOutput = new DBSPZSetLiteral(firstOutput.getNonVoidType());
+        DBSPZSetLiteral secondOutput = DBSPZSetLiteral.emptyWithType(firstOutput.getNonVoidType());
         DBSPZSetLiteral thirdOutput = outputForEmptyInput.minus(firstOutput);
         this.invokeTestQueryBase(query,
                 // Add first input
@@ -221,7 +221,6 @@ public class NaiveIncrementalTests extends EndToEndTests {
                 new DBSPTupleExpression(
                 new DBSPI32Literal(10, true)));
         this.testAggregate(query, output, new DBSPZSetLiteral(
-                output.zsetType.weightType,
                 new DBSPTupleExpression(DBSPLiteral.none(DBSPTypeInteger.SIGNED_32.setMayBeNull(true)))));
     }
 

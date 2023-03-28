@@ -331,7 +331,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 container = vec;
                 expectedOutput = new DBSPZSetLiteral(vec);
             } else {
-                expectedOutput = new DBSPZSetLiteral(outputType);
+                expectedOutput = DBSPZSetLiteral.emptyWithType(outputType);
                 container = expectedOutput;
             }
             DBSPTypeTuple outputElementType = elementType.to(DBSPTypeTuple.class);

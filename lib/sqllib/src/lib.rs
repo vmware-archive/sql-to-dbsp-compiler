@@ -1162,3 +1162,8 @@ pub fn power_decimalN_decimalN(left: Option<Decimal>, right: Option<Decimal>) ->
         (l, Some(r)) => power_decimalN_decimal(l, r),
     }
 }
+
+pub fn plus_u_u(left: usize, right: usize) -> usize
+{
+    left + right
+}    

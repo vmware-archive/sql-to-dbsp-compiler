@@ -146,9 +146,7 @@ public class PostgresDateTests extends BaseSQLTests {
 
     static DBSPZSetLiteral makeSet(String[] data) {
         DBSPType type = nullableDate;
-        DBSPZSetLiteral result = new DBSPZSetLiteral(
-                TypeCompiler.makeZSet(
-                        new DBSPTypeTuple(type)));
+        DBSPZSetLiteral result = DBSPZSetLiteral.emptyWithElementType(new DBSPTypeTuple(type));
         for (String s: data) {
             DBSPExpression value;
             if (s == null)

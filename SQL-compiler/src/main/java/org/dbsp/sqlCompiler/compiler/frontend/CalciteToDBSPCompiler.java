@@ -44,6 +44,7 @@ import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPUSizeLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -52,6 +53,7 @@ import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeTimestamp;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeUSize;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
@@ -208,13 +210,57 @@ public class CalciteToDBSPCompiler extends RelVisitor
         return result;
     }
 
+    HashMap<String, DBSPOperator> correlatedVariables = new HashMap<>();
+
     public void visitCorrelate(LogicalCorrelate correlate) {
-        throw new Unimplemented(correlate);
+        if (correlate.getJoinType().isOuterJoin())
+            throw new Unimplemented(correlate);
+        this.visit(correlate.getLeft(), 0, correlate);
+        DBSPOperator left = this.getInputAs(correlate.getLeft(), true);
+        String var = correlate.getCorrelVariable();
+        this.correlatedVariables.put(var, left);
+        this.visit(correlate.getRight(), 0, correlate);
+        DBSPOperator right = this.getInputAs(correlate.getRight(), true);
+        this.assignOperator(correlate, right);
     }
 
     public void visitUncollect(Uncollect uncollect) {
         // This represents an unnest.
-        throw new Unimplemented(uncollect);
+        // flat_map(move |x| { x.0.into_iter().map(move |e| Tuple1::new(e)) })
+        DBSPType type = this.convertType(uncollect.getRowType());
+        RelNode input = uncollect.getInput();
+        DBSPTypeTuple inputRowType = this.convertType(input.getRowType()).to(DBSPTypeTuple.class);
+        // We expect this to be a single-element tuple whose type is a vector.
+        DBSPTypeVec vec = inputRowType.getFieldType(0).to(DBSPTypeVec.class);
+        DBSPOperator opInput = this.getInputAs(input, true);
+        DBSPVariablePath var = new DBSPVariablePath("x", inputRowType);
+        DBSPExpression iter = new DBSPApplyMethodExpression("into_iter", DBSPTypeAny.INSTANCE, var.field(0));
+        DBSPExpression function;
+        if (uncollect.withOrdinality) {
+            DBSPTypeTuple pair = type.to(DBSPTypeTuple.class);
+            iter = new DBSPApplyMethodExpression("enumerate", DBSPTypeAny.INSTANCE, iter);
+            DBSPVariablePath elem = new DBSPVariablePath("e", new DBSPTypeRawTuple(
+                    DBSPTypeUSize.INSTANCE, vec.getElementType()));
+            DBSPClosureExpression toTuple = new DBSPTupleExpression(
+                    elem.field(1).cast(pair.getFieldType(0)), // value
+                    new DBSPBinaryExpression(null,
+                            DBSPTypeUSize.INSTANCE, "+",
+                            elem.field(0),
+                            new DBSPUSizeLiteral(1)).cast(pair.getFieldType(1))). // index
+                    closure(elem.asParameter());
+            function = new DBSPApplyMethodExpression(
+                    "map", DBSPTypeAny.INSTANCE,
+                    iter, toTuple).closure(var.asRefParameter());
+        } else {
+            DBSPVariablePath elem = new DBSPVariablePath("e", vec.getElementType());
+            DBSPClosureExpression toTuple = new DBSPTupleExpression(elem).closure(elem.asParameter());
+            function = new DBSPApplyMethodExpression(
+                    "map", DBSPTypeAny.INSTANCE,
+                    iter, toTuple).closure(var.asRefParameter());
+        }
+        DBSPFlatMapOperator flatMap = new DBSPFlatMapOperator(uncollect, function,
+                TypeCompiler.makeZSet(type), opInput);
+        this.assignOperator(uncollect, flatMap);
     }
 
     public void visitAggregate(LogicalAggregate aggregate) {
@@ -696,7 +742,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
             resultType = sourceType;
         }
 
-        DBSPZSetLiteral result = new DBSPZSetLiteral(TypeCompiler.makeZSet(resultType));
+        DBSPZSetLiteral result = DBSPZSetLiteral.emptyWithElementType(resultType);
         for (List<RexLiteral> t : values.getTuples()) {
             List<DBSPExpression> expressions = new ArrayList<>();
             if (t.size() != sourceType.size())
@@ -977,7 +1023,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
     @Override
     public void visit(
             RelNode node, int ordinal,
-            @org.checkerframework.checker.nullness.qual.Nullable RelNode parent) {
+            @Nullable RelNode parent) {
         Logger.INSTANCE.from(this, 3)
                 .append("Visiting ")
                 .append(node.toString())
@@ -986,6 +1032,11 @@ public class CalciteToDBSPCompiler extends RelVisitor
             // We have already done this one.  This can happen because the
             // plan can be a DAG, not just a tree.
             return;
+
+        // logical correlates are not done in postorder.
+        if (this.visitIfMatches(node, LogicalCorrelate.class, this::visitCorrelate))
+            return;
+
         // First process children
         super.visit(node, ordinal, parent);
         // Synthesize current node
@@ -1001,7 +1052,6 @@ public class CalciteToDBSPCompiler extends RelVisitor
                 this.visitIfMatches(node, LogicalIntersect.class, this::visitIntersect) ||
                 this.visitIfMatches(node, LogicalWindow.class, this::visitWindow) ||
                 this.visitIfMatches(node, LogicalSort.class, this::visitSort) ||
-                this.visitIfMatches(node, LogicalCorrelate.class, this::visitCorrelate) ||
                 this.visitIfMatches(node, Uncollect.class, this::visitUncollect);
         if (!success)
             throw new Unimplemented(node);

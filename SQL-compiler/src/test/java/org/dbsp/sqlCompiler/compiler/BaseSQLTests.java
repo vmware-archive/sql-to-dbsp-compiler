@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.*;
-import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
 import org.dbsp.sqlCompiler.compiler.backend.optimize.*;
 import org.dbsp.sqlCompiler.compiler.backend.rust.RustSqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.compiler.backend.rust.RustFileWriter;
@@ -249,7 +248,7 @@ public class BaseSQLTests {
     );
     static final DBSPZSetLiteral z0 = new DBSPZSetLiteral(e0);
     static final DBSPZSetLiteral z1 = new DBSPZSetLiteral(e1);
-    static final DBSPZSetLiteral empty = new DBSPZSetLiteral(z0.getNonVoidType());
+    static final DBSPZSetLiteral empty = DBSPZSetLiteral.emptyWithType(z0.getNonVoidType());
 
     /**
      * Returns the table containing:

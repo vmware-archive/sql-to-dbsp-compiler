@@ -478,7 +478,7 @@ public class ZetatestVisitor extends ZetatestBaseVisitor<Void> implements IModul
                 values.add(this.currentValue);
             }
             if (values.isEmpty()) {
-                this.currentValue = new DBSPZSetLiteral(this.currentExpressionType);
+                this.currentValue = DBSPZSetLiteral.emptyWithElementType(this.currentExpressionType);
             } else {
                 this.currentValue = new DBSPZSetLiteral(values.toArray(new DBSPExpression[0]));
             }

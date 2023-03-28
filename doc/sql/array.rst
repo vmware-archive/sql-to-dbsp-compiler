@@ -8,6 +8,28 @@ Array elements may be nullable types, e.g., ``INT ARRAY NULL``.
 Multidimensional arrays are possible, e.g. ``VARCHAR ARRAY ARRAY``
 is a two-dimensional array.
 
+The UNNEST SQL Operator
+-----------------------
+
+The ``UNNEST`` operator takes an ``ARRAY`` and returns a table with a
+row for each element in the ``ARRAY``: ``UNNEST(ARRAY) [WITH
+ORDINALITY]``.  If the input is an array with 5 elements, the output
+is a table with 5 rows, each row holding one element of the array.
+The additional keyword ``WITH ORDINALITY`` creates an output table
+with two columns, where the second column is the index of the element
+within the array, with numbering starting at 1.  If the array contains
+duplicated values, the resulting table will be a multiset.
+
+The ``UNNEST`` operator can be used in self-joins as follows:
+
+```
+SELECT city, country
+FROM data, UNNEST(cities) AS t (city)
+```
+
+where we assume that the ``data`` table has a schema defined
+as ``CREATE TABLE data AS (CITIES VARCHAR ARRAY, COUNTRY VARCHAR)``.
+
 Predefined functions on array values
 ------------------------------------
 
@@ -32,3 +54,5 @@ Predefined functions on array values
        than one element, it causes a runtime exception.  (In the
        future we should probably replace the runtime exception with
        a ``NULL`` result for this case.)
+
+       
