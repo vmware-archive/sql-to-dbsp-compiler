@@ -61,7 +61,7 @@ public class DBSPWindowAggregateOperator extends DBSPAggregateOperatorBase {
     @Override
     public DBSPOperator withFunction(@Nullable DBSPExpression expression) {
         return new DBSPWindowAggregateOperator(
-                this.getNode(), expression, this.getAggregate(), this.window,
+                this.getNode(), expression, this.aggregate, this.window,
                 this.partitionKeyType, this.timestampType, this.aggregateType,
                 this.input());
     }
@@ -70,7 +70,7 @@ public class DBSPWindowAggregateOperator extends DBSPAggregateOperatorBase {
     public DBSPOperator withInputs(List<DBSPOperator> newInputs, boolean force) {
         if (force || this.inputsDiffer(newInputs))
             return new DBSPWindowAggregateOperator(
-                    this.getNode(), this.function, this.getAggregate(), this.window,
+                    this.getNode(), this.function, this.aggregate, this.window,
                     this.partitionKeyType, this.timestampType, this.aggregateType,
                     newInputs.get(0));
         return this;

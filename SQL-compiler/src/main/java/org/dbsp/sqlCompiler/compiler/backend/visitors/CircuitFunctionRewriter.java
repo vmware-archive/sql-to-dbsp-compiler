@@ -29,7 +29,9 @@ import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.util.Linq;
 
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -45,15 +47,16 @@ public class CircuitFunctionRewriter extends CircuitCloneVisitor {
     }
 
     @Override
-    public void postorder(DBSPOperator node) {
+    public void replace(DBSPOperator node) {
         IDBSPInnerNode function = this.transform.apply(node.function);
         DBSPOperator result;
         if (function != null) {
             DBSPExpression funcExpr = function.to(DBSPExpression.class);
-            result = node.withFunction(funcExpr);
+            List<DBSPOperator> sources = Linq.map(node.inputs, this::mapped);
+            result = node.withFunction(funcExpr).withInputs(sources, false);
             this.map(node, result);
         } else {
-            this.replace(node);
+            super.replace(node);
         }
     }
 

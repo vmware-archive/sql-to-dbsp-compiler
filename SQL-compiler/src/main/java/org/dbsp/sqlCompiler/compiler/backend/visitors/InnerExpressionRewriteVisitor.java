@@ -45,7 +45,9 @@ public abstract class InnerExpressionRewriteVisitor
     public IDBSPInnerNode apply(@Nullable IDBSPInnerNode dbspNode) {
         if (dbspNode == null)
             return null;
+        this.startVisit();
         dbspNode.accept(this);
+        this.endVisit();
         return this.getResult();
     }
 
@@ -343,7 +345,7 @@ public abstract class InnerExpressionRewriteVisitor
         DBSPExpression[] fields = Linq.map(expression.fields, this::transform, DBSPExpression.class);
         DBSPExpression result = expression;
         if (Linq.different(fields, expression.fields)) {
-            result = new DBSPTupleExpression(fields, expression.getNonVoidType().mayBeNull);
+            result = new DBSPTupleExpression(fields);
         }
         this.map(expression, result);
         return false;

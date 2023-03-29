@@ -24,6 +24,10 @@
 package org.dbsp.sqlCompiler.ir.type;
 
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPRawTupleExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPVariablePath;
 import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
@@ -86,5 +90,21 @@ public class DBSPTypeRawTuple extends DBSPTypeTupleBase {
         for (DBSPType type: this.tupFields)
             type.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPExpression caster(DBSPType to) {
+        if (!to.is(DBSPTypeRawTuple.class))
+            return super.caster(to);  // throw
+        DBSPTypeRawTuple tuple = to.to(DBSPTypeRawTuple.class);
+        if (tuple.size() != this.size())
+            return super.caster(to);  // throw
+        DBSPVariablePath var = new DBSPVariablePath("x", this);
+        DBSPExpression[] casts = new DBSPExpression[this.tupFields.length];
+        for (int i = 0; i < this.tupFields.length; i++) {
+            casts[i] = this.tupFields[i].caster(tuple.tupFields[i]);
+            casts[i] = casts[i].call(var.field(i));
+        }
+        return new DBSPRawTupleExpression(casts).closure(var.asRefParameter());
     }
 }

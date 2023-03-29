@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.ir.type.primitive;
 
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPVariablePath;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 
 import javax.annotation.Nullable;
@@ -52,4 +54,10 @@ public abstract class DBSPTypeBaseType extends DBSPType {
      * usize -> u
      */
     public abstract String shortName();
+
+    @Override
+    public DBSPExpression caster(DBSPType to) {
+        DBSPVariablePath var = new DBSPVariablePath("x", this);
+        return var.cast(to).closure(var.asParameter());
+    }
 }

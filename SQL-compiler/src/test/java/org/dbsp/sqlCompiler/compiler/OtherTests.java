@@ -311,7 +311,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         boolean success = file.delete();
         Assert.assertTrue(success);
     }
-
+    
     @Test
     public void testSchema() throws IOException {
         String[] statements = new String[]{

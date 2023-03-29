@@ -21,7 +21,10 @@
  * SOFTWARE.
  */
 
-package org.dbsp.util;
+package org.dbsp.sqllogictest.executors;
+
+import org.dbsp.util.ICastable;
+import org.dbsp.util.IModule;
 
 import java.text.DecimalFormat;
 import java.util.HashSet;

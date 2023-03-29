@@ -51,5 +51,4 @@ public class DBSPRawTupleExpression extends DBSPBaseTupleExpression {
             expression.accept(visitor);
         visitor.postorder(this);
     }
-
 }

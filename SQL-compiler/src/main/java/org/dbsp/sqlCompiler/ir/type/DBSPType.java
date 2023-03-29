@@ -29,6 +29,7 @@ import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBaseType;
 import org.dbsp.util.IndentStream;
+import org.dbsp.util.Unimplemented;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -161,5 +162,12 @@ public abstract class DBSPType extends DBSPNode implements IDBSPInnerNode {
      */
     public String baseTypeWithSuffix() {
         return this.to(DBSPTypeBaseType.class).shortName() + this.nullableSuffix();
+    }
+
+    /**
+     * Returns a lambda which casts the current type to the specified type.
+     */
+    public DBSPExpression caster(DBSPType to) {
+        throw new Unimplemented("Casting from " + this + " to " + to);
     }
 }

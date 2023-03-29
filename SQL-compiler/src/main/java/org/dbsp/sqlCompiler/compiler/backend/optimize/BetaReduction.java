@@ -76,6 +76,8 @@ public class BetaReduction extends InnerExpressionRewriteVisitor {
         }
 
         void substitute(String name, @Nullable DBSPExpression expression) {
+            if (this.stack.isEmpty())
+                throw new RuntimeException("Empty context");
             this.stack.get(this.stack.size() - 1).substitute(name, expression);
         }
 
@@ -142,5 +144,17 @@ public class BetaReduction extends InnerExpressionRewriteVisitor {
         this.context.substitute(statement.variable, null);
         super.preorder(statement);
         return false;
+    }
+
+    @Override
+    public void startVisit() {
+        this.context.newContext();
+    }
+
+    @Override
+    public void endVisit() {
+        this.context.popContext();
+        if (!this.context.stack.isEmpty())
+            throw new RuntimeException("Non-empty context at the end of visit");
     }
 }

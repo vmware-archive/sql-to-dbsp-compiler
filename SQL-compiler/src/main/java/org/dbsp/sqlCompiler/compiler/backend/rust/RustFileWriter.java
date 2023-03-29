@@ -3,7 +3,9 @@ package org.dbsp.sqlCompiler.compiler.backend.rust;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
+import org.dbsp.sqlCompiler.compiler.backend.optimize.BetaReduction;
 import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitDelegateVisitor;
+import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitFunctionRewriter;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
@@ -26,6 +28,7 @@ import java.util.stream.IntStream;
 public class RustFileWriter {
     final List<IDBSPNode> toWrite;
     final PrintStream outputStream;
+    boolean emitHandles = false;
 
     static class StructuresUsed {
         final Set<Integer> tupleSizesUsed = new HashSet<>();
@@ -62,6 +65,16 @@ public class RustFileWriter {
     FindResources finder = new FindResources();
     CircuitDelegateVisitor findInCircuit = new CircuitDelegateVisitor(this.finder);
     LowerCircuitVisitor lower = new LowerCircuitVisitor();
+    BetaReduction reducer = new BetaReduction();
+    CircuitFunctionRewriter circuitReducer = new CircuitFunctionRewriter(reducer);
+
+    /**
+     * If this is called with 'true' the emitted Rust code will use handles
+     * instead of explicitly typed ZSets.
+     */
+    public void emitCodeWithHandle(boolean emit) {
+        this.emitHandles = emit;
+    }
 
     public static final DBSPType WEIGHT_TYPE_IMPLEMENTATION = DBSPTypeInteger.SIGNED_64;
 
@@ -251,7 +264,11 @@ public class RustFileWriter {
             } else {
                 DBSPCircuit outer = node.to(DBSPCircuit.class);
                 outer = this.lower.apply(outer);
-                str = ToRustVisitor.toRustString(outer);
+                outer = this.circuitReducer.apply(outer);
+                if (this.emitHandles)
+                    str = ToRustHandleVisitor.toRustString(outer, outer.name);
+                else
+                    str = ToRustVisitor.toRustString(outer);
             }
             this.outputStream.println(str);
         }
