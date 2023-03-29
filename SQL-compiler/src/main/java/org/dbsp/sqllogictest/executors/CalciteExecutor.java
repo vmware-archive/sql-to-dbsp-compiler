@@ -74,7 +74,7 @@ import static org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler.TYPE_SYSTE
 public class CalciteExecutor extends SqlSLTTestExecutor {
     private final JDBCExecutor statementExecutor;
     private final CalciteConnection calciteConnection;
-    private static final String POSTGRESQL_SCHEMA = "slt";
+    private static final String POSTGRESQL_SCHEMA = "";
     private final Planner planner;
     private final SqlToRelConverter converter;
 

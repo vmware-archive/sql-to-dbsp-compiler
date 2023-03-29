@@ -131,8 +131,8 @@ public class Main {
 
         String[] args = {
                 "-s",                   // do not validate command status
-                //"-e", "calcite",        // executor
-                "-e", "hybrid",
+                "-e", "calcite",        // executor
+                //"-e", "hybrid",
                 //"-i",                 // incremental (streaming) testing
                 //"-j",                 // Validate JSON IR.
                 "-u", "postgres",       // database user name
