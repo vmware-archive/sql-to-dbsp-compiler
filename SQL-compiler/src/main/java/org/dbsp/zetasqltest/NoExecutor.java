@@ -23,7 +23,7 @@
 
 package org.dbsp.zetasqltest;
 
-import org.dbsp.util.SqlTestExecutor;
+import org.dbsp.sqllogictest.executors.SqlTestExecutor;
 import org.dbsp.util.TestStatistics;
 
 /**

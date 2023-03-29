@@ -35,6 +35,7 @@ import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
 import java.io.*;
+import java.sql.SQLException;
 import java.util.*;
 
 @SuppressWarnings("CanBeFinal")
@@ -48,6 +49,7 @@ public class ExecutionOptions {
             this.legalExecutors.add("JDBC");
             this.legalExecutors.add("hybrid");
             this.legalExecutors.add("none");
+            this.legalExecutors.add("calcite");
         }
 
         @Override
@@ -137,7 +139,7 @@ public class ExecutionOptions {
         return jdbc;
     }
 
-    SqlSLTTestExecutor getExecutor() throws IOException {
+    SqlSLTTestExecutor getExecutor() throws IOException, SQLException {
         HashSet<String> sltBugs = new HashSet<>();
         if (this.bugsFile != null) {
             sltBugs = this.readBugsFile(this.bugsFile);
@@ -157,6 +159,13 @@ public class ExecutionOptions {
                 return dExec;
             case "JDBC": {
                 return this.jdbcExecutor(sltBugs);
+            }
+            case "calcite": {
+                JDBCExecutor jdbc = this.jdbcExecutor(sltBugs);
+                CalciteExecutor result = new CalciteExecutor(jdbc, this.user, this.password);
+                result.avoid(sltBugs);
+                result.setValidateStatus(this.validateStatus);
+                return result;
             }
             case "hybrid": {
                 JDBCExecutor jdbc = this.jdbcExecutor(sltBugs);

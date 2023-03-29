@@ -25,7 +25,6 @@ package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqllogictest.SLTTestFile;
-import org.dbsp.util.SqlTestExecutor;
 import org.dbsp.util.TestStatistics;
 
 import java.io.IOException;

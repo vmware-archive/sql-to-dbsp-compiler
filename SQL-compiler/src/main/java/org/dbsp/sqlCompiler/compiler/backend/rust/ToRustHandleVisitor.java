@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.compiler.backend.rust;
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
+import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSourceOperator;
@@ -50,7 +51,8 @@ import org.dbsp.util.Utilities;
  */
 public class ToRustHandleVisitor extends ToRustVisitor {
     private final String functionName;
-    int handleCount = 0;
+    int inputHandleIndex = 0;
+    int outputHandleIndex = 0;
 
     public ToRustHandleVisitor(IndentStream builder, String functionName) {
         super(builder);
@@ -63,7 +65,7 @@ public class ToRustHandleVisitor extends ToRustVisitor {
                 .append("let (")
                 .append(operator.outputName)
                 .append(", handle")
-                .append(this.handleCount++)
+                .append(this.inputHandleIndex++)
                 .append(") = circuit.add_input_zset::<");
         DBSPTypeZSet type = operator.getNonVoidType().to(DBSPTypeZSet.class);
         type.elementType.accept(this.innerVisitor);
@@ -78,7 +80,7 @@ public class ToRustHandleVisitor extends ToRustVisitor {
         this.writeComments(operator.query);
         this.writeComments(operator)
                 .append("let handle")
-                .append(this.handleCount++)
+                .append(this.outputHandleIndex++)
                 .append(" = ")
                 .append(operator.input().getName())
                 .append(".output();");
@@ -94,6 +96,7 @@ public class ToRustHandleVisitor extends ToRustVisitor {
 
     @Override
     public boolean preorder(DBSPPartialCircuit circuit) {
+        this.outputHandleIndex = circuit.getInputCount();
         this.builder.append("pub fn ")
                 .append(this.functionName)
                 .append("(workers: usize) -> (DBSPHandle, Catalog) {")
@@ -106,7 +109,7 @@ public class ToRustHandleVisitor extends ToRustVisitor {
         for (IDBSPNode node : circuit.getCode())
             super.processNode(node);
         this.builder.append("(");
-        for (int i = 0; i < this.handleCount; i++)
+        for (int i = 0; i < this.outputHandleIndex; i++)
             this.builder.append("handle")
                     .append(i)
                     .append(",");
@@ -116,12 +119,12 @@ public class ToRustHandleVisitor extends ToRustVisitor {
                 .append("}).unwrap();")
                 .newline();
 
-        this.handleCount = 0;
+        int index = 0;
         for (DBSPOperator i : circuit.inputOperators) {
             this.builder.append("catalog.register_input_zset_handle(")
                     .append(Utilities.doubleQuote(i.getName()))
                     .append(", handles.")
-                    .append(this.handleCount++)
+                    .append(index++)
                     .append(");")
                     .newline();
         }
@@ -129,7 +132,7 @@ public class ToRustHandleVisitor extends ToRustVisitor {
             this.builder.append("catalog.register_output_batch_handle(")
                     .append(Utilities.doubleQuote(o.getName()))
                     .append(", handles.")
-                    .append(this.handleCount++)
+                    .append(index++)
                     .append(");")
                     .newline();
         }
@@ -141,5 +144,13 @@ public class ToRustHandleVisitor extends ToRustVisitor {
                 .append("}")
                 .newline();
         return false;
+    }
+
+    public static String toRustString(IDBSPOuterNode node, String functionName) {
+        StringBuilder builder = new StringBuilder();
+        IndentStream stream = new IndentStream(builder);
+        ToRustVisitor visitor = new ToRustHandleVisitor(stream, functionName);
+        node.accept(visitor);
+        return builder.toString();
     }
 }

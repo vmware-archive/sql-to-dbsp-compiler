@@ -29,7 +29,6 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.backend.rust.RustSqlRuntimeLibrary;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
-import org.dbsp.util.Logger;
 import org.dbsp.util.TestStatistics;
 import org.dbsp.util.Utilities;
 
@@ -104,7 +103,7 @@ public class Main {
     }
 
     @SuppressWarnings("SpellCheckingInspection")
-    public static void main(String[] argv) throws IOException {
+    public static void main(String[] argv) throws IOException, SQLException {
         RustSqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         String benchDir = "../../sqllogictest/test/";
         List<String> files = Linq.list(
@@ -132,10 +131,11 @@ public class Main {
 
         String[] args = {
                 "-s",                   // do not validate command status
-                "-e", "hybrid",         // hybrid executor DBSP + JDBC
+                //"-e", "calcite",        // executor
+                "-e", "hybrid",
                 //"-i",                 // incremental (streaming) testing
                 //"-j",                 // Validate JSON IR.
-                "-u", "user0",          // database user name
+                "-u", "postgres",       // database user name
                 "-p", "password",       // database password
                 "-l", "db"              // can be csv or db
         };
@@ -148,6 +148,8 @@ public class Main {
             args = a.toArray(new String[0]);
         }
         /*
+        Logger.INSTANCE.setDebugLevel(CalciteExecutor.class, 1);
+        Logger.INSTANCE.setDebugLevel(JDBCExecutor.class, 1);
         Logger.INSTANCE.setDebugLevel(JDBCExecutor.class, 3);
         Logger.INSTANCE.setDebugLevel(DBSPExecutor.class, 3);
         Logger.INSTANCE.setDebugLevel(DBSP_JDBC_Executor.class, 3);

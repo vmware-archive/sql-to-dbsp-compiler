@@ -390,8 +390,22 @@ public class CalciteToDBSPCompiler extends RelVisitor
         this.assignOperator(project, op);
     }
 
+    DBSPOperator castOutput(RelNode node, DBSPOperator operator, DBSPType outputElementType) {
+        DBSPType inputElementType = operator.outputType.to(DBSPTypeZSet.class).elementType;
+        if (inputElementType.sameType(outputElementType))
+            return operator;
+        DBSPExpression function = inputElementType.caster(outputElementType);
+        DBSPOperator map = new DBSPMapOperator(node, function, outputElementType, operator);
+        this.circuit.addOperator(map);
+        return map;
+    }
+
     private void visitUnion(LogicalUnion union) {
+        RelDataType rowType = union.getRowType();
+        DBSPType outputType = this.convertType(rowType);
         List<DBSPOperator> inputs = Linq.map(union.getInputs(), this::getOperator);
+        // input type nullability may not match
+        inputs = Linq.map(inputs, o -> this.castOutput(union, o, outputType));
         DBSPSumOperator sum = new DBSPSumOperator(union, inputs);
         if (union.all) {
             this.assignOperator(union, sum);
@@ -404,14 +418,18 @@ public class CalciteToDBSPCompiler extends RelVisitor
 
     private void visitMinus(LogicalMinus minus) {
         boolean first = true;
+        RelDataType rowType = minus.getRowType();
+        DBSPType outputType = this.convertType(rowType);
         List<DBSPOperator> inputs = new ArrayList<>();
         for (RelNode input : minus.getInputs()) {
             DBSPOperator opInput = this.getInputAs(input, false);
             if (!first) {
-                DBSPNegateOperator neg = new DBSPNegateOperator(minus, opInput);
+                DBSPOperator neg = new DBSPNegateOperator(minus, opInput);
+                neg = this.castOutput(minus, neg, outputType);
                 this.circuit.addOperator(neg);
                 inputs.add(neg);
             } else {
+                opInput = this.castOutput(minus, opInput, outputType);
                 inputs.add(opInput);
             }
             first = false;

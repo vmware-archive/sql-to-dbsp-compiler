@@ -159,4 +159,8 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
     public DBSPCircuit seal(String name) {
         return new DBSPCircuit(this, name);
     }
+
+    public int getInputCount() {
+        return this.inputOperators.size();
+    }
 }

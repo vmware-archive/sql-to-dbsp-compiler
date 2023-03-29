@@ -108,7 +108,7 @@ public class NexmarkTest extends BaseSQLTests {
             "-- Using `bid` events here, as they are most numerous with default configuration.\n" +
             "-- -------------------------------------------------------------------------------------------------\n" +
             "\n" +
-            "CREATE VIEW discard_sink AS " +
+            "CREATE VIEW q0 AS " +
             "SELECT auction, bidder, price, dateTime, extra FROM bid",
 
             "-- -------------------------------------------------------------------------------------------------\n" +
