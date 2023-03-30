@@ -201,12 +201,31 @@ public class ArrayTests extends BaseSQLTests {
     public void testUnnest1() {
         // TODO: not yet implemented.
         String ddl = "CREATE TABLE ARR_TABLE (\n"
-                + "ID INTEGER,\n"
-                + "STR VARCHAR,\n"
-                + "VALS INTEGER ARRAY)";
+                + "VALS INTEGER ARRAY,"
+                + "ID INTEGER)";
         DBSPCompiler compiler = testCompiler();
         compiler.compileStatement(ddl);
-        String query = "CREATE VIEW V AS SELECT ID, VAL FROM ARR_TABLE, UNNEST(VALS) AS VAL";
+        String query = "CREATE VIEW V AS SELECT ID, VAL FROM " +
+                "ARR_TABLE, UNNEST(VALS) AS VAL";
+        Logger.INSTANCE.setDebugLevel(CalciteToDBSPCompiler.class, 3);
+        compiler.compileStatements(query);
+        if (compiler.hasErrors())
+            compiler.showErrors(System.err);
+        DBSPCircuit circuit = getCircuit(compiler);
+        this.addRustTestCase(circuit);
+    }
+
+    //@Test
+    public void testDoubleUnnest1() {
+        // TODO: not yet implemented.
+        String ddl = "CREATE TABLE ARR_TABLE (\n"
+                + "VALS0 INTEGER ARRAY,"
+                + "VALS1 INTEGER ARRAY,"
+                + "ID INTEGER)";
+        DBSPCompiler compiler = testCompiler();
+        compiler.compileStatement(ddl);
+        String query = "CREATE VIEW V AS SELECT ID, VAL0, VAL1 FROM " +
+                "ARR_TABLE, UNNEST(VALS0) AS VAL0, UNNEST(VALS1) AS VAL1";
         Logger.INSTANCE.setDebugLevel(CalciteToDBSPCompiler.class, 3);
         compiler.compileStatements(query);
         if (compiler.hasErrors())

@@ -30,6 +30,7 @@ import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.*;
 import org.apache.calcite.rel.logical.*;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.*;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
@@ -210,18 +211,68 @@ public class CalciteToDBSPCompiler extends RelVisitor
         return result;
     }
 
-    HashMap<String, DBSPOperator> correlatedVariables = new HashMap<>();
-
     public void visitCorrelate(LogicalCorrelate correlate) {
+        // We decorrelate queries using Calcite's optimizer.
+        // So we assume that the only correlated queries we receive
+        // are unnest-type queries.  We assume that unnest queries
+        // have a restricted plan of this form:
+        // LogicalCorrelate(correlation=[$cor0], joinType=[inner], requiredColumns=[{...}])
+        //    LeftSubquery
+        //    Uncollect
+        //      LogicalProject(COL=[$cor0.ARRAY])
+        //        LogicalValues(tuples=[[{ 0 }]])
+        // The translation for this is:
+        // left.flat_map(move |x| { x.ARRAY.into_iter().map(move |e| TupleN::new(x.0, x.1, .... e)) })
+        // Instead of projecting and joining again we directly apply flatmap.
+        DBSPType type = this.convertType(correlate.getRowType());
         if (correlate.getJoinType().isOuterJoin())
             throw new Unimplemented(correlate);
         this.visit(correlate.getLeft(), 0, correlate);
         DBSPOperator left = this.getInputAs(correlate.getLeft(), true);
-        String var = correlate.getCorrelVariable();
-        this.correlatedVariables.put(var, left);
-        this.visit(correlate.getRight(), 0, correlate);
-        DBSPOperator right = this.getInputAs(correlate.getRight(), true);
-        this.assignOperator(correlate, right);
+        DBSPTypeTuple leftElementType = left.getOutputZSetElementType();
+
+        RelNode correlateRight = correlate.getRight();
+        if (!(correlateRight instanceof Uncollect))
+            throw new Unimplemented(correlate);
+        Uncollect uncollect = (Uncollect) correlateRight;
+        RelNode uncollectInput = uncollect.getInput();
+        if (!(uncollectInput instanceof LogicalProject))
+            throw new Unimplemented(correlate);
+        LogicalProject project = (LogicalProject) uncollectInput;
+        DBSPVariablePath rowVar = new DBSPVariablePath("x", leftElementType);
+        DBSPTypeVec uncollectInputType = this.convertType(project.getRowType())
+                .to(DBSPTypeTuple.class)
+                .getFieldType(0)
+                .to(DBSPTypeVec.class);
+        DBSPVariablePath elem = new DBSPVariablePath("e", uncollectInputType.getElementType());
+
+        List<DBSPExpression> resultColumns = new ArrayList<>();
+        for (int i = 0; i < leftElementType.size(); i++)
+            resultColumns.add(rowVar.field(i));
+        resultColumns.add(elem);
+        if (project.getProjects().size() != 1)
+            throw new Unimplemented(correlate);
+        RexNode projection = project.getProjects().get(0);
+        if (!(projection instanceof RexFieldAccess))
+            throw new Unimplemented(correlate);
+        RexFieldAccess field = (RexFieldAccess) projection;
+        RelDataType leftRowType = correlate.getLeft().getRowType();
+        int index = 0;
+        for (RelDataTypeField rowField: leftRowType.getFieldList()) {
+            if (rowField.getName().equals(field.getField().getName()))
+                break;
+            index++;
+        }
+
+        DBSPExpression iter = new DBSPApplyMethodExpression("into_iter", DBSPTypeAny.INSTANCE, rowVar.field(index));
+        DBSPClosureExpression toTuple = new DBSPTupleExpression(resultColumns, false)
+                .closure(elem.asParameter());
+        DBSPExpression function = new DBSPApplyMethodExpression(
+                "map", DBSPTypeAny.INSTANCE,
+                iter, toTuple).closure(rowVar.asRefParameter());
+        DBSPFlatMapOperator flatMap = new DBSPFlatMapOperator(uncollect, function,
+                TypeCompiler.makeZSet(type), left);
+        this.assignOperator(correlate, flatMap);
     }
 
     public void visitUncollect(Uncollect uncollect) {
@@ -233,8 +284,8 @@ public class CalciteToDBSPCompiler extends RelVisitor
         // We expect this to be a single-element tuple whose type is a vector.
         DBSPTypeVec vec = inputRowType.getFieldType(0).to(DBSPTypeVec.class);
         DBSPOperator opInput = this.getInputAs(input, true);
-        DBSPVariablePath var = new DBSPVariablePath("x", inputRowType);
-        DBSPExpression iter = new DBSPApplyMethodExpression("into_iter", DBSPTypeAny.INSTANCE, var.field(0));
+        DBSPVariablePath rowVar = new DBSPVariablePath("x", inputRowType);
+        DBSPExpression iter = new DBSPApplyMethodExpression("into_iter", DBSPTypeAny.INSTANCE, rowVar.field(0));
         DBSPExpression function;
         if (uncollect.withOrdinality) {
             DBSPTypeTuple pair = type.to(DBSPTypeTuple.class);
@@ -250,13 +301,13 @@ public class CalciteToDBSPCompiler extends RelVisitor
                     closure(elem.asParameter());
             function = new DBSPApplyMethodExpression(
                     "map", DBSPTypeAny.INSTANCE,
-                    iter, toTuple).closure(var.asRefParameter());
+                    iter, toTuple).closure(rowVar.asRefParameter());
         } else {
             DBSPVariablePath elem = new DBSPVariablePath("e", vec.getElementType());
             DBSPClosureExpression toTuple = new DBSPTupleExpression(elem).closure(elem.asParameter());
             function = new DBSPApplyMethodExpression(
                     "map", DBSPTypeAny.INSTANCE,
-                    iter, toTuple).closure(var.asRefParameter());
+                    iter, toTuple).closure(rowVar.asRefParameter());
         }
         DBSPFlatMapOperator flatMap = new DBSPFlatMapOperator(uncollect, function,
                 TypeCompiler.makeZSet(type), opInput);
@@ -437,7 +488,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
     }
 
     DBSPOperator castOutput(RelNode node, DBSPOperator operator, DBSPType outputElementType) {
-        DBSPType inputElementType = operator.outputType.to(DBSPTypeZSet.class).elementType;
+        DBSPType inputElementType = operator.getOutputZSetElementType();
         if (inputElementType.sameType(outputElementType))
             return operator;
         DBSPExpression function = inputElementType.caster(outputElementType);
