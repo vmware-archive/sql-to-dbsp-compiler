@@ -131,6 +131,7 @@ public class CompilerMain {
                 stream.println(output);
             } else {
                 RustFileWriter writer = new RustFileWriter(stream);
+                writer.emitCodeWithHandle(true);
                 writer.add(dbsp);
                 writer.write();
             }
