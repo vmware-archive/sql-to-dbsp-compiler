@@ -42,7 +42,7 @@ public class CircuitFunctionRewriter extends CircuitCloneVisitor {
     private final Function<IDBSPInnerNode, IDBSPInnerNode> transform;
 
     public CircuitFunctionRewriter(Function<IDBSPInnerNode, IDBSPInnerNode> transform) {
-        super(true);
+        super(false);
         this.transform = transform;
     }
 

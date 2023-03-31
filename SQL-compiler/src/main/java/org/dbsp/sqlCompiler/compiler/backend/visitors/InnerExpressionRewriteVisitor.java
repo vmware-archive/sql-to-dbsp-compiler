@@ -100,6 +100,12 @@ public abstract class InnerExpressionRewriteVisitor
     }
 
     @Override
+    public boolean preorder(DBSPFlatmap expression) {
+        this.map(expression, expression);
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPAsExpression expression) {
         DBSPExpression source = this.transform(expression.source);
         DBSPExpression result = expression;

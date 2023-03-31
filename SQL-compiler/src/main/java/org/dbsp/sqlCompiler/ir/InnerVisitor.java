@@ -298,7 +298,12 @@ public abstract class InnerVisitor {
         if (this.visitSuper) return this.preorder((DBSPTypeUser) node);
         else return true;
     }
-    
+
+    public boolean preorder(DBSPTypeSemigroup node) {
+        if (this.visitSuper) return this.preorder((DBSPTypeUser) node);
+        else return true;
+    }
+
     public boolean preorder(DBSPTypeAny node) {
         if (this.visitSuper) return this.preorder((DBSPType) node);
         else return true;
@@ -341,6 +346,11 @@ public abstract class InnerVisitor {
     }
 
     // Expressions
+
+    public boolean preorder(DBSPFlatmap node) {
+        if (this.visitSuper) return this.preorder((DBSPExpression) node);
+        else return true;
+    }
 
     public boolean preorder(DBSPSortExpression node) {
         if (this.visitSuper) return this.preorder((DBSPExpression) node);
@@ -777,6 +787,10 @@ public abstract class InnerVisitor {
         if (this.visitSuper) this.postorder((DBSPTypeUser) node);
     }
 
+    public void postorder(DBSPTypeSemigroup node) {
+        if (this.visitSuper) this.postorder((DBSPTypeUser) node);
+    }
+
     public void postorder(DBSPTypeAny node) {
         if (this.visitSuper) this.postorder((DBSPType) node);
     }
@@ -811,6 +825,10 @@ public abstract class InnerVisitor {
     }
 
     // Expressions
+
+    public void postorder(DBSPFlatmap node) {
+        if (this.visitSuper) this.preorder((DBSPExpression) node);
+    }
 
     public void postorder(DBSPIndexExpression node) {
         if (this.visitSuper) this.preorder((DBSPExpression) node);

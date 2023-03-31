@@ -45,23 +45,21 @@ import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
-import org.dbsp.sqlCompiler.ir.expression.literal.DBSPUSizeLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
-import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
-import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeTimestamp;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeUSize;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * The compiler is stateful: it compiles a sequence of SQL statements
@@ -235,7 +233,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
         //        }
         //     })
         //  });
-        DBSPType type = this.convertType(correlate.getRowType());
+        DBSPTypeTuple type = this.convertType(correlate.getRowType()).to(DBSPTypeTuple.class);
         if (correlate.getJoinType().isOuterJoin())
             throw new Unimplemented(correlate);
         this.visit(correlate.getLeft(), 0, correlate);
@@ -259,45 +257,18 @@ public class CalciteToDBSPCompiler extends RelVisitor
         RelDataType leftRowType = correlate.getLeft().getRowType();
         // The index of the field that is the array
         int arrayFieldIndex = getFieldIndex(field.getField().getName(), leftRowType);
-
-        DBSPVariablePath rowVar = new DBSPVariablePath("x", leftElementType);
-        DBSPTypeVec uncollectInputType = this.convertType(project.getRowType())
-                .to(DBSPTypeTuple.class)
-                .getFieldType(0)
-                .to(DBSPTypeVec.class);
-        DBSPVariablePath elem = new DBSPVariablePath("e", uncollectInputType.getElementType());
-        List<DBSPStatement> clones = new ArrayList<>();
-
-        List<DBSPExpression> resultColumns = new ArrayList<>();
-        for (int i = 0; i < leftElementType.size(); i++) {
-            // let xA: Vec<i32> = x.0.clone();
-            // let xB: x.1.clone();
-            DBSPVariablePath fieldClone = new DBSPVariablePath("x" + i, rowVar.field(i).getNonVoidType());
-            DBSPLetStatement stat = new DBSPLetStatement(fieldClone.variable, rowVar.field(i));
-            clones.add(stat);
-            resultColumns.add(fieldClone.applyClone());
+        List<Integer> allFields = IntStream.range(0, leftElementType.size())
+                .boxed()
+                .collect(Collectors.toList());
+        DBSPType indexType = null;
+        if (uncollect.withOrdinality) {
+            // Index field is always last
+            indexType = type.getFieldType(type.size() - 1);
         }
-        resultColumns.add(elem);
-        // move |e: i32, | -> Tuple3<Vec<i32>, Option<i32>, i32> {
-        //   Tuple3::new(xA.clone(), xB.clone(), e)
-        // }
-        DBSPClosureExpression toTuple = new DBSPTupleExpression(resultColumns, false)
-                .closure(elem.asParameter());
-        DBSPExpression iter = new DBSPApplyMethodExpression("into_iter", DBSPTypeAny.INSTANCE,
-                rowVar.field(arrayFieldIndex));
-
-        // x.0.clone().into_iter().map({
-        //    move |e: i32, | -> Tuple3<Vec<i32>, Option<i32>, i32> {
-        //        Tuple3::new(xA.clone(), xB.clone(), e)
-        //    }
-        // })
-        DBSPExpression function = new DBSPApplyMethodExpression(
-                "map", DBSPTypeAny.INSTANCE,
-                iter, toTuple);
-        DBSPExpression block = new DBSPBlockExpression(clones, function);
+        DBSPFlatmap flatmap = new DBSPFlatmap(correlate, leftElementType, arrayFieldIndex,
+                allFields, indexType);
         DBSPFlatMapOperator flatMap = new DBSPFlatMapOperator(uncollect,
-                block.closure(rowVar.asRefParameter()),
-                TypeCompiler.makeZSet(type), left);
+                flatmap, TypeCompiler.makeZSet(type), left);
         this.assignOperator(correlate, flatMap);
     }
 
@@ -308,33 +279,14 @@ public class CalciteToDBSPCompiler extends RelVisitor
         RelNode input = uncollect.getInput();
         DBSPTypeTuple inputRowType = this.convertType(input.getRowType()).to(DBSPTypeTuple.class);
         // We expect this to be a single-element tuple whose type is a vector.
-        DBSPTypeVec vec = inputRowType.getFieldType(0).to(DBSPTypeVec.class);
         DBSPOperator opInput = this.getInputAs(input, true);
-        DBSPVariablePath rowVar = new DBSPVariablePath("x", inputRowType);
-        DBSPExpression iter = new DBSPApplyMethodExpression("into_iter", DBSPTypeAny.INSTANCE, rowVar.field(0));
-        DBSPExpression function;
+        DBSPType indexType = null;
         if (uncollect.withOrdinality) {
             DBSPTypeTuple pair = type.to(DBSPTypeTuple.class);
-            iter = new DBSPApplyMethodExpression("enumerate", DBSPTypeAny.INSTANCE, iter);
-            DBSPVariablePath elem = new DBSPVariablePath("e", new DBSPTypeRawTuple(
-                    DBSPTypeUSize.INSTANCE, vec.getElementType()));
-            DBSPClosureExpression toTuple = new DBSPTupleExpression(
-                    elem.field(1).cast(pair.getFieldType(0)), // value
-                    new DBSPBinaryExpression(null,
-                            DBSPTypeUSize.INSTANCE, "+",
-                            elem.field(0),
-                            new DBSPUSizeLiteral(1)).cast(pair.getFieldType(1))). // index
-                    closure(elem.asParameter());
-            function = new DBSPApplyMethodExpression(
-                    "map", DBSPTypeAny.INSTANCE,
-                    iter, toTuple).closure(rowVar.asRefParameter());
-        } else {
-            DBSPVariablePath elem = new DBSPVariablePath("e", vec.getElementType());
-            DBSPClosureExpression toTuple = new DBSPTupleExpression(elem).closure(elem.asParameter());
-            function = new DBSPApplyMethodExpression(
-                    "map", DBSPTypeAny.INSTANCE,
-                    iter, toTuple).closure(rowVar.asRefParameter());
+            indexType = pair.getFieldType(1);
         }
+        DBSPExpression function = new DBSPFlatmap(uncollect, inputRowType, 0,
+                Linq.list(), indexType);
         DBSPFlatMapOperator flatMap = new DBSPFlatMapOperator(uncollect, function,
                 TypeCompiler.makeZSet(type), opInput);
         this.assignOperator(uncollect, flatMap);
