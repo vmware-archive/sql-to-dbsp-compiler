@@ -34,7 +34,6 @@ public class TimeTests extends BaseSQLTests {
     @Override
     public DBSPCompiler compileQuery(String query) {
         DBSPCompiler compiler = testCompiler();
-        compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 TIMESTAMP NOT NULL" +
                 ")";
@@ -47,7 +46,7 @@ public class TimeTests extends BaseSQLTests {
         // T contains a date with timestamp '100'.
         query = "CREATE VIEW V AS " + query;
         DBSPCompiler compiler = this.compileQuery(query);
-        compiler.throwOnError();
+        compiler.throwIfErrorsOccurred();
         DBSPCircuit circuit = getCircuit(compiler);
         DBSPZSetLiteral expectedOutput = new DBSPZSetLiteral(new DBSPTupleExpression(fields));
         InputOutputPair streams = new InputOutputPair(this.createInput(), expectedOutput);

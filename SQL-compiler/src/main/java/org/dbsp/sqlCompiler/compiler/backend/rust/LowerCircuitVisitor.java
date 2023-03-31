@@ -22,6 +22,7 @@ import java.util.Objects;
 
 /**
  * Lowers a circuit's representation.
+ * - converts DBSPAggregate operations into more basic operations.
  */
 public class LowerCircuitVisitor extends CircuitCloneVisitor {
     public LowerCircuitVisitor() {

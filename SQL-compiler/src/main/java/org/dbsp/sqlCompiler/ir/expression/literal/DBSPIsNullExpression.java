@@ -50,5 +50,4 @@ public class DBSPIsNullExpression extends DBSPExpression {
         this.expression.accept(visitor);
         visitor.postorder(this);
     }
-
 }

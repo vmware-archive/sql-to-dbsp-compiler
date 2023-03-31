@@ -27,7 +27,6 @@ import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.BaseSQLTests;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
-import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
@@ -99,10 +98,8 @@ public class PostgresDateTests extends BaseSQLTests {
                 //"INSERT INTO DATE_TBL VALUES ('2040-04-10 BC');";
         CompilerOptions options = new CompilerOptions();
         options.optimizerOptions.noOptimizations = !optimize;
+        options.optimizerOptions.generateInputForEveryTable = true;
         DBSPCompiler compiler = new DBSPCompiler(options);
-        // So that queries that do not depend on the input still
-        // have circuits with inputs.
-        compiler.setGenerateInputsFromTables(true);
         compiler.compileStatements(data);
         compiler.compileStatement(query);
         return compiler;
@@ -111,7 +108,7 @@ public class PostgresDateTests extends BaseSQLTests {
     void testQuery(String query, DBSPZSetLiteral expectedOutput, boolean optimize) {
         query = "CREATE VIEW V AS " + query;
         DBSPCompiler compiler = this.compileQuery(query, optimize);
-        compiler.throwOnError();
+        compiler.throwIfErrorsOccurred();
         DBSPCircuit circuit = getCircuit(compiler);
         DBSPZSetLiteral input = compiler.getTableContents().getTableContents("DATE_TBL");
         InputOutputPair streams = new InputOutputPair(input, expectedOutput);

@@ -32,6 +32,10 @@ import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Very high level circuit-level optimizations.
+ * Does not really look at the functions inside the circuit.
+ */
 public class CircuitOptimizer {
     public final CompilerOptions.Optimizer options;
     public final CircuitVisitor optimizer;

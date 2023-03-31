@@ -127,15 +127,6 @@ public class DBSPCompiler implements IModule {
         return this.typeCompiler;
     }
 
-    /**
-     * If argument is true, the inputs to the circuit are generated from the CREATE TABLE
-     * statements.  Otherwise they are generated from the LogicalTableScan
-     * operations in a view plan.  Default value is 'false'.
-     */
-    public void setGenerateInputsFromTables(boolean generateInputsFromTables) {
-        this.midend.setGenerateInputsFromTables(generateInputsFromTables);
-    }
-
     public void reportError(SourcePositionRange range, boolean warning,
                             String errorType, String message) {
         this.messages.reportError(range, warning, errorType, message);
@@ -270,7 +261,7 @@ public class DBSPCompiler implements IModule {
      * Throw if any error has been encountered.
      * Displays the errors on stderr as well.
      */
-    public void throwOnError() {
+    public void throwIfErrorsOccurred() {
         if (this.hasErrors()) {
             this.showErrors(System.err);
             throw new RuntimeException("Error during compilation");

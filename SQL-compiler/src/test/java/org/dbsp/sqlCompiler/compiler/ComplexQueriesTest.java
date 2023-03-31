@@ -58,7 +58,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
                         "   RANGE BETWEEN 3600  PRECEDING AND 1 PRECEDING ) AS count_trips_window_1h_pickup_zip\n" +
                         "FROM green_tripdata";
         DBSPCompiler compiler = testCompiler();
-        compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl);
         compiler.compileStatement(query);
@@ -198,7 +197,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "-- create view k8scluster_vulnerability_stats ();";
         DBSPCompiler compiler = new DBSPCompiler(testOptions());
         compiler.compileStatements(statements);
-        compiler.throwOnError();
+        compiler.throwIfErrorsOccurred();
         DBSPCircuit circuit = compiler.getFinalCircuit("circuit");
         RustFileWriter writer = new RustFileWriter(testFilePath);
         writer.emitCodeWithHandle(true);
@@ -355,7 +354,7 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "-- create view k8scluster_vulnerability_stats ();";
         DBSPCompiler compiler = new DBSPCompiler(testOptions());
         compiler.compileStatements(statements);
-        compiler.throwOnError();
+        compiler.throwIfErrorsOccurred();
         DBSPCircuit circuit = compiler.getFinalCircuit("circuit");
         RustFileWriter writer = new RustFileWriter(testFilePath);
         writer.emitCodeWithHandle(true);
@@ -434,7 +433,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "        LEFT JOIN  demographics AS t2\n" +
                 "        ON t1.cc_num = t2.cc_num);";
         DBSPCompiler compiler = testCompiler();
-        compiler.setGenerateInputsFromTables(true);
         compiler.compileStatements(query);
         DBSPZSetLiteral[] inputs = new DBSPZSetLiteral[] {
                 new DBSPZSetLiteral(new DBSPTupleExpression(
@@ -502,7 +500,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
                         "case when extract (ISODOW from  CAST (lpep_dropoff_datetime AS TIMESTAMP))  > 5 then 1 else 0 end as dropoff_is_weekend\n" +
                         "FROM green_tripdata";
         DBSPCompiler compiler = testCompiler();
-        compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl);
         compiler.compileStatement(query);
@@ -578,7 +575,6 @@ public class ComplexQueriesTest extends BaseSQLTests {
                 "          LEFT JOIN  demographics AS t2\n" +
                 "          ON t1.cc_num =t2.cc_num)";
         DBSPCompiler compiler = testCompiler();
-        compiler.setGenerateInputsFromTables(true);
         query = "CREATE VIEW V AS (" + query + ")";
         compiler.compileStatement(ddl0);
         compiler.compileStatement(ddl1);

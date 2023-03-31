@@ -23,6 +23,10 @@ public class CircuitDelegateVisitor extends CircuitVisitor {
             node.function.accept(this.innerVisitor);
     }
 
+    void doOutputType(DBSPOperator node) {
+        node.outputType.accept(this.innerVisitor);
+    }
+
     void doAggregate(@Nullable DBSPAggregate aggregate) {
         if (aggregate != null)
             aggregate.accept(this.innerVisitor);
@@ -31,11 +35,13 @@ public class CircuitDelegateVisitor extends CircuitVisitor {
     @Override
     public void postorder(DBSPOperator node) {
         this.doFunction(node);
+        this.doOutputType(node);
     }
 
     @Override
     public void postorder(DBSPAggregateOperatorBase node) {
         this.doAggregate(node.aggregate);
         this.doFunction(node);
+        this.doOutputType(node);
     }
 }

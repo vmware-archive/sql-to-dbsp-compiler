@@ -53,8 +53,8 @@ public class PostgresNumericTests extends BaseSQLTests {
                 "CREATE TABLE num_exp_power_10_ln (id int4, expected numeric(" + width + ",10));\n";
         CompilerOptions options = new CompilerOptions();
         options.ioOptions.lexicalRules = Lex.ORACLE;
+        options.optimizerOptions.generateInputForEveryTable = true;
         DBSPCompiler compiler = new DBSPCompiler(options);
-        compiler.setGenerateInputsFromTables(true);
         compiler.compileStatements(createTables);
         return compiler;
     }
@@ -525,7 +525,7 @@ public class PostgresNumericTests extends BaseSQLTests {
         compiler.generateOutputForNextView(true);
         compiler.compileStatement(last);
         compiler.optimize();
-        compiler.throwOnError();
+        compiler.throwIfErrorsOccurred();
         DBSPCircuit circuit = getCircuit(compiler);
         DBSPZSetLiteral[] inputs = new DBSPZSetLiteral[compiler.getTableContents().tablesCreated.size()];
         int index = 0;

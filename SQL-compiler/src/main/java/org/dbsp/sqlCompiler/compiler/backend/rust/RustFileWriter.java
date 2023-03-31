@@ -4,6 +4,7 @@ import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.compiler.backend.optimize.BetaReduction;
+import org.dbsp.sqlCompiler.compiler.backend.optimize.Simplify;
 import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitDelegateVisitor;
 import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitFunctionRewriter;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
@@ -256,15 +257,20 @@ public class RustFileWriter {
 
     public void write() throws FileNotFoundException, UnsupportedEncodingException {
         this.outputStream.println(generatePreamble(used));
+        Simplify simplify = new Simplify();
+        CircuitFunctionRewriter simplifier = new CircuitFunctionRewriter(simplify);
+
         for (IDBSPNode node: this.toWrite) {
             String str;
             IDBSPInnerNode inner = node.as(IDBSPInnerNode.class);
             if (inner != null) {
+                inner = simplify.apply(inner);
                 str = ToRustInnerVisitor.toRustString(inner);
             } else {
                 DBSPCircuit outer = node.to(DBSPCircuit.class);
                 outer = this.lower.apply(outer);
                 outer = this.circuitReducer.apply(outer);
+                outer = simplifier.apply(outer);
                 if (this.emitHandles)
                     str = ToRustHandleVisitor.toRustString(outer, outer.name);
                 else

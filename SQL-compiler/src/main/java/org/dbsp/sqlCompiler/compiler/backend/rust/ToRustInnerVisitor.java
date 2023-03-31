@@ -390,8 +390,12 @@ public class ToRustInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPIsNullExpression expression) {
-        expression.expression.accept(this);
-        this.builder.append(".is_none()");
+        if (!expression.expression.getNonVoidType().mayBeNull) {
+            this.builder.append("false");
+        } else {
+            expression.expression.accept(this);
+            this.builder.append(".is_none()");
+        }
         return false;
     }
 

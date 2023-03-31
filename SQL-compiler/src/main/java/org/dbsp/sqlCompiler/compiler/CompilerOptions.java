@@ -52,6 +52,8 @@ public class CompilerOptions {
          * Useful for development
          */
         public boolean throwOnError = false;
+        @Parameter(names = "-alltables", description = "Generate an input for each CREATE TABLE, even if the table is not used by any view")
+        public boolean generateInputForEveryTable = false;
     }
 
     /**

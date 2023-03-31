@@ -192,6 +192,7 @@ public class BaseSQLTests {
     static CompilerOptions testOptions() {
         CompilerOptions options = new CompilerOptions();
         options.optimizerOptions.throwOnError = true;
+        options.optimizerOptions.generateInputForEveryTable = true;
         return options;
     }
 
@@ -203,7 +204,6 @@ public class BaseSQLTests {
         DBSPCompiler compiler = testCompiler();
         // This is necessary if we want queries that do not depend on the input
         // to generate circuits that still have inputs.
-        compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +

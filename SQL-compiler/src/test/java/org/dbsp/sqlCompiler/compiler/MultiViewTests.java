@@ -54,7 +54,6 @@ public class MultiViewTests extends BaseSQLTests {
         String query2 = "CREATE VIEW V2 as SELECT T.COL2 FROM T";
 
         DBSPCompiler compiler = testCompiler();
-        compiler.setGenerateInputsFromTables(true);
         compiler.compileStatement(ddl);
         compiler.compileStatement(query1);
         compiler.compileStatement(query2);
@@ -83,7 +82,6 @@ public class MultiViewTests extends BaseSQLTests {
         String query2 = "CREATE VIEW V2 as SELECT * FROM V1";
 
         DBSPCompiler compiler = testCompiler();
-        compiler.setGenerateInputsFromTables(true);
         compiler.compileStatement(ddl);
         compiler.compileStatement(query1);
         compiler.compileStatement(query2);
@@ -112,7 +110,6 @@ public class MultiViewTests extends BaseSQLTests {
         String query2 = "CREATE VIEW V2 as SELECT DISTINCT COL1 FROM (SELECT * FROM V1 JOIN T ON V1.COL3 = T.COL3)";
 
         DBSPCompiler compiler = testCompiler();
-        compiler.setGenerateInputsFromTables(true);
         compiler.compileStatement(ddl);
         compiler.compileStatement(query1);
         compiler.compileStatement(query2);
