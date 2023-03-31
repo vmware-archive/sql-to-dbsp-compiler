@@ -44,7 +44,7 @@ public class DBSPTimestampLiteral extends DBSPLiteral {
     }
 
     static TimestampString createTimestampString(String timestamp) {
-        // Calcite is too smart: it does not accept a number that ends in 0 if there is a decimal point
+        // TimestampString is too smart: it does not accept a number that ends in 0 if there is a decimal point
         String[] parts = timestamp.split("[.]");
         TimestampString result = new TimestampString(parts[0]);
         if (parts.length == 1)
