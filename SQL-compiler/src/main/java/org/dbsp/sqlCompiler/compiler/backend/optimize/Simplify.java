@@ -37,7 +37,7 @@ import java.util.Objects;
  * Visitor which does some Rust-level expression simplifications.
  * - is_null() called on non-nullable values is simplified to 'false'
  * - Boolean && and || with constant arguments are simplified
- * - if expressions with constant arguments are simplified to the corresponding branch
+ * - 'if' expressions with constant arguments are simplified to the corresponding branch
  */
 public class Simplify extends InnerExpressionRewriteVisitor {
     // You would think that Calcite has done these optimizations, but apparently not.

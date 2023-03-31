@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.compiler.ICompilerComponent;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Logger;
+import org.dbsp.util.Utilities;
 
 import java.util.*;
 
@@ -91,7 +92,8 @@ public class DeadCodeVisitor extends CircuitVisitor implements IModule {
         for (DBSPOperator source: this.getCircuit().circuit.inputOperators) {
             if (!this.reachable.contains(source))
                 this.component.getCompiler().reportError(source.getSourcePosition(), true,
-                        "Unused", "Table " + source.outputName + " is not used");
+                        "Unused", "Table " + Utilities.singleQuote(source.outputName) +
+                                " is not used");
         }
         super.endVisit();
     }

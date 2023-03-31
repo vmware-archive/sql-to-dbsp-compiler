@@ -411,7 +411,8 @@ public class OtherTests extends BaseSQLTests implements IModule {
         Assert.assertEquals(messages.exitCode, 0);
         Assert.assertEquals(messages.errorCount(), 1);
         CompilerMessages.Error error = messages.messages.get(0);
-        System.err.println(error);
+        Assert.assertTrue(error.warning);
+        Assert.assertTrue(error.message.contains("Table 'T' is not used"));
     }
 
     @Test
