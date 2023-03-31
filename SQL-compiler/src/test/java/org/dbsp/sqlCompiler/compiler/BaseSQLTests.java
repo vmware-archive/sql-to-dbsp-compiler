@@ -149,12 +149,12 @@ public class BaseSQLTests {
         RustSqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
     }
 
-    CircuitVisitor getOptimizer() {
-        DeadCodeVisitor dead = new DeadCodeVisitor();
+    CircuitVisitor getOptimizer(DBSPCompiler compiler) {
+        DeadCodeVisitor dead = new DeadCodeVisitor(compiler);
         return new PassesVisitor(
                 new OptimizeIncrementalVisitor(),
                 dead,
-                new RemoveOperatorsVisitor(dead.reachable),
+                new RemoveOperatorsVisitor(dead.toKeep),
                 new NoIntegralVisitor()
         );
     }
@@ -163,16 +163,16 @@ public class BaseSQLTests {
         try {
             query = "CREATE VIEW V AS " + query;
             DBSPCompiler compiler = this.compileQuery(query);
-            if (compiler.hasErrors()) {
+            if (compiler.hasErrors() || compiler.hasWarnings())
                 compiler.showErrors(System.err);
+            if (compiler.hasErrors())
                 throw new RuntimeException("Aborting test");
-            }
             DBSPCircuit circuit = getCircuit(compiler);
             circuit = new OptimizeDistinctVisitor().apply(circuit);
             if (incremental)
                 circuit = new IncrementalizeVisitor().apply(circuit);
             if (optimize) {
-                CircuitVisitor optimizer = this.getOptimizer();
+                CircuitVisitor optimizer = this.getOptimizer(compiler);
                 circuit = optimizer.apply(circuit);
             }
 

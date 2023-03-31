@@ -33,6 +33,7 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
+import org.dbsp.sqlCompiler.compiler.ICompilerComponent;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
 import org.dbsp.sqlCompiler.compiler.errors.SourceFileContents;
 import org.dbsp.sqlCompiler.compiler.errors.SourcePositionRange;
@@ -64,7 +65,7 @@ import java.io.PrintStream;
  * execution and keeping track of the contents of each table.
  * The contents after insertions can be obtained using getTableContents().
  */
-public class DBSPCompiler implements IModule {
+public class DBSPCompiler implements IModule, ICompilerComponent {
     enum InputSource {
         /**
          * No data source set yet.
@@ -95,6 +96,7 @@ public class DBSPCompiler implements IModule {
     final @Nullable ArrayNode outputs;
     public final @Nullable ObjectNode ios;
     public final TypeCompiler typeCompiler;
+    public boolean hasWarnings;
 
     /**
      * Circuit produced by the compiler.
@@ -123,12 +125,23 @@ public class DBSPCompiler implements IModule {
         }
     }
 
+    public boolean hasWarnings() {
+        return this.hasWarnings;
+    }
+
+    @Override
+    public DBSPCompiler getCompiler() {
+        return this;
+    }
+
     public TypeCompiler getTypeCompiler() {
         return this.typeCompiler;
     }
 
     public void reportError(SourcePositionRange range, boolean warning,
                             String errorType, String message) {
+        if (warning)
+            this.hasWarnings = true;
         this.messages.reportError(range, warning, errorType, message);
     }
 
@@ -205,7 +218,7 @@ public class DBSPCompiler implements IModule {
         if (this.circuit == null) {
             this.circuit = this.getFinalCircuit("tmp");
         }
-        CircuitOptimizer optimizer = new CircuitOptimizer(this.options.optimizerOptions);
+        CircuitOptimizer optimizer = new CircuitOptimizer(this.options.optimizerOptions, this);
         this.circuit = optimizer.optimize(circuit);
     }
 

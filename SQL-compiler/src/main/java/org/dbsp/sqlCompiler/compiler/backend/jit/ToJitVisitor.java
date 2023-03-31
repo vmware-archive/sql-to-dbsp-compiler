@@ -464,7 +464,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(norm);
         circuit = rewriter.apply(circuit);
         ToJitVisitor visitor = new ToJitVisitor();
-        circuit.accept(visitor);
+        visitor.apply(circuit);
         visitor.addTypesToJson();
         return visitor.root.toPrettyString();
     }

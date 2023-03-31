@@ -394,11 +394,24 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 "  COL1 INT NOT NULL" +
                 ", COL2 GARBAGE";
         File file = this.createInputScript(statement);
-        CompilerMessages messages = CompilerMain.execute(file.getPath());
+        CompilerMessages messages = CompilerMain.execute(file.getPath(), "-o", "/dev/null");
         Assert.assertEquals(messages.exitCode, 1);
         Assert.assertEquals(messages.errorCount(), 1);
         CompilerMessages.Error error = messages.messages.get(0);
         Assert.assertTrue(error.message.startsWith("Encountered \"<EOF>\""));
+    }
+
+    @Test
+    public void warningTest() throws FileNotFoundException, UnsupportedEncodingException {
+        String statements = "CREATE TABLE T (COL1 INT);\n" +
+                "CREATE TABLE S (COL1 INT);\n" +
+                "CREATE VIEW V AS SELECT * FROM S";
+        File file = this.createInputScript(statements);
+        CompilerMessages messages = CompilerMain.execute(file.getPath(), "-o", "/dev/null", "-alltables");
+        Assert.assertEquals(messages.exitCode, 0);
+        Assert.assertEquals(messages.errorCount(), 1);
+        CompilerMessages.Error error = messages.messages.get(0);
+        System.err.println(error);
     }
 
     @Test
