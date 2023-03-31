@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.ir.expression;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPCloneExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIsNullExpression;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
@@ -93,6 +94,8 @@ public abstract class DBSPExpression
     }
 
     public DBSPExpression is_null() {
+        if (!this.getNonVoidType().mayBeNull)
+            return DBSPBoolLiteral.FALSE;
         return new DBSPIsNullExpression(this.getNode(), this);
     }
 
@@ -106,5 +109,9 @@ public abstract class DBSPExpression
             return this;
         }
         return new DBSPCastExpression(this.getNode(), this, to);
+    }
+
+    public boolean isNullable() {
+        return this.getNonVoidType().mayBeNull;
     }
 }

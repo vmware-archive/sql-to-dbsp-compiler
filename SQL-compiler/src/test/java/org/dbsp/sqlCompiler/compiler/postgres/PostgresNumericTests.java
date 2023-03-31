@@ -27,7 +27,6 @@ import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.BaseSQLTests;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
-import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
@@ -54,8 +53,8 @@ public class PostgresNumericTests extends BaseSQLTests {
                 "CREATE TABLE num_exp_power_10_ln (id int4, expected numeric(" + width + ",10));\n";
         CompilerOptions options = new CompilerOptions();
         options.ioOptions.lexicalRules = Lex.ORACLE;
+        options.optimizerOptions.generateInputForEveryTable = true;
         DBSPCompiler compiler = new DBSPCompiler(options);
-        compiler.setGenerateInputsFromTables(true);
         compiler.compileStatements(createTables);
         return compiler;
     }
@@ -526,7 +525,7 @@ public class PostgresNumericTests extends BaseSQLTests {
         compiler.generateOutputForNextView(true);
         compiler.compileStatement(last);
         compiler.optimize();
-        compiler.throwOnError();
+        compiler.throwIfErrorsOccurred();
         DBSPCircuit circuit = getCircuit(compiler);
         DBSPZSetLiteral[] inputs = new DBSPZSetLiteral[compiler.getTableContents().tablesCreated.size()];
         int index = 0;
@@ -537,12 +536,11 @@ public class PostgresNumericTests extends BaseSQLTests {
         InputOutputPair streams = new InputOutputPair(
                 inputs,
                 new DBSPZSetLiteral[] {
-                new DBSPZSetLiteral(
-                        TypeCompiler.makeZSet(new DBSPTypeTuple(
-                                DBSPTypeInteger.SIGNED_32,
-                                DBSPTypeInteger.SIGNED_64,
-                                new DBSPTypeDecimal(null, width, 10, false),
-                                new DBSPTypeDecimal(null, width, 10, false)))
+                DBSPZSetLiteral.emptyWithElementType(new DBSPTypeTuple(
+                    DBSPTypeInteger.SIGNED_32,
+                    DBSPTypeInteger.SIGNED_64,
+                    new DBSPTypeDecimal(null, width, 10, false),
+                    new DBSPTypeDecimal(null, width, 10, false))
                 )}
         );
         this.addRustTestCase(circuit, streams);

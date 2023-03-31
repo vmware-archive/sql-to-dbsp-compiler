@@ -4,16 +4,18 @@ import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.compiler.backend.optimize.BetaReduction;
+import org.dbsp.sqlCompiler.compiler.backend.optimize.Simplify;
 import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitDelegateVisitor;
 import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitFunctionRewriter;
-import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeSemigroup;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.IndentStream;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
@@ -51,11 +53,8 @@ public class RustFileWriter {
         }
 
         @Override
-        public void postorder(DBSPAggregate aggregate) {
-            int size = aggregate.components.length;
-            RustFileWriter.this.used.semigroupSizesUsed.add(size);
-            // This will appear in the code generated for the Fold
-            RustFileWriter.this.used.tupleSizesUsed.add(size);
+        public void postorder(DBSPTypeSemigroup type) {
+            RustFileWriter.this.used.semigroupSizesUsed.add(type.semigroupSize());
         }
     }
 
@@ -246,25 +245,41 @@ public class RustFileWriter {
 
     public void add(DBSPCircuit circuit) {
         this.toWrite.add(circuit);
-        circuit.accept(this.findInCircuit);
     }
 
     public void add(DBSPFunction function) {
-        function.accept(this.finder);
         this.toWrite.add(function);
     }
 
     public void write() throws FileNotFoundException, UnsupportedEncodingException {
-        this.outputStream.println(generatePreamble(used));
+        Simplify simplify = new Simplify();
+        CircuitFunctionRewriter simplifier = new CircuitFunctionRewriter(simplify);
+        // Lower the circuits
+        List<IDBSPNode> lowered = new ArrayList<>();
         for (IDBSPNode node: this.toWrite) {
+            IDBSPInnerNode inner = node.as(IDBSPInnerNode.class);
+            if (inner != null) {
+                inner = simplify.apply(inner);
+                inner.accept(this.finder);
+                lowered.add(inner);
+            } else {
+                DBSPCircuit outer = node.to(DBSPCircuit.class);
+                outer = this.lower.apply(outer);
+                outer = this.circuitReducer.apply(outer);
+                outer = simplifier.apply(outer);
+                outer.accept(this.findInCircuit);
+                lowered.add(outer);
+            }
+        }
+        // Emit code
+        this.outputStream.println(generatePreamble(used));
+        for (IDBSPNode node: lowered) {
             String str;
             IDBSPInnerNode inner = node.as(IDBSPInnerNode.class);
             if (inner != null) {
                 str = ToRustInnerVisitor.toRustString(inner);
             } else {
                 DBSPCircuit outer = node.to(DBSPCircuit.class);
-                outer = this.lower.apply(outer);
-                outer = this.circuitReducer.apply(outer);
                 if (this.emitHandles)
                     str = ToRustHandleVisitor.toRustString(outer, outer.name);
                 else
@@ -275,6 +290,7 @@ public class RustFileWriter {
     }
 
     public void writeAndClose() throws FileNotFoundException, UnsupportedEncodingException {
+        Logger.INSTANCE.setDebugLevel(FindResources.class, 3);
         this.write();
         this.outputStream.close();
     }

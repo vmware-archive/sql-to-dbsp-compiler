@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.expression.literal;
 
+import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.IDBSPContainer;
@@ -44,14 +45,13 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
 
     /**
      * Create a ZSet literal from a set of data values.
-     * @param weightType  Type of weight used.
      * @param data Data to insert in zset - cannot be empty, since
      *             it is used to extract the zset type.
      *             To create empty zsets use the constructor
      *             with just a type argument.
      */
-    public DBSPZSetLiteral(DBSPType weightType, DBSPExpression... data) {
-        super(null, new DBSPTypeZSet(data[0].getNonVoidType(), weightType), 0);
+    public DBSPZSetLiteral(DBSPExpression... data) {
+        super(null, TypeCompiler.makeZSet(data[0].getNonVoidType()), 0);
         // value 0 is not used
         this.zsetType = this.getNonVoidType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
@@ -64,10 +64,6 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         }
     }
 
-    public DBSPZSetLiteral(DBSPExpression... data) {
-        this(DBSPTypeZSet.WEIGHT_TYPE, data);
-    }
-
     protected DBSPZSetLiteral(Map<DBSPExpression, Integer> data,
                               DBSPTypeZSet zsetType) {
         super(null, zsetType, 0);
@@ -78,10 +74,24 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
     /**
      * Creates an empty zset with the specified type.
      */
-    public DBSPZSetLiteral(DBSPType type) {
+    DBSPZSetLiteral(DBSPType type) {
         super(null, type, 0); // Value is unused, but needs to be non-null
         this.zsetType = this.getNonVoidType().to(DBSPTypeZSet.class);
         this.data = new HashMap<>();
+    }
+
+    /**
+     * Creates an empty zset with the specified type.
+     */
+    public static DBSPZSetLiteral emptyWithElementType(DBSPType elementType) {
+        return new DBSPZSetLiteral(TypeCompiler.makeZSet(elementType));
+    }
+
+    /**
+     * Creates an empty zset with the specified type.
+     */
+    public static DBSPZSetLiteral emptyWithType(DBSPType type) {
+        return new DBSPZSetLiteral(type);
     }
 
     @SuppressWarnings("MethodDoesntCallSuperMethod")
@@ -122,7 +132,7 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
     }
 
     public DBSPZSetLiteral negate() {
-        DBSPZSetLiteral result = new DBSPZSetLiteral(this.zsetType);
+        DBSPZSetLiteral result = DBSPZSetLiteral.emptyWithType(this.zsetType);
         for (Map.Entry<DBSPExpression, Integer> entry: data.entrySet()) {
             result.add(entry.getKey(), -entry.getValue());
         }
@@ -162,5 +172,4 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         result.add(sub.negate());
         return result;
     }
-
 }

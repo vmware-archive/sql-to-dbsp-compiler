@@ -78,7 +78,7 @@ public class TableContents implements ICompilerComponent {
             this.tablesCreated.add(create.tableName);
             if (this.tableContents != null)
                 Utilities.putNew(this.tableContents, create.tableName,
-                        new DBSPZSetLiteral(create.getTableType(this.compiler.getTypeCompiler())));
+                        DBSPZSetLiteral.emptyWithType(create.getTableType(this.compiler.getTypeCompiler())));
         } else if (statement.is(DropTableStatement.class)) {
             DropTableStatement drop = statement.to(DropTableStatement.class);
             this.tableCreation.remove(drop.tableName);

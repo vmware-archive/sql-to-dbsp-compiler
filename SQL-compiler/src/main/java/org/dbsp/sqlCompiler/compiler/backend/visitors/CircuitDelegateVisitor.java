@@ -1,5 +1,8 @@
 package org.dbsp.sqlCompiler.compiler.backend.visitors;
 
+import org.dbsp.sqlCompiler.circuit.DBSPPartialCircuit;
+import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
@@ -23,6 +26,10 @@ public class CircuitDelegateVisitor extends CircuitVisitor {
             node.function.accept(this.innerVisitor);
     }
 
+    void doOutputType(DBSPOperator node) {
+        node.outputType.accept(this.innerVisitor);
+    }
+
     void doAggregate(@Nullable DBSPAggregate aggregate) {
         if (aggregate != null)
             aggregate.accept(this.innerVisitor);
@@ -31,11 +38,27 @@ public class CircuitDelegateVisitor extends CircuitVisitor {
     @Override
     public void postorder(DBSPOperator node) {
         this.doFunction(node);
+        this.doOutputType(node);
     }
 
     @Override
     public void postorder(DBSPAggregateOperatorBase node) {
         this.doAggregate(node.aggregate);
         this.doFunction(node);
+        this.doOutputType(node);
+    }
+
+    @Override
+    public boolean preorder(DBSPPartialCircuit circuit) {
+        for (IDBSPNode node : circuit.getCode()) {
+            DBSPOperator op = node.as(DBSPOperator.class);
+            if (op != null)
+                op.accept(this);
+            else {
+                IDBSPInnerNode inode = node.to(IDBSPInnerNode.class);
+                inode.accept(this.innerVisitor);
+            }
+        }
+        return false;
     }
 }

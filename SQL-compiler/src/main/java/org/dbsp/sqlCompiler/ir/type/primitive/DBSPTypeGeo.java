@@ -32,4 +32,8 @@ public abstract class DBSPTypeGeo extends DBSPTypeBaseType {
     protected DBSPTypeGeo(@Nullable Object node, boolean mayBeNull) {
         super(node, mayBeNull);
     }
+
+    public boolean hasCopy() {
+        return false;
+    }
 }

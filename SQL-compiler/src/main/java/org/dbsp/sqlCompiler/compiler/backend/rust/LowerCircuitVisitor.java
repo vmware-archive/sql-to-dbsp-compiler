@@ -1,27 +1,29 @@
 package org.dbsp.sqlCompiler.compiler.backend.rust;
 
-import org.dbsp.sqlCompiler.circuit.operator.DBSPAggregateOperator;
-import org.dbsp.sqlCompiler.circuit.operator.DBSPIncrementalAggregateOperator;
-import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
-import org.dbsp.sqlCompiler.circuit.operator.DBSPWindowAggregateOperator;
+import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.compiler.backend.optimize.BetaReduction;
 import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitCloneVisitor;
 import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.expression.*;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPUSizeLiteral;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeRawTuple;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeSemigroup;
+import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
+import org.dbsp.sqlCompiler.ir.type.*;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeUSize;
+import org.dbsp.util.Linq;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
  * Lowers a circuit's representation.
+ * - converts DBSPAggregate into basic operations.
+ * - converts DBSPFlatmap into basic operations.
  */
 public class LowerCircuitVisitor extends CircuitCloneVisitor {
     public LowerCircuitVisitor() {
@@ -98,6 +100,72 @@ public class LowerCircuitVisitor extends CircuitCloneVisitor {
                 accumFunction, postClosure);
         DBSPLetStatement result = this.getResult().declareLocal("fold", fold);
         return result.getVarReference();
+    }
+
+    DBSPExpression rewriteFlatmap(DBSPFlatmap flatmap) {
+        //   move |x: &Tuple2<Vec<i32>, Option<i32>>, | -> _ {
+        //     let xA: Vec<i32> = x.0.clone();
+        //     let xB: x.1.clone();
+        //     x.0.clone().into_iter().map({
+        //        move |e: i32, | -> Tuple3<Vec<i32>, Option<i32>, i32> {
+        //            Tuple3::new(xA.clone(), xB.clone(), e)
+        //        }
+        //     })
+        DBSPVariablePath rowVar = new DBSPVariablePath("x", flatmap.inputElementType);
+        DBSPType eType = flatmap.collectionElementType;
+        if (flatmap.indexType != null)
+            eType = new DBSPTypeRawTuple(DBSPTypeUSize.INSTANCE, eType);
+        DBSPVariablePath elem = new DBSPVariablePath("e", eType);
+        List<DBSPStatement> clones = new ArrayList<>();
+        List<DBSPExpression> resultColumns = new ArrayList<>();
+        int fieldsSkipped = 1; // last field is the unnested field
+        if (flatmap.indexType != null)
+            fieldsSkipped = 2; // skip the index field too
+        for (int i = 0; i < flatmap.outputElementType.size() - fieldsSkipped; i++) {
+            // let xA: Vec<i32> = x.0.clone();
+            // let xB: x.1.clone();
+            DBSPVariablePath fieldClone = new DBSPVariablePath("x" + i, rowVar.field(i).getNonVoidType());
+            DBSPLetStatement stat = new DBSPLetStatement(fieldClone.variable, rowVar.field(i));
+            clones.add(stat);
+            resultColumns.add(fieldClone.applyClone());
+        }
+        if (flatmap.indexType != null) {
+            resultColumns.add(elem.field(1));
+            resultColumns.add(new DBSPBinaryExpression(null,
+                    DBSPTypeUSize.INSTANCE, "+",
+                    elem.field(0),
+                    new DBSPUSizeLiteral(1)).cast(flatmap.indexType));
+        } else {
+            resultColumns.add(elem);
+        }
+        // move |e: i32, | -> Tuple3<Vec<i32>, Option<i32>, i32> {
+        //   Tuple3::new(xA.clone(), xB.clone(), e)
+        // }
+        DBSPClosureExpression toTuple = new DBSPTupleExpression(resultColumns, false)
+                .closure(elem.asParameter());
+        DBSPExpression iter = new DBSPApplyMethodExpression("into_iter", DBSPTypeAny.INSTANCE,
+                rowVar.field(flatmap.collectionFieldIndex));
+        if (flatmap.indexType != null) {
+            iter = new DBSPApplyMethodExpression("enumerate", DBSPTypeAny.INSTANCE, iter);
+        }
+        DBSPExpression function = new DBSPApplyMethodExpression(
+                "map", DBSPTypeAny.INSTANCE,
+                iter, toTuple);
+        DBSPExpression block = new DBSPBlockExpression(clones, function);
+        return block.closure(rowVar.asRefParameter());
+    }
+
+    @Override
+    public void postorder(DBSPFlatMapOperator node) {
+        DBSPOperator result = node;
+        if (node.getFunction().is(DBSPFlatmap.class)) {
+            List<DBSPOperator> sources = Linq.map(node.inputs, this::mapped);
+            DBSPExpression function = this.rewriteFlatmap(node.getFunction().to(DBSPFlatmap.class));
+            result = node.withFunction(function).withInputs(sources, this.force);
+            this.map(node, result);
+        } else {
+            super.postorder(node);
+        }
     }
 
     @Override

@@ -25,7 +25,6 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.*;
-import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
 import org.dbsp.sqlCompiler.compiler.backend.optimize.*;
 import org.dbsp.sqlCompiler.compiler.backend.rust.RustSqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.compiler.backend.rust.RustFileWriter;
@@ -150,12 +149,12 @@ public class BaseSQLTests {
         RustSqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
     }
 
-    CircuitVisitor getOptimizer() {
-        DeadCodeVisitor dead = new DeadCodeVisitor();
+    CircuitVisitor getOptimizer(DBSPCompiler compiler) {
+        DeadCodeVisitor dead = new DeadCodeVisitor(compiler);
         return new PassesVisitor(
                 new OptimizeIncrementalVisitor(),
                 dead,
-                new RemoveOperatorsVisitor(dead.reachable),
+                new RemoveOperatorsVisitor(dead.toKeep),
                 new NoIntegralVisitor()
         );
     }
@@ -164,16 +163,16 @@ public class BaseSQLTests {
         try {
             query = "CREATE VIEW V AS " + query;
             DBSPCompiler compiler = this.compileQuery(query);
-            if (compiler.hasErrors()) {
+            if (compiler.hasErrors() || compiler.hasWarnings())
                 compiler.showErrors(System.err);
+            if (compiler.hasErrors())
                 throw new RuntimeException("Aborting test");
-            }
             DBSPCircuit circuit = getCircuit(compiler);
             circuit = new OptimizeDistinctVisitor().apply(circuit);
             if (incremental)
                 circuit = new IncrementalizeVisitor().apply(circuit);
             if (optimize) {
-                CircuitVisitor optimizer = this.getOptimizer();
+                CircuitVisitor optimizer = this.getOptimizer(compiler);
                 circuit = optimizer.apply(circuit);
             }
 
@@ -193,6 +192,7 @@ public class BaseSQLTests {
     static CompilerOptions testOptions() {
         CompilerOptions options = new CompilerOptions();
         options.optimizerOptions.throwOnError = true;
+        options.optimizerOptions.generateInputForEveryTable = true;
         return options;
     }
 
@@ -204,7 +204,6 @@ public class BaseSQLTests {
         DBSPCompiler compiler = testCompiler();
         // This is necessary if we want queries that do not depend on the input
         // to generate circuits that still have inputs.
-        compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +
@@ -249,7 +248,7 @@ public class BaseSQLTests {
     );
     static final DBSPZSetLiteral z0 = new DBSPZSetLiteral(e0);
     static final DBSPZSetLiteral z1 = new DBSPZSetLiteral(e1);
-    static final DBSPZSetLiteral empty = new DBSPZSetLiteral(z0.getNonVoidType());
+    static final DBSPZSetLiteral empty = DBSPZSetLiteral.emptyWithType(z0.getNonVoidType());
 
     /**
      * Returns the table containing:

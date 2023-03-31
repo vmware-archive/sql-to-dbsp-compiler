@@ -343,6 +343,12 @@ public class CalciteCompiler implements IModule {
                 .addRuleInstance(CoreRules.PROJECT_MULTI_JOIN_MERGE)
                 .addRuleInstance(CoreRules.MULTI_JOIN_OPTIMIZE_BUSHY)
                 .build();
+        HepProgram move = createProgram(
+                CoreRules.PROJECT_CORRELATE_TRANSPOSE,
+                CoreRules.PROJECT_FILTER_TRANSPOSE,
+                CoreRules.PROJECT_SET_OP_TRANSPOSE,
+                CoreRules.PROJECT_JOIN_TRANSPOSE
+        );
         HepProgram mergeNodes = createProgram(
                 CoreRules.PROJECT_MERGE,
                 CoreRules.MINUS_MERGE,
@@ -361,17 +367,14 @@ public class CalciteCompiler implements IModule {
                 CoreRules.PROJECT_TO_LOGICAL_PROJECT_AND_WINDOW
         );
             if (avoidBushyJoin(rel))
-                return Linq.list(constantFold, removeEmpty, window, distinctAggregates, mergeNodes, remove);
-            return Linq.list(constantFold, removeEmpty, window, distinctAggregates, multiJoins, mergeNodes, remove);
+                return Linq.list(constantFold, removeEmpty, window, distinctAggregates, move, mergeNodes, remove);
+            return Linq.list(constantFold, removeEmpty, window, distinctAggregates, move, multiJoins, mergeNodes, remove);
             /*
         return Linq.list(
-                CoreRules.PROJECT_JOIN_TRANSPOSE)
                 CoreRules.AGGREGATE_PROJECT_PULL_UP_CONSTANTS,
                 CoreRules.AGGREGATE_UNION_AGGREGATE,
                 CoreRules.JOIN_PUSH_EXPRESSIONS,
                 CoreRules.JOIN_CONDITION_PUSH,
-                CoreRules.PROJECT_FILTER_TRANSPOSE,
-                CoreRules.PROJECT_SET_OP_TRANSPOSE,
         );
          */
     }

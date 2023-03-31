@@ -42,13 +42,15 @@ public class CircuitFunctionRewriter extends CircuitCloneVisitor {
     private final Function<IDBSPInnerNode, IDBSPInnerNode> transform;
 
     public CircuitFunctionRewriter(Function<IDBSPInnerNode, IDBSPInnerNode> transform) {
-        super(true);
+        super(false);
         this.transform = transform;
     }
 
     @Override
     public void replace(DBSPOperator node) {
-        IDBSPInnerNode function = this.transform.apply(node.function);
+        IDBSPInnerNode function = null;
+        if (node.function != null)
+            function = this.transform.apply(node.function);
         DBSPOperator result;
         if (function != null) {
             DBSPExpression funcExpr = function.to(DBSPExpression.class);

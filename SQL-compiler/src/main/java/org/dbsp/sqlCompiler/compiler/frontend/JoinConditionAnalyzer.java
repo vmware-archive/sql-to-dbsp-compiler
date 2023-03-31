@@ -130,6 +130,12 @@ public class JoinConditionAnalyzer extends RexVisitorImpl<Void> implements IModu
     }
 
     @Override
+    public Void visitInputRef(RexInputRef ref) {
+        this.result.setLeftOver(ref);
+        return null;
+    }
+
+    @Override
     public Void visitLiteral(RexLiteral lit) {
         this.result.setLeftOver(lit);
         return null;

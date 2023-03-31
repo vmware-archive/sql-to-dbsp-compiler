@@ -325,7 +325,7 @@ public class EndToEndTests extends BaseSQLTests {
     @Test
     public void whereExpressionTest() {
         String query = "SELECT * FROM T WHERE COL2 < 0";
-        this.testQuery(query, new DBSPZSetLiteral(z0.getNonVoidType()));
+        this.testQuery(query, DBSPZSetLiteral.emptyWithType(z0.getNonVoidType()));
     }
 
     @Test

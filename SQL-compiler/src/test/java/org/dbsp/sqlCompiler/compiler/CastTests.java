@@ -39,7 +39,6 @@ public class CastTests extends BaseSQLTests {
     @Override
     public DBSPCompiler compileQuery(String query) {
         DBSPCompiler compiler = testCompiler();
-        compiler.setGenerateInputsFromTables(true);
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +

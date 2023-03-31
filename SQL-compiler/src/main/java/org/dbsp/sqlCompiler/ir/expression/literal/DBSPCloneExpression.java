@@ -35,7 +35,7 @@ public class DBSPCloneExpression extends DBSPExpression {
     public final DBSPExpression expression;
 
     public DBSPCloneExpression(@Nullable Object object, DBSPExpression expression) {
-        super(object, expression.getNonVoidType().deref());
+        super(object, expression.getNonVoidType().derefIfNeeded());
         this.expression = expression;
     }
 

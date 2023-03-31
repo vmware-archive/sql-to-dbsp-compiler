@@ -150,10 +150,8 @@ public class PostgresTimestampTests extends BaseSQLTests {
         CompilerOptions options = new CompilerOptions();
         options.ioOptions.lexicalRules = Lex.ORACLE;
         options.optimizerOptions.noOptimizations = !optimize;
+        options.optimizerOptions.generateInputForEveryTable = true;
         DBSPCompiler compiler = new DBSPCompiler(options);
-        // So that queries that do not depend on the input still
-        // have circuits with inputs.
-        compiler.setGenerateInputsFromTables(true);
         compiler.compileStatements(data);
         compiler.compileStatement(query);
         return compiler;

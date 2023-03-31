@@ -3,6 +3,7 @@ package org.dbsp.sqlCompiler.compiler.backend.visitors;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.*;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIsNullExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.statement.DBSPExpressionStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
@@ -41,10 +42,7 @@ public abstract class InnerExpressionRewriteVisitor
     }
 
     @Override
-    @Nullable
-    public IDBSPInnerNode apply(@Nullable IDBSPInnerNode dbspNode) {
-        if (dbspNode == null)
-            return null;
+    public IDBSPInnerNode apply(IDBSPInnerNode dbspNode) {
         this.startVisit();
         dbspNode.accept(this);
         this.endVisit();
@@ -56,13 +54,14 @@ public abstract class InnerExpressionRewriteVisitor
      * @param old     only used for debugging.
      */
     protected void map(IDBSPInnerNode old, IDBSPInnerNode newOp) {
-        Logger.INSTANCE.from(this, 1)
-                .append(this.toString())
-                .append(":")
-                .append(old.toString())
-                .append(" -> ")
-                .append(newOp.toString())
-                .newline();
+        if (old != newOp)
+            Logger.INSTANCE.from(this, 1)
+                    .append(this.toString())
+                    .append(":")
+                    .append(old.toString())
+                    .append(" -> ")
+                    .append(newOp.toString())
+                    .newline();
         this.lastResult = newOp;
     }
 
@@ -96,6 +95,12 @@ public abstract class InnerExpressionRewriteVisitor
 
     @Override
     public boolean preorder(DBSPLiteral expression) {
+        this.map(expression, expression);
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPFlatmap expression) {
         this.map(expression, expression);
         return false;
     }
@@ -188,6 +193,17 @@ public abstract class InnerExpressionRewriteVisitor
         DBSPExpression result = expression;
         if (source != expression.source) {
             result = source.cast(expression.destinationType);
+        }
+        this.map(expression, result);
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPIsNullExpression expression) {
+        DBSPExpression source = this.transform(expression.expression);
+        DBSPExpression result = expression;
+        if (source != expression.expression) {
+            result = source.is_null();
         }
         this.map(expression, result);
         return false;

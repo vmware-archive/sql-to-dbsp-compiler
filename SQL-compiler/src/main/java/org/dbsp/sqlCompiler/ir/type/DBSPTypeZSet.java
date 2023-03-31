@@ -27,7 +27,7 @@ import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 import javax.annotation.Nullable;
 
-public class DBSPTypeZSet extends DBSPTypeUser {
+public class DBSPTypeZSet extends DBSPTypeUser implements ICollectionType {
     public final DBSPType elementType;
     public final DBSPType weightType;
 
@@ -60,6 +60,11 @@ public class DBSPTypeZSet extends DBSPTypeUser {
         this.elementType.accept(visitor);
         this.weightType.accept(visitor);
         visitor.postorder(this);
+    }
+
+    @Override
+    public DBSPType getElementType() {
+        return this.elementType;
     }
 
     // sameType and hashCode inherited from TypeUser

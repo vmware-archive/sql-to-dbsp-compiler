@@ -56,12 +56,17 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
     /**
      * Override to initialize before visiting any node.
      */
-    public void startVisit(IDBSPOuterNode node) {}
+    public void startVisit(IDBSPOuterNode node) {
+        if (node.is(DBSPCircuit.class))
+            this.setCircuit(node.to(DBSPCircuit.class));
+    }
 
     /**
      * Override to finish after visiting all nodes.
      */
-    public void endVisit() {}
+    public void endVisit() {
+        this.circuit = null;
+    }
 
     /**
      * Returns by default the input circuit unmodified.
@@ -71,7 +76,6 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
         this.startVisit(node);
         node.accept(this);
         this.endVisit();
-        this.circuit = null;
         return node;
     }
 
@@ -89,7 +93,6 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
     }
 
     public boolean preorder(DBSPCircuit circuit) {
-        this.setCircuit(circuit);
         return true;
     }
 
@@ -225,9 +228,7 @@ public abstract class CircuitVisitor extends IdGen implements Function<DBSPCircu
 
     ////////////////////////////////////
 
-    public void postorder(DBSPCircuit ignored) {
-        this.circuit = null;
-    }
+    public void postorder(DBSPCircuit ignored) {}
 
     public void postorder(DBSPPartialCircuit circuit) {}
 

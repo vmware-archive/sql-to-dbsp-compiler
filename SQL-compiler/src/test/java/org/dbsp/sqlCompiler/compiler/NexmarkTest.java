@@ -27,7 +27,6 @@ import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * Test SQL queries from the Nexmark suite.
@@ -559,7 +558,7 @@ public class NexmarkTest extends BaseSQLTests {
             compiler.compileStatement(view);
         for (String query: queries)
             compiler.compileStatement(query);
-        compiler.throwOnError();
+        compiler.throwIfErrorsOccurred();
         DBSPCircuit circuit = getCircuit(compiler);
         Assert.assertNotNull(circuit);
     }

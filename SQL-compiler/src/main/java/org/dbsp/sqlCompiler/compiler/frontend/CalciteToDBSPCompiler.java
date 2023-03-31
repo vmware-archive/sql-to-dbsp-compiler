@@ -30,6 +30,7 @@ import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.*;
 import org.apache.calcite.rel.logical.*;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.*;
 import org.dbsp.sqlCompiler.circuit.DBSPNode;
@@ -57,6 +58,8 @@ import org.dbsp.util.*;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * The compiler is stateful: it compiles a sequence of SQL statements
@@ -75,20 +78,6 @@ public class CalciteToDBSPCompiler extends RelVisitor
      * to be hardwired in the Calcite optimizer.
      */
     public static final int firstDOW = 1;
-    /**
-     * If true, the inputs to the circuit are generated from the CREATE TABLE
-     * statements.  Otherwise, they are generated from the LogicalTableScan
-     * operations in a view plan.
-     */
-    boolean generateInputsFromTables = false;
-
-    /**
-     * If true the inputs to the circuit are generated from the CREATE TABLE
-     * statements.
-     */
-    public void setGenerateInputsFromTables(boolean generateInputsFromTables) {
-        this.generateInputsFromTables = generateInputsFromTables;
-    }
 
     /**
      * Variable that refers to the weight of the row in the z-set.
@@ -208,13 +197,99 @@ public class CalciteToDBSPCompiler extends RelVisitor
         return result;
     }
 
+    /**
+     * Given a struct type find the index of the specified field.
+     * Throws if no such field exists.
+     */
+    static int getFieldIndex(String field, RelDataType type) {
+        int index = 0;
+        for (RelDataTypeField rowField: type.getFieldList()) {
+            if (rowField.getName().equals(field))
+                return index;
+            index++;
+        }
+        throw new RuntimeException("Type " + type + " has no field named " + field);
+    }
+
     public void visitCorrelate(LogicalCorrelate correlate) {
-        throw new Unimplemented(correlate);
+        // We decorrelate queries using Calcite's optimizer.
+        // So we assume that the only correlated queries we receive
+        // are unnest-type queries.  We assume that unnest queries
+        // have a restricted plan of this form:
+        // LogicalCorrelate(correlation=[$cor0], joinType=[inner], requiredColumns=[{...}])
+        //    LeftSubquery
+        //    Uncollect
+        //      LogicalProject(COL=[$cor0.ARRAY])
+        //        LogicalValues(tuples=[[{ 0 }]])
+        // Instead of projecting and joining again we directly apply flatmap.
+        // The translation for this is:
+        // stream.flat_map({
+        //   move |x: &Tuple2<Vec<i32>, Option<i32>>, | -> _ {
+        //     let xA: Vec<i32> = x.0.clone();
+        //     let xB: x.1.clone();
+        //     x.0.clone().into_iter().map({
+        //        move |e: i32, | -> Tuple3<Vec<i32>, Option<i32>, i32> {
+        //            Tuple3::new(xA.clone(), xB.clone(), e)
+        //        }
+        //     })
+        //  });
+        DBSPTypeTuple type = this.convertType(correlate.getRowType()).to(DBSPTypeTuple.class);
+        if (correlate.getJoinType().isOuterJoin())
+            throw new Unimplemented(correlate);
+        this.visit(correlate.getLeft(), 0, correlate);
+        DBSPOperator left = this.getInputAs(correlate.getLeft(), true);
+        DBSPTypeTuple leftElementType = left.getOutputZSetElementType();
+
+        RelNode correlateRight = correlate.getRight();
+        if (!(correlateRight instanceof Uncollect))
+            throw new Unimplemented(correlate);
+        Uncollect uncollect = (Uncollect) correlateRight;
+        RelNode uncollectInput = uncollect.getInput();
+        if (!(uncollectInput instanceof LogicalProject))
+            throw new Unimplemented(correlate);
+        LogicalProject project = (LogicalProject) uncollectInput;
+        if (project.getProjects().size() != 1)
+            throw new Unimplemented(correlate);
+        RexNode projection = project.getProjects().get(0);
+        if (!(projection instanceof RexFieldAccess))
+            throw new Unimplemented(correlate);
+        RexFieldAccess field = (RexFieldAccess) projection;
+        RelDataType leftRowType = correlate.getLeft().getRowType();
+        // The index of the field that is the array
+        int arrayFieldIndex = getFieldIndex(field.getField().getName(), leftRowType);
+        List<Integer> allFields = IntStream.range(0, leftElementType.size())
+                .boxed()
+                .collect(Collectors.toList());
+        DBSPType indexType = null;
+        if (uncollect.withOrdinality) {
+            // Index field is always last
+            indexType = type.getFieldType(type.size() - 1);
+        }
+        DBSPFlatmap flatmap = new DBSPFlatmap(correlate, leftElementType, arrayFieldIndex,
+                allFields, indexType);
+        DBSPFlatMapOperator flatMap = new DBSPFlatMapOperator(uncollect,
+                flatmap, TypeCompiler.makeZSet(type), left);
+        this.assignOperator(correlate, flatMap);
     }
 
     public void visitUncollect(Uncollect uncollect) {
         // This represents an unnest.
-        throw new Unimplemented(uncollect);
+        // flat_map(move |x| { x.0.into_iter().map(move |e| Tuple1::new(e)) })
+        DBSPType type = this.convertType(uncollect.getRowType());
+        RelNode input = uncollect.getInput();
+        DBSPTypeTuple inputRowType = this.convertType(input.getRowType()).to(DBSPTypeTuple.class);
+        // We expect this to be a single-element tuple whose type is a vector.
+        DBSPOperator opInput = this.getInputAs(input, true);
+        DBSPType indexType = null;
+        if (uncollect.withOrdinality) {
+            DBSPTypeTuple pair = type.to(DBSPTypeTuple.class);
+            indexType = pair.getFieldType(1);
+        }
+        DBSPExpression function = new DBSPFlatmap(uncollect, inputRowType, 0,
+                Linq.list(), indexType);
+        DBSPFlatMapOperator flatMap = new DBSPFlatMapOperator(uncollect, function,
+                TypeCompiler.makeZSet(type), opInput);
+        this.assignOperator(uncollect, flatMap);
     }
 
     public void visitAggregate(LogicalAggregate aggregate) {
@@ -333,7 +408,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
             return;
         }
 
-        if (this.generateInputsFromTables)
+        if (this.options.optimizerOptions.generateInputForEveryTable)
             throw new RuntimeException("Could not find input for table " + tableName);
         @Nullable String comment = null;
         if (scan.getTable() instanceof RelOptTableImpl) {
@@ -391,7 +466,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
     }
 
     DBSPOperator castOutput(RelNode node, DBSPOperator operator, DBSPType outputElementType) {
-        DBSPType inputElementType = operator.outputType.to(DBSPTypeZSet.class).elementType;
+        DBSPType inputElementType = operator.getOutputZSetElementType();
         if (inputElementType.sameType(outputElementType))
             return operator;
         DBSPExpression function = inputElementType.caster(outputElementType);
@@ -696,7 +771,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
             resultType = sourceType;
         }
 
-        DBSPZSetLiteral result = new DBSPZSetLiteral(TypeCompiler.makeZSet(resultType));
+        DBSPZSetLiteral result = DBSPZSetLiteral.emptyWithElementType(resultType);
         for (List<RexLiteral> t : values.getTuples()) {
             List<DBSPExpression> expressions = new ArrayList<>();
             if (t.size() != sourceType.size())
@@ -977,7 +1052,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
     @Override
     public void visit(
             RelNode node, int ordinal,
-            @org.checkerframework.checker.nullness.qual.Nullable RelNode parent) {
+            @Nullable RelNode parent) {
         Logger.INSTANCE.from(this, 3)
                 .append("Visiting ")
                 .append(node.toString())
@@ -986,6 +1061,11 @@ public class CalciteToDBSPCompiler extends RelVisitor
             // We have already done this one.  This can happen because the
             // plan can be a DAG, not just a tree.
             return;
+
+        // logical correlates are not done in postorder.
+        if (this.visitIfMatches(node, LogicalCorrelate.class, this::visitCorrelate))
+            return;
+
         // First process children
         super.visit(node, ordinal, parent);
         // Synthesize current node
@@ -1001,7 +1081,6 @@ public class CalciteToDBSPCompiler extends RelVisitor
                 this.visitIfMatches(node, LogicalIntersect.class, this::visitIntersect) ||
                 this.visitIfMatches(node, LogicalWindow.class, this::visitWindow) ||
                 this.visitIfMatches(node, LogicalSort.class, this::visitSort) ||
-                this.visitIfMatches(node, LogicalCorrelate.class, this::visitCorrelate) ||
                 this.visitIfMatches(node, Uncollect.class, this::visitUncollect);
         if (!success)
             throw new Unimplemented(node);
@@ -1036,7 +1115,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
                 statement.is(DropTableStatement.class)) {
             this.tableContents.execute(statement);
             CreateTableStatement create = statement.as(CreateTableStatement.class);
-            if (create != null && this.generateInputsFromTables) {
+            if (create != null && this.options.optimizerOptions.generateInputForEveryTable) {
                 // We create an input for the circuit.  The inputs
                 // could be created by visiting LogicalTableScan, but if a table
                 // is *not* used in a view, it won't have a corresponding input

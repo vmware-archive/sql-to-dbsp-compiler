@@ -27,14 +27,13 @@ import org.dbsp.sqlCompiler.circuit.IDBSPOuterNode;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSinkOperator;
 import org.dbsp.sqlCompiler.circuit.operator.DBSPSourceOperator;
+import org.dbsp.sqlCompiler.compiler.ICompilerComponent;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Logger;
+import org.dbsp.util.Utilities;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * At the end of the visit the set 'keep' contains all
@@ -43,9 +42,13 @@ import java.util.Set;
  */
 public class DeadCodeVisitor extends CircuitVisitor implements IModule {
     public final Set<DBSPOperator> reachable = new HashSet<>();
+    // Includes reachable plus all inputs
+    public final Set<DBSPOperator> toKeep = new HashSet<>();
+    ICompilerComponent component;
 
-    public DeadCodeVisitor() {
+    public DeadCodeVisitor(ICompilerComponent component) {
         super(true);
+        this.component = Objects.requireNonNull(component);
     }
 
     public void keep(DBSPOperator operator) {
@@ -53,12 +56,14 @@ public class DeadCodeVisitor extends CircuitVisitor implements IModule {
                 .append(operator.toString())
                 .append(" reachable")
                 .newline();
-        this.reachable.add(operator);
+        this.toKeep.add(operator);
     }
 
     @Override
     public void startVisit(IDBSPOuterNode node) {
+        this.toKeep.clear();
         this.reachable.clear();
+        super.startVisit(node);
     }
 
     @Override
@@ -73,12 +78,24 @@ public class DeadCodeVisitor extends CircuitVisitor implements IModule {
         r.add(operator);
         while (!r.isEmpty()) {
             DBSPOperator op = r.remove(0);
-            if (this.reachable.contains(op))
+            this.reachable.add(op);
+            if (this.toKeep.contains(op))
                 continue;
             this.keep(op);
             r.addAll(op.inputs);
         }
         return false;
+    }
+
+    @Override
+    public void endVisit() {
+        for (DBSPOperator source: this.getCircuit().circuit.inputOperators) {
+            if (!this.reachable.contains(source))
+                this.component.getCompiler().reportError(source.getSourcePosition(), true,
+                        "Unused", "Table " + Utilities.singleQuote(source.outputName) +
+                                " is not used");
+        }
+        super.endVisit();
     }
 
     @Override
