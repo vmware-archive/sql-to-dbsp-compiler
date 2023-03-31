@@ -140,6 +140,10 @@ Usage: sql-to-dbsp [options] Input file to compile
     -O0
       Do not optimize
       Default: false
+    -alltables
+      Generate an input for each CREATE TABLE, even if the table is not used
+      by any view
+      Default: false      
     -d
       SQL syntax dialect used
       Default: ORACLE
