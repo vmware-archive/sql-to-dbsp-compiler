@@ -26,10 +26,13 @@ package org.dbsp.sqlCompiler.compiler;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.frontend.CalciteToDBSPCompiler;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPI32Literal;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPVecLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.Logger;
 import org.junit.Test;
@@ -199,39 +202,92 @@ public class ArrayTests extends BaseSQLTests {
 
     @Test
     public void testUnnest1() {
-        // TODO: not yet implemented.
         String ddl = "CREATE TABLE ARR_TABLE (\n"
-                + "VALS INTEGER ARRAY,"
-                + "ID INTEGER)";
+                + "VALS INTEGER ARRAY NOT NULL,"
+                + "ID INTEGER NOT NULL)";
         DBSPCompiler compiler = testCompiler();
         compiler.compileStatement(ddl);
-        String query = "CREATE VIEW V AS SELECT ID, VAL FROM " +
+        String query = "CREATE VIEW V AS SELECT VAL, ID FROM " +
                 "ARR_TABLE, UNNEST(VALS) AS VAL";
-        Logger.INSTANCE.setDebugLevel(CalciteToDBSPCompiler.class, 3);
         compiler.compileStatements(query);
         if (compiler.hasErrors())
             compiler.showErrors(System.err);
         DBSPCircuit circuit = getCircuit(compiler);
-        this.addRustTestCase(circuit);
+        DBSPZSetLiteral input = new DBSPZSetLiteral(
+                new DBSPTupleExpression(
+                        new DBSPVecLiteral(
+                                new DBSPI32Literal(1),
+                                new DBSPI32Literal(2),
+                                new DBSPI32Literal(3)),
+                        new DBSPI32Literal(6)),
+                new DBSPTupleExpression(
+                        new DBSPVecLiteral(
+                                new DBSPI32Literal(1),
+                                new DBSPI32Literal(2),
+                                new DBSPI32Literal(3)),
+                        new DBSPI32Literal(7))
+                );
+        DBSPZSetLiteral result = new DBSPZSetLiteral(
+                new DBSPTupleExpression(new DBSPI32Literal(1), new DBSPI32Literal(6)),
+                new DBSPTupleExpression(new DBSPI32Literal(2), new DBSPI32Literal(6)),
+                new DBSPTupleExpression(new DBSPI32Literal(3), new DBSPI32Literal(6)),
+                new DBSPTupleExpression(new DBSPI32Literal(1), new DBSPI32Literal(7)),
+                new DBSPTupleExpression(new DBSPI32Literal(2), new DBSPI32Literal(7)),
+                new DBSPTupleExpression(new DBSPI32Literal(3), new DBSPI32Literal(7))
+        );
+        this.addRustTestCase(circuit, new InputOutputPair(input, result));
     }
 
-    //@Test
+    @Test
     public void testDoubleUnnest1() {
-        // TODO: not yet implemented.
         String ddl = "CREATE TABLE ARR_TABLE (\n"
-                + "VALS0 INTEGER ARRAY,"
-                + "VALS1 INTEGER ARRAY,"
-                + "ID INTEGER)";
+                + "VALS0 INTEGER ARRAY NOT NULL,"
+                + "VALS1 INTEGER ARRAY NOT NULL,"
+                + "ID INTEGER NOT NULL)";
         DBSPCompiler compiler = testCompiler();
         compiler.compileStatement(ddl);
-        String query = "CREATE VIEW V AS SELECT ID, VAL0, VAL1 FROM " +
+        String query = "CREATE VIEW V AS SELECT VAL0, VAL1, ID FROM " +
                 "ARR_TABLE, UNNEST(VALS0) AS VAL0, UNNEST(VALS1) AS VAL1";
-        Logger.INSTANCE.setDebugLevel(CalciteToDBSPCompiler.class, 3);
         compiler.compileStatements(query);
         if (compiler.hasErrors())
             compiler.showErrors(System.err);
         DBSPCircuit circuit = getCircuit(compiler);
-        this.addRustTestCase(circuit);
+        DBSPZSetLiteral input = new DBSPZSetLiteral(
+                new DBSPTupleExpression(
+                        new DBSPVecLiteral(
+                                new DBSPI32Literal(1),
+                                new DBSPI32Literal(2),
+                                new DBSPI32Literal(3)),
+                        new DBSPVecLiteral(
+                                new DBSPI32Literal(4),
+                                new DBSPI32Literal(5),
+                                new DBSPI32Literal(6)),
+                        new DBSPI32Literal(7)),
+                new DBSPTupleExpression(
+                        new DBSPVecLiteral(
+                                new DBSPI32Literal(8),
+                                new DBSPI32Literal(9),
+                                new DBSPI32Literal(10)),
+                        new DBSPVecLiteral(
+                                new DBSPI32Literal(11),
+                                new DBSPI32Literal(12),
+                                new DBSPI32Literal(13)),
+                        new DBSPI32Literal(14))
+        );
+        DBSPZSetLiteral result = DBSPZSetLiteral.emptyWithElementType(
+            new DBSPTypeTuple(DBSPTypeInteger.SIGNED_32, DBSPTypeInteger.SIGNED_32, DBSPTypeInteger.SIGNED_32)
+        );
+        for (int i = 1; i < 4; i++)
+            for (int j = 4; j < 7; j++) {
+                DBSPExpression tuple = new DBSPTupleExpression(new DBSPI32Literal(i), new DBSPI32Literal(j), new DBSPI32Literal(7));
+                result.add(tuple);
+            }
+        for (int i = 8; i < 11; i++)
+            for (int j = 11; j < 14; j++) {
+                DBSPExpression tuple = new DBSPTupleExpression(new DBSPI32Literal(i), new DBSPI32Literal(j), new DBSPI32Literal(14));
+                result.add(tuple);
+            }
+        this.addRustTestCase(circuit, new InputOutputPair(input, result));
     }
 
     //@Test

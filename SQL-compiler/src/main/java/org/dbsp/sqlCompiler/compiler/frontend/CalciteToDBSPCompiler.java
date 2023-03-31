@@ -50,6 +50,8 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.path.DBSPSimplePathSegment;
+import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
+import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
@@ -78,20 +80,6 @@ public class CalciteToDBSPCompiler extends RelVisitor
      * to be hardwired in the Calcite optimizer.
      */
     public static final int firstDOW = 1;
-    /**
-     * If true, the inputs to the circuit are generated from the CREATE TABLE
-     * statements.  Otherwise, they are generated from the LogicalTableScan
-     * operations in a view plan.
-     */
-    boolean generateInputsFromTables = false;
-
-    /**
-     * If true the inputs to the circuit are generated from the CREATE TABLE
-     * statements.
-     */
-    public void setGenerateInputsFromTables(boolean generateInputsFromTables) {
-        this.generateInputsFromTables = generateInputsFromTables;
-    }
 
     /**
      * Variable that refers to the weight of the row in the z-set.
@@ -211,6 +199,20 @@ public class CalciteToDBSPCompiler extends RelVisitor
         return result;
     }
 
+    /**
+     * Given a struct type find the index of the specified field.
+     * Throws if no such field exists.
+     */
+    static int getFieldIndex(String field, RelDataType type) {
+        int index = 0;
+        for (RelDataTypeField rowField: type.getFieldList()) {
+            if (rowField.getName().equals(field))
+                return index;
+            index++;
+        }
+        throw new RuntimeException("Type " + type + " has no field named " + field);
+    }
+
     public void visitCorrelate(LogicalCorrelate correlate) {
         // We decorrelate queries using Calcite's optimizer.
         // So we assume that the only correlated queries we receive
@@ -221,9 +223,18 @@ public class CalciteToDBSPCompiler extends RelVisitor
         //    Uncollect
         //      LogicalProject(COL=[$cor0.ARRAY])
         //        LogicalValues(tuples=[[{ 0 }]])
-        // The translation for this is:
-        // left.flat_map(move |x| { x.ARRAY.into_iter().map(move |e| TupleN::new(x.0, x.1, .... e)) })
         // Instead of projecting and joining again we directly apply flatmap.
+        // The translation for this is:
+        // stream.flat_map({
+        //   move |x: &Tuple2<Vec<i32>, Option<i32>>, | -> _ {
+        //     let xA: Vec<i32> = x.0.clone();
+        //     let xB: x.1.clone();
+        //     x.0.clone().into_iter().map({
+        //        move |e: i32, | -> Tuple3<Vec<i32>, Option<i32>, i32> {
+        //            Tuple3::new(xA.clone(), xB.clone(), e)
+        //        }
+        //     })
+        //  });
         DBSPType type = this.convertType(correlate.getRowType());
         if (correlate.getJoinType().isOuterJoin())
             throw new Unimplemented(correlate);
@@ -239,17 +250,6 @@ public class CalciteToDBSPCompiler extends RelVisitor
         if (!(uncollectInput instanceof LogicalProject))
             throw new Unimplemented(correlate);
         LogicalProject project = (LogicalProject) uncollectInput;
-        DBSPVariablePath rowVar = new DBSPVariablePath("x", leftElementType);
-        DBSPTypeVec uncollectInputType = this.convertType(project.getRowType())
-                .to(DBSPTypeTuple.class)
-                .getFieldType(0)
-                .to(DBSPTypeVec.class);
-        DBSPVariablePath elem = new DBSPVariablePath("e", uncollectInputType.getElementType());
-
-        List<DBSPExpression> resultColumns = new ArrayList<>();
-        for (int i = 0; i < leftElementType.size(); i++)
-            resultColumns.add(rowVar.field(i));
-        resultColumns.add(elem);
         if (project.getProjects().size() != 1)
             throw new Unimplemented(correlate);
         RexNode projection = project.getProjects().get(0);
@@ -257,20 +257,46 @@ public class CalciteToDBSPCompiler extends RelVisitor
             throw new Unimplemented(correlate);
         RexFieldAccess field = (RexFieldAccess) projection;
         RelDataType leftRowType = correlate.getLeft().getRowType();
-        int index = 0;
-        for (RelDataTypeField rowField: leftRowType.getFieldList()) {
-            if (rowField.getName().equals(field.getField().getName()))
-                break;
-            index++;
-        }
+        // The index of the field that is the array
+        int arrayFieldIndex = getFieldIndex(field.getField().getName(), leftRowType);
 
-        DBSPExpression iter = new DBSPApplyMethodExpression("into_iter", DBSPTypeAny.INSTANCE, rowVar.field(index));
+        DBSPVariablePath rowVar = new DBSPVariablePath("x", leftElementType);
+        DBSPTypeVec uncollectInputType = this.convertType(project.getRowType())
+                .to(DBSPTypeTuple.class)
+                .getFieldType(0)
+                .to(DBSPTypeVec.class);
+        DBSPVariablePath elem = new DBSPVariablePath("e", uncollectInputType.getElementType());
+        List<DBSPStatement> clones = new ArrayList<>();
+
+        List<DBSPExpression> resultColumns = new ArrayList<>();
+        for (int i = 0; i < leftElementType.size(); i++) {
+            // let xA: Vec<i32> = x.0.clone();
+            // let xB: x.1.clone();
+            DBSPVariablePath fieldClone = new DBSPVariablePath("x" + i, rowVar.field(i).getNonVoidType());
+            DBSPLetStatement stat = new DBSPLetStatement(fieldClone.variable, rowVar.field(i));
+            clones.add(stat);
+            resultColumns.add(fieldClone.applyClone());
+        }
+        resultColumns.add(elem);
+        // move |e: i32, | -> Tuple3<Vec<i32>, Option<i32>, i32> {
+        //   Tuple3::new(xA.clone(), xB.clone(), e)
+        // }
         DBSPClosureExpression toTuple = new DBSPTupleExpression(resultColumns, false)
                 .closure(elem.asParameter());
+        DBSPExpression iter = new DBSPApplyMethodExpression("into_iter", DBSPTypeAny.INSTANCE,
+                rowVar.field(arrayFieldIndex));
+
+        // x.0.clone().into_iter().map({
+        //    move |e: i32, | -> Tuple3<Vec<i32>, Option<i32>, i32> {
+        //        Tuple3::new(xA.clone(), xB.clone(), e)
+        //    }
+        // })
         DBSPExpression function = new DBSPApplyMethodExpression(
                 "map", DBSPTypeAny.INSTANCE,
-                iter, toTuple).closure(rowVar.asRefParameter());
-        DBSPFlatMapOperator flatMap = new DBSPFlatMapOperator(uncollect, function,
+                iter, toTuple);
+        DBSPExpression block = new DBSPBlockExpression(clones, function);
+        DBSPFlatMapOperator flatMap = new DBSPFlatMapOperator(uncollect,
+                block.closure(rowVar.asRefParameter()),
                 TypeCompiler.makeZSet(type), left);
         this.assignOperator(correlate, flatMap);
     }
@@ -430,7 +456,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
             return;
         }
 
-        if (this.generateInputsFromTables)
+        if (this.options.optimizerOptions.generateInputForEveryTable)
             throw new RuntimeException("Could not find input for table " + tableName);
         @Nullable String comment = null;
         if (scan.getTable() instanceof RelOptTableImpl) {
@@ -1137,7 +1163,7 @@ public class CalciteToDBSPCompiler extends RelVisitor
                 statement.is(DropTableStatement.class)) {
             this.tableContents.execute(statement);
             CreateTableStatement create = statement.as(CreateTableStatement.class);
-            if (create != null && this.generateInputsFromTables) {
+            if (create != null && this.options.optimizerOptions.generateInputForEveryTable) {
                 // We create an input for the circuit.  The inputs
                 // could be created by visiting LogicalTableScan, but if a table
                 // is *not* used in a view, it won't have a corresponding input
