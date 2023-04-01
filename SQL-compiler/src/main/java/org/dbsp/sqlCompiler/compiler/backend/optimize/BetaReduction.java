@@ -5,10 +5,6 @@ import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.pattern.DBSPIdentifierPattern;
 import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
-import org.dbsp.util.Utilities;
-
-import javax.annotation.Nullable;
-import java.util.*;
 
 /**
  * Performs beta reduction on an Expression.
@@ -16,91 +12,13 @@ import java.util.*;
  * body with arguments substituted.
  * This code makes some simplifying assumptions:
  * - all parameter are simple path patterns
- * - arguments do not have side-effects.
+ * - arguments do not have side effects.
  */
 public class BetaReduction extends InnerExpressionRewriteVisitor {
-    static class Substitution {
-        /**
-         * Maps parameter names to expressions.
-         */
-        final Map<String, DBSPExpression> replacement;
-        /**
-         * When a variable is defined it shadows parameters with the same \
-         * name.  These are represented in the tombstones.
-         */
-        final Set<String> tombstone;
-
-        Substitution() {
-            this.replacement = new HashMap<>();
-            this.tombstone = new HashSet<>();
-        }
-
-        void substitute(String name, @Nullable DBSPExpression expression) {
-            if (expression == null)
-                this.tombstone.add(name);
-            else
-                this.replacement.put(name, expression);
-        }
-
-        /**
-         * Returns null if there is tombstone with this name.
-         * Returns an expression otherwise.
-         * Throws if there is no such substitution.
-         */
-        @Nullable
-        DBSPExpression getReplacement(String name) {
-            if (this.tombstone.contains(name))
-                return null;
-            return Utilities.getExists(this.replacement, name);
-        }
-
-        boolean contains(String name) {
-            return this.tombstone.contains(name) ||
-                    this.replacement.containsKey(name);
-        }
-    }
-
-    static class Context {
-        final List<Substitution> stack;
-
-        Context() {
-            this.stack = new ArrayList<>();
-        }
-
-        void newContext() {
-            this.stack.add(new Substitution());
-        }
-
-        void popContext() {
-            Utilities.removeLast(this.stack);
-        }
-
-        void substitute(String name, @Nullable DBSPExpression expression) {
-            if (this.stack.isEmpty())
-                throw new RuntimeException("Empty context");
-            this.stack.get(this.stack.size() - 1).substitute(name, expression);
-        }
-
-        DBSPExpression lookup(DBSPVariablePath var) {
-            for (int i = 0; i < this.stack.size(); i++) {
-                int index = this.stack.size() - i - 1;
-                Substitution subst = this.stack.get(i);
-                if (subst.contains(var.variable)) {
-                    DBSPExpression expression = subst.getReplacement(var.variable);
-                    if (expression == null)
-                        return var;
-                    return expression;
-                }
-            }
-            return var;
-        }
-    }
-
-    final Context context;
+    final ExpressionSubstitutionContext context;
 
     public BetaReduction() {
-        super();
-        this.context = new Context();
+        this.context = new ExpressionSubstitutionContext();
     }
 
     @Override
@@ -127,12 +45,14 @@ public class BetaReduction extends InnerExpressionRewriteVisitor {
         return false;
     }
 
+    @Override
     public boolean preorder(DBSPVariablePath variable) {
         DBSPExpression replacement = this.context.lookup(variable);
         this.map(variable, replacement);
         return false;
     }
 
+    @Override
     public boolean preorder(DBSPBlockExpression block) {
         this.context.newContext();
         super.preorder(block);
@@ -140,6 +60,7 @@ public class BetaReduction extends InnerExpressionRewriteVisitor {
         return false;
     }
 
+    @Override
     public boolean preorder(DBSPLetStatement statement) {
         this.context.substitute(statement.variable, null);
         super.preorder(statement);
@@ -149,12 +70,13 @@ public class BetaReduction extends InnerExpressionRewriteVisitor {
     @Override
     public void startVisit() {
         this.context.newContext();
+        super.startVisit();
     }
 
     @Override
     public void endVisit() {
         this.context.popContext();
-        if (!this.context.stack.isEmpty())
-            throw new RuntimeException("Non-empty context at the end of visit");
+        this.context.mustBeEmpty();
+        super.endVisit();
     }
 }

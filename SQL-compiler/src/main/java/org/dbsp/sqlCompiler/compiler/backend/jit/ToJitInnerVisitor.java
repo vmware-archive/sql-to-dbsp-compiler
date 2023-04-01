@@ -407,7 +407,8 @@ public class ToJitInnerVisitor extends InnerVisitor {
         ExpressionIds sourceId = this.accept(expression.source);
         ExpressionJsonRepresentation ev = this.insertInstruction(expression);
         this.cast(ev.instruction, sourceId.id, baseTypeName(expression.source), baseTypeName(expression));
-        if (sourceId.hasNull())
+        if (sourceId.hasNull() && ev.isNullInstruction != null)
+            // FIXME: this may need to panic at runtime.
             this.copy(ev.getNullObject(), sourceId.isNullId, "Bool");
         return false;
     }
@@ -713,10 +714,10 @@ public class ToJitInnerVisitor extends InnerVisitor {
     public boolean preorder(DBSPLetStatement statement) {
         boolean isTuple = statement.type.is(DBSPTypeTuple.class);
         ExpressionIds ids = this.declare(statement.variable, needsNull(statement.type));
-        ArrayNode instruction = Objects.requireNonNull(this.currentBlockBody).addArray();
-        instruction.add(ids.id);
         this.variableAssigned.add(statement.variable);
         if (isTuple) {
+            ArrayNode instruction = Objects.requireNonNull(this.currentBlockBody).addArray();
+            instruction.add(ids.id);
             ObjectNode uninit = instruction.addObject();
             ObjectNode storeNode = uninit.putObject("UninitRow");
             int typeId = this.catalog.getTypeId(statement.type);

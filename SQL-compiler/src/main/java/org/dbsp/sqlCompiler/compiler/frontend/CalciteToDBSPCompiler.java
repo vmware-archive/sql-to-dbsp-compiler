@@ -368,8 +368,8 @@ public class CalciteToDBSPCompiler extends RelVisitor
                 //                  +
                 //              {z->1}/{c->1}
                 this.circuit.addOperator(map);
-                DBSPVariablePath _t = DBSPTypeAny.INSTANCE.var("_t");
-                DBSPExpression toZero = fold.defaultZero().closure(_t.asParameter());
+                DBSPVariablePath _t = tuple.var("_t");
+                DBSPExpression toZero = fold.defaultZero().closure(_t.asRefParameter());
                 DBSPOperator map1 = new DBSPMapOperator(aggregate, toZero, type, map);
                 this.circuit.addOperator(map1);
                 DBSPOperator neg = new DBSPNegateOperator(aggregate, map1);
