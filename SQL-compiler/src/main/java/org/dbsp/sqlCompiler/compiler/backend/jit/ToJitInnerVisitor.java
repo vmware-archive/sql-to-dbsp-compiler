@@ -290,14 +290,14 @@ public class ToJitInnerVisitor extends InnerVisitor {
     }
 
     void mux(ObjectNode parent, int cond, int if_true, int if_false) {
-        ObjectNode node = parent.putObject("Cond");
+        ObjectNode node = parent.putObject("Select");
         node.put("cond", cond);
         node.put("if_true", if_true);
         node.put("if_false", if_false);
     }
 
     void unOp(ObjectNode parent, String kind, int value, String type) {
-        ObjectNode node = parent.putObject("UnOp");
+        ObjectNode node = parent.putObject("UnaryOp");
         node.put("value", value);
         node.put("kind", kind);
         node.put("value_ty", type);
