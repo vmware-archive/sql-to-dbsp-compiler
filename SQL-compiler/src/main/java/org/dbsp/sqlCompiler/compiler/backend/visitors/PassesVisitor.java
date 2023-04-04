@@ -30,6 +30,7 @@ import org.dbsp.util.IModule;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PassesVisitor extends CircuitVisitor implements IModule {
@@ -43,6 +44,14 @@ public class PassesVisitor extends CircuitVisitor implements IModule {
     public PassesVisitor(List<CircuitVisitor> passes) {
         super(false);
         this.passes = passes;
+    }
+
+    public void add(CircuitVisitor pass) {
+        this.passes.add(pass);
+    }
+
+    public void add(InnerExpressionRewriteVisitor inner) {
+        this.passes.add(new CircuitFunctionRewriter(inner));
     }
 
     @Override

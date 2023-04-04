@@ -23,7 +23,6 @@
 
 package org.dbsp.sqlCompiler.compiler.backend.jit;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -33,18 +32,25 @@ import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.operator.*;
 import org.dbsp.sqlCompiler.compiler.backend.optimize.BetaReduction;
-import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitFunctionRewriter;
+import org.dbsp.sqlCompiler.compiler.backend.visitors.PassesVisitor;
+import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
 import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPAggregate;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
+import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
+import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBaseType;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Unimplemented;
+import org.dbsp.util.Utilities;
 
 import javax.annotation.Nullable;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 
 /**
@@ -111,7 +117,20 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         this.typeCatalog = new TypeCatalog();
     }
 
+    @Nullable
+    public static DBSPType resolveType(@Nullable DBSPType type) {
+        if (type == null)
+            return type;
+        if (type.is(DBSPTypeUser.class)) {
+            DBSPTypeUser user = type.to(DBSPTypeUser.class);
+            if (user.name.equals(TypeCompiler.WEIGHT_TYPE_NAME))
+                type = TypeCompiler.WEIGHT_TYPE_IMPLEMENTATION;
+        }
+        return type;
+    }
+
     static String baseTypeName(DBSPType type) {
+        type = Objects.requireNonNull(resolveType(type));
         if (type.sameType(new DBSPTypeTuple()))
             return "Unit";
         DBSPTypeBaseType base = type.as(DBSPTypeBaseType.class);
@@ -148,12 +167,15 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     void addToJson(DBSPTypeTupleBase type, int id) {
         ObjectNode result = this.structs.putObject(Integer.toString(id));
-        if (type.tupFields.length == 0) {
-            result.put("ty", "Unit");
-            return;
-        }
         ArrayNode columns = this.topMapper.createArrayNode();
         result.set("columns", columns);
+        if (type.tupFields.length == 0) {
+            ObjectNode col = this.topMapper.createObjectNode();
+            col.put("nullable", false);
+            col.put("ty", "Unit");
+            columns.add(col);
+            return;
+        }
         for (DBSPType colType: type.tupFields) {
             ObjectNode col = this.topMapper.createObjectNode();
             col.put("nullable", colType.mayBeNull);
@@ -213,7 +235,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
             return type.to(DBSPTypeTuple.class);
         else if (type.is(DBSPTypeRawTuple.class))
             return new DBSPTypeTuple(type.to(DBSPTypeRawTuple.class).tupFields);
-        throw new Unimplemented("Convertion to Tuple", type);
+        throw new Unimplemented("Conversion to Tuple", type);
     }
 
     ObjectNode functionToJson(DBSPClosureExpression function) {
@@ -240,6 +262,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
                 result.put("ret", baseTypeName(base));
             }
         } else {
+            Objects.requireNonNull(resultType);
             result.put("ret", "Unit");
             List<DBSPTypeTuple> types = TypeCatalog.expandToTuples(resultType);
             for (DBSPTypeTuple type: types) {
@@ -258,8 +281,12 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
     }
 
     public static boolean isScalarType(@Nullable DBSPType type) {
-        return type == null || type.is(DBSPTypeBaseType.class) ||
-                (type.is(DBSPTypeTupleBase.class) && type.to(DBSPTypeTupleBase.class).size() == 0);
+        type = resolveType(type);
+        if (type == null)
+            return true;
+        if (type.is(DBSPTypeBaseType.class))
+            return true;
+        return type.is(DBSPTypeTupleBase.class) && type.to(DBSPTypeTupleBase.class).size() == 0;
     }
 
     void addTypesToJson() {
@@ -279,6 +306,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         if (operator.function != null) {
             DBSPExpression func = this.resolve(operator.function);
             DBSPClosureExpression closure = func.to(DBSPClosureExpression.class);
+            closure = new SimpleClosureParameters().rewriteClosure(closure);
             ObjectNode funcNode = this.functionToJson(closure);
             data.set(function, funcNode);
         }
@@ -308,7 +336,12 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     @Override
     public boolean preorder(DBSPSumOperator operator) {
-        this.operatorToJson(operator, "Sum", "");
+        ObjectNode node = this.topMapper.createObjectNode();
+        ObjectNode data = node.putObject("Sum");
+        ArrayNode inputs = data.putArray("inputs");
+        for (DBSPOperator input: operator.inputs)
+            inputs.add(input.id);
+        this.nodes.set(Long.toString(operator.id), node);
         return false;
     }
 
@@ -354,6 +387,41 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         return false;
     }
 
+    /**
+     * Given a closure expression, convert each parameter with a scalar type
+     * into a parameter with a 1-dimensional tuple type.  E.g.
+     * (t: Tuple1<i32>, u: i32) { body }
+     * is converted to
+     * (t: Tuple1<i32>, u: tuple1<i32>) { let u: i32 = u.0; body }
+     * Pre-condition: the closure body is a BlockExpression.
+     * The JIT representation only supports tuples for closure parameters.
+     */
+    DBSPClosureExpression tupleEachParameter(DBSPClosureExpression closure) {
+        List<DBSPStatement> statements = new ArrayList<>();
+        DBSPParameter[] newParams = new DBSPParameter[closure.parameters.length];
+        int index = 0;
+        for (DBSPParameter param: closure.parameters) {
+            if (isScalarType(param.type)) {
+                DBSPParameter tuple = new DBSPParameter(param.pattern, new DBSPTypeRawTuple(param.type));
+                statements.add(new DBSPLetStatement(
+                        tuple.asVariableReference().variable,
+                        tuple.asVariableReference().field(0)));
+                newParams[index] = tuple;
+            } else {
+                newParams[index] = param;
+            }
+            index++;
+        }
+        if (statements.isEmpty())
+            return closure;
+        DBSPBlockExpression block = closure.body.to(DBSPBlockExpression.class);
+        statements.addAll(block.contents);
+        DBSPBlockExpression newBlock = new DBSPBlockExpression(
+                statements,
+                block.lastExpression);
+        return newBlock.closure(newParams);
+    }
+
     @Override
     public boolean preorder(DBSPAggregateOperator operator) {
         if (operator.function != null)
@@ -366,23 +434,28 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         ArrayNode rows = init.putArray("rows");
         ObjectNode row = rows.addObject();
         DBSPTupleExpression elementValue = initial.to(DBSPTupleExpression.class);
-        for (DBSPExpression e: elementValue.fields) {
+        for (DBSPExpression e: elementValue.fields)
             this.addLiteralToJson(row, e.to(DBSPLiteral.class));
-        }
 
         DBSPClosureExpression closure = aggregate.getIncrement();
         BetaReduction reducer = new BetaReduction();
         IDBSPInnerNode reduced = reducer.apply(closure);
-        System.out.println(closure + "\n" + reduced);
         closure = Objects.requireNonNull(reduced).to(DBSPClosureExpression.class);
+        closure = this.tupleEachParameter(closure);
         ObjectNode increment = this.functionToJson(closure);
         node.set("step_fn", increment);
 
         closure = aggregate.getPostprocessing();
         reduced = reducer.apply(closure);
         closure = Objects.requireNonNull(reduced).to(DBSPClosureExpression.class);
+        closure = this.tupleEachParameter(closure);
         ObjectNode post = this.functionToJson(closure);
         node.set("finish_fn", post);
+
+        node.put("acc_layout", this.typeCatalog.getTypeId(aggregate.defaultZeroType()));
+        node.put("step_layout", this.typeCatalog.getTypeId(
+                Objects.requireNonNull(aggregate.getIncrement().getResultType())));
+        node.put("output_layout", this.typeCatalog.getTypeId(operator.outputElementType));
         return false;
     }
 
@@ -435,20 +508,22 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         DBSPType type = operator.getNonVoidType();
         DBSPType elementType = type.to(DBSPTypeZSet.class).elementType;
         ObjectNode layout = data.putObject("layout");
-        layout.put("set", this.typeCatalog.getTypeId(elementType));
+        layout.put("Set", this.typeCatalog.getTypeId(elementType));
         ObjectNode value = data.putObject("value");
         ArrayNode set = value.putArray("Set");
         DBSPZSetLiteral setValue = Objects.requireNonNull(operator.function)
                 .to(DBSPZSetLiteral.class);
         for (Map.Entry<DBSPExpression, Integer> element : setValue.data.entrySet()) {
             int weight = element.getValue();
-            ArrayNode row = set.addArray();
-            ObjectNode rows = row.addObject();
+            ArrayNode array = set.addArray();
+            ObjectNode rows = array.addObject();
+            ArrayNode rowsValue = rows.putArray("rows");
+            ObjectNode rowsValueArray = rowsValue.addObject();
             DBSPTupleExpression elementValue = element.getKey().to(DBSPTupleExpression.class);
             for (DBSPExpression e: elementValue.fields) {
-                this.addLiteralToJson(rows, e.to(DBSPLiteral.class));
+                this.addLiteralToJson(rowsValueArray, e.to(DBSPLiteral.class));
             }
-            row.add(weight);
+            array.add(weight);
         }
         this.nodes.set(Long.toString(operator.id), node);
         return false;
@@ -460,8 +535,8 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
     }
 
     public static String circuitToJson(DBSPCircuit circuit) {
-        JitNormalizeInnerVisitor norm = new JitNormalizeInnerVisitor();
-        CircuitFunctionRewriter rewriter = new CircuitFunctionRewriter(norm);
+        PassesVisitor rewriter = new PassesVisitor();
+        rewriter.add(new BlockClosures());
         circuit = rewriter.apply(circuit);
         ToJitVisitor visitor = new ToJitVisitor();
         visitor.apply(circuit);
@@ -478,7 +553,13 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
             JsonNode root = mapper.readTree(json);
             if (root == null)
                 throw new RuntimeException("No JSON produced from circuit");
-        } catch (JsonProcessingException ex) {
+            File jsonFile = File.createTempFile("out", ".json", new File("."));
+            jsonFile.deleteOnExit();
+            PrintWriter writer = new PrintWriter(jsonFile);
+            writer.println(json);
+            writer.close();
+            Utilities.compileAndTestJit("../../database-stream-processor", jsonFile);
+        } catch (IOException | InterruptedException ex) {
             throw new RuntimeException(ex);
         }
     }

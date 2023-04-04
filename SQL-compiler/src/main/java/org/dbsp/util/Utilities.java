@@ -200,4 +200,9 @@ public class Utilities {
             return Linq.list();
         return Linq.list(comment.split("\n"));
     }
+
+    public static void compileAndTestJit(String directory, File jsonFile) throws IOException, InterruptedException {
+        runProcess(directory, "cargo", "run", "-p", "dataflow-jit",
+                "--bin", "dataflow-jit", "--features", "binary", "--", jsonFile.getAbsolutePath());
+    }
 }

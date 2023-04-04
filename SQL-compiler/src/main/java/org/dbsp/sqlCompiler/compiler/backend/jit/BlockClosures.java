@@ -7,15 +7,14 @@ import org.dbsp.util.IModule;
 import org.dbsp.util.Linq;
 
 /**
- * Perform some IR rewriting to prepare for JIT code generation.
- * - make sure every closure body is a BlockExpression.
+ * Make sure every closure body is a BlockExpression.
  */
-public class JitNormalizeInnerVisitor
+public class BlockClosures
         extends InnerExpressionRewriteVisitor
         implements IModule {
 
-    public JitNormalizeInnerVisitor() {
-        super(true);
+    public BlockClosures() {
+        super();
     }
 
     @Override

@@ -59,6 +59,15 @@ public class DBSPParameter extends DBSPNode implements IHasType, IDBSPInnerNode 
         this.type = new DBSPTypeRawTuple(Linq.map(variables, DBSPExpression::getType, DBSPType.class));
     }
 
+    /**
+     * This is only defined for parameters that have an IdentifierPattern.
+     * Return a variable that refers to the parameter.
+     */
+    public DBSPVariablePath asVariableReference() {
+        DBSPIdentifierPattern id = this.pattern.to(DBSPIdentifierPattern.class);
+        return new DBSPVariablePath(id.identifier, this.type);
+    }
+
     @Nullable
     @Override
     public DBSPType getType() {

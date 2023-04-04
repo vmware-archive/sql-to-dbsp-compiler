@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.*;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
 import org.dbsp.sqlCompiler.compiler.backend.optimize.*;
 import org.dbsp.sqlCompiler.compiler.backend.rust.RustSqlRuntimeLibrary;
 import org.dbsp.sqlCompiler.compiler.backend.rust.RustFileWriter;
@@ -125,7 +126,7 @@ public class BaseSQLTests {
 
     @BeforeClass
     public static void prepareTests() throws IOException {
-        generateLib();
+        //generateLib();
         testsToRun.clear();
     }
 

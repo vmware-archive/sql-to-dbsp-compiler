@@ -1030,4 +1030,9 @@ public abstract class InnerVisitor {
     public void postorder(DBSPGeoPointLiteral node)  {
         if (this.visitSuper) this.postorder((DBSPLiteral) node);
     }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
+    }
 }

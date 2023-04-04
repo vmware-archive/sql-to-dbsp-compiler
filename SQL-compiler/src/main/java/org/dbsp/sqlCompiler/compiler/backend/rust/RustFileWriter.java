@@ -11,8 +11,11 @@ import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeSemigroup;
+import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
+import org.dbsp.sqlCompiler.ir.DBSPAggregate;
+import org.dbsp.sqlCompiler.ir.DBSPFunction;
+import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.IndentStream;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Logger;
@@ -74,8 +77,6 @@ public class RustFileWriter {
     public void emitCodeWithHandle(boolean emit) {
         this.emitHandles = emit;
     }
-
-    public static final DBSPType WEIGHT_TYPE_IMPLEMENTATION = DBSPTypeInteger.SIGNED_64;
 
     @SuppressWarnings("SpellCheckingInspection")
     static final String rustPreamble =
@@ -235,8 +236,10 @@ public class RustFileWriter {
         IndentStream stream = new IndentStream(new StringBuilder());
         stream.append(rustPreamble)
                 .newline();
-        stream.append("type Weight = ")
-                .append(WEIGHT_TYPE_IMPLEMENTATION.toString())
+        stream.append("type ")
+                .append(TypeCompiler.WEIGHT_TYPE_NAME)
+                .append(" = ")
+                .append(TypeCompiler.WEIGHT_TYPE_IMPLEMENTATION.toString())
                 .append(";")
                 .newline();
         generateStructures(used, stream);

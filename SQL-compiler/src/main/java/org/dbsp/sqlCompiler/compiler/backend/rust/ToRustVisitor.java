@@ -353,6 +353,8 @@ public class ToRustVisitor extends CircuitVisitor {
     public static String toRustString(IDBSPOuterNode node) {
         StringBuilder builder = new StringBuilder();
         IndentStream stream = new IndentStream(builder);
+        LowerCircuitVisitor lower = new LowerCircuitVisitor();
+        node = lower.apply(node.to(DBSPCircuit.class));
         ToRustVisitor visitor = new ToRustVisitor(stream);
         node.accept(visitor);
         return builder.toString();

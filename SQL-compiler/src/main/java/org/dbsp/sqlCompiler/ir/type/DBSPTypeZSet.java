@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.ir.type;
 
+import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 
 import javax.annotation.Nullable;
@@ -31,11 +32,6 @@ public class DBSPTypeZSet extends DBSPTypeUser implements ICollectionType {
     public final DBSPType elementType;
     public final DBSPType weightType;
 
-    /**
-     * Default weight type.
-     */
-    public static final DBSPType WEIGHT_TYPE = new DBSPTypeUser(null, "Weight", false);
-
     public DBSPTypeZSet(@Nullable Object node, DBSPType elementType, DBSPType weightType) {
         super(node, "OrdZSet", false, elementType, weightType);
         this.elementType = elementType;
@@ -43,7 +39,7 @@ public class DBSPTypeZSet extends DBSPTypeUser implements ICollectionType {
     }
 
     public DBSPTypeZSet(@Nullable Object node, DBSPType elementType) {
-        this(node, elementType, WEIGHT_TYPE);
+        this(node, elementType, TypeCompiler.WEIGHT_TYPE);
     }
 
     public DBSPTypeZSet(DBSPType elementType, DBSPType weightType) {
@@ -51,7 +47,7 @@ public class DBSPTypeZSet extends DBSPTypeUser implements ICollectionType {
     }
 
     public DBSPTypeZSet(DBSPType elementType) {
-        this(null, elementType, WEIGHT_TYPE);
+        this(null, elementType, TypeCompiler.WEIGHT_TYPE);
     }
 
     @Override

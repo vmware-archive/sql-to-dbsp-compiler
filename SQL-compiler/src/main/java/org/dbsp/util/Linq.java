@@ -162,7 +162,7 @@ public class Linq {
 
     @SafeVarargs
     public static <T> List<T> list(T... data) {
-        return Arrays.asList(data);
+        return new ArrayList<>(Arrays.asList(data));
     }
 
     public static <T> List<T> where(List<T> data, Predicate<T> function) {

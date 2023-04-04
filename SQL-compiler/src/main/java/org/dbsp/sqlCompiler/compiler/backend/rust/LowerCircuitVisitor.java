@@ -15,7 +15,6 @@ import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeUSize;
 import org.dbsp.util.Linq;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -33,8 +32,7 @@ public class LowerCircuitVisitor extends CircuitCloneVisitor {
     /**
      * Creates a DBSP Fold object from an Aggregate.
      */
-    DBSPExpression createAggregator(@Nullable DBSPAggregate aggregate) {
-        Objects.requireNonNull(aggregate);
+    DBSPExpression createAggregator(DBSPAggregate aggregate) {
         // Example for a pair of count+sum aggregations:
         // let zero_count: isize = 0;
         // let inc_count = |acc: isize, v: &usize, w: isize| -> isize { acc + 1 * w };
@@ -196,6 +194,10 @@ public class LowerCircuitVisitor extends CircuitCloneVisitor {
 
     @Override
     public void postorder(DBSPWindowAggregateOperator node) {
+        if (node.aggregate == null) {
+            super.postorder(node);
+            return;
+        }
         DBSPExpression function = this.createAggregator(node.getAggregate());
         DBSPOperator result = new DBSPWindowAggregateOperator(node.getNode(),
                 function, null, node.window,

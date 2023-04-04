@@ -42,9 +42,7 @@ import java.util.Objects;
 public class Simplify extends InnerExpressionRewriteVisitor {
     // You would think that Calcite has done these optimizations, but apparently not.
 
-    public Simplify() {
-        super(true);
-    }
+    public Simplify() {}
 
     @Override
     public boolean preorder(DBSPIsNullExpression expression) {
