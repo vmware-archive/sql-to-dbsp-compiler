@@ -349,14 +349,14 @@ public class EndToEndTests extends BaseSQLTests {
 
     @Test
     public void groupByCountTest() {
-        String query = "SELECT COL1, COUNT(col2) FROM T GROUP BY COL1, COL3";
+        String query = "SELECT COL1, COUNT(COL2) FROM T GROUP BY COL1, COL3";
         DBSPExpression row =  new DBSPTupleExpression(new DBSPI32Literal(10), new DBSPI64Literal(1));
         this.testQuery(query, new DBSPZSetLiteral( row, row));
     }
 
     @Test
     public void groupBySumTest() {
-        String query = "SELECT COL1, SUM(col2) FROM T GROUP BY COL1, COL3";
+        String query = "SELECT COL1, SUM(COL2) FROM T GROUP BY COL1, COL3";
         this.testQuery(query, new DBSPZSetLiteral(
                 new DBSPTupleExpression(new DBSPI32Literal(10), new DBSPDoubleLiteral(1)),
                 new DBSPTupleExpression(new DBSPI32Literal(10), new DBSPDoubleLiteral(12))));
