@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.adapter.jdbc.JdbcSchema;
 import org.apache.calcite.jdbc.CalciteConnection;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.RelBuilder;
@@ -57,6 +56,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import sun.awt.image.FileImageSource;
 import sun.awt.image.JPEGImageDecoder;
+import org.apache.calcite.schema.SchemaPlus;
 
 import javax.sql.DataSource;
 import java.io.*;
@@ -318,15 +318,20 @@ public class OtherTests extends BaseSQLTests implements IModule {
         boolean success = file.delete();
         Assert.assertTrue(success);
     }
-    
+
     @Test
-    public void testSchema() throws IOException {
+    public void testCaseSensitive() throws IOException {
         String[] statements = new String[]{
-                "CREATE TABLE T (\n" +
+                "CREATE TABLE MYTABLE (\n" +
                         "COL1 INT NOT NULL" +
                         ", COL2 DOUBLE NOT NULL" +
                         ")",
-                "CREATE VIEW V AS SELECT COL1 FROM T"
+                "CREATE VIEW V AS SELECT COL1 FROM MYTABLE",
+                "CREATE TABLE yourtable (\n" +
+                "  column1 INT NOT NULL" +
+                ", column2 DOUBLE NOT NULL" +
+                ")",
+                "CREATE VIEW V2 AS SELECT column2 FROM yourtable"
         };
         File file = this.createInputScript(statements);
         File json = File.createTempFile("out", ".json", new File("."));
@@ -337,6 +342,11 @@ public class OtherTests extends BaseSQLTests implements IModule {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode parsed = mapper.readTree(json);
         Assert.assertNotNull(parsed);
+        String jsonContents  = String.join("\n", Files.readAllLines(json.toPath()));
+        Assert.assertTrue(jsonContents.contains("MYTABLE"));  // checks case sensitivity
+        Assert.assertTrue(jsonContents.contains("COL1"));
+        Assert.assertTrue(jsonContents.contains("yourtable"));
+        Assert.assertTrue(jsonContents.contains("column1"));
         boolean success = file.delete();
         Assert.assertTrue(success);
         success = json.delete();
