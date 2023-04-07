@@ -24,6 +24,7 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.adapter.jdbc.JdbcSchema;
+import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.jdbc.CalciteConnection;
@@ -65,7 +66,6 @@ import java.sql.*;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.regex.Pattern;
 
 import static org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler.TYPE_SYSTEM;
 
@@ -74,14 +74,14 @@ import static org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler.TYPE_SYSTE
 public class CalciteExecutor extends SqlSLTTestExecutor {
     private final JDBCExecutor statementExecutor;
     private final CalciteConnection calciteConnection;
-    private static final String POSTGRESQL_SCHEMA = "";
+    private static final String SCHEMA_NAME = "SLT";
     private final Planner planner;
     private final SqlToRelConverter converter;
 
     public CalciteExecutor(JDBCExecutor statementExecutor, String user, String password) throws SQLException {
         this.statementExecutor = statementExecutor;
         // Build our connection
-        Connection connection = DriverManager.getConnection("jdbc:calcite:");
+        Connection connection = DriverManager.getConnection("jdbc:calcite:lex=ORACLE;caseSensitive=true;quoting=DOUBLE_QUOTE;quotedCasing=UNCHANGED;unquotedCasing=UNCHANGED");
         // Unwrap our connection using the CalciteConnection
         this.calciteConnection = connection.unwrap(CalciteConnection.class);
         Catalog catalog = new Catalog("schema");
@@ -93,9 +93,11 @@ public class CalciteExecutor extends SqlSLTTestExecutor {
                 password
         );
         // Attach our Postgres Jdbc Datasource to our Root Schema
-        JdbcSchema jdbcSchema = JdbcSchema.create(rootSchema, POSTGRESQL_SCHEMA, postgresDataSource, null, null);
-        rootSchema.add(POSTGRESQL_SCHEMA, jdbcSchema);
-        SqlParser.Config parserConfig = SqlParser.config();
+        JdbcSchema jdbcSchema = JdbcSchema.create(rootSchema, SCHEMA_NAME, postgresDataSource, null, null);
+        rootSchema.add(SCHEMA_NAME, jdbcSchema);
+        SqlParser.Config parserConfig = SqlParser.config()
+                .withCaseSensitive(true)
+                .withUnquotedCasing(Casing.UNCHANGED);
         Frameworks.ConfigBuilder config = Frameworks.newConfigBuilder()
                 .defaultSchema(rootSchema)
                 .parserConfig(parserConfig)
@@ -135,25 +137,22 @@ public class CalciteExecutor extends SqlSLTTestExecutor {
         );
     }
 
-    static final String regexCreate = "create\\s+table\\s+(\\w+)";
-    static final Pattern patCreate = Pattern.compile(regexCreate);
-    static final String regexDrop = "drop\\s+table\\s+(\\w+)";
-    static final Pattern patDrop = Pattern.compile(regexDrop);
-
     boolean statement(SqlStatement statement) throws SQLException {
         this.statementExecutor.statement(statement);
         return true;
     }
 
     boolean query(SqlTestQuery query, int queryNo) throws SQLException, SqlParseException {
+        String q = query.query;
+        q = q.replace("t1", "SLT.t1");
+        q = "SELECT * FROM SLT.t1";
         Logger.INSTANCE.from(this, 1)
                 .append("Executing query ")
-                .append(query.query)
+                .append(q)
                 .newline();
-        SqlNode node = planner.parse(query.query);
+        SqlNode node = planner.parse(q);
         RelRoot relRoot = this.converter.convertQuery(node, true, true);
-
-        final RelRunner runner = this.calciteConnection.unwrap(RelRunner.class);
+        RelRunner runner = calciteConnection.unwrap(RelRunner.class);
         PreparedStatement ps = runner.prepareStatement(relRoot.rel);
         ps.execute();
         ResultSet resultSet = ps.getResultSet();

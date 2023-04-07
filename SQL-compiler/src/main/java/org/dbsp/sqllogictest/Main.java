@@ -107,13 +107,13 @@ public class Main {
         RustSqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         String benchDir = "../../sqllogictest/test/";
         List<String> files = Linq.list(
-                "random/select"
+                "select1.test"
                 /*
-                "select1.test",
                 "select2.test",
                 "select3.test",
                 "select4.test",
                 "select5.test",
+                "random/select",
                 "random/aggregates",
                 "random/groupby",
                 "random/expr",
