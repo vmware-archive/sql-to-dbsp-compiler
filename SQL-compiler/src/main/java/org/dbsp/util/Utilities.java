@@ -48,10 +48,9 @@ package org.dbsp.util;/*
  */
 
 import javax.annotation.Nullable;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 public class Utilities {
@@ -114,6 +113,19 @@ public class Utilities {
         if (previous != null)
             throw new RuntimeException("Key " + key + " already mapped to " + previous + " when adding " + value);
         return value;
+    }
+
+    public static void showResultSet(ResultSet result, PrintStream out)
+            throws SQLException {
+        int columnCount = result.getMetaData().getColumnCount();
+        while (result.next()) {
+            for (int i = 1; i <= columnCount; i++) {
+                if (i > 1)
+                    out.print(", ");
+                out.print(result.getString(i));
+            }
+            out.println();
+        }
     }
 
     /**

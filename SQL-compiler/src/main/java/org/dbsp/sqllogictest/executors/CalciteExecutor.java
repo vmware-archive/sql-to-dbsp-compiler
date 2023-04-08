@@ -36,6 +36,7 @@ import org.apache.calcite.plan.hep.HepPlanner;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
@@ -51,9 +52,7 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
-import org.apache.calcite.tools.Frameworks;
-import org.apache.calcite.tools.Planner;
-import org.apache.calcite.tools.RelRunner;
+import org.apache.calcite.tools.*;
 import org.dbsp.sqlCompiler.compiler.sqlparser.Catalog;
 import org.dbsp.sqllogictest.*;
 import org.dbsp.util.Logger;
@@ -73,27 +72,28 @@ import static org.dbsp.sqlCompiler.compiler.sqlparser.CalciteCompiler.TYPE_SYSTE
 
 public class CalciteExecutor extends SqlSLTTestExecutor {
     private final JDBCExecutor statementExecutor;
-    private final CalciteConnection calciteConnection;
     private static final String SCHEMA_NAME = "SLT";
     private final Planner planner;
     private final SqlToRelConverter converter;
+    private final RelOptCluster cluster;
+    private final Connection connection;
 
-    public CalciteExecutor(JDBCExecutor statementExecutor, String user, String password) throws SQLException {
+    public CalciteExecutor(JDBCExecutor statementExecutor) throws SQLException {
         this.statementExecutor = statementExecutor;
         // Build our connection
-        Connection connection = DriverManager.getConnection("jdbc:calcite:lex=ORACLE;caseSensitive=true;quoting=DOUBLE_QUOTE;quotedCasing=UNCHANGED;unquotedCasing=UNCHANGED");
+        this.connection = DriverManager.getConnection("jdbc:calcite:lex=ORACLE;caseSensitive=true;quoting=DOUBLE_QUOTE;quotedCasing=UNCHANGED;unquotedCasing=UNCHANGED");
         // Unwrap our connection using the CalciteConnection
-        this.calciteConnection = connection.unwrap(CalciteConnection.class);
+        CalciteConnection calciteConnection = this.connection.unwrap(CalciteConnection.class);
         Catalog catalog = new Catalog("schema");
         SchemaPlus rootSchema = calciteConnection.getRootSchema();
-        DataSource postgresDataSource = JdbcSchema.dataSource(
-                "jdbc:postgresql://localhost/slt",
-                "org.postgresql.Driver",
-                user,
-                password
+        DataSource hsqldb = JdbcSchema.dataSource(
+                "jdbc:hsqldb:mem:db",
+                "org.hsqldb.jdbcDriver",
+                "",
+                ""
         );
         // Attach our Postgres Jdbc Datasource to our Root Schema
-        JdbcSchema jdbcSchema = JdbcSchema.create(rootSchema, SCHEMA_NAME, postgresDataSource, null, null);
+        JdbcSchema jdbcSchema = JdbcSchema.create(rootSchema, SCHEMA_NAME, hsqldb, null, null);
         rootSchema.add(SCHEMA_NAME, jdbcSchema);
         SqlParser.Config parserConfig = SqlParser.config()
                 .withCaseSensitive(true)
@@ -121,11 +121,9 @@ public class CalciteExecutor extends SqlSLTTestExecutor {
                 validatorConfig
         );
 
-        // This planner does not do anything.
-        // We use a series of planner stages later to perform the real optimizations.
         RelOptPlanner planner = new HepPlanner(new HepProgramBuilder().build());
         planner.setExecutor(RexUtil.EXECUTOR);
-        RelOptCluster cluster = RelOptCluster.create(planner, new RexBuilder(typeFactory));
+        this.cluster = RelOptCluster.create(planner, new RexBuilder(typeFactory));
         SqlToRelConverter.Config converterConfig = SqlToRelConverter.config();
         this.converter = new SqlToRelConverter(
                 (type, query, schema, path) -> null,
@@ -145,15 +143,17 @@ public class CalciteExecutor extends SqlSLTTestExecutor {
     boolean query(SqlTestQuery query, int queryNo) throws SQLException, SqlParseException {
         String q = query.query;
         q = q.replace("t1", "SLT.t1");
-        q = "SELECT * FROM SLT.t1";
+        q = "SELECT * FROM SLT.T1";
         Logger.INSTANCE.from(this, 1)
                 .append("Executing query ")
                 .append(q)
                 .newline();
         SqlNode node = planner.parse(q);
         RelRoot relRoot = this.converter.convertQuery(node, true, true);
-        RelRunner runner = calciteConnection.unwrap(RelRunner.class);
-        PreparedStatement ps = runner.prepareStatement(relRoot.rel);
+        RelNode transformed = relRoot.rel;
+        System.out.println(transformed);
+        final RelRunner runner = this.connection.unwrap(RelRunner.class);
+        PreparedStatement ps = runner.prepareStatement(transformed);
         ps.execute();
         ResultSet resultSet = ps.getResultSet();
         return true;

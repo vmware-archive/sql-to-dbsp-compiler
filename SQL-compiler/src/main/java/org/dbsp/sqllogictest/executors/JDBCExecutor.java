@@ -37,23 +37,18 @@ import java.util.List;
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
     public final String db_url;
-    public final String user;
-    public final String password;
     @Nullable
     Connection connection;
 
     // In the end everything is decoded as a string
     static class Row {
         public final List<String> values;
-
         Row() {
             this.values = new ArrayList<>();
         }
-
         void add(String v) {
             this.values.add(v);
         }
-
         @Override
         public String toString() {
             return String.join("\n", this.values);
@@ -70,12 +65,10 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         void add(Row row) {
             this.rows.add(row);
         }
-
         @Override
         public String toString() {
             return String.join("\n", Linq.map(this.rows, Row::toString));
         }
-
         public int size() {
             return this.rows.size();
         }
@@ -97,10 +90,8 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         }
     }
 
-    public JDBCExecutor(String db_url, String user, String password) {
+    public JDBCExecutor(String db_url) {
         this.db_url = db_url;
-        this.user = user;
-        this.password = password;
         this.connection = null;
     }
 
@@ -240,29 +231,33 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         }
     }
 
-    List<String> getStringResults(String query) throws SQLException {
+    List<String> getTableList() throws SQLException {
         List<String> result = new ArrayList<>();
         assert this.connection != null;
-        Statement stmt = this.connection.createStatement();
-        ResultSet rs = stmt.executeQuery(query);
+        DatabaseMetaData md = this.connection.getMetaData();
+        ResultSet rs = md.getTables(null, null, "%", new String[] { "TABLE" });
         while (rs.next()) {
-            String tableName = rs.getString(1);
+            String tableName = rs.getString(3);
+            if (tableName.equals("PUBLIC"))
+                // The catalog table in HSQLDB
+                continue;
             result.add(tableName);
         }
         rs.close();
         return result;
     }
 
-    List<String> getTableList() throws SQLException {
-        return this.getStringResults("SELECT tableName FROM pg_catalog.pg_tables\n" +
-                    "    WHERE schemaname != 'information_schema' AND\n" +
-                    "    schemaname != 'pg_catalog'");
-    }
-
     List<String> getViewList() throws SQLException {
-        return this.getStringResults("SELECT table_name \n" +
-                "FROM information_schema.views \n" +
-                "WHERE table_schema NOT IN ('information_schema', 'pg_catalog') \n");
+        List<String> result = new ArrayList<>();
+        assert this.connection != null;
+        DatabaseMetaData md = this.connection.getMetaData();
+        ResultSet rs = md.getTables(null, null, "%", new String[] { "VIEW" });
+        while (rs.next()) {
+            String tableName = rs.getString(3);
+            result.add(tableName);
+        }
+        rs.close();
+        return result;
     }
 
     void dropAllTables() throws SQLException {
@@ -290,8 +285,11 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
     }
 
     public void establishConnection() throws SQLException {
-        this.connection = DriverManager.getConnection(this.db_url, this.user, this.password);
+        this.connection = DriverManager.getConnection(this.db_url, "", "");
         assert this.connection != null;
+        Statement statement = this.connection.createStatement();
+        // Enable postgres compatibility
+        statement.execute("SET DATABASE SQL SYNTAX PGS TRUE");
     }
 
     public void closeConnection() throws SQLException {

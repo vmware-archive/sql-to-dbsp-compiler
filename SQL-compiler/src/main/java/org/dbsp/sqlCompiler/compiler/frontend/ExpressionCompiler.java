@@ -367,7 +367,7 @@ public class ExpressionCompiler extends RexVisitorImpl<DBSPExpression> implement
                 DBSPType argType = arg.getNonVoidType();
                 if (argType.mayBeNull) {
                     if (call.op.kind == SqlKind.IS_NULL)
-                        ops.get(0).is_null();
+                        return ops.get(0).is_null();
                     else
                         return new DBSPUnaryExpression(call,
                                 type,

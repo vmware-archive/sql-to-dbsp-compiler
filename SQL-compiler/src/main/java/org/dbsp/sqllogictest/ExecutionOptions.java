@@ -30,7 +30,6 @@ import com.beust.jcommander.ParameterException;
 import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqllogictest.executors.*;
-import org.dbsp.util.Unimplemented;
 import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
@@ -65,22 +64,15 @@ public class ExecutionOptions {
     List<String> directories = new ArrayList<>();
     @Parameter(names = "-i", description = "Incremental testing")
     boolean incremental;
-    @Parameter(names = "-n", description = "Do not execute, just parse")
+    @Parameter(names = "-n", description = "Do not execute, just parse the test files")
     boolean doNotExecute;
     @Parameter(names = "-e", validateWith = ExecutorValidator.class)
     String executor = "none";
-    @Parameter(names = "-u", description = "Name of user to use for database")
-    String user = "user";
-    @Parameter(names = "-p", description = "Password of user for the database")
-    String password = "password";
     @Parameter(names = "-s", description = "Ignore the status of SQL commands executed")
     boolean validateStatus;
     @Parameter(names = "-b", description = "Load a list of buggy commands to skip from this file")
     @Nullable
     String bugsFile = null;
-    @Parameter(names = "-l", description = "How the test programs store intermediate data from the database (choices: csv, db)")
-    @Nullable
-    String inputSource = "csv";
     // @Parameter(names = "-j", description = "Validate JSON JIT IR representation while compiling")
     // TODO: reenable this when the JIT compiler works properly
     boolean validateJson = false;
@@ -112,34 +104,25 @@ public class ExecutionOptions {
     }
 
     String jdbcConnectionString() {
-        return "jdbc:postgresql://localhost/slt";
+        return "jdbc:hsqldb:mem:db";
     }
 
     String connectionString() {
-        Objects.requireNonNull(this.inputSource);
-        if (this.inputSource.equals("csv")) {
-            return "csv";
-        } else if (this.inputSource.equals("db")) {
-            return String.format("postgresql://localhost?dbname=slt&user=%s&password=%s", this.user,
-                                         this.password);
-        }
-        throw new Unimplemented(String.format("Unsupported input source or DB dialect: inputSource=%s",
-                                              this.inputSource));
+        return "csv";
     }
 
     AcceptancePolicy getAcceptancePolicy() {
         return new PostgresPolicy();
     }
 
-    JDBCExecutor jdbcExecutor(HashSet<String> sltBugs) {
-        JDBCExecutor jdbc =  new JDBCExecutor(this.jdbcConnectionString(),
-                this.user, this.password);
+    JDBCExecutor jdbcExecutor(HashSet<String> sltBugs) throws ClassNotFoundException {
+        JDBCExecutor jdbc =  new JDBCExecutor(this.jdbcConnectionString());
         jdbc.avoid(sltBugs);
         jdbc.setValidateStatus(this.validateStatus);
         return jdbc;
     }
 
-    SqlSLTTestExecutor getExecutor() throws IOException, SQLException {
+    SqlSLTTestExecutor getExecutor() throws IOException, SQLException, ClassNotFoundException {
         HashSet<String> sltBugs = new HashSet<>();
         if (this.bugsFile != null) {
             sltBugs = this.readBugsFile(this.bugsFile);
@@ -162,7 +145,7 @@ public class ExecutionOptions {
             }
             case "calcite": {
                 JDBCExecutor jdbc = this.jdbcExecutor(sltBugs);
-                CalciteExecutor result = new CalciteExecutor(jdbc, this.user, this.password);
+                CalciteExecutor result = new CalciteExecutor(jdbc);
                 result.avoid(sltBugs);
                 result.setValidateStatus(this.validateStatus);
                 return result;

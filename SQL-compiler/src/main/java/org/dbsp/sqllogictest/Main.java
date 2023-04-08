@@ -103,12 +103,11 @@ public class Main {
     }
 
     @SuppressWarnings("SpellCheckingInspection")
-    public static void main(String[] argv) throws IOException, SQLException {
+    public static void main(String[] argv) throws IOException, SQLException, ClassNotFoundException {
         RustSqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         String benchDir = "../../sqllogictest/test/";
         List<String> files = Linq.list(
-                "select1.test"
-                /*
+                "select1.test",
                 "select2.test",
                 "select3.test",
                 "select4.test",
@@ -117,6 +116,7 @@ public class Main {
                 "random/aggregates",
                 "random/groupby",
                 "random/expr",
+                "index/commute",
                 "index/orderby",
                 "index/between",
                 "index/view/",
@@ -126,18 +126,13 @@ public class Main {
                 "index/orderby_nosort", 
                 "index/random",  
                 "evidence"
-                 */
         );
 
         String[] args = {
-                "-s",                   // do not validate command status
                 "-e", "calcite",        // executor
                 //"-e", "hybrid",
                 //"-i",                 // incremental (streaming) testing
-                //"-j",                 // Validate JSON IR.
-                "-u", "postgres",       // database user name
-                "-p", "password",       // database password
-                "-l", "db"              // can be csv or db
+                //"-j"                  // Validate JSON IR.
         };
         if (argv.length > 0) {
             args = argv;
@@ -148,11 +143,10 @@ public class Main {
             args = a.toArray(new String[0]);
         }
         /*
-        Logger.INSTANCE.setDebugLevel(CalciteExecutor.class, 1);
-        Logger.INSTANCE.setDebugLevel(JDBCExecutor.class, 1);
         Logger.INSTANCE.setDebugLevel(JDBCExecutor.class, 3);
-        Logger.INSTANCE.setDebugLevel(DBSPExecutor.class, 3);
         Logger.INSTANCE.setDebugLevel(DBSP_JDBC_Executor.class, 3);
+        Logger.INSTANCE.setDebugLevel(CalciteExecutor.class, 1);
+        Logger.INSTANCE.setDebugLevel(DBSPExecutor.class, 3);
         Logger.INSTANCE.setDebugLevel(SLTTestFile.class, 3);
         Logger.INSTANCE.setDebugLevel(PassesVisitor.class, 3);
         Logger.INSTANCE.setDebugLevel(RemoveOperatorsVisitor.class, 3);

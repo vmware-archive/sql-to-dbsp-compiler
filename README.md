@@ -27,12 +27,6 @@ current version of the DBSP library sources from github
 
 The testing programs use sqllogictest -- see the [section on testing](#testing)
 
-Some tests use Postgres (see below the section on testing).  To run
-these tests you need to create a database named `slt` and a user
-account in the database.  In the `run-tests.sh` script you should
-replace the `-u user` with the user name you have created, and `-p
-password` with the user's password.
-
 If you want to generate images of the query plans you need
 to also install graphviz as described here <https://graphviz.org/download/>.
 
@@ -143,7 +137,7 @@ Usage: sql-to-dbsp [options] Input file to compile
     -alltables
       Generate an input for each CREATE TABLE, even if the table is not used
       by any view
-      Default: false      
+      Default: false
     -d
       SQL syntax dialect used
       Default: ORACLE
@@ -302,33 +296,6 @@ sending the statements and queries to a database to be executed.  Any
 database that supports JDBC and can handle the correct syntax of the
 queries can be used.
 
-To use this executor you have to install Postgres:
-
-- Download Postgress from <https://www.postgresql.org/download/>.
-
-- Connecting to Postgres also requires a JDBC driver for your platform.
-The maven pom.xml file already includes the Postgres driver.
-
-- If you want to run these tests you need to create a database named
-`slt` (from Sql Logic Test), and an appropriate user account.  Here
-is how you can do it:
-
-```
-# Create a database
-sudo -u postgres createdb slt
-# Create a user named 'user0'
-sudo -u postgres createuser user0
-# Change password for this user to 'password' and grand privileges
-sudo -u postgres psql
-psql=# alter user user0 with encrypted password 'password';
-psql=# grand all privileges on database slt to user0;
-psql=# exit
-```
-
-After this you should edit the last line in the script
-`./SQL-compiler/run-tests.sh` inserting the correct user name (user0)
-and password (password).
-
 #### The hybrid `DBSP_JDBC_Executor`
 
 This executor is a combination of the DBSP executor and the JDBC
@@ -372,9 +339,6 @@ broken by design.
 
 The "index" tests cannot be executed with the `DBSPExecutor` since it
 does not support the "unique index" SQL statement.
-
-The results in this table were produced using the JDBC executor with
-Postgres as a backing database.
 
 <!---
 ### ZetsSQL tests
