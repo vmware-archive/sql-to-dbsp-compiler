@@ -60,6 +60,8 @@ public class ExecutionOptions {
         }
     }
 
+    @Parameter(names = "-x", description = "Stop at the first encountered query error")
+    public boolean stopAtFirstError = false;
     @Parameter(description = "Files or directories with test data")
     List<String> directories = new ArrayList<>();
     @Parameter(names = "-i", description = "Incremental testing")
@@ -77,17 +79,9 @@ public class ExecutionOptions {
     // TODO: reenable this when the JIT compiler works properly
     boolean validateJson = false;
 
-    static class PostgresPolicy implements AcceptancePolicy {
-        @Override
-        public boolean accept(List<String> skip, List<String> only) {
-            if (only.contains("postgresql"))
-                return true;
-            if (!only.isEmpty())
-                return false;
-            return !skip.contains("postgresql");
-        }
-    }
-
+    /**
+     * Read the list of statements and queries to skip from a file.
+     */
     HashSet<String> readBugsFile(String fileName) throws IOException {
         HashSet<String> bugs = new HashSet<>();
         File file = new File(fileName);
@@ -109,10 +103,6 @@ public class ExecutionOptions {
 
     String connectionString() {
         return "csv";
-    }
-
-    AcceptancePolicy getAcceptancePolicy() {
-        return new PostgresPolicy();
     }
 
     JDBCExecutor jdbcExecutor(HashSet<String> sltBugs) throws ClassNotFoundException {
@@ -181,6 +171,7 @@ public class ExecutionOptions {
                 ", incremental=" + this.incremental +
                 ", execute=" + !this.doNotExecute +
                 ", executor=" + this.executor +
+                ", stopAtFirstError=" + this.stopAtFirstError +
                 '}';
     }
 }

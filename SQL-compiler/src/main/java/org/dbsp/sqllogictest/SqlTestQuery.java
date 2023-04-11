@@ -34,19 +34,23 @@ public class SqlTestQuery implements ISqlTestOperation {
     public String query;
     @Nullable
     public String name;
+    public String file;
+    public int line;
+
     public final SqlTestQueryOutputDescription outputDescription;
 
     public void setName(String name) {
         this.name = name;
     }
 
-    SqlTestQuery() {
+    SqlTestQuery(String file) {
         this.query = "";
+        this.file = file;
         this.outputDescription = new SqlTestQueryOutputDescription();
     }
 
-    void setQuery(String query) {
-        this.query = query;
+    void setQuery(String query, int line) {
+        this.query = query; this.line = line;
     }
 
     @Override

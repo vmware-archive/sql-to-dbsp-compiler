@@ -31,10 +31,10 @@ import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeZSet;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeString;
+import org.dbsp.sqllogictest.ExecutionOptions;
 import org.dbsp.sqllogictest.SqlStatement;
 import org.dbsp.sqllogictest.SLTTestFile;
 import org.dbsp.util.Logger;
@@ -255,11 +255,11 @@ public class DBSP_JDBC_Executor extends DBSPExecutor {
     }
 
     @Override
-    public TestStatistics execute(SLTTestFile file)
+    public TestStatistics execute(SLTTestFile file, ExecutionOptions options)
             throws SqlParseException, IOException, InterruptedException, SQLException {
         this.statementExecutor.establishConnection();
         this.statementExecutor.dropAllViews();
         this.statementExecutor.dropAllTables();
-        return super.execute(file);
+        return super.execute(file, options);
     }
 }

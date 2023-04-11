@@ -23,6 +23,7 @@
 
 package org.dbsp.sqllogictest.executors;
 
+import org.dbsp.sqllogictest.ExecutionOptions;
 import org.dbsp.sqllogictest.SLTTestFile;
 import org.dbsp.util.TestStatistics;
 
@@ -32,8 +33,8 @@ import org.dbsp.util.TestStatistics;
  */
 public class NoExecutor extends SqlSLTTestExecutor {
     @Override
-    public TestStatistics execute(SLTTestFile testFile) {
-        TestStatistics result = new TestStatistics();
+    public TestStatistics execute(SLTTestFile testFile, ExecutionOptions options) {
+        TestStatistics result = new TestStatistics(options.stopAtFirstError);
         this.startTest();
         result.failed = 0;
         result.ignored = testFile.getTestCount();

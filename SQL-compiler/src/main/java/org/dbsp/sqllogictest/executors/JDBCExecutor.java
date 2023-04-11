@@ -116,24 +116,22 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         this.statementsExecuted++;
     }
 
-    boolean query(SqlTestQuery query, int queryNo) throws SQLException, NoSuchAlgorithmException {
+    void query(SqlTestQuery query, TestStatistics statistics) throws SQLException, NoSuchAlgorithmException {
         assert this.connection != null;
         if (this.buggyOperations.contains(query.query)) {
             System.err.println("Skipping " + query.query);
-            return false;
+
         }
         Statement stmt = this.connection.createStatement();
         ResultSet resultSet = stmt.executeQuery(query.query);
-        this.validate(query.query, queryNo, resultSet, query.outputDescription);
+        this.validate(query, resultSet, query.outputDescription, statistics);
         stmt.close();
         resultSet.close();
-        this.queriesExecuted++;
         Logger.INSTANCE.from(this, 1)
-                .append(this.queriesExecuted)
+                .append(statistics.testsRun())
                 .append(": ")
                 .append(query.query)
                 .newline();
-        return true;
     }
 
     Row getValue(ResultSet rs, String columnTypes) throws SQLException {
@@ -200,8 +198,9 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         }
     }
 
-    void validate(String query, int queryNo,
-                  ResultSet rs, SqlTestQueryOutputDescription description)
+    void validate(SqlTestQuery query, ResultSet rs,
+                  SqlTestQueryOutputDescription description,
+                  TestStatistics statistics)
             throws SQLException, NoSuchAlgorithmException {
         assert description.columnTypes != null;
         Rows rows = new Rows();
@@ -209,15 +208,26 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
             Row row = this.getValue(rs, description.columnTypes);
             rows.add(row);
         }
-        if (description.valueCount != rows.size() * description.columnTypes.length())
-            throw new RuntimeException("Expected " + description.valueCount + " got " +
-                    rows.size() * description.columnTypes.length());
+        if (description.valueCount != rows.size() * description.columnTypes.length()) {
+            statistics.addFailure(new TestStatistics.FailedTestDescription(
+                    query, "Expected " + description.valueCount + " rows, got " +
+                    rows.size() * description.columnTypes.length()));
+            return;
+        }
         rows.sort(description.order);
+        Logger.INSTANCE.from(this, 3)
+                .append("Result is ")
+                .newline()
+                .append(rows.toString())
+                .newline();
         if (description.queryResults != null) {
             String r = rows.toString();
             String q = String.join("\n", description.queryResults);
-            if (!r.equals(q))
-                throw new RuntimeException("Output differs: " + r + " vs " + q);
+            if (!r.equals(q)) {
+                statistics.addFailure(new TestStatistics.FailedTestDescription(
+                        query, "Output differs: " + r + " vs " + q));
+                return;
+            }
         }
         if (description.hash != null) {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -225,10 +235,13 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
             md.update(repr.getBytes());
             byte[] digest = md.digest();
             String hash = Utilities.toHex(digest);
-            if (!description.hash.equals(hash))
-                throw new RuntimeException(query + " #" + queryNo +
-                        ": Hash of data does not match");
+            if (!description.hash.equals(hash)) {
+                statistics.addFailure(new TestStatistics.FailedTestDescription(
+                        query, "Hash of data does not match expected value"));
+                return;
+            }
         }
+        statistics.passed++;
     }
 
     List<String> getTableList() throws SQLException {
@@ -298,11 +311,12 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
     }
 
     @Override
-    public TestStatistics execute(SLTTestFile file) throws SQLException, NoSuchAlgorithmException {
+    public TestStatistics execute(SLTTestFile file, ExecutionOptions options)
+            throws SQLException, NoSuchAlgorithmException {
         this.startTest();
         this.establishConnection();
         this.dropAllTables();
-        TestStatistics result = new TestStatistics();
+        TestStatistics result = new TestStatistics(options.stopAtFirstError);
         for (ISqlTestOperation operation: file.fileContents) {
             try {
                 SqlStatement stat = operation.as(SqlStatement.class);
@@ -310,15 +324,10 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
                     this.statement(stat);
                 } else {
                     SqlTestQuery query = operation.to(SqlTestQuery.class);
-                    boolean executed = this.query(query, result.passed);
-                    if (executed) {
-                        result.passed++;
-                    } else {
-                        result.ignored++;
-                    }
+                    this.query(query, result);
                 }
             } catch (SQLException ex) {
-                System.err.println("Error while processing #" + result.passed + " " + operation);
+                System.err.println("Error while processing #" + result.testsRun() + " " + operation);
                 throw ex;
             }
         }

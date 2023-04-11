@@ -24,6 +24,7 @@
 package org.dbsp.sqllogictest.executors;
 
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.dbsp.sqllogictest.ExecutionOptions;
 import org.dbsp.sqllogictest.SLTTestFile;
 import org.dbsp.util.TestStatistics;
 
@@ -35,5 +36,6 @@ public abstract class SqlSLTTestExecutor extends SqlTestExecutor {
     /**
      * Execute the specified test file.
      */
-    public abstract TestStatistics execute(SLTTestFile testFile) throws SqlParseException, IOException, InterruptedException, SQLException, NoSuchAlgorithmException;
+    public abstract TestStatistics execute(SLTTestFile testFile, ExecutionOptions options)
+            throws SqlParseException, IOException, InterruptedException, SQLException, NoSuchAlgorithmException;
 }

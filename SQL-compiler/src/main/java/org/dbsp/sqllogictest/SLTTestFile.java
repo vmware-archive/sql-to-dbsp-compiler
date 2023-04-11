@@ -144,7 +144,7 @@ public class SLTTestFile implements IModule {
         if (!line.startsWith("query")) {
             this.error("Unexpected line: " + Utilities.singleQuote(line));
         }
-        @Nullable SqlTestQuery result = new SqlTestQuery();
+        @Nullable SqlTestQuery result = new SqlTestQuery(this.testFile);
         line = line.substring("query".length()).trim();
         if (line.isEmpty())
             this.error("Malformed query description " + line);
@@ -176,7 +176,7 @@ public class SLTTestFile implements IModule {
         }
 
         String q = query.toString().trim();
-        result.setQuery(q);
+        result.setQuery(q, this.lineno);
 
         if (!this.done) {
             line = this.nextLine(true);

@@ -29,6 +29,7 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.dbsp.sqlCompiler.compiler.backend.rust.RustSqlRuntimeLibrary;
 import org.dbsp.sqllogictest.executors.*;
 import org.dbsp.util.Linq;
+import org.dbsp.util.Logger;
 import org.dbsp.util.TestStatistics;
 import org.dbsp.util.Utilities;
 
@@ -46,25 +47,39 @@ import java.util.List;
 public class Main {
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
-        private final SqlSLTTestExecutor executor;
         final TestStatistics statistics;
-        private final AcceptancePolicy policy;
+        public final ExecutionOptions options;
+        /**
+         * This policy accepts all SLT queries and statements written in the Postgres SQL language.
+         */
+        static class PostgresPolicy implements AcceptancePolicy {
+            @Override
+            public boolean accept(List<String> skip, List<String> only) {
+                if (only.contains("postgresql"))
+                    return true;
+                if (!only.isEmpty())
+                    return false;
+                return !skip.contains("postgresql");
+            }
+        }
 
         /**
          * Creates a new class that reads tests from a directory tree and executes them.
-         * @param executor Program that knows how to generate and run the tests.
-         * @param policy   Policy that dictates which operations can be executed.
          */
-        TestLoader(SqlSLTTestExecutor executor,
-                   AcceptancePolicy policy) {
-            this.executor = executor;
-            this.statistics = new TestStatistics();
-            this.policy = policy;
+        TestLoader(ExecutionOptions options) {
+            this.statistics = new TestStatistics(options.stopAtFirstError);
+            this.options = options;
         }
 
         @SuppressWarnings("ConstantConditions")
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+            SqlSLTTestExecutor executor = null;
+            try {
+                executor = this.options.getExecutor();
+            } catch (IOException | SQLException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
             String extension = Utilities.getFileExtension(file.toString());
             int batchSize = 500;
             int skipPerFile = 0;
@@ -81,16 +96,14 @@ public class Main {
                 try {
                     System.out.println(file);
                     test = new SLTTestFile(file.toString());
-                    test.parse(this.policy);
+                    test.parse(new PostgresPolicy());
                 } catch (Exception ex) {
-                    // We can't yet parse all kinds of tests
-                    //noinspection UnnecessaryToStringCall
-                    System.out.println(ex.toString());
+                    System.err.println(ex.toString());
                     this.errors++;
                 }
                 if (test != null) {
                     try {
-                        TestStatistics stats = this.executor.execute(test);
+                        TestStatistics stats = executor.execute(test, options);
                         this.statistics.add(stats);
                     } catch (SqlParseException | IOException | InterruptedException |
                             SQLException | NoSuchAlgorithmException ex) {
@@ -107,7 +120,8 @@ public class Main {
         RustSqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         String benchDir = "../../sqllogictest/test/";
         List<String> files = Linq.list(
-                "select1.test",
+                "select1.test"
+                /*
                 "select2.test",
                 "select3.test",
                 "select4.test",
@@ -126,11 +140,12 @@ public class Main {
                 "index/orderby_nosort", 
                 "index/random",  
                 "evidence"
+                 */
         );
 
         String[] args = {
-                "-e", "calcite",        // executor
-                //"-e", "hybrid",
+                "-e", "hybrid",        // executor
+                //"-e", "JDBC",
                 //"-i",                 // incremental (streaming) testing
                 //"-j"                  // Validate JSON IR.
         };
@@ -148,16 +163,13 @@ public class Main {
         Logger.INSTANCE.setDebugLevel(CalciteExecutor.class, 1);
         Logger.INSTANCE.setDebugLevel(DBSPExecutor.class, 3);
         Logger.INSTANCE.setDebugLevel(SLTTestFile.class, 3);
-        Logger.INSTANCE.setDebugLevel(PassesVisitor.class, 3);
-        Logger.INSTANCE.setDebugLevel(RemoveOperatorsVisitor.class, 3);
+        Logger.INSTANCE.setDebugLevel(DBSPExecutor.class, 3);
         Logger.INSTANCE.setDebugLevel(CalciteCompiler.class, 3);
          */
         ExecutionOptions options = new ExecutionOptions();
         options.parse(args);
-        SqlSLTTestExecutor executor = options.getExecutor();
         System.out.println(options);
-        AcceptancePolicy policy = options.getAcceptancePolicy();
-        TestLoader loader = new TestLoader(executor, policy);
+        TestLoader loader = new TestLoader(options);
         for (String file : options.getDirectories()) {
             Path path = Paths.get(benchDir + "/" + file);
             Files.walkFileTree(path, loader);
