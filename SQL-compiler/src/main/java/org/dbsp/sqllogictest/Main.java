@@ -144,35 +144,35 @@ public class Main {
         Files.copy(in, zip.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         System.out.println("Unzipping data");
-        ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip.toPath()));
-        ZipEntry zipEntry = zis.getNextEntry();
-        while (zipEntry != null) {
-            File newFile = newFile(directory, zipEntry);
-            if (newFile != null) {
-                System.out.println("Creating " + newFile.getPath());
-                if (zipEntry.isDirectory()) {
-                    if (!newFile.isDirectory() && !newFile.mkdirs()) {
-                        throw new IOException("Failed to create directory " + newFile);
-                    }
-                } else {
-                    File parent = newFile.getParentFile();
-                    if (!parent.isDirectory() && !parent.mkdirs()) {
-                        throw new IOException("Failed to create directory " + parent);
-                    }
+        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip.toPath()))) {
+            ZipEntry zipEntry = zis.getNextEntry();
+            while (zipEntry != null) {
+                File newFile = newFile(directory, zipEntry);
+                if (newFile != null) {
+                    System.out.println("Creating " + newFile.getPath());
+                    if (zipEntry.isDirectory()) {
+                        if (!newFile.isDirectory() && !newFile.mkdirs()) {
+                            throw new IOException("Failed to create directory " + newFile);
+                        }
+                    } else {
+                        File parent = newFile.getParentFile();
+                        if (!parent.isDirectory() && !parent.mkdirs()) {
+                            throw new IOException("Failed to create directory " + parent);
+                        }
 
-                    FileOutputStream fos = new FileOutputStream(newFile);
-                    int len;
-                    byte[] buffer = new byte[1024];
-                    while ((len = zis.read(buffer)) > 0) {
-                        fos.write(buffer, 0, len);
+                        try (FileOutputStream fos = new FileOutputStream(newFile)) {
+                            int len;
+                            byte[] buffer = new byte[1024];
+                            while ((len = zis.read(buffer)) > 0) {
+                                fos.write(buffer, 0, len);
+                            }
+                        }
                     }
-                    fos.close();
                 }
+                zipEntry = zis.getNextEntry();
             }
-            zipEntry = zis.getNextEntry();
+            zis.closeEntry();
         }
-        zis.closeEntry();
-        zis.close();
     }
 
     static void abort(ExecutionOptions options, @Nullable String message) {
@@ -186,8 +186,8 @@ public class Main {
     public static void main(String[] argv) throws IOException {
         RustSqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         List<String> files = Linq.list(
-                "select1.test"
                 /*
+                "select1.test"
                 "select2.test",
                 "select3.test",
                 "select4.test",
@@ -211,8 +211,9 @@ public class Main {
 
         String[] args = {
                 "-e", "hybrid",        // executor
-                //"-inc",                 // incremental (streaming) testing
-                //"-j"                  // Validate JSON IR.
+                "."
+                //"-inc",              // incremental (streaming) testing
+                //"-j"                 // Validate JSON IR.
         };
         if (argv.length > 0) {
             args = argv;

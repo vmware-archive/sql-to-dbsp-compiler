@@ -346,8 +346,8 @@ public class CalciteCompiler implements IModule {
         HepProgram move = createProgram(
                 CoreRules.PROJECT_CORRELATE_TRANSPOSE,
                 CoreRules.PROJECT_FILTER_TRANSPOSE,
-                CoreRules.PROJECT_SET_OP_TRANSPOSE,
-                CoreRules.PROJECT_JOIN_TRANSPOSE
+                CoreRules.PROJECT_SET_OP_TRANSPOSE
+                //CoreRules.PROJECT_JOIN_TRANSPOSE  // This rule is unsound
         );
         HepProgram mergeNodes = createProgram(
                 CoreRules.PROJECT_MERGE,

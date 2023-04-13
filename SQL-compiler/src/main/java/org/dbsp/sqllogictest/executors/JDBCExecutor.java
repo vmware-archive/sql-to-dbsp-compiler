@@ -278,10 +278,11 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         assert this.connection != null;
         List<String> tables = this.getTableList();
         for (String tableName: tables) {
-            String del = "DROP TABLE ?";
+            // Unfortunately prepare statements cannot be parameterized in table names.
+            // Sonar complains about this, but there is nothing we can do but suppress the warning.
+            String del = "DROP TABLE " + tableName;
             Logger.INSTANCE.from(this, 2).append(del).newline();
-            try (PreparedStatement drop = this.connection.prepareStatement(del)) {
-                drop.setString(1, tableName);
+            try (Statement drop = this.connection.createStatement()) {
                 drop.execute(del);
             }
         }
@@ -291,10 +292,11 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         assert this.connection != null;
         List<String> tables = this.getViewList();
         for (String tableName: tables) {
-            String del = "DROP VIEW IF EXISTS ? CASCADE";
+            // Unfortunately prepare statements cannot be parameterized in table names.
+            // Sonar complains about this, but there is nothing we can do but suppress the warning.
+            String del = "DROP VIEW IF EXISTS " + tableName + " CASCADE";
             Logger.INSTANCE.from(this, 2).append(del).newline();
-            try (PreparedStatement drop = this.connection.prepareStatement(del)) {
-                drop.setString(1, tableName);
+            try (Statement drop = this.connection.createStatement()) {
                 drop.execute(del);
             }
         }

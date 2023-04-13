@@ -90,6 +90,7 @@ public class CalciteExecutor extends SqlSLTTestExecutor {
     @Override
     public TestStatistics execute(SLTTestFile file, ExecutionOptions options)
             throws SqlParseException, IOException, SQLException, NoSuchAlgorithmException {
+        this.startTest();
         this.statementExecutor.establishConnection();
         this.statementExecutor.dropAllViews();
         this.statementExecutor.dropAllTables();
