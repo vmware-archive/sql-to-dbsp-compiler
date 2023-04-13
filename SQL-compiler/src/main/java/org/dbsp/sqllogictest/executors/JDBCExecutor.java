@@ -40,6 +40,9 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
     @Nullable
     Connection connection;
 
+    String DEFAULT_USER = "";  // no user needed for hsqldb
+    String DEFAULT_PASSWORD = "";  // no password needed for hsqldb
+
     // In the end everything is decoded as a string
     static class Row {
         public final List<String> values;
@@ -102,11 +105,9 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
                 .append(statement.statement)
                 .newline();
         assert this.connection != null;
-        Statement stmt = this.connection.createStatement();
-        try {
+        try (Statement stmt = this.connection.createStatement()) {
             stmt.execute(statement.statement);
         } catch (SQLException ex) {
-            stmt.close();
             Logger.INSTANCE.from(this, 1)
                     .append("ERROR: ")
                     .append(ex.getMessage())
@@ -122,11 +123,11 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
             System.err.println("Skipping " + query.query);
 
         }
-        Statement stmt = this.connection.createStatement();
-        ResultSet resultSet = stmt.executeQuery(query.query);
-        this.validate(query, resultSet, query.outputDescription, statistics);
-        stmt.close();
-        resultSet.close();
+        try (Statement stmt = this.connection.createStatement()) {
+            ResultSet resultSet = stmt.executeQuery(query.query);
+            this.validate(query, resultSet, query.outputDescription, statistics);
+            resultSet.close();
+        }
         Logger.INSTANCE.from(this, 1)
                 .append(statistics.testsRun())
                 .append(": ")
@@ -277,11 +278,12 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         assert this.connection != null;
         List<String> tables = this.getTableList();
         for (String tableName: tables) {
-            String del = "DROP TABLE " + tableName;
+            String del = "DROP TABLE ?";
             Logger.INSTANCE.from(this, 2).append(del).newline();
-            Statement drop = this.connection.createStatement();
-            drop.execute(del);
-            drop.close();
+            try (PreparedStatement drop = this.connection.prepareStatement(del)) {
+                drop.setString(1, tableName);
+                drop.execute(del);
+            }
         }
     }
 
@@ -289,20 +291,22 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         assert this.connection != null;
         List<String> tables = this.getViewList();
         for (String tableName: tables) {
-            String del = "DROP VIEW IF EXISTS " + tableName + " CASCADE";
+            String del = "DROP VIEW IF EXISTS ? CASCADE";
             Logger.INSTANCE.from(this, 2).append(del).newline();
-            Statement drop = this.connection.createStatement();
-            drop.execute(del);
-            drop.close();
+            try (PreparedStatement drop = this.connection.prepareStatement(del)) {
+                drop.setString(1, tableName);
+                drop.execute(del);
+            }
         }
     }
 
     public void establishConnection() throws SQLException {
-        this.connection = DriverManager.getConnection(this.db_url, "", "");
+        this.connection = DriverManager.getConnection(this.db_url, DEFAULT_USER, DEFAULT_PASSWORD);
         assert this.connection != null;
-        Statement statement = this.connection.createStatement();
-        // Enable postgres compatibility
-        statement.execute("SET DATABASE SQL SYNTAX PGS TRUE");
+        try (Statement statement = this.connection.createStatement()) {
+            // Enable postgres compatibility
+            statement.execute("SET DATABASE SQL SYNTAX PGS TRUE");
+        }
     }
 
     public void closeConnection() throws SQLException {

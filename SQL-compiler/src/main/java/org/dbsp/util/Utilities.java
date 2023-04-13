@@ -54,6 +54,8 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class Utilities {
+    private Utilities() {}
+
     /**
      * Generate a rust file which does nothing but includes the specified modules.
      * @param file     File to write to.

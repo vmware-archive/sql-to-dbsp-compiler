@@ -28,6 +28,9 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * A PrintStream that writes do a String.
+ */
 public class StringPrintStream {
     PrintStream stream;
     ByteArrayOutputStream byteStream;
@@ -42,6 +45,9 @@ public class StringPrintStream {
         return this.stream;
     }
 
+    /**
+     * Get the data written so far.  Once this is done the stream is closed and can't be used anymore.
+     */
     @Override
     public String toString() {
         if (!this.closed)

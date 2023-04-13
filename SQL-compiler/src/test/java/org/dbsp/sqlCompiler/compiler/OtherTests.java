@@ -516,7 +516,6 @@ public class OtherTests extends BaseSQLTests implements IModule {
                         r.field("STRCOL")
                 )
                 .build();
-        System.out.println(node);
         RelRunner runner = calciteConnection.unwrap(RelRunner.class);
         try (PreparedStatement ps = runner.prepareStatement(node)) {
             ps.execute();

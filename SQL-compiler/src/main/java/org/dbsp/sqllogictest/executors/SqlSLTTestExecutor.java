@@ -37,5 +37,5 @@ public abstract class SqlSLTTestExecutor extends SqlTestExecutor {
      * Execute the specified test file.
      */
     public abstract TestStatistics execute(SLTTestFile testFile, ExecutionOptions options)
-            throws SqlParseException, IOException, InterruptedException, SQLException, NoSuchAlgorithmException;
+            throws SqlParseException, IOException, SQLException, NoSuchAlgorithmException, InterruptedException;
 }

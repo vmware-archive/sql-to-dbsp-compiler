@@ -14,4 +14,4 @@ mvn clean
 mvn -DskipTests package
 mvn test
 echo "Running sqllogictest tests"
-mvn compile exec:java -Dexec.mainClass="org.dbsp.sqllogictest.Main" -Dexec.args="-i -s -e hybrid ."
+mvn compile exec:java -Dexec.mainClass="org.dbsp.sqllogictest.Main" -Dexec.args="-inc -i -s -e hybrid -d ../../sqllogictest/ ."

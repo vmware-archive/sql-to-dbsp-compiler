@@ -247,15 +247,46 @@ They can be executed usign `mvn test`.
 One of the means of testing the compiler is using sqllogictests:
 <https://www.sqlite.org/sqllogictest/doc/trunk/about.wiki>.
 
-We assume that the sqllogictest source tree is installed in ../sqllogictest
-with respect to the root directory of the compiler project
-(we only need the .test files).  One way the source tree can be obtained
-is from the git mirror: <https://github.com/gregrahn/sqllogictest.git>
+We have implemented a general-purpose testing framework for running
+SqlLogicTest programs, in the `org.dbsp.sqllogictest` package.  The
+framework parses SqlLogicTest files and creates an internal
+representation of these files.  The files are executed by "test
+executors".
 
-We have implemented a general-purpose parser and testing framework for
-running SqlLogicTest programs, in the `org.dbsp.sqllogictest` package.
-The framework parses SqlLogicTest files and creates an internal
-representation of these files.  The files are executed by "test executors".
+The tests are run by a standalone executable (the executable is
+invoked by the `run-tests.sh` script).  The executable supports the
+following command-line arguments:
+
+```
+Usage: [options] Files or directories with test data (relative to the specified directory)
+Options:
+-b
+Load a list of buggy commands to skip from this file
+-d
+Directory with SLT tests
+Default: ../../sqllogictest
+-e
+Executor to use; one of 'none, JDBC, calcite'
+Default: none
+-h
+Show this help message and exit
+Default: false
+-i
+Install the SLT tests if the directory does not exist
+Default: false
+-inc
+Incremental testing
+Default: false
+-n
+Do not execute, just parse the test files
+Default: false
+-s
+Ignore the status of SQL commands executed
+Default: false
+-x
+Stop at the first encountered query error
+Default: false
+```
 
 We have multiple executors:
 
@@ -294,7 +325,8 @@ only checks the final output.
 This executor parallels the standard ODBC executor written in C by
 sending the statements and queries to a database to be executed.  Any
 database that supports JDBC and can handle the correct syntax of the
-queries can be used.
+queries can be used, but we use by default the HSQLDB
+<http://hsqldb.org/> database.
 
 #### The hybrid `DBSP_JDBC_Executor`
 
@@ -302,6 +334,13 @@ This executor is a combination of the DBSP executor and the JDBC
 executor, using a real database to store data in tables, but using
 DBSP as a query engine.  It should be able to execute all SqlLogicTest
 queries that are supported by the underlying database.
+
+#### The 'Calcite' executor
+
+This executor uses the JDBC executor to execute the statements storing
+the data, and the default Calcite compiler settings to compile and
+execute the queries.  This code has been contributed to the Calcite
+project.
 
 #### SqlLogicTest Test results
 
@@ -332,10 +371,6 @@ are detailed below.
 | index/random         |         N/A | 188,449/0 |   188,449/0   |
 | index/orderby        |         N/A | 310,630/0 |   310,630/0   |
 | evidence             |         N/A |    153/25 |               |
-
-We have 2 failing tests; these tests depend on unspecified features of
-the SQL semantics (numeric overflow), so we can argue that they are
-broken by design.
 
 The "index" tests cannot be executed with the `DBSPExecutor` since it
 does not support the "unique index" SQL statement.

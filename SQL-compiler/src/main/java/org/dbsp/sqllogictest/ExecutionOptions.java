@@ -40,7 +40,7 @@ import java.util.*;
 @SuppressWarnings("CanBeFinal")
 public class ExecutionOptions {
     public static class ExecutorValidator implements IParameterValidator {
-        final private Set<String> legalExecutors;
+        private final Set<String> legalExecutors;
 
         public ExecutorValidator() {
             this.legalExecutors = new HashSet<>();
@@ -60,11 +60,17 @@ public class ExecutionOptions {
         }
     }
 
+    @Parameter(names = "-d", description = "Directory with SLT tests")
+    public String sltDirectory = "../../sqllogictest";
+    @Parameter(names = "-i", description = "Install the SLT tests if the directory does not exist")
+    public boolean install = false;
+    @Parameter(names = "-h", description = "Show this help message and exit")
+    public boolean help = false;
     @Parameter(names = "-x", description = "Stop at the first encountered query error")
     public boolean stopAtFirstError = false;
     @Parameter(description = "Files or directories with test data")
     List<String> directories = new ArrayList<>();
-    @Parameter(names = "-i", description = "Incremental testing")
+    @Parameter(names = "-inc", description = "Incremental testing")
     boolean incremental;
     @Parameter(names = "-n", description = "Do not execute, just parse the test files")
     boolean doNotExecute;
@@ -97,22 +103,35 @@ public class ExecutionOptions {
         return bugs;
     }
 
+    final JCommander commander;
+
+    public ExecutionOptions() {
+        this.commander = JCommander.newBuilder()
+                .addObject(this)
+                .build();
+        this.commander.setProgramName("slt");
+    }
+
     String jdbcConnectionString() {
         return "jdbc:hsqldb:mem:db";
+    }
+
+    public void usage() {
+        this.commander.usage();
     }
 
     String connectionString() {
         return "csv";
     }
 
-    JDBCExecutor jdbcExecutor(HashSet<String> sltBugs) throws ClassNotFoundException {
+    JDBCExecutor jdbcExecutor(HashSet<String> sltBugs) {
         JDBCExecutor jdbc =  new JDBCExecutor(this.jdbcConnectionString());
         jdbc.avoid(sltBugs);
         jdbc.setValidateStatus(this.validateStatus);
         return jdbc;
     }
 
-    SqlSLTTestExecutor getExecutor() throws IOException, SQLException, ClassNotFoundException {
+    SqlSLTTestExecutor getExecutor() throws IOException, SQLException {
         HashSet<String> sltBugs = new HashSet<>();
         if (this.bugsFile != null) {
             sltBugs = this.readBugsFile(this.bugsFile);
@@ -149,6 +168,8 @@ public class ExecutionOptions {
                 result.setValidateStatus(this.validateStatus);
                 return result;
             }
+            default:
+                break;
         }
         throw new UnsupportedException(this.executor);  // unreachable
     }
@@ -158,16 +179,15 @@ public class ExecutionOptions {
     }
 
     public void parse(String... argv) {
-        JCommander.newBuilder()
-                .addObject(this)
-                .build()
-                .parse(argv);
+        this.commander.parse(argv);
     }
 
     @Override
     public String toString() {
         return "ExecutionOptions{" +
-                "directories=" + this.directories +
+                "tests source=" + this.sltDirectory +
+                ", install=" + this.install +
+                ", directories=" + this.directories +
                 ", incremental=" + this.incremental +
                 ", execute=" + !this.doNotExecute +
                 ", executor=" + this.executor +
