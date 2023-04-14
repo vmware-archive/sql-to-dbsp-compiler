@@ -10,7 +10,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
-import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
+import org.dbsp.sqlCompiler.ir.type.primitive.*;
 import org.dbsp.util.Unimplemented;
 import org.dbsp.util.Utilities;
 
@@ -332,27 +332,46 @@ public class ToJitInnerVisitor extends InnerVisitor {
         throw new Unimplemented(expression);
     }
 
-    boolean createJsonLiteral(DBSPLiteral expression, String type, @Nullable BaseJsonNode value) {
+    boolean createJsonLiteral(DBSPLiteral expression, String type, BaseJsonNode value) {
         ExpressionJsonRepresentation ev = this.insertInstruction(expression);
+        ObjectNode constant = ev.instruction.putObject("Constant");
+        constant.set(type, value);
         if (expression.isNull) {
             Objects.requireNonNull(ev.isNullInstruction);
             ObjectNode n = ev.isNullInstruction.putObject("Constant");
-            n.put("is_null", true);
+            n.put("Bool", true);
         } else {
-            ObjectNode constant = ev.instruction.putObject("Constant");
-            constant.set(type, Objects.requireNonNull(value));
             if (ev.isNullInstruction != null) {
                 ObjectNode n = ev.isNullInstruction.putObject("Constant");
-                n.put("is_null", false);
+                n.put("Bool", true);
             }
         }
         return false;
     }
 
+    BaseJsonNode zero(DBSPType type) {
+        if (!type.mayBeNull)
+            throw new RuntimeException("Expected a nullable type");
+        if (type.sameType(DBSPTypeInteger.NULLABLE_SIGNED_32))
+            return new IntNode(0);
+        else if (type.sameType(DBSPTypeInteger.NULLABLE_SIGNED_64))
+            return new LongNode(0);
+        else if (type.sameType(DBSPTypeFloat.NULLABLE_INSTANCE))
+            return new FloatNode(0.0F);
+        else if (type.sameType(DBSPTypeDouble.NULLABLE_INSTANCE))
+            return new DoubleNode(0.0);
+        else if (type.sameType(DBSPTypeString.NULLABLE_INSTANCE))
+            return new TextNode("");
+        else if (type.sameType(DBSPTypeBool.NULLABLE_INSTANCE))
+            return BooleanNode.valueOf(false);
+        throw new Unimplemented(type);
+    }
+
     @Override
     public boolean preorder(DBSPLiteral literal) {
         if (literal.isNull) {
-            return this.createJsonLiteral(literal, baseTypeName(literal), null);
+            return this.createJsonLiteral(literal, baseTypeName(literal),
+                    this.zero(literal.getNonVoidType()));
         }
         throw new Unimplemented(literal);
     }
@@ -360,35 +379,35 @@ public class ToJitInnerVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPI32Literal expression) {
         return this.createJsonLiteral(expression, "I32",
-                expression.value == null ? null : new IntNode(expression.value));
+                expression.value == null ? new IntNode(0) : new IntNode(expression.value));
     }
 
     @Override
     public boolean preorder(DBSPI64Literal expression) {
         return this.createJsonLiteral(expression, "I64",
-                expression.value == null ? null : new LongNode(expression.value));
+                expression.value == null ? new LongNode(0) : new LongNode(expression.value));
     }
 
     @Override
     public boolean preorder(DBSPBoolLiteral expression) {
         return this.createJsonLiteral(expression, "Bool",
-                expression.value == null ? null : BooleanNode.valueOf(expression.value));
+                expression.value == null ? BooleanNode.valueOf(false) : BooleanNode.valueOf(expression.value));
     }
 
     @Override
     public boolean preorder(DBSPStringLiteral expression) {
         return this.createJsonLiteral(expression, "String",
-                expression.value == null ? null : new TextNode(expression.value));
+                expression.value == null ? new TextNode("") : new TextNode(expression.value));
     }
 
     public boolean preorder(DBSPDoubleLiteral expression) {
         return this.createJsonLiteral(expression, "F64",
-                expression.value == null ? null : new DoubleNode(expression.value));
+                expression.value == null ? new DoubleNode(0.0) : new DoubleNode(expression.value));
     }
 
     public boolean preorder(DBSPFloatLiteral expression) {
         return this.createJsonLiteral(expression, "F32",
-                expression.value == null ? null : new FloatNode(expression.value));
+                expression.value == null ? new FloatNode(0.0F) : new FloatNode(expression.value));
     }
 
     public boolean preorder(DBSPBorrowExpression expression) {
@@ -407,9 +426,19 @@ public class ToJitInnerVisitor extends InnerVisitor {
         ExpressionIds sourceId = this.accept(expression.source);
         ExpressionJsonRepresentation ev = this.insertInstruction(expression);
         this.cast(ev.instruction, sourceId.id, baseTypeName(expression.source), baseTypeName(expression));
-        if (sourceId.hasNull() && ev.isNullInstruction != null)
-            // FIXME: this may need to panic at runtime.
-            this.copy(ev.getNullObject(), sourceId.isNullId, "Bool");
+        if (sourceId.hasNull()) {
+            if (ev.isNullInstruction != null)
+                this.copy(ev.getNullObject(), sourceId.isNullId, "Bool");
+            else {
+                // FIXME: this needs to panic at runtime.
+            }
+        } else {
+            if (ev.isNullInstruction != null) {
+                ObjectNode n = ev.isNullInstruction.putObject("Constant");
+                n.put("Bool", false);
+            }
+            // else nothing to do
+        }
         return false;
     }
 
@@ -462,6 +491,8 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 (expression.operation.equals("||") && expression.left.getNonVoidType().is(DBSPTypeBool.class));
         if (needsNull(expression.getNonVoidType()) && special) {
             if (expression.operation.equals("&&")) {
+                ExpressionJsonRepresentation result = this.insertInstruction(expression);
+
                 // Nullable bit computation
                 // (a && b).is_null = a.is_null ? (b.is_null ? true     : !b.value)
                 //                              : (b.is_null ? !a.value : false)
@@ -483,8 +514,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 ExpressionJsonRepresentation cond2 = this.insertNewInstruction();
                 this.mux(cond2.instruction, rightNullId, notA.instructionId, falseLit.id);
                 // Top-level condition
-                ExpressionJsonRepresentation topCond = this.insertNewInstruction();
-                this.mux(topCond.instruction, leftNullId, cond1.instructionId, cond2.instructionId);
+                this.mux(result.getNullObject(), leftNullId, cond1.instructionId, cond2.instructionId);
 
                 // (a && b).value = a.is_null ? b.value
                 //                            : (b.is_null ? a.value : a.value && b.value)
@@ -496,9 +526,9 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 ExpressionJsonRepresentation secondBranch = this.insertNewInstruction();
                 this.mux(secondBranch.instruction, rightNullId, leftId.id, and.instructionId);
                 // Final Mux
-                ExpressionJsonRepresentation er = this.insertInstruction(expression);
-                this.mux(er.instruction, leftNullId, rightId.id, secondBranch.instructionId);
+                this.mux(result.instruction, leftNullId, rightId.id, secondBranch.instructionId);
             } else { // Boolean ||
+                ExpressionJsonRepresentation result = this.insertInstruction(expression);
                 // Nullable bit computation
                 // (a || b).is_null = a.is_null ? (b.is_null ? true : b.value)
                 //                              : (b.is_null ? a.value : false)
@@ -513,8 +543,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 ExpressionJsonRepresentation cond2 = this.insertNewInstruction();
                 this.mux(cond2.instruction, rightNullId, leftId.id, falseLit.id);
                 // Top-level condition
-                ExpressionJsonRepresentation topCond = this.insertNewInstruction();
-                this.mux(topCond.instruction, leftNullId, cond1.instructionId, cond2.instructionId);
+                this.mux(result.getNullObject(), leftNullId, cond1.instructionId, cond2.instructionId);
 
                 // (a || b).value = a.is_null ? b.value
                 //                            : a.value || b.value
@@ -522,8 +551,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 ExpressionJsonRepresentation or = this.insertNewInstruction();
                 this.binOp(or.instruction, leftId.id, rightId.id, "Or", baseTypeName(expression.left));
                 // Result
-                ExpressionJsonRepresentation secondBranch = this.insertInstruction(expression);
-                this.mux(secondBranch.instruction, leftNullId, rightId.id, or.instructionId);
+                this.mux(result.instruction, leftNullId, rightId.id, or.instructionId);
             }
             return false;
         } else if (expression.operation.equals("agg_plus")) {

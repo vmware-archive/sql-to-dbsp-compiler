@@ -204,6 +204,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         ObjectNode data = node.putObject("Source");
         data.put("layout", typeId);
         node.set("Source", data);
+        data.put("table", operator.outputName);
         return false;
     }
 
@@ -311,6 +312,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
             data.set(function, funcNode);
         }
         this.nodes.set(Long.toString(operator.id), node);
+        this.addComment(data, operator.comment);
         return data;
     }
 
@@ -459,6 +461,11 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         return false;
     }
 
+    void addComment(ObjectNode node, @Nullable String comment) {
+        if (comment != null)
+            node.put("comment", comment);
+    }
+
     @Override
     public boolean preorder(DBSPNegateOperator operator) {
         this.operatorToJson(operator, "Neg", "");
@@ -467,7 +474,8 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     @Override
     public boolean preorder(DBSPSinkOperator operator) {
-        this.operatorToJson(operator, "Sink", "");
+        ObjectNode node = this.operatorToJson(operator, "Sink", "");
+        node.put("query", operator.query);
         return false;
     }
 
@@ -505,6 +513,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
     public boolean preorder(DBSPConstantOperator operator) {
         ObjectNode node = this.topMapper.createObjectNode();
         ObjectNode data = node.putObject("Constant");
+        this.addComment(data, operator.getFunction().toString());
         DBSPType type = operator.getNonVoidType();
         DBSPType elementType = type.to(DBSPTypeZSet.class).elementType;
         ObjectNode layout = data.putObject("layout");
