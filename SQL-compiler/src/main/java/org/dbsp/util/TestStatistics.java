@@ -23,10 +23,30 @@
 
 package org.dbsp.util;
 
+import org.dbsp.sqllogictest.SqlTestQuery;
+
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestStatistics {
     static final DecimalFormat df = new DecimalFormat("#,###");
+
+    public static class FailedTestDescription {
+        public final SqlTestQuery query;
+        public final String error;
+
+        public FailedTestDescription(SqlTestQuery query, String error) {
+            this.query = query;
+            this.error = error;
+        }
+
+        @Override
+        public String toString() {
+            return "ERROR: " + this.error + "\n\t" + this.query.file + ":" + this.query.line +
+                    "\n\t" + this.query + "\n";
+        }
+    }
 
     public int failed;
     public int passed;
@@ -36,14 +56,38 @@ public class TestStatistics {
         this.failed += stats.failed;
         this.passed += stats.passed;
         this.ignored += stats.ignored;
+        this.failures.addAll(stats.failures);
+    }
+
+    List<FailedTestDescription> failures = new ArrayList<>();
+    final boolean stopAtFirstErrror;
+
+    public TestStatistics(boolean stopAtFirstError) {
+        this.stopAtFirstErrror = stopAtFirstError;
+    }
+
+    public void addFailure(FailedTestDescription failure) {
+        this.failures.add(failure);
+        this.failed++;
+    }
+
+    public int testsRun() {
+        return this.passed + this.ignored + this.failed;
     }
 
     @Override
     public String toString() {
+        StringBuilder result = new StringBuilder();
+        if (this.failures.size() > 0)
+            result.append(this.failures.size())
+                    .append(" failures:\n");
+        for (FailedTestDescription failure: this.failures)
+            result.append(failure.toString());
         return "Passed: " + TestStatistics.df.format(this.passed) +
                 "\nFailed: " + TestStatistics.df.format(this.failed) +
                 "\nIgnored: " + TestStatistics.df.format(this.ignored) +
-                "\n";
+                "\n" +
+                result;
     }
 
     public int totalTests() {

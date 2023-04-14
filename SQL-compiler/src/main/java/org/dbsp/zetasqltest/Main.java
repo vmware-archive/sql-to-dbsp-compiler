@@ -23,6 +23,7 @@
 
 package org.dbsp.zetasqltest;
 
+import org.dbsp.sqllogictest.ExecutionOptions;
 import org.dbsp.util.TestStatistics;
 import org.dbsp.util.Utilities;
 
@@ -39,9 +40,11 @@ public class Main {
     static class TestLoader extends SimpleFileVisitor<Path> {
         int errors = 0;
         final TestStatistics statistics;
+        final ExecutionOptions options;
 
-        TestLoader() {
-            this.statistics = new TestStatistics();
+        TestLoader(ExecutionOptions options) {
+            this.options = options;
+            this.statistics = new TestStatistics(options.stopAtFirstError);
         }
 
         @SuppressWarnings("ConstantConditions")
@@ -59,7 +62,7 @@ public class Main {
                     this.errors++;
                     throw ex;
                 }
-                TestStatistics stats = executor.execute(test);
+                TestStatistics stats = executor.execute(test, this.options);
                 this.statistics.add(stats);
             }
             return FileVisitResult.CONTINUE;
@@ -69,8 +72,9 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         //Logger.INSTANCE.setDebugLevel(ZetatestVisitor.class, 1);
+        ExecutionOptions options = new ExecutionOptions();
         Path path = Paths.get(zetaRepo);
-        TestLoader loader = new TestLoader();
+        TestLoader loader = new TestLoader(options);
         Files.walkFileTree(path, loader);
         System.out.println("Files that could not be not parsed: " + loader.errors);
         System.out.println(loader.statistics);

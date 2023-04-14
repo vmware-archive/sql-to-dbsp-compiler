@@ -26,6 +26,14 @@ package org.dbsp.sqlCompiler.compiler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.calcite.adapter.jdbc.JdbcSchema;
+import org.apache.calcite.jdbc.CalciteConnection;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.tools.FrameworkConfig;
+import org.apache.calcite.tools.Frameworks;
+import org.apache.calcite.tools.RelBuilder;
+import org.apache.calcite.tools.RelRunner;
 import org.dbsp.sqlCompiler.compiler.backend.rust.RustFileWriter;
 import org.dbsp.sqlCompiler.compiler.errors.CompilerMessages;
 import org.dbsp.sqlCompiler.CompilerMain;
@@ -43,19 +51,18 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeUser;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Logger;
+import org.dbsp.util.StringPrintStream;
 import org.dbsp.util.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.awt.image.FileImageSource;
 import sun.awt.image.JPEGImageDecoder;
 
+import javax.sql.DataSource;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -468,5 +475,69 @@ public class OtherTests extends BaseSQLTests implements IModule {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = mapper.readTree(json);
         Assert.assertNotNull(jsonNode);
+    }
+
+    @SuppressWarnings("SqlDialectInspection")
+    @Test
+    public void HSQLDBTest() throws SQLException, UnsupportedEncodingException {
+        //Class.forName("org.hsqldb.jdbcDriver");
+        String jdbcUrl = "jdbc:hsqldb:mem:db";
+        Connection connection = DriverManager.getConnection(jdbcUrl, "", "");
+        try (Statement s = connection.createStatement()) {
+            s.execute("create table mytable(" +
+                    "id integer not null primary key," +
+                    "strcol varchar(25))");
+
+            s.execute("insert into mytable values(0, 'str0')");
+            s.execute("insert into mytable values(1, 'str1')");
+        }
+
+        StringPrintStream direct = new StringPrintStream();
+        try (Statement s = connection.createStatement()) {
+            ResultSet resultSet = s.executeQuery("SELECT * FROM mytable WHERE id > 0");
+            Utilities.showResultSet(resultSet, direct.getPrintStream());
+        }
+
+        DataSource mockDataSource = JdbcSchema.dataSource(jdbcUrl, "org.hsqldb.jdbcDriver", "", "");
+        Connection executorConnection = DriverManager.getConnection("jdbc:calcite:");
+        CalciteConnection calciteConnection = executorConnection.unwrap(CalciteConnection.class);
+        SchemaPlus rootSchema = calciteConnection.getRootSchema();
+        rootSchema.add("schema", JdbcSchema.create(rootSchema, "schema", mockDataSource, null, null));
+
+        FrameworkConfig config = Frameworks.newConfigBuilder()
+                .defaultSchema(rootSchema)
+                .build();
+        RelBuilder r = RelBuilder.create(config);
+        RelNode node = r
+                .scan("schema", "MYTABLE")
+                .filter(r.equals(r.field("ID"), r.literal(1)))
+                .project(
+                        r.field("ID"),
+                        r.field("STRCOL")
+                )
+                .build();
+        RelRunner runner = calciteConnection.unwrap(RelRunner.class);
+        try (PreparedStatement ps = runner.prepareStatement(node)) {
+            ps.execute();
+            ResultSet resultSet = ps.getResultSet();
+            StringPrintStream throughCalcite = new StringPrintStream();
+            Utilities.showResultSet(resultSet, throughCalcite.getPrintStream());
+            Assert.assertEquals(direct.toString(), throughCalcite.toString());
+        }
+    }
+
+    @Test
+    public void rawCalciteTest() throws SQLException {
+        Connection connection = DriverManager.getConnection("jdbc:calcite:");
+        String query = "SELECT timestampdiff(MONTH, TIMESTAMP'2021-02-28 12:00:00', TIMESTAMP'2021-03-28 11:59:59')";
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.execute();
+            try (ResultSet resultSet = ps.getResultSet()) {
+                while (resultSet.next()) {
+                    int result = resultSet.getInt(1);
+                    Assert.assertEquals(0, result);
+                }
+            }
+        }
     }
 }

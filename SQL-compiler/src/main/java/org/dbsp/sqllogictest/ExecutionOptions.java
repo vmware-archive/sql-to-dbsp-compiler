@@ -30,7 +30,6 @@ import com.beust.jcommander.ParameterException;
 import org.apache.calcite.config.Lex;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqllogictest.executors.*;
-import org.dbsp.util.Unimplemented;
 import org.dbsp.util.UnsupportedException;
 
 import javax.annotation.Nullable;
@@ -41,7 +40,7 @@ import java.util.*;
 @SuppressWarnings("CanBeFinal")
 public class ExecutionOptions {
     public static class ExecutorValidator implements IParameterValidator {
-        final private Set<String> legalExecutors;
+        private final Set<String> legalExecutors;
 
         public ExecutorValidator() {
             this.legalExecutors = new HashSet<>();
@@ -61,41 +60,34 @@ public class ExecutionOptions {
         }
     }
 
+    @Parameter(names = "-d", description = "Directory with SLT tests")
+    public String sltDirectory = "../../sqllogictest";
+    @Parameter(names = "-i", description = "Install the SLT tests if the directory does not exist")
+    public boolean install = false;
+    @Parameter(names = "-h", description = "Show this help message and exit")
+    public boolean help = false;
+    @Parameter(names = "-x", description = "Stop at the first encountered query error")
+    public boolean stopAtFirstError = false;
     @Parameter(description = "Files or directories with test data")
     List<String> directories = new ArrayList<>();
-    @Parameter(names = "-i", description = "Incremental testing")
+    @Parameter(names = "-inc", description = "Incremental testing")
     boolean incremental;
-    @Parameter(names = "-n", description = "Do not execute, just parse")
+    @Parameter(names = "-n", description = "Do not execute, just parse the test files")
     boolean doNotExecute;
     @Parameter(names = "-e", validateWith = ExecutorValidator.class)
     String executor = "none";
-    @Parameter(names = "-u", description = "Name of user to use for database")
-    String user = "user";
-    @Parameter(names = "-p", description = "Password of user for the database")
-    String password = "password";
     @Parameter(names = "-s", description = "Ignore the status of SQL commands executed")
     boolean validateStatus;
     @Parameter(names = "-b", description = "Load a list of buggy commands to skip from this file")
     @Nullable
     String bugsFile = null;
-    @Parameter(names = "-l", description = "How the test programs store intermediate data from the database (choices: csv, db)")
-    @Nullable
-    String inputSource = "csv";
     // @Parameter(names = "-j", description = "Validate JSON JIT IR representation while compiling")
     // TODO: reenable this when the JIT compiler works properly
     boolean validateJson = false;
 
-    static class PostgresPolicy implements AcceptancePolicy {
-        @Override
-        public boolean accept(List<String> skip, List<String> only) {
-            if (only.contains("postgresql"))
-                return true;
-            if (!only.isEmpty())
-                return false;
-            return !skip.contains("postgresql");
-        }
-    }
-
+    /**
+     * Read the list of statements and queries to skip from a file.
+     */
     HashSet<String> readBugsFile(String fileName) throws IOException {
         HashSet<String> bugs = new HashSet<>();
         File file = new File(fileName);
@@ -111,29 +103,29 @@ public class ExecutionOptions {
         return bugs;
     }
 
+    final JCommander commander;
+
+    public ExecutionOptions() {
+        this.commander = JCommander.newBuilder()
+                .addObject(this)
+                .build();
+        this.commander.setProgramName("slt");
+    }
+
     String jdbcConnectionString() {
-        return "jdbc:postgresql://localhost/slt";
+        return "jdbc:hsqldb:mem:db";
+    }
+
+    public void usage() {
+        this.commander.usage();
     }
 
     String connectionString() {
-        Objects.requireNonNull(this.inputSource);
-        if (this.inputSource.equals("csv")) {
-            return "csv";
-        } else if (this.inputSource.equals("db")) {
-            return String.format("postgresql://localhost?dbname=slt&user=%s&password=%s", this.user,
-                                         this.password);
-        }
-        throw new Unimplemented(String.format("Unsupported input source or DB dialect: inputSource=%s",
-                                              this.inputSource));
-    }
-
-    AcceptancePolicy getAcceptancePolicy() {
-        return new PostgresPolicy();
+        return "csv";
     }
 
     JDBCExecutor jdbcExecutor(HashSet<String> sltBugs) {
-        JDBCExecutor jdbc =  new JDBCExecutor(this.jdbcConnectionString(),
-                this.user, this.password);
+        JDBCExecutor jdbc =  new JDBCExecutor(this.jdbcConnectionString());
         jdbc.avoid(sltBugs);
         jdbc.setValidateStatus(this.validateStatus);
         return jdbc;
@@ -162,7 +154,7 @@ public class ExecutionOptions {
             }
             case "calcite": {
                 JDBCExecutor jdbc = this.jdbcExecutor(sltBugs);
-                CalciteExecutor result = new CalciteExecutor(jdbc, this.user, this.password);
+                CalciteExecutor result = new CalciteExecutor(jdbc);
                 result.avoid(sltBugs);
                 result.setValidateStatus(this.validateStatus);
                 return result;
@@ -176,6 +168,8 @@ public class ExecutionOptions {
                 result.setValidateStatus(this.validateStatus);
                 return result;
             }
+            default:
+                break;
         }
         throw new UnsupportedException(this.executor);  // unreachable
     }
@@ -185,19 +179,19 @@ public class ExecutionOptions {
     }
 
     public void parse(String... argv) {
-        JCommander.newBuilder()
-                .addObject(this)
-                .build()
-                .parse(argv);
+        this.commander.parse(argv);
     }
 
     @Override
     public String toString() {
         return "ExecutionOptions{" +
-                "directories=" + this.directories +
+                "tests source=" + this.sltDirectory +
+                ", install=" + this.install +
+                ", directories=" + this.directories +
                 ", incremental=" + this.incremental +
                 ", execute=" + !this.doNotExecute +
                 ", executor=" + this.executor +
+                ", stopAtFirstError=" + this.stopAtFirstError +
                 '}';
     }
 }

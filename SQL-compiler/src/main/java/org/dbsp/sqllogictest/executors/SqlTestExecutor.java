@@ -40,12 +40,10 @@ public class SqlTestExecutor implements ICastable, IModule {
      * If true validate the status of the SQL statements executed.
      */
     protected boolean validateStatus = true;
-
     private static long startTime = -1;
     private static int totalTests = 0;
     private long lastTestStartTime;
     protected long statementsExecuted = 0;
-    protected long queriesExecuted = 0;
 
     protected SqlTestExecutor() {
         this.buggyOperations = new HashSet<>();

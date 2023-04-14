@@ -21,21 +21,38 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqllogictest.executors;
+package org.dbsp.util;
 
-import org.apache.calcite.sql.parser.SqlParseException;
-import org.dbsp.sqllogictest.ExecutionOptions;
-import org.dbsp.sqllogictest.SLTTestFile;
-import org.dbsp.util.TestStatistics;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
+/**
+ * A PrintStream that writes do a String.
+ */
+public class StringPrintStream {
+    PrintStream stream;
+    ByteArrayOutputStream byteStream;
+    boolean closed = false;
 
-public abstract class SqlSLTTestExecutor extends SqlTestExecutor {
+    public StringPrintStream() throws UnsupportedEncodingException {
+        this.byteStream = new ByteArrayOutputStream();
+        this.stream = new PrintStream(this.byteStream, true, StandardCharsets.UTF_8.name());
+    }
+
+    public PrintStream getPrintStream() {
+        return this.stream;
+    }
+
     /**
-     * Execute the specified test file.
+     * Get the data written so far.  Once this is done the stream is closed and can't be used anymore.
      */
-    public abstract TestStatistics execute(SLTTestFile testFile, ExecutionOptions options)
-            throws SqlParseException, IOException, SQLException, NoSuchAlgorithmException, InterruptedException;
+    @Override
+    public String toString() {
+        if (!this.closed)
+            this.stream.close();
+        this.closed = true;
+        return this.byteStream.toString();
+    }
 }

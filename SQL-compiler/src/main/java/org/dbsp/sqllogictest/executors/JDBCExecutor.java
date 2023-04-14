@@ -27,6 +27,7 @@ import org.dbsp.sqllogictest.*;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
@@ -37,23 +38,21 @@ import java.util.List;
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
     public final String db_url;
-    public final String user;
-    public final String password;
     @Nullable
     Connection connection;
+
+    String DEFAULT_USER = "";  // no user needed for hsqldb
+    String DEFAULT_PASSWORD = "";  // no password needed for hsqldb
 
     // In the end everything is decoded as a string
     static class Row {
         public final List<String> values;
-
         Row() {
             this.values = new ArrayList<>();
         }
-
         void add(String v) {
             this.values.add(v);
         }
-
         @Override
         public String toString() {
             return String.join("\n", this.values);
@@ -70,12 +69,10 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         void add(Row row) {
             this.rows.add(row);
         }
-
         @Override
         public String toString() {
             return String.join("\n", Linq.map(this.rows, Row::toString));
         }
-
         public int size() {
             return this.rows.size();
         }
@@ -97,10 +94,8 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         }
     }
 
-    public JDBCExecutor(String db_url, String user, String password) {
+    public JDBCExecutor(String db_url) {
         this.db_url = db_url;
-        this.user = user;
-        this.password = password;
         this.connection = null;
     }
 
@@ -111,11 +106,9 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
                 .append(statement.statement)
                 .newline();
         assert this.connection != null;
-        Statement stmt = this.connection.createStatement();
-        try {
+        try (Statement stmt = this.connection.createStatement()) {
             stmt.execute(statement.statement);
         } catch (SQLException ex) {
-            stmt.close();
             Logger.INSTANCE.from(this, 1)
                     .append("ERROR: ")
                     .append(ex.getMessage())
@@ -125,24 +118,22 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         this.statementsExecuted++;
     }
 
-    boolean query(SqlTestQuery query, int queryNo) throws SQLException, NoSuchAlgorithmException {
+    void query(SqlTestQuery query, TestStatistics statistics) throws SQLException, NoSuchAlgorithmException {
         assert this.connection != null;
         if (this.buggyOperations.contains(query.query)) {
             System.err.println("Skipping " + query.query);
-            return false;
+
         }
-        Statement stmt = this.connection.createStatement();
-        ResultSet resultSet = stmt.executeQuery(query.query);
-        this.validate(query.query, queryNo, resultSet, query.outputDescription);
-        stmt.close();
-        resultSet.close();
-        this.queriesExecuted++;
+        try (Statement stmt = this.connection.createStatement()) {
+            ResultSet resultSet = stmt.executeQuery(query.query);
+            this.validate(query, resultSet, query.outputDescription, statistics);
+            resultSet.close();
+        }
         Logger.INSTANCE.from(this, 1)
-                .append(this.queriesExecuted)
+                .append(statistics.testsRun())
                 .append(": ")
                 .append(query.query)
                 .newline();
-        return true;
     }
 
     Row getValue(ResultSet rs, String columnTypes) throws SQLException {
@@ -209,8 +200,9 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         }
     }
 
-    void validate(String query, int queryNo,
-                  ResultSet rs, SqlTestQueryOutputDescription description)
+    void validate(SqlTestQuery query, ResultSet rs,
+                  SqlTestQueryOutputDescription description,
+                  TestStatistics statistics)
             throws SQLException, NoSuchAlgorithmException {
         assert description.columnTypes != null;
         Rows rows = new Rows();
@@ -218,62 +210,82 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
             Row row = this.getValue(rs, description.columnTypes);
             rows.add(row);
         }
-        if (description.valueCount != rows.size() * description.columnTypes.length())
-            throw new RuntimeException("Expected " + description.valueCount + " got " +
-                    rows.size() * description.columnTypes.length());
+        if (description.valueCount != rows.size() * description.columnTypes.length()) {
+            statistics.addFailure(new TestStatistics.FailedTestDescription(
+                    query, "Expected " + description.valueCount + " rows, got " +
+                    rows.size() * description.columnTypes.length()));
+            return;
+        }
         rows.sort(description.order);
+        Logger.INSTANCE.from(this, 3)
+                .append("Result is ")
+                .newline()
+                .append(rows.toString())
+                .newline();
         if (description.queryResults != null) {
             String r = rows.toString();
             String q = String.join("\n", description.queryResults);
-            if (!r.equals(q))
-                throw new RuntimeException("Output differs: " + r + " vs " + q);
+            if (!r.equals(q)) {
+                statistics.addFailure(new TestStatistics.FailedTestDescription(
+                        query, "Output differs: " + r + " vs " + q));
+                return;
+            }
         }
         if (description.hash != null) {
             MessageDigest md = MessageDigest.getInstance("MD5");
             String repr = rows + "\n";
-            md.update(repr.getBytes());
+            md.update(repr.getBytes(StandardCharsets.UTF_8));
             byte[] digest = md.digest();
             String hash = Utilities.toHex(digest);
-            if (!description.hash.equals(hash))
-                throw new RuntimeException(query + " #" + queryNo +
-                        ": Hash of data does not match");
+            if (!description.hash.equals(hash)) {
+                statistics.addFailure(new TestStatistics.FailedTestDescription(
+                        query, "Hash of data does not match expected value"));
+                return;
+            }
         }
+        statistics.passed++;
     }
 
-    List<String> getStringResults(String query) throws SQLException {
+    List<String> getTableList() throws SQLException {
         List<String> result = new ArrayList<>();
         assert this.connection != null;
-        Statement stmt = this.connection.createStatement();
-        ResultSet rs = stmt.executeQuery(query);
+        DatabaseMetaData md = this.connection.getMetaData();
+        ResultSet rs = md.getTables(null, null, "%", new String[] { "TABLE" });
         while (rs.next()) {
-            String tableName = rs.getString(1);
+            String tableName = rs.getString(3);
+            if (tableName.equals("PUBLIC"))
+                // The catalog table in HSQLDB
+                continue;
             result.add(tableName);
         }
         rs.close();
         return result;
     }
 
-    List<String> getTableList() throws SQLException {
-        return this.getStringResults("SELECT tableName FROM pg_catalog.pg_tables\n" +
-                    "    WHERE schemaname != 'information_schema' AND\n" +
-                    "    schemaname != 'pg_catalog'");
-    }
-
     List<String> getViewList() throws SQLException {
-        return this.getStringResults("SELECT table_name \n" +
-                "FROM information_schema.views \n" +
-                "WHERE table_schema NOT IN ('information_schema', 'pg_catalog') \n");
+        List<String> result = new ArrayList<>();
+        assert this.connection != null;
+        DatabaseMetaData md = this.connection.getMetaData();
+        ResultSet rs = md.getTables(null, null, "%", new String[] { "VIEW" });
+        while (rs.next()) {
+            String tableName = rs.getString(3);
+            result.add(tableName);
+        }
+        rs.close();
+        return result;
     }
 
     void dropAllTables() throws SQLException {
         assert this.connection != null;
         List<String> tables = this.getTableList();
         for (String tableName: tables) {
+            // Unfortunately prepare statements cannot be parameterized in table names.
+            // Sonar complains about this, but there is nothing we can do but suppress the warning.
             String del = "DROP TABLE " + tableName;
             Logger.INSTANCE.from(this, 2).append(del).newline();
-            Statement drop = this.connection.createStatement();
-            drop.execute(del);
-            drop.close();
+            try (Statement drop = this.connection.createStatement()) {
+                drop.execute(del);
+            }
         }
     }
 
@@ -281,17 +293,23 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         assert this.connection != null;
         List<String> tables = this.getViewList();
         for (String tableName: tables) {
+            // Unfortunately prepare statements cannot be parameterized in table names.
+            // Sonar complains about this, but there is nothing we can do but suppress the warning.
             String del = "DROP VIEW IF EXISTS " + tableName + " CASCADE";
             Logger.INSTANCE.from(this, 2).append(del).newline();
-            Statement drop = this.connection.createStatement();
-            drop.execute(del);
-            drop.close();
+            try (Statement drop = this.connection.createStatement()) {
+                drop.execute(del);
+            }
         }
     }
 
     public void establishConnection() throws SQLException {
-        this.connection = DriverManager.getConnection(this.db_url, this.user, this.password);
+        this.connection = DriverManager.getConnection(this.db_url, DEFAULT_USER, DEFAULT_PASSWORD);
         assert this.connection != null;
+        try (Statement statement = this.connection.createStatement()) {
+            // Enable postgres compatibility
+            statement.execute("SET DATABASE SQL SYNTAX PGS TRUE");
+        }
     }
 
     public void closeConnection() throws SQLException {
@@ -300,11 +318,12 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
     }
 
     @Override
-    public TestStatistics execute(SLTTestFile file) throws SQLException, NoSuchAlgorithmException {
+    public TestStatistics execute(SLTTestFile file, ExecutionOptions options)
+            throws SQLException, NoSuchAlgorithmException {
         this.startTest();
         this.establishConnection();
         this.dropAllTables();
-        TestStatistics result = new TestStatistics();
+        TestStatistics result = new TestStatistics(options.stopAtFirstError);
         for (ISqlTestOperation operation: file.fileContents) {
             try {
                 SqlStatement stat = operation.as(SqlStatement.class);
@@ -312,15 +331,10 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
                     this.statement(stat);
                 } else {
                     SqlTestQuery query = operation.to(SqlTestQuery.class);
-                    boolean executed = this.query(query, result.passed);
-                    if (executed) {
-                        result.passed++;
-                    } else {
-                        result.ignored++;
-                    }
+                    this.query(query, result);
                 }
             } catch (SQLException ex) {
-                System.err.println("Error while processing #" + result.passed + " " + operation);
+                System.err.println("Error while processing #" + result.testsRun() + " " + operation);
                 throw ex;
             }
         }

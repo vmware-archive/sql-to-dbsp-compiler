@@ -269,7 +269,6 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
                 ProgramAndTester pc = this.generateTestCase(
                         compiler, streamInputFunction, this.viewPreparation, testQuery, queryNo);
                 codeGenerated.add(pc);
-                this.queriesExecuted++;
             } catch (Throwable ex) {
                 System.err.println("Error while compiling " + testQuery.query + ": " + ex.getMessage());
                 throw ex;
@@ -288,7 +287,10 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         this.queriesToRun.clear();
         this.reportTime(queryNo);
         this.cleanupFilesystem();
-        result.passed += queryNo;  // This is not entirely correct, but I am not parsing the rust output
+        if (this.execute)
+            result.passed += queryNo;  // This is not entirely correct, but I am not parsing the rust output
+        else
+            result.ignored += queryNo;
     }
 
     ProgramAndTester generateTestCase(
@@ -409,9 +411,9 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
     }
 
     @Override
-    public TestStatistics execute(SLTTestFile file)
+    public TestStatistics execute(SLTTestFile file, ExecutionOptions options)
             throws SqlParseException, IOException, InterruptedException, SQLException {
-        TestStatistics result = new TestStatistics();
+        TestStatistics result = new TestStatistics(options.stopAtFirstError);
         boolean seenQueries = false;
         int remainingInBatch = this.batchSize;
         int toSkip = this.skip;

@@ -23,6 +23,7 @@
 
 package org.dbsp.zetasqltest;
 
+import org.dbsp.sqllogictest.ExecutionOptions;
 import org.dbsp.sqllogictest.executors.SqlTestExecutor;
 import org.dbsp.util.TestStatistics;
 
@@ -33,9 +34,9 @@ import org.dbsp.util.TestStatistics;
 public class NoExecutor extends SqlTestExecutor {
     public NoExecutor() {}
 
-    TestStatistics execute(ZetaSQLTestFile file) {
+    TestStatistics execute(ZetaSQLTestFile file, ExecutionOptions options) {
         this.startTest();
-        TestStatistics result = new TestStatistics();
+        TestStatistics result = new TestStatistics(options.stopAtFirstError);
         for (ZetaSQLTest ignored : file.tests) {
             result.ignored++;
         }

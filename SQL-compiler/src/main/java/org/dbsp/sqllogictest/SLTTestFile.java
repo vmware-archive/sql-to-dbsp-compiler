@@ -144,7 +144,7 @@ public class SLTTestFile implements IModule {
         if (!line.startsWith("query")) {
             this.error("Unexpected line: " + Utilities.singleQuote(line));
         }
-        @Nullable SqlTestQuery result = new SqlTestQuery();
+        @Nullable SqlTestQuery result = new SqlTestQuery(this.testFile);
         line = line.substring("query".length()).trim();
         if (line.isEmpty())
             this.error("Malformed query description " + line);
@@ -176,17 +176,18 @@ public class SLTTestFile implements IModule {
         }
 
         String q = query.toString().trim();
-        result.setQuery(q);
+        result.setQuery(q, this.lineno);
 
+        final String vht = "values hashing to";
         if (!this.done) {
             line = this.nextLine(true);
             if (!this.done) {
-                if (line.contains("values hashing to")) {
-                    int vi = line.indexOf("values hashing to");
+                if (line.contains(vht)) {
+                    int vi = line.indexOf(vht);
                     String number = line.substring(0, vi - 1);
                     int values = Integer.parseInt(number);
                     result.outputDescription.setValueCount(values);
-                    line = line.substring(vi + "values hashing to".length()).trim();
+                    line = line.substring(vi + vht.length()).trim();
                     result.outputDescription.setHash(line);
                     line = this.nextLine(true);
                     if (!this.done && !line.isEmpty())
