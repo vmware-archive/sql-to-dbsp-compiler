@@ -27,6 +27,7 @@ import org.dbsp.sqllogictest.*;
 import org.dbsp.util.*;
 
 import javax.annotation.Nullable;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
@@ -233,7 +234,7 @@ public class JDBCExecutor extends SqlSLTTestExecutor implements IModule {
         if (description.hash != null) {
             MessageDigest md = MessageDigest.getInstance("MD5");
             String repr = rows + "\n";
-            md.update(repr.getBytes());
+            md.update(repr.getBytes(StandardCharsets.UTF_8));
             byte[] digest = md.digest();
             String hash = Utilities.toHex(digest);
             if (!description.hash.equals(hash)) {

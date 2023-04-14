@@ -525,4 +525,19 @@ public class OtherTests extends BaseSQLTests implements IModule {
             Assert.assertEquals(direct.toString(), throughCalcite.toString());
         }
     }
+
+    @Test
+    public void rawCalciteTest() throws SQLException {
+        Connection connection = DriverManager.getConnection("jdbc:calcite:");
+        String query = "SELECT timestampdiff(MONTH, TIMESTAMP'2021-02-28 12:00:00', TIMESTAMP'2021-03-28 11:59:59')";
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.execute();
+            try (ResultSet resultSet = ps.getResultSet()) {
+                while (resultSet.next()) {
+                    int result = resultSet.getInt(1);
+                    Assert.assertEquals(0, result);
+                }
+            }
+        }
+    }
 }
