@@ -56,7 +56,7 @@ import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
 import org.apache.calcite.sql.type.*;
 import org.apache.calcite.sql.util.SqlOperatorTables;
 import org.apache.calcite.sql.util.SqlShuttle;
-import org.apache.calcite.sql.validate.SqlConformance;
+import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.RelDecorrelator;
@@ -184,11 +184,11 @@ public class CalciteCompiler implements IModule {
         this.options = options;
 
         CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(new Properties());
-        SqlConformance conformance = connectionConfig.conformance();
         this.parserConfig = SqlParser.config()
                 .withLex(options.ioOptions.lexicalRules)
                 .withUnquotedCasing(Casing.UNCHANGED)
                 .withQuotedCasing(Casing.UNCHANGED)
+                .withConformance(SqlConformanceEnum.LENIENT)
                 // Add support for DDL language
                 // TODO: would be nice to get DDL and BABEL at the same time...
                 //.withParserFactory(SqlBabelParserImpl.FACTORY)
@@ -227,7 +227,9 @@ public class CalciteCompiler implements IModule {
                 SqlOperatorTables.of(division)
         );
 
-        SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT;
+        SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
+                .withIdentifierExpansion(true);
+
         this.validator = SqlValidatorUtil.newValidator(
                 operatorTable,
                 catalogReader,

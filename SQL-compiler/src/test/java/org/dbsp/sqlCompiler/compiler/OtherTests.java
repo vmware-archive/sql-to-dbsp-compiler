@@ -335,7 +335,9 @@ public class OtherTests extends BaseSQLTests implements IModule {
         };
         File file = this.createInputScript(statements);
         File json = File.createTempFile("out", ".json", new File("."));
+        json.deleteOnExit();
         File tmp = File.createTempFile("out", ".rs", new File("."));
+        tmp.deleteOnExit();
         CompilerMessages message = CompilerMain.execute(
                 "-js", json.getPath(), "-o", tmp.getPath(), file.getPath());
         Assert.assertEquals(message.exitCode, 0);
@@ -348,10 +350,6 @@ public class OtherTests extends BaseSQLTests implements IModule {
         Assert.assertTrue(jsonContents.contains("yourtable"));
         Assert.assertTrue(jsonContents.contains("column1"));
         boolean success = file.delete();
-        Assert.assertTrue(success);
-        success = json.delete();
-        Assert.assertTrue(success);
-        success = tmp.delete();
         Assert.assertTrue(success);
     }
 
