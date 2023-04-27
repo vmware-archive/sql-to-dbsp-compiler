@@ -216,6 +216,12 @@ public class ToRustInnerVisitor extends InnerVisitor {
         String val = Float.toString(literal.value);
         if (Float.isNaN(literal.value))
             val = "std::f32::NAN";
+        else if (Float.isInfinite(literal.value)) {
+            if (literal.value < 0)
+                val = "std::f32::NEG_INFINITY";
+            else
+                val = "std::f32::INFINITY";
+        }
         this.builder.append(literal.wrapSome("F32::new(" + val + ")"));
         return false;
     }
@@ -226,6 +232,12 @@ public class ToRustInnerVisitor extends InnerVisitor {
         String val = Double.toString(literal.value);
         if (Double.isNaN(literal.value))
             val = "std::f64::NAN";
+        else if (Double.isInfinite(literal.value)) {
+            if (literal.value < 0)
+                val = "std::f64::NEG_INFINITY";
+            else
+                val = "std::f64::INFINITY";
+        }
         this.builder.append(literal.wrapSome("F64::new(" + val + ")"));
         return false;
     }
