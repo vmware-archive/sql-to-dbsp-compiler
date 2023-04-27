@@ -28,11 +28,18 @@ import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.BaseSQLTests;
 import org.dbsp.sqlCompiler.compiler.CompilerOptions;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
+import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPDoubleLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
+import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDecimal;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
 import org.junit.Test;
+
+import java.util.Objects;
 
 /**
  * Tests manually adapted from
@@ -684,5 +691,174 @@ public class PostgresNumericTests extends BaseSQLTests {
                 "    WHERE t1.id1 = t2.id\n" +
                 "    AND t1.results != t2.expected";
         this.testQuery(intermediate, last);
+    }
+
+    DBSPZSetLiteral parseTable(String table) {
+        String[] lines = table.split("\n");
+        boolean inHeader = true;
+        DBSPZSetLiteral result = null;
+        int tupleSize = 0;
+        for (String line: lines) {
+            if (line.startsWith("---")) {
+                inHeader = false;
+                continue;
+            }
+            if (inHeader)
+                continue;
+            String[] columns = line.split("[|]");
+            if (result == null) {
+                DBSPType[] fields = new DBSPType[columns.length];
+                for (int i = 0; i < columns.length; i++)
+                    fields[i] = DBSPTypeDouble.INSTANCE;
+                DBSPTypeTuple tuple = new DBSPTypeTuple(fields);
+                result = DBSPZSetLiteral.emptyWithElementType(tuple);
+                tupleSize  = columns.length;
+            }
+            DBSPExpression[] values = new DBSPExpression[columns.length];
+            if (columns.length != tupleSize)
+                throw new RuntimeException("Row size is " + columns.length + " but expected " + tupleSize);
+            for (int i = 0; i < columns.length; i++) {
+                String column = columns[i];
+                double value = Double.parseDouble(column);
+                values[i] = new DBSPDoubleLiteral(value);
+            }
+            DBSPExpression tupleValue = new DBSPTupleExpression(values);
+            result.add(tupleValue);
+        }
+        return Objects.requireNonNull(result);
+    }
+
+    void compare(String query, String expected) {
+        DBSPCompiler compiler = testCompiler();
+        compiler.compileStatement(query);
+        compiler.optimize();
+        DBSPCircuit circuit = getCircuit(compiler);
+        DBSPZSetLiteral result = this.parseTable(expected);
+        InputOutputPair streams = new InputOutputPair(
+                new DBSPZSetLiteral[0],
+                new DBSPZSetLiteral[] { result }
+        );
+        this.addRustTestCase(circuit, streams);
+    }
+
+    @Test
+    public void testSpecialValues() {
+        // TODO: this test was written with NUMERIC values, but was converted to FP
+        String query = "CREATE VIEW VV AS " +
+                "WITH v(x) AS (VALUES(0E0),(1E0),(-1E0),(4.2E0),(CAST ('Infinity' AS DOUBLE)),(CAST ('-Infinity' AS DOUBLE)),(CAST ('nan' AS DOUBLE)))\n" +
+                "SELECT x1, x2,\n" +
+                "  x1 + x2 AS s,\n" +
+                "  x1 - x2 AS diff,\n" +
+                "  x1 * x2 AS prod\n" +
+                "FROM v AS v1(x1), v AS v2(x2)";
+        String expected = "    x1     |    x2     |    sum    |   diff    |   prod    \n" +
+                "-----------+-----------+-----------+-----------+-----------\n" +
+                "         0 |         0 |         0 |         0 |         0\n" +
+                "         0 |         1 |         1 |        -1 |         0\n" +
+                "         0 |        -1 |        -1 |         1 |         0\n" +
+                "         0 |       4.2 |       4.2 |      -4.2 |       0.0\n" +
+                "         0 |  Infinity |  Infinity | -Infinity |       NaN\n" +
+                "         0 | -Infinity | -Infinity |  Infinity |       NaN\n" +
+                "         0 |       NaN |       NaN |       NaN |       NaN\n" +
+                "         1 |         0 |         1 |         1 |         0\n" +
+                "         1 |         1 |         2 |         0 |         1\n" +
+                "         1 |        -1 |         0 |         2 |        -1\n" +
+                "         1 |       4.2 |       5.2 |      -3.2 |       4.2\n" +
+                "         1 |  Infinity |  Infinity | -Infinity |  Infinity\n" +
+                "         1 | -Infinity | -Infinity |  Infinity | -Infinity\n" +
+                "         1 |       NaN |       NaN |       NaN |       NaN\n" +
+                "        -1 |         0 |        -1 |        -1 |         0\n" +
+                "        -1 |         1 |         0 |        -2 |        -1\n" +
+                "        -1 |        -1 |        -2 |         0 |         1\n" +
+                "        -1 |       4.2 |       3.2 |      -5.2 |      -4.2\n" +
+                "        -1 |  Infinity |  Infinity | -Infinity | -Infinity\n" +
+                "        -1 | -Infinity | -Infinity |  Infinity |  Infinity\n" +
+                "        -1 |       NaN |       NaN |       NaN |       NaN\n" +
+                "       4.2 |         0 |       4.2 |       4.2 |       0.0\n" +
+                "       4.2 |         1 |       5.2 |       3.2 |       4.2\n" +
+                "       4.2 |        -1 |       3.2 |       5.2 |      -4.2\n" +
+                "       4.2 |       4.2 |       8.4 |       0.0 |     17.64\n" +
+                "       4.2 |  Infinity |  Infinity | -Infinity |  Infinity\n" +
+                "       4.2 | -Infinity | -Infinity |  Infinity | -Infinity\n" +
+                "       4.2 |       NaN |       NaN |       NaN |       NaN\n" +
+                "  Infinity |         0 |  Infinity |  Infinity |       NaN\n" +
+                "  Infinity |         1 |  Infinity |  Infinity |  Infinity\n" +
+                "  Infinity |        -1 |  Infinity |  Infinity | -Infinity\n" +
+                "  Infinity |       4.2 |  Infinity |  Infinity |  Infinity\n" +
+                "  Infinity |  Infinity |  Infinity |       NaN |  Infinity\n" +
+                "  Infinity | -Infinity |       NaN |  Infinity | -Infinity\n" +
+                "  Infinity |       NaN |       NaN |       NaN |       NaN\n" +
+                " -Infinity |         0 | -Infinity | -Infinity |       NaN\n" +
+                " -Infinity |         1 | -Infinity | -Infinity | -Infinity\n" +
+                " -Infinity |        -1 | -Infinity | -Infinity |  Infinity\n" +
+                " -Infinity |       4.2 | -Infinity | -Infinity | -Infinity\n" +
+                " -Infinity |  Infinity |       NaN | -Infinity | -Infinity\n" +
+                " -Infinity | -Infinity | -Infinity |       NaN |  Infinity\n" +
+                " -Infinity |       NaN |       NaN |       NaN |       NaN\n" +
+                "       NaN |         0 |       NaN |       NaN |       NaN\n" +
+                "       NaN |         1 |       NaN |       NaN |       NaN\n" +
+                "       NaN |        -1 |       NaN |       NaN |       NaN\n" +
+                "       NaN |       4.2 |       NaN |       NaN |       NaN\n" +
+                "       NaN |  Infinity |       NaN |       NaN |       NaN\n" +
+                "       NaN | -Infinity |       NaN |       NaN |       NaN\n" +
+                "       NaN |       NaN |       NaN |       NaN |       NaN";
+        this.compare(query, expected);
+    }
+
+    // @Test
+    public void testSpecialValues2() {
+        String query = "CREATE VIEW VV AS WITH v(x) AS\n" +
+                "  (VALUES(0E0),(1E0),(-1E0),(4.2E0),(CAST ('Infinity' AS DOUBLE)),(CAST ('-Infinity' AS DOUBLE)),(CAST ('nan' AS DOUBLE)))\n" +
+                "SELECT x1, x2,\n" +
+                "  x1 / x2 AS quot,\n" +
+                "  x1 % x2 AS m,\n" + // not really defined for FP
+                "  div(x1, x2) AS div\n" +
+                "FROM v AS v1(x1), v AS v2(x2) WHERE x2 != 0E0";
+        String expected =
+                "    x1     |    x2     |          quot           | mod  |    div    \n" +
+                "-----------+-----------+-------------------------+------+-----------\n" +
+                "         0 |         1 |  0.00000000000000000000 |    0 |         0\n" +
+                "         1 |         1 |  1.00000000000000000000 |    0 |         1\n" +
+                "        -1 |         1 | -1.00000000000000000000 |    0 |        -1\n" +
+                "       4.2 |         1 |      4.2000000000000000 |  0.2 |         4\n" +
+                "  Infinity |         1 |                Infinity |  NaN |  Infinity\n" +
+                " -Infinity |         1 |               -Infinity |  NaN | -Infinity\n" +
+                "       NaN |         1 |                     NaN |  NaN |       NaN\n" +
+                "         0 |        -1 |  0.00000000000000000000 |    0 |         0\n" +
+                "         1 |        -1 | -1.00000000000000000000 |    0 |        -1\n" +
+                "        -1 |        -1 |  1.00000000000000000000 |    0 |         1\n" +
+                "       4.2 |        -1 |     -4.2000000000000000 |  0.2 |        -4\n" +
+                "  Infinity |        -1 |               -Infinity |  NaN | -Infinity\n" +
+                " -Infinity |        -1 |                Infinity |  NaN |  Infinity\n" +
+                "       NaN |        -1 |                     NaN |  NaN |       NaN\n" +
+                "         0 |       4.2 |  0.00000000000000000000 |  0.0 |         0\n" +
+                "         1 |       4.2 |  0.23809523809523809524 |  1.0 |         0\n" +
+                "        -1 |       4.2 | -0.23809523809523809524 | -1.0 |         0\n" +
+                "       4.2 |       4.2 |  1.00000000000000000000 |  0.0 |         1\n" +
+                "  Infinity |       4.2 |                Infinity |  NaN |  Infinity\n" +
+                " -Infinity |       4.2 |               -Infinity |  NaN | -Infinity\n" +
+                "       NaN |       4.2 |                     NaN |  NaN |       NaN\n" +
+                "         0 |  Infinity |                       0 |    0 |         0\n" +
+                "         1 |  Infinity |                       0 |    1 |         0\n" +
+                "        -1 |  Infinity |                       0 |   -1 |         0\n" +
+                "       4.2 |  Infinity |                       0 |  4.2 |         0\n" +
+                "  Infinity |  Infinity |                     NaN |  NaN |       NaN\n" +
+                " -Infinity |  Infinity |                     NaN |  NaN |       NaN\n" +
+                "       NaN |  Infinity |                     NaN |  NaN |       NaN\n" +
+                "         0 | -Infinity |                       0 |    0 |         0\n" +
+                "         1 | -Infinity |                       0 |    1 |         0\n" +
+                "        -1 | -Infinity |                       0 |   -1 |         0\n" +
+                "       4.2 | -Infinity |                       0 |  4.2 |         0\n" +
+                "  Infinity | -Infinity |                     NaN |  NaN |       NaN\n" +
+                " -Infinity | -Infinity |                     NaN |  NaN |       NaN\n" +
+                "       NaN | -Infinity |                     NaN |  NaN |       NaN\n" +
+                "         0 |       NaN |                     NaN |  NaN |       NaN\n" +
+                "         1 |       NaN |                     NaN |  NaN |       NaN\n" +
+                "        -1 |       NaN |                     NaN |  NaN |       NaN\n" +
+                "       4.2 |       NaN |                     NaN |  NaN |       NaN\n" +
+                "  Infinity |       NaN |                     NaN |  NaN |       NaN\n" +
+                " -Infinity |       NaN |                     NaN |  NaN |       NaN\n" +
+                "       NaN |       NaN |                     NaN |  NaN |       NaN";
+        this.compare(query, expected);
     }
 }

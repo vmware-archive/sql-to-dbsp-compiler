@@ -473,6 +473,11 @@ public class ToJitInnerVisitor extends InnerVisitor {
         //   "operand_ty": "I64",
         //   "kind": "GreaterThan"
         // }
+        // a || b for strings is concatenation.
+        if (expression.left.getNonVoidType().is(DBSPTypeString.class) &&
+                expression.operation.equals("||")) {
+            throw new Unimplemented(expression);
+        }
         ExpressionIds leftId = this.accept(expression.left);
         ExpressionIds rightId = this.accept(expression.right);
         ExpressionIds cf = this.constantBool(false);

@@ -197,7 +197,7 @@ public class BaseSQLTests {
         return options;
     }
 
-    static DBSPCompiler testCompiler() {
+    protected static DBSPCompiler testCompiler() {
         return new DBSPCompiler(testOptions());
     }
 

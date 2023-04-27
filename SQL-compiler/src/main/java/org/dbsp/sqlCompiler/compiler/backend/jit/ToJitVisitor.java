@@ -323,10 +323,23 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
     }
 
     @Override
+    public boolean preorder(DBSPMapIndexOperator operator) {
+        // A MapIndex operator compiles to a Map representation that
+        // returns elements with type "Map" instead of "Set"
+        ObjectNode map = this.operatorToJson(operator, "Map", "map_fn");
+        DBSPType keyType = operator.keType;
+        DBSPType valueType = operator.valueType;
+        this.addIndexedZSetLayout(map, "output_layout", keyType, valueType);
+        this.addZSetLayout(map, "input_layout", operator.input().getOutputZSetElementType());
+        return false;
+    }
+
+    @Override
     public boolean preorder(DBSPMapOperator operator) {
         ObjectNode map = this.operatorToJson(operator, "Map", "map_fn");
         DBSPType type = operator.outputElementType;
-        map.put("layout", this.typeCatalog.getTypeId(type));
+        this.addZSetLayout(map, "output_layout", type);
+        this.addZSetLayout(map, "input_layout", operator.input().getOutputZSetElementType());
         return false;
     }
 
@@ -466,9 +479,23 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
             node.put("comment", comment);
     }
 
+    public void addZSetLayout(ObjectNode parent, String label, DBSPType type) {
+        ObjectNode set = parent.putObject(label);
+        set.put("Set", this.typeCatalog.getTypeId(type));
+    }
+
+    public void addIndexedZSetLayout(ObjectNode parent, String label, DBSPType keyType, DBSPType valueType) {
+        ObjectNode map = parent.putObject(label);
+        ArrayNode array = map.putArray("Map");
+        array.add(this.typeCatalog.getTypeId(keyType));
+        array.add(this.typeCatalog.getTypeId(valueType));
+    }
+
     @Override
     public boolean preorder(DBSPNegateOperator operator) {
-        this.operatorToJson(operator, "Neg", "");
+        ObjectNode node = this.operatorToJson(operator, "Neg", "");
+        DBSPType type = operator.getOutputZSetElementType();
+        this.addZSetLayout(node, "layout", type);
         return false;
     }
 
@@ -517,8 +544,11 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         DBSPType type = operator.getNonVoidType();
         DBSPType elementType = type.to(DBSPTypeZSet.class).elementType;
         ObjectNode layout = data.putObject("layout");
-        layout.put("Set", this.typeCatalog.getTypeId(elementType));
+        int typeId = this.typeCatalog.getTypeId(elementType);
+        layout.put("Set", typeId);
         ObjectNode value = data.putObject("value");
+        ObjectNode valueLayout = value.putObject("layout");
+        valueLayout.put("Set", typeId);
         ArrayNode set = value.putArray("Set");
         DBSPZSetLiteral setValue = Objects.requireNonNull(operator.function)
                 .to(DBSPZSetLiteral.class);

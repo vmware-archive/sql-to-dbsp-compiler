@@ -186,6 +186,7 @@ public class Main {
     public static void main(String[] argv) throws IOException {
         RustSqlRuntimeLibrary.INSTANCE.writeSqlLibrary( "../lib/genlib/src/lib.rs");
         List<String> files = Linq.list(
+                "/index/random/1000/slt_good_0.test"
                 /*
                 "select1.test"
                 "select2.test",
