@@ -163,4 +163,9 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
     public int getInputCount() {
         return this.inputOperators.size();
     }
+
+    @Override
+    public String toString() {
+        return "PartialCircuit" + this.id;
+    }
 }

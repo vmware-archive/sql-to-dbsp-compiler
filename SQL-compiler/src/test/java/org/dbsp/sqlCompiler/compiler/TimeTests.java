@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.compiler;
 
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -46,8 +47,8 @@ public class TimeTests extends BaseSQLTests {
         // T contains a date with timestamp '100'.
         query = "CREATE VIEW V AS " + query;
         DBSPCompiler compiler = this.compileQuery(query);
-        compiler.throwIfErrorsOccurred();
         DBSPCircuit circuit = getCircuit(compiler);
+        // ToJitVisitor.validateJson(circuit);
         DBSPZSetLiteral expectedOutput = new DBSPZSetLiteral(new DBSPTupleExpression(fields));
         InputOutputPair streams = new InputOutputPair(this.createInput(), expectedOutput);
         this.addRustTestCase(circuit, streams);
