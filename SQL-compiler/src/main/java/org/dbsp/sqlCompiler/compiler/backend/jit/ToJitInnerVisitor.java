@@ -174,7 +174,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
     /**
      * The type catalog shared with the ToJitVisitor.
      */
-    public final ToJitVisitor.TypeCatalog catalog;
+    public final ToJitVisitor.TypeCatalog typeCatalog;
     /**
      * The names of the variables currently being assigned.
      * This is a stack, because we can have nested blocks:
@@ -182,10 +182,10 @@ public class ToJitInnerVisitor extends InnerVisitor {
      */
     final List<String> variableAssigned;
 
-    public ToJitInnerVisitor(ObjectNode blocks, ToJitVisitor.TypeCatalog catalog) {
+    public ToJitInnerVisitor(ObjectNode blocks, ToJitVisitor.TypeCatalog typeCatalog) {
         super(true);
         this.blocks = blocks;
-        this.catalog = catalog;
+        this.typeCatalog = typeCatalog;
         this.expressionId = new HashMap<>();
         this.declarations = new ArrayList<>();
         this.currentBlock = null;
@@ -329,6 +329,103 @@ public class ToJitInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPExpression expression) {
+        throw new Unimplemented(expression);
+    }
+
+    @Override
+    public boolean preorder(DBSPApplyExpression expression) {
+        DBSPPathExpression path = expression.function.as(DBSPPathExpression.class);
+        if (path != null) {
+            String jitFunction = null;
+            String function = path.path.toString();
+            switch (function) {
+                case "extract_Timestamp_second":
+                    jitFunction = "dbsp.timestamp.second";
+                    break;
+                case "extract_Timestamp_minute":
+                    jitFunction = "dbsp.timestamp.minute";
+                    break;
+                case "extract_Timestamp_hour":
+                    jitFunction = "dbsp.timestamp.hour";
+                    break;
+                case "extract_Timestamp_day":
+                    jitFunction = "dbsp.timestamp.day";
+                    break;
+                case "extract_Timestamp_dow":
+                    jitFunction = "dbsp.timestamp.day_of_week";
+                    break;
+                case "extract_Timestamp_doy":
+                    jitFunction = "dbsp.timestamp.day_of_year";
+                    break;
+                case "extract_Timestamp_isodow":
+                    jitFunction = "dbsp.timestamp.iso_day_of_week";
+                    break;
+                case "extract_Timestamp_week":
+                    jitFunction = "dbsp.timestamp.week";
+                    break;
+                case "extract_Timestamp_month":
+                    jitFunction = "dbsp.timestamp.month";
+                    break;
+                case "extract_Timestamp_year":
+                    jitFunction = "dbsp.timestamp.year";
+                    break;
+                case "extract_Timestamp_isoyear":
+                    jitFunction = "dbsp.timestamp.isoyear";
+                    break;
+                case "extract_Timestamp_quarter":
+                    jitFunction = "dbsp.timestamp.quarter";
+                    break;
+                case "extract_Timestamp_decade":
+                    jitFunction = "dbsp.timestamp.decade";
+                    break;
+                case "extract_Timestamp_century":
+                    jitFunction = "dbsp.timestamp.century";
+                    break;
+                case "extract_Timestamp_millennium":
+                    jitFunction = "dbsp.timestamp.millennium";
+                    break;
+                case "extract_Timestamp_epoch":
+                    jitFunction = "dbsp.timestamp.epoch";
+                    break;
+                default:
+                    break;
+            }
+            // { "Call": {
+            //    "function": "some.func",
+            //    "args": [100, 200],
+            //    "arg_types": [{ "Row": 10 }, { "Scalar": "U32" }],
+            //    "ret_ty": "I32"
+            // }
+            if (jitFunction != null) {
+                // TODO: handle null
+                List<ExpressionIds> argIds = new ArrayList<>();
+                for (DBSPExpression arg: expression.arguments) {
+                    ExpressionIds argId = this.accept(arg);
+                    argIds.add(argId);
+                }
+
+                ExpressionJsonRepresentation ev = this.insertInstruction(expression);
+                ObjectNode call = ev.instruction.putObject("Call");
+                call.put("function", jitFunction);
+                ArrayNode args = call.putArray("args");
+                ArrayNode argTypes = call.putArray("arg_types");
+                int index = 0;
+                for (DBSPExpression arg: expression.arguments) {
+                    ObjectNode argTypeNode = argTypes.addObject();
+                    ExpressionIds argId = argIds.get(index);
+                    args.add(argId.id);
+                    DBSPType argType = arg.getNonVoidType();
+                    if (ToJitVisitor.isScalarType(argType)) {
+                        argTypeNode.put("Scalar", ToJitVisitor.baseTypeName(argType));
+                    } else {
+                        argTypeNode.put("Row", this.typeCatalog.getTypeId(argType));
+                    }
+                    index++;
+                }
+                call.put("ret_ty", baseTypeName(expression));
+                return false;
+            }
+        }
         throw new Unimplemented(expression);
     }
 
@@ -753,7 +850,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
             instruction.add(ids.id);
             ObjectNode uninit = instruction.addObject();
             ObjectNode storeNode = uninit.putObject("UninitRow");
-            int typeId = this.catalog.getTypeId(statement.type);
+            int typeId = this.typeCatalog.getTypeId(statement.type);
             storeNode.put("layout", typeId);
         }
         if (statement.initializer != null)
@@ -774,7 +871,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         ObjectNode load = er.instruction.putObject("Load");
         ExpressionIds sourceId = this.accept(expression.expression);
         load.put("source", sourceId.id);
-        int typeId = this.catalog.getTypeId(expression.expression.getNonVoidType());
+        int typeId = this.typeCatalog.getTypeId(expression.expression.getNonVoidType());
         load.put("source_layout", typeId);
         load.put("column", expression.fieldNo);
         load.put("column_type", baseTypeName(expression));
@@ -847,7 +944,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         // Compile this as an assignment to the currently assigned variable
         String variableAssigned = this.variableAssigned.get(this.variableAssigned.size() - 1);
         ExpressionIds retValId = this.resolve(variableAssigned);
-        int tupleTypeId = this.catalog.getTypeId(expression.getNonVoidType());
+        int tupleTypeId = this.typeCatalog.getTypeId(expression.getNonVoidType());
         int index = 0;
         for (DBSPExpression field: expression.fields) {
             // Generates 1 or 2 instructions for each field (depending on nullability)

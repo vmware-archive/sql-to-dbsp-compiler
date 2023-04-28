@@ -61,6 +61,7 @@ public class PostgresNumericTests extends BaseSQLTests {
         CompilerOptions options = new CompilerOptions();
         options.ioOptions.lexicalRules = Lex.ORACLE;
         options.optimizerOptions.generateInputForEveryTable = true;
+        options.optimizerOptions.throwOnError = true;
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatements(createTables);
         return compiler;
@@ -532,7 +533,6 @@ public class PostgresNumericTests extends BaseSQLTests {
         compiler.generateOutputForNextView(true);
         compiler.compileStatement(last);
         compiler.optimize();
-        compiler.throwIfErrorsOccurred();
         DBSPCircuit circuit = getCircuit(compiler);
         DBSPZSetLiteral[] inputs = new DBSPZSetLiteral[compiler.getTableContents().tablesCreated.size()];
         int index = 0;
@@ -679,7 +679,7 @@ public class PostgresNumericTests extends BaseSQLTests {
         this.testQuery(intermediate, last);
     }
 
-    //@Test
+    // @Test
     // This test fails because Postgres has higher precision than we support
     public void power10Test() {
         String intermediate = "CREATE VIEW num_result AS SELECT id AS ID1, 0, CAST(POWER(10, LN(ABS(round(val,200)))) AS NUMERIC(" +
