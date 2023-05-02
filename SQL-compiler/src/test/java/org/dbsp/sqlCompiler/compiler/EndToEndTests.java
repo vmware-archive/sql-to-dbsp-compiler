@@ -199,6 +199,12 @@ public class EndToEndTests extends BaseSQLTests {
     }
 
     @Test
+    public void idTest() {
+        String query = "SELECT * FROM T";
+        this.testQuery(query, this.createInput());
+    }
+
+    @Test
     public void unionTest() {
         String query = "(SELECT * FROM T) UNION (SELECT * FROM T)";
         this.testQuery(query, this.createInput());

@@ -200,7 +200,7 @@ public class ToRustInnerVisitor extends InnerVisitor {
     public boolean preorder(DBSPZSetLiteral literal) {
         this.builder.append("zset!(")
                 .increase();
-        for (Map.Entry<DBSPExpression, Integer> e: literal.data.entrySet()) {
+        for (Map.Entry<DBSPExpression, Long> e: literal.data.entrySet()) {
             e.getKey().accept(this);
             this.builder.append(" => ")
                     .append(e.getValue())

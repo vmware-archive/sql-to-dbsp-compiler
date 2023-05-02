@@ -25,11 +25,14 @@ package org.dbsp.sqlCompiler.compiler.backend.optimize;
 
 import org.dbsp.sqlCompiler.compiler.backend.visitors.InnerExpressionRewriteVisitor;
 import org.dbsp.sqlCompiler.ir.expression.DBSPBinaryExpression;
+import org.dbsp.sqlCompiler.ir.expression.DBSPCastExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPIfExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPBoolLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPIsNullExpression;
+import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
+import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeNull;
 
 import java.util.Objects;
 
@@ -38,6 +41,7 @@ import java.util.Objects;
  * - is_null() called on non-nullable values is simplified to 'false'
  * - Boolean && and || with constant arguments are simplified
  * - 'if' expressions with constant arguments are simplified to the corresponding branch
+ * - cast(NULL, T) is converted to a NULL value of type T
  */
 public class Simplify extends InnerExpressionRewriteVisitor {
     // You would think that Calcite has done these optimizations, but apparently not.
@@ -51,6 +55,21 @@ public class Simplify extends InnerExpressionRewriteVisitor {
         if (!source.getNonVoidType().mayBeNull)
             result = DBSPBoolLiteral.FALSE;
         this.map(expression, result);
+        return false;
+    }
+
+    @Override
+    public boolean preorder(DBSPCastExpression expression) {
+        DBSPExpression source = this.transform(expression.source);
+        DBSPLiteral lit = source.as(DBSPLiteral.class);
+        if (lit != null) {
+            if (lit.getNonVoidType().is(DBSPTypeNull.class)) {
+                // This is a literal with type "NULL".
+                // Convert it to a literal of the resulting type
+                DBSPExpression result = DBSPLiteral.none(expression.getNonVoidType());
+                this.map(expression, result);
+            }
+        }
         return false;
     }
 
