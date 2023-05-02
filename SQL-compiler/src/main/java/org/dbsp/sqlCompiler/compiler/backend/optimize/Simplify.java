@@ -68,8 +68,10 @@ public class Simplify extends InnerExpressionRewriteVisitor {
                 // Convert it to a literal of the resulting type
                 DBSPExpression result = DBSPLiteral.none(expression.getNonVoidType());
                 this.map(expression, result);
+                return false;
             }
         }
+        this.map(expression, expression);
         return false;
     }
 

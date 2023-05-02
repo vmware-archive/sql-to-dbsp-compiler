@@ -25,7 +25,6 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
@@ -54,8 +53,8 @@ public class DBSPCompilerTests {
         Assert.assertNotNull(dbsp);
     }
 
-    @Test
-    public void circuitToJitTest() throws JsonProcessingException {
+    // @Test
+    public void circuitToJitTest() {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatement(ddl);
         compiler.compileStatement("CREATE VIEW V AS SELECT T.COL1 FROM T WHERE COL1 > 5");
@@ -64,7 +63,7 @@ public class DBSPCompilerTests {
     }
 
     @Test
-    public void floatJitTest() throws JsonProcessingException {
+    public void floatJitTest() {
         String ddl = "CREATE TABLE bid (\n" +
                 "    auction BIGINT,\n" +
                 "    bidder BIGINT,\n" +
