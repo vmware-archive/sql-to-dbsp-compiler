@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions;
 
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.dbsp.util.IIndentStream;
 
 public class JITMuxInstruction extends JITInstruction {
     public final JITInstructionReference condition;
@@ -53,5 +54,15 @@ public class JITMuxInstruction extends JITInstruction {
     @Override
     public String toString() {
         return this.id + " " + this.condition + " ? " + this.left + " : " + this.right;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return super.toString(builder)
+                .append(this.condition)
+                .append(" ? ")
+                .append(this.left)
+                .append(" : ")
+                .append(this.right);
     }
 }

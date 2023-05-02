@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.compiler.backend.jit.ir.operators;
 
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITReference;
+import org.dbsp.util.IIndentStream;
 
 /**
  * Refers to another operator by its id.

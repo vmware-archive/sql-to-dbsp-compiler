@@ -30,7 +30,7 @@ import org.dbsp.sqlCompiler.compiler.backend.jit.ir.IJITId;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITReference;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstruction;
-import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITIsNullInstruction;
+import org.dbsp.util.IIndentStream;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -47,10 +47,6 @@ public class JITBlock extends JITNode implements IJITId {
         this.id = id;
         this.instructions = new ArrayList<>();
         this.terminator = null;
-    }
-
-    void addInstruction(JITInstruction instruction) {
-        this.instructions.add(instruction);
     }
 
     @Override
@@ -92,5 +88,17 @@ public class JITBlock extends JITNode implements IJITId {
         if (this.terminator != null)
             throw new RuntimeException("Block already terminated with " + this.terminator);
         this.terminator = terminator;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        builder.append("block ")
+                .append(this.getId())
+                .increase()
+                .intercalateI(System.lineSeparator(), this.instructions);
+        if (this.terminator != null)
+            // This may not happen while debugging
+            builder.append(this.terminator);
+        return builder.decrease();
     }
 }

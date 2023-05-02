@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITBoolType;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITScalarType;
+import org.dbsp.util.IIndentStream;
 
 /**
  * An instruction that returns a constant value.
@@ -56,5 +57,17 @@ public class JITConstantInstruction extends JITInstruction {
             result.put(JITBoolType.INSTANCE.toString(), this.value.isNull());
         }
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "Constant " + this.value.toString();
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return super.toString(builder)
+                .append(" ")
+                .append(this.value);
     }
 }

@@ -50,6 +50,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.*;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBaseType;
 import org.dbsp.util.IModule;
+import org.dbsp.util.IndentStream;
 import org.dbsp.util.Linq;
 import org.dbsp.util.Unimplemented;
 import org.dbsp.util.Utilities;
@@ -381,21 +382,28 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         throw new Unimplemented(operator);
     }
 
-    public static String circuitToJson(DBSPCircuit circuit) {
+    public static JITProgram circuitToJIT(DBSPCircuit circuit) {
         PassesVisitor rewriter = new PassesVisitor();
         rewriter.add(new BlockClosures());
         rewriter.add(new Simplify().circuitRewriter());
         circuit = rewriter.apply(circuit);
         ToJitVisitor visitor = new ToJitVisitor();
         visitor.apply(circuit);
-        return visitor.program.asJson().toPrettyString();
+        return visitor.program;
     }
 
-    public static void validateJson(DBSPCircuit circuit) {
+    public static void validateJson(DBSPCircuit circuit, boolean verbose) {
         try {
-            System.out.println(circuit);
-            String json = ToJitVisitor.circuitToJson(circuit);
-            System.out.println(json);
+            if (verbose)
+                System.out.println(circuit);
+            JITProgram program = ToJitVisitor.circuitToJIT(circuit);
+            if (verbose) {
+                IndentStream stream = new IndentStream(System.out);
+                stream.append(program);
+            }
+            String json = program.asJson().toPrettyString();
+            if (verbose)
+                System.out.println(json);
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(json);
             if (root == null)
@@ -409,5 +417,9 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         } catch (IOException | InterruptedException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    public static void validateJson(DBSPCircuit circuit) {
+        validateJson(circuit, false);
     }
 }

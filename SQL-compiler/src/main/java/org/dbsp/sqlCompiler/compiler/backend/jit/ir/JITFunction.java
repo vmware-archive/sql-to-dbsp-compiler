@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg.JITBlock;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITScalarType;
+import org.dbsp.util.IIndentStream;
 
 import java.util.List;
 
@@ -57,5 +58,14 @@ public class JITFunction extends JITNode {
             blocks.set(Long.toString(block.id), block.asJson());
         }
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder.append("(")
+                .joinI(", ", this.parameters)
+                .append(")")
+                .newline()
+                .joinI(System.lineSeparator(), this.blocks);
     }
 }

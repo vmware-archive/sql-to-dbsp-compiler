@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstructionReference;
+import org.dbsp.util.IIndentStream;
 
 public class JITBranchTerminator extends JITBlockTerminator {
     public final JITBlockParameters falseParams;
@@ -53,5 +54,15 @@ public class JITBranchTerminator extends JITBlockTerminator {
         branch.put("falsy", this.falsy.getId());
         branch.put("truthy", this.truthy.getId());
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder.append("if ")
+                .append(this.condition)
+                .append(" then ")
+                .append(this.truthy)
+                .append(" else ")
+                .append(this.falsy);
     }
 }

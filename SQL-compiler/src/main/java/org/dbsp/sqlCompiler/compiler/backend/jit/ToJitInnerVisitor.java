@@ -878,7 +878,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
             stat.accept(this);
 
         // TODO: handle nullability
-        JITInstructionPair resultId = null;
+        JITInstructionPair resultId = new JITInstructionPair(new JITInstructionReference());
         if (expression.lastExpression != null) {
             if (ToJitVisitor.isScalarType(expression.lastExpression.getType())) {
                 resultId = this.accept(expression.lastExpression);
@@ -894,6 +894,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 }
             }
         }
+
         JITReturnTerminator ret = new JITReturnTerminator(resultId.value);
         this.currentBlock.terminate(ret);
         this.popContext();

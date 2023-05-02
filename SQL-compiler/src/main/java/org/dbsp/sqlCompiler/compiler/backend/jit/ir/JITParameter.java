@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.compiler.backend.jit.ir;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITRowType;
+import org.dbsp.util.IIndentStream;
 
 public class JITParameter extends JITNode {
     public final long id;
@@ -49,6 +50,11 @@ public class JITParameter extends JITNode {
 
     @Override
     public String toString() {
-        return "PARAM " + this.id + " " + (this.isInput ? "IN" : "OUT") + ":" + this.type;
+        return this.id + " " + (this.isInput ? "IN" : "OUT") + ":" + this.type;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder.append(this.toString());
     }
 }

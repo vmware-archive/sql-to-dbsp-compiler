@@ -6,6 +6,7 @@ import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITRowType;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeRawTuple;
+import org.dbsp.sqlCompiler.ir.type.DBSPTypeRef;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTupleBase;
 
@@ -25,11 +26,14 @@ public class TypeCatalog {
     }
 
     public JITRowType convertType(DBSPType type) {
-        if (this.typeId.containsKey(type))
-            return this.typeId.get(type);
+        if (type.is(DBSPTypeRef.class))
+            type = type.to(DBSPTypeRef.class).type;
+        DBSPTypeTupleBase tuple = type.to(DBSPTypeTupleBase.class);
+        if (this.typeId.containsKey(tuple))
+            return this.typeId.get(tuple);
         long id = this.typeId.size() + 1;  // 0 is not a valid id
-        JITRowType result = new JITRowType(id, type.to(DBSPTypeTupleBase.class));
-        this.typeId.put(type, result);
+        JITRowType result = new JITRowType(id, tuple);
+        this.typeId.put(tuple, result);
         return result;
     }
 

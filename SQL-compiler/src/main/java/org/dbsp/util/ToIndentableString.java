@@ -27,6 +27,5 @@ package org.dbsp.util;
  * Interface implemented by objects that can be as nicely indented strings.
  */
 public interface ToIndentableString {
-    @SuppressWarnings("UnusedReturnValue")
-    IndentStream toString(IndentStream builder);
+    IIndentStream toString(IIndentStream builder);
 }

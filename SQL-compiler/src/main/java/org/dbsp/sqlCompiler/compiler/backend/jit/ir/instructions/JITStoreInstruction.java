@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITRowType;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITScalarType;
+import org.dbsp.util.IIndentStream;
 
 public class JITStoreInstruction extends JITInstruction {
     public final JITInstructionReference target;
@@ -64,5 +65,16 @@ public class JITStoreInstruction extends JITInstruction {
         value.put("Expr", this.source.getId());
         result.put("value_type", this.valueType.toString());
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return super.toString(builder)
+                .append(" ")
+                .append(this.target)
+                .append("[")
+                .append(this.column)
+                .append("]=")
+                .append(this.source);
     }
 }

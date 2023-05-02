@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.compiler.backend.jit.ir;
 
+import org.dbsp.util.IIndentStream;
+
 /**
  * An objects that refers to another one by its id.
  * In invalid reference has a negative id.
@@ -53,5 +55,11 @@ public class JITReference extends JITNode {
     public void mustBeValid() {
         if (this.isValid())
             throw new RuntimeException("Expected a valid reference");
+    }
+
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder.append(this.toString());
     }
 }

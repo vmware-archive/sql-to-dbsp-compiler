@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITFunction;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITReference;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITRowType;
+import org.dbsp.util.IIndentStream;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -108,10 +109,27 @@ public abstract class JITOperator extends JITNode implements IJITId {
         set.put("Set", type.getId());
     }
 
+    @SuppressWarnings("SameParameterValue")
     void addIndexedZSetLayout(ObjectNode parent, String label, JITRowType keyType, JITRowType valueType) {
         ObjectNode map = parent.putObject(label);
         ArrayNode array = map.putArray("Map");
         array.add(keyType.getId());
         array.add(valueType.getId());
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        builder.append(this.getId())
+                .append(" ")
+                .append(this.name)
+                .append("(")
+                .joinI(", ", this.inputs)
+                .append(")");
+        if (this.function != null) {
+            builder.increase()
+                    .append(this.function)
+                    .decrease();
+        }
+        return builder;
     }
 }

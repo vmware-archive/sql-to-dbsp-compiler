@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITRowType;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITScalarType;
+import org.dbsp.util.IIndentStream;
 
 public class JITLoadInstruction extends JITInstruction {
     public final JITInstructionReference source;
@@ -57,5 +58,15 @@ public class JITLoadInstruction extends JITInstruction {
         load.put("column", this.column);
         load.put("column_type", resultType.toString());
         return load;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return super.toString(builder)
+                .append(" ")
+                .append(this.column)
+                .append("[")
+                .append(this.column)
+                .append("]");
     }
 }

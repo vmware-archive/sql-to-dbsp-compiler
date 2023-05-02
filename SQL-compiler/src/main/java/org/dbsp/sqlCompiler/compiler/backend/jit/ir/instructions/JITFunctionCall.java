@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITType;
+import org.dbsp.util.IIndentStream;
 import org.dbsp.util.Linq;
 
 import java.util.List;
@@ -79,5 +80,15 @@ public class JITFunctionCall extends JITInstruction {
         }
         result.put("ret_ty", this.returnType.toString());
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return super.toString(builder)
+                .append(" ")
+                .append(this.functionName)
+                .append("(")
+                .joinI(", ", this.arguments)
+                .append(")");
     }
 }

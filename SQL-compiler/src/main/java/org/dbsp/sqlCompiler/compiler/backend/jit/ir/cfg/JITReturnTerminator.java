@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstructionReference;
+import org.dbsp.util.IIndentStream;
 
 public class JITReturnTerminator extends JITBlockTerminator {
     public final JITInstructionReference retVal;
@@ -45,5 +46,11 @@ public class JITReturnTerminator extends JITBlockTerminator {
             retValue.put("Imm", "Unit");
         }
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder.append("return ")
+                .append(this.retVal);
     }
 }

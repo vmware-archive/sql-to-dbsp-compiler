@@ -34,6 +34,7 @@ public interface IIndentStream extends Appendable {
     IIndentStream append(int value);
     IIndentStream append(long value);
     IIndentStream joinS(String separator, Collection<String> data);
+    <T extends ToIndentableString> IIndentStream joinI(String separator, Collection<T> data);
     IIndentStream join(String separator, String[] data);
     IIndentStream join(String separator, Stream<String> data);
     <T> IIndentStream join(String separator, T[] data, Function<T, String> generator);
@@ -43,6 +44,7 @@ public interface IIndentStream extends Appendable {
     IIndentStream intercalate(String separator, Collection<String> data);
     IIndentStream intercalate(String separator, String[] data);
     IIndentStream intercalateS(String separator, Collection<String> data);
+    <T extends ToIndentableString> IIndentStream intercalateI(String separator, Collection<T> data);
     IIndentStream newline();
     /**
      * Increase indentation and emit a newline.

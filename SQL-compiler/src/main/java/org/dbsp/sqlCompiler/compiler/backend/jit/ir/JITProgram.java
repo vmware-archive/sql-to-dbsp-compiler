@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.TypeCatalog;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.operators.JITOperator;
+import org.dbsp.util.IIndentStream;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,5 +32,12 @@ public class JITProgram extends JITNode {
 
     public void add(JITOperator source) {
         this.operators.add(source);
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        for (JITOperator op: this.operators)
+            builder.append(op).newline();
+        return builder;
     }
 }

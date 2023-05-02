@@ -29,13 +29,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.IJITId;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITReference;
+import org.dbsp.util.IIndentStream;
 
 public abstract class JITInstruction extends JITNode implements IJITId {
     public final long id;
     public final String name;
 
     public JITInstruction(long id, String name) {
-        this.id = id++;
+        this.id = id;
         this.name = name;
     }
 
@@ -62,5 +63,12 @@ public abstract class JITInstruction extends JITNode implements IJITId {
 
     public JITInstructionReference getInstructionReference() {
         return new JITInstructionReference(this.id);
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder.append(this.id)
+                .append(" ")
+                .append(this.name);
     }
 }

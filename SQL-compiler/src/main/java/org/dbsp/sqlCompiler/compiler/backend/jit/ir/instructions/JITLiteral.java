@@ -39,6 +39,7 @@ import org.dbsp.sqlCompiler.ir.expression.literal.DBSPI32Literal;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPI64Literal;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPStringLiteral;
+import org.dbsp.util.IIndentStream;
 import org.dbsp.util.Unimplemented;
 
 public class JITLiteral extends JITValue {
@@ -99,5 +100,15 @@ public class JITLiteral extends JITValue {
 
     public boolean isNull() {
         return this.literal.isNull;
+    }
+
+    @Override
+    public String toString() {
+        return this.literal.toString();
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder.append(this.literal.toString());
     }
 }

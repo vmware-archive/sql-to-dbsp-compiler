@@ -25,6 +25,7 @@ package org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg;
 
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.dbsp.util.IIndentStream;
 
 public class JITJumpTerminator extends JITBlockTerminator {
     public final JITBlockReference target;
@@ -41,5 +42,11 @@ public class JITJumpTerminator extends JITBlockTerminator {
         jump.put("target", target.getId());
         jump.set("params", this.parameters.asJson());  // for now ignored
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder.append("jump ")
+                .append(this.target);
     }
 }

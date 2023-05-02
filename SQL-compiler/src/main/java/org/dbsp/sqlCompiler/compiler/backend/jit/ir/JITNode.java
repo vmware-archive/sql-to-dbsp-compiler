@@ -26,21 +26,23 @@ package org.dbsp.sqlCompiler.compiler.backend.jit.ir;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import org.dbsp.util.ICastable;
-import org.dbsp.util.IndentStream;
+import org.dbsp.util.IIndentStream;
+import org.dbsp.util.ToIndentableString;
+import org.dbsp.util.Unimplemented;
 
-public class JITNode implements ICastable {
+public abstract class JITNode implements ICastable, ToIndentableString {
     public BaseJsonNode asJson() {
-        // TODO
-        return null;
-    }
-
-    public void print(IndentStream out) {
-        // TODO
+        throw new Unimplemented("Should be overridden in all subclasses");
     }
 
     private static final ObjectMapper topMapper = new ObjectMapper();
 
     public static ObjectMapper jsonFactory() {
         return topMapper;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder;
     }
 }
