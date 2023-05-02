@@ -27,7 +27,7 @@ public class TypeCatalog {
     public JITRowType convertType(DBSPType type) {
         if (this.typeId.containsKey(type))
             return this.typeId.get(type);
-        long id = this.typeId.size();
+        long id = this.typeId.size() + 1;  // 0 is not a valid id
         JITRowType result = new JITRowType(id, type.to(DBSPTypeTupleBase.class));
         this.typeId.put(type, result);
         return result;

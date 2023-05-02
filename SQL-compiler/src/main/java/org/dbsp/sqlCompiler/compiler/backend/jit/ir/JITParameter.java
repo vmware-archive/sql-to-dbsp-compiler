@@ -46,4 +46,9 @@ public class JITParameter extends JITNode {
         result.put("flags", this.isInput ? "input" : "output");
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "PARAM " + this.id + " " + (this.isInput ? "IN" : "OUT") + ":" + this.type;
+    }
 }

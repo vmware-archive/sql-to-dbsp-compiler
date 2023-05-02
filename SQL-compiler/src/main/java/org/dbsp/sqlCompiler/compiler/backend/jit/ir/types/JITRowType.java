@@ -30,6 +30,7 @@ import org.dbsp.sqlCompiler.compiler.backend.jit.ir.IJITId;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITReference;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTupleBase;
+import org.dbsp.util.Linq;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,5 +83,11 @@ public class JITRowType extends JITType implements IJITId {
             }
         }
         return result;
+    }
+
+    @Override
+    public String toString() {
+        List<String> fields = Linq.map(this.fields, JITScalarType::toString);
+        return "[" + String.join(", ", fields) + "]";
     }
 }

@@ -94,8 +94,12 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
         public OperatorConversion(DBSPOperator operator) {
             this.type = ToJitVisitor.this.getTypeCatalog().convertType(operator.getOutputZSetElementType());
-            this.function = operator.function == null ? null :
-                    ToJitVisitor.this.convertFunction(operator.function.to(DBSPClosureExpression.class));
+            if (operator.function != null) {
+                DBSPExpression func = ToJitVisitor.this.resolve(operator.function);
+                this.function = ToJitVisitor.this.convertFunction(func.to(DBSPClosureExpression.class));
+            } else {
+                this.function = null;
+            }
             this.inputs = Linq.map(operator.inputs, i -> new JITOperatorReference(i.id));
         }
 
