@@ -23,11 +23,13 @@
 
 package org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPLiteral;
+import org.dbsp.util.IIndentStream;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,9 +48,17 @@ public class JITTupleLiteral extends JITValue {
     @Override
     public BaseJsonNode asJson() {
         ObjectNode result = jsonFactory().createObjectNode();
-        for (JITLiteral literal: this.fields) {
-            // TODO
-        }
+        // Should this be called "columns"?
+        ArrayNode rows = result.putArray("rows");
+        for (JITLiteral literal: this.fields)
+            rows.add(literal.asJson());
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder.append("[")
+                .joinI(", ", this.fields)
+                .append("]");
     }
 }

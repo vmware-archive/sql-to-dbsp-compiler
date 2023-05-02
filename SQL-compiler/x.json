@@ -1,0 +1,115 @@
+{
+  "nodes" : {
+    "78" : {
+      "Source" : {
+        "layout" : 1,
+        "table" : "T"
+      }
+    },
+    "122" : {
+      "Constant" : {
+        "layout" : {
+          "Set" : 2
+        },
+        "value" : {
+          "layout" : {
+            "Set" : 2
+          },
+          "Set" : [ [ {
+            "rows" : [ {
+              "NonNull" : {
+                "I32" : 0
+              }
+            } ]
+          }, 1 ] ]
+        }
+      }
+    },
+    "131" : {
+      "Map" : {
+        "input" : 122,
+        "map_fn" : {
+          "args" : [ {
+            "id" : 1,
+            "layout" : 2,
+            "flags" : "input"
+          }, {
+            "id" : 2,
+            "layout" : 2,
+            "flags" : "output"
+          } ],
+          "ret" : "Unit",
+          "entry_block" : 1,
+          "blocks" : {
+            "1" : {
+              "id" : 1,
+              "body" : [ [ 3, {
+                "Constant" : {
+                  "I32" : 3
+                }
+              } ], [ 4, {
+                "Store" : {
+                  "target" : 2,
+                  "target_layout" : 2,
+                  "column" : 0,
+                  "value" : {
+                    "Expr" : 3
+                  },
+                  "value_type" : "I32"
+                }
+              } ] ],
+              "terminator" : {
+                "Return" : {
+                  "value" : {
+                    "Imm" : "Unit"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "output_layout" : {
+          "Set" : 2
+        },
+        "input_layout" : {
+          "Set" : 2
+        }
+      }
+    },
+    "133" : {
+      "Sink" : {
+        "input" : 131,
+        "query" : "CREATE VIEW V AS SELECT 1 + 2"
+      }
+    }
+  },
+  "layouts" : {
+    "1" : {
+      "columns" : [ {
+        "nullable" : false,
+        "ty" : "I32"
+      }, {
+        "nullable" : false,
+        "ty" : "F64"
+      }, {
+        "nullable" : false,
+        "ty" : "Bool"
+      }, {
+        "nullable" : false,
+        "ty" : "String"
+      }, {
+        "nullable" : true,
+        "ty" : "I32"
+      }, {
+        "nullable" : true,
+        "ty" : "F64"
+      } ]
+    },
+    "2" : {
+      "columns" : [ {
+        "nullable" : false,
+        "ty" : "I32"
+      } ]
+    }
+  }
+}

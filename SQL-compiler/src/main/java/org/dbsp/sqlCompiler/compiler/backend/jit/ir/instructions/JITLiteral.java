@@ -55,27 +55,32 @@ public class JITLiteral extends JITValue {
 
     @Override
     public BaseJsonNode asJson() {
+        ObjectNode result = jsonFactory().createObjectNode();
+        ObjectNode value;
+        if (this.mayBeNull())
+            value = result.putObject("Nullable");
+        else
+            value = result.putObject("NonNull");
         if (this.literal.isNull) {
             return NullNode.getInstance();
         } else {
-            ObjectNode result = jsonFactory().createObjectNode();
             if (this.literal.is(DBSPI32Literal.class)) {
-                result.put("I32", this.literal.to(DBSPI32Literal.class).value);
+                value.put("I32", this.literal.to(DBSPI32Literal.class).value);
             } else if (this.literal.is(DBSPI64Literal.class)) {
-                result.put("I64", this.literal.to(DBSPI64Literal.class).value);
+                value.put("I64", this.literal.to(DBSPI64Literal.class).value);
             } else if (this.literal.is(DBSPStringLiteral.class)) {
-                result.put("String", this.literal.to(DBSPStringLiteral.class).value);
+                value.put("String", this.literal.to(DBSPStringLiteral.class).value);
             } else if (this.literal.is(DBSPBoolLiteral.class)) {
-                result.put("Bool", this.literal.to(DBSPBoolLiteral.class).value);
+                value.put("Bool", this.literal.to(DBSPBoolLiteral.class).value);
             } else if (this.literal.is(DBSPDoubleLiteral.class)) {
-                result.put("F64", this.literal.to(DBSPDoubleLiteral.class).value);
+                value.put("F64", this.literal.to(DBSPDoubleLiteral.class).value);
             } else if (this.literal.is(DBSPFloatLiteral.class)) {
-                result.put("F32", this.literal.to(DBSPFloatLiteral.class).value);
+                value.put("F32", this.literal.to(DBSPFloatLiteral.class).value);
             } else {
                 throw new Unimplemented(this.literal);
             }
-            return result;
         }
+        return result;
     }
 
     @SuppressWarnings("DataFlowIssue")

@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITZSetLiteral;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITRowType;
+import org.dbsp.util.IIndentStream;
 import org.dbsp.util.Linq;
 
 public class JITConstantOperator extends JITOperator {
@@ -47,5 +48,13 @@ public class JITConstantOperator extends JITOperator {
         layout.put("Set", typeId);
         data.set("value", this.value.asJson());
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return super.toString(builder)
+                .increase()
+                .append(this.value)
+                .decrease();
     }
 }

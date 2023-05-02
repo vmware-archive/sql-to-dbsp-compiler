@@ -178,7 +178,7 @@ public class BaseSQLTests {
             }
 
             // Test json serialization
-            // ToJitVisitor.validateJson(circuit, true);
+            ToJitVisitor.validateJson(circuit, true);
             this.addRustTestCase(circuit, streams);
         } catch (Exception ex) {
             throw new RuntimeException(ex);

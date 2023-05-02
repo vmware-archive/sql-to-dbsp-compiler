@@ -367,12 +367,12 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     @Override
     public boolean preorder(DBSPConstantOperator operator) {
-        OperatorConversion conversion = new OperatorConversion(operator);
+        JITRowType type = this.getTypeCatalog().convertType(operator.getOutputZSetElementType());
         DBSPZSetLiteral setValue = Objects.requireNonNull(operator.function)
                 .to(DBSPZSetLiteral.class);
-        JITZSetLiteral setLiteral = new JITZSetLiteral(setValue, conversion.type);
+        JITZSetLiteral setLiteral = new JITZSetLiteral(setValue, type);
         JITOperator result = new JITConstantOperator(
-                operator.id, conversion.type, setLiteral, operator.getFunction().toString());
+                operator.id, type, setLiteral, operator.getFunction().toString());
         this.program.add(result);
         return false;
     }
@@ -394,8 +394,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     public static void validateJson(DBSPCircuit circuit, boolean verbose) {
         try {
-            if (verbose)
-                System.out.println(circuit);
+            //if (verbose) System.out.println(circuit);
             JITProgram program = ToJitVisitor.circuitToJIT(circuit);
             if (verbose) {
                 IndentStream stream = new IndentStream(System.out);

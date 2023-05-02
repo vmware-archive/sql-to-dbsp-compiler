@@ -31,6 +31,7 @@ import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITRowType;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
 import org.dbsp.sqlCompiler.ir.expression.literal.DBSPZSetLiteral;
+import org.dbsp.util.IIndentStream;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,11 +60,25 @@ public class JITZSetLiteral extends JITNode {
         for (Map.Entry<JITTupleLiteral, Long> element : this.elements.entrySet()) {
             long weight = element.getValue();
             ArrayNode array = set.addArray();
-            ObjectNode rows = array.addObject();
-            ArrayNode rowsValue = rows.putArray("rows");
-            rowsValue.add(element.getKey().asJson());
+            array.add(element.getKey().asJson());
             array.add(weight);
         }
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        boolean first = true;
+        for (Map.Entry<JITTupleLiteral, Long> e: this.elements.entrySet()) {
+            if (!first)
+                builder.newline();
+            first = false;
+            builder.append(e.getKey());
+            if (e.getValue() != 1) {
+                builder.append(" => ")
+                        .append(e.getValue());
+            }
+        }
+        return builder;
     }
 }
