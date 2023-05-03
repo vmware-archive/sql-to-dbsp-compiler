@@ -103,6 +103,21 @@ public class JITLiteral extends JITValue {
         }
     }
 
+    /*
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        JITLiteral that = (JITLiteral) o;
+        return literal.equals(that.literal);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(literal);
+    }
+     */
+
     public boolean isNull() {
         return this.literal.isNull;
     }

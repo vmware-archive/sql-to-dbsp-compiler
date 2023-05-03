@@ -404,10 +404,8 @@ public class ToJitInnerVisitor extends InnerVisitor {
 
         JITInstructionReference isNull = new JITInstructionReference();
         if (mayBeNull) {
-            JITConstantInstruction isNullFlag = new JITConstantInstruction(
-                    this.nextInstructionId(), type, literal, false);
-            this.add(isNullFlag);
-            isNull = isNullFlag.getInstructionReference();
+            JITInstructionPair nullValue = this.constantBool(expression.isNull);
+            isNull = nullValue.value;
         }
         JITInstructionPair pair = new JITInstructionPair(value.getInstructionReference(), isNull);
         this.map(expression, pair);
@@ -432,8 +430,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         JITInstructionReference isNull = new JITInstructionReference();
         if (needsNull(expression)) {
             if (needsNull(expression.source)) {
-                JITCopyInstruction copy = new JITCopyInstruction(this.nextInstructionId(), sourceId.isNull, JITBoolType.INSTANCE);
-                this.currentBlock.add(copy);
+                isNull = sourceId.isNull;
             } else {
                 // TODO: if source is nullable and is null must panic at runtime
                 // this.createFunctionCall("dbsp.error.abort", expression);
@@ -481,10 +478,16 @@ public class ToJitInnerVisitor extends InnerVisitor {
                     expression.left, expression.right);
             return false;
         }
+        if (expression.operation.equals("/")) {
+            // TODO: division by 0 returns null.
+            throw new Unimplemented(expression);
+        }
 
         JITInstructionPair leftId = this.accept(expression.left);
         JITInstructionPair rightId = this.accept(expression.right);
-        JITInstructionPair cf = this.constantBool(false);
+        JITInstructionPair cf = new JITInstructionPair(new JITInstructionReference());
+        if (needsNull(expression))
+            cf = this.constantBool(false);
         JITInstructionReference leftNullId;
         if (leftId.hasNull())
             leftNullId = leftId.isNull;
@@ -593,7 +596,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
             // (a * w).value = (a.value * (type_of_a)w)
             // (a * w).is_null = a.is_null
             JITInstructionReference left;
-            DBSPType rightType = ToJitVisitor.resolveType(expression.right.getNonVoidType());
+            DBSPType rightType = ToJitVisitor.resolveWeightType(expression.right.getNonVoidType());
             if (expression.left.getNonVoidType().sameType(rightType)) {
                 JITInstruction cast = this.add(new JITCastInstruction(this.nextInstructionId(),
                     rightId.value, convertScalarType(expression.right), convertScalarType(expression.left)));
@@ -627,11 +630,11 @@ public class ToJitInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPUnaryExpression expression) {
+        JITInstructionPair source = this.accept(expression.source);
         boolean isWrapBool = expression.operation.equals("wrap_bool");
         JITInstructionPair cf = null;
         if (isWrapBool)
             cf = this.constantBool(false);
-        JITInstructionPair leftId = this.accept(expression.source);
         JITUnaryInstruction.Operation kind;
         switch (expression.operation) {
             case "-":
@@ -642,20 +645,20 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 break;
             case "wrap_bool": {
                 JITInstruction value = this.add(new JITMuxInstruction(this.nextInstructionId(),
-                        leftId.isNull, cf.value, leftId.value));
+                        source.isNull, cf.value, source.value));
                 this.map(expression, new JITInstructionPair(value));
                 return false;
             }
             case "is_false": {
-                if (leftId.hasNull()) {
+                if (source.hasNull()) {
                     // result = left.is_null ? false : !left.value
                     // ! left.value
                     JITInstruction ni = this.add(new JITUnaryInstruction(this.nextInstructionId(),
-                        JITUnaryInstruction.Operation.NOT, leftId.value, convertScalarType(expression.source)));
+                        JITUnaryInstruction.Operation.NOT, source.value, convertScalarType(expression.source)));
                     JITInstructionPair False = this.constantBool(false);
                     // result
                     JITInstruction value = this.add(new JITMuxInstruction(this.nextInstructionId(),
-                            leftId.isNull, False.value, ni.getInstructionReference()));
+                            source.isNull, False.value, ni.getInstructionReference()));
                     this.map(expression, new JITInstructionPair(value));
                     return false;
                 } else {
@@ -664,28 +667,28 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 break;
             }
             case "is_true": {
-                if (leftId.hasNull()) {
+                if (source.hasNull()) {
                     // result = left.is_null ? false : left.value
                     JITInstructionPair False = this.constantBool(false);
                     // result
                     JITInstruction value = this.add(new JITMuxInstruction(this.nextInstructionId(),
-                        leftId.isNull, False.value, leftId.value));
+                        source.isNull, False.value, source.value));
                     this.map(expression, new JITInstructionPair(value));
                 } else {
-                    this.map(expression, new JITInstructionPair(leftId.value));
+                    this.map(expression, new JITInstructionPair(source.value));
                 }
                 return false;
             }
             case "is_not_true": {
-                if (leftId.hasNull()) {
+                if (source.hasNull()) {
                     // result = left.is_null ? true : !left.value
                     // ! left.value
                     JITInstruction ni = this.add(new JITUnaryInstruction(this.nextInstructionId(), 
-                        JITUnaryInstruction.Operation.NOT, leftId.value, convertScalarType(expression.source)));
+                        JITUnaryInstruction.Operation.NOT, source.value, convertScalarType(expression.source)));
                     JITInstructionPair True = this.constantBool(true);
                     // result
                     JITInstruction value = this.add(new JITMuxInstruction(this.nextInstructionId(), 
-                        leftId.isNull, True.value, ni.getInstructionReference()));
+                        source.isNull, True.value, ni.getInstructionReference()));
                     this.map(expression, new JITInstructionPair(value));
                     return false;
                 } else {
@@ -694,23 +697,23 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 break;
             }
             case "is_not_false": {
-                if (leftId.hasNull()) {
+                if (source.hasNull()) {
                     // result = left.is_null ? true : left.value
                     JITInstructionPair True = this.constantBool(true);
                     // result
                     JITInstruction value = this.add(new JITMuxInstruction(this.nextInstructionId(),
-                        leftId.isNull, True.value, leftId.value));
+                        source.isNull, True.value, source.value));
                     this.map(expression, new JITInstructionPair(value));
                 } else {
-                    this.map(expression, new JITInstructionPair(leftId.value));
+                    this.map(expression, new JITInstructionPair(source.value));
                 }
                 return false;
             }
             case "indicator": {
-                if (!leftId.hasNull())
+                if (!source.hasNull())
                     throw new RuntimeException("indicator called on non-nullable expression" + expression);
                 JITInstruction value = this.add(new JITCastInstruction(this.nextInstructionId(),
-                    leftId.isNull, JITBoolType.INSTANCE, JITI64Type.INSTANCE));
+                    source.isNull, JITBoolType.INSTANCE, JITI64Type.INSTANCE));
                 this.map(expression, new JITInstructionPair(value));
                 return false;
             }
@@ -718,10 +721,10 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 throw new Unimplemented(expression);
         }
         JITInstruction value = this.add(new JITUnaryInstruction(this.nextInstructionId(),
-            kind, leftId.value, convertScalarType(expression.source)));
+            kind, source.value, convertScalarType(expression.source)));
         JITInstructionReference isNull = new JITInstructionReference();
-        if (leftId.hasNull())
-            isNull = leftId.isNull;
+        if (source.hasNull())
+            isNull = source.isNull;
         this.map(expression, new JITInstructionPair(value.getInstructionReference(), isNull));
         return false;
     }
@@ -853,7 +856,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
                     JITScalarType.scalarType(field.getNonVoidType())));
             if (fieldId.hasNull()) {
                 this.add(new JITSetNullInstruction(this.nextInstructionId(),
-                        retValId.value, tupleTypeId, index, fieldId.value));
+                        retValId.value, tupleTypeId, index, fieldId.isNull));
             }
             index++;
         }

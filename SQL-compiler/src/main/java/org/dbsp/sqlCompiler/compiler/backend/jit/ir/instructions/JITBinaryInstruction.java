@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITType;
+import org.dbsp.util.IIndentStream;
 
 public class JITBinaryInstruction extends JITInstruction {
     public enum Operation {
@@ -51,6 +52,11 @@ public class JITBinaryInstruction extends JITInstruction {
 
         Operation(String text) {
             this.text = text;
+        }
+
+        @Override
+        public String toString() {
+            return this.text;
         }
     }
 
@@ -88,7 +94,13 @@ public class JITBinaryInstruction extends JITInstruction {
     }
 
     @Override
-    public String toString() {
-        return this.id + " " + this.operation + "(" + this.left + "," + this.right + ")";
+    public IIndentStream toString(IIndentStream builder) {
+        return super.toString(builder)
+                .append(" ")
+                .append(this.left)
+                .append(" ")
+                .append(this.operation.text)
+                .append(" ")
+                .append(this.right);
     }
 }

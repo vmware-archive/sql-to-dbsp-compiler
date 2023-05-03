@@ -64,7 +64,7 @@ public class JITLoadInstruction extends JITInstruction {
     public IIndentStream toString(IIndentStream builder) {
         return super.toString(builder)
                 .append(" ")
-                .append(this.column)
+                .append(this.source)
                 .append("[")
                 .append(this.column)
                 .append("]");

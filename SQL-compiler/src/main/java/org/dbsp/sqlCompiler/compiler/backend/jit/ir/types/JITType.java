@@ -24,8 +24,14 @@
 package org.dbsp.sqlCompiler.compiler.backend.jit.ir.types;
 
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
+import org.dbsp.util.IIndentStream;
 
 public abstract class JITType extends JITNode {
     protected JITType() {}
     public abstract boolean isScalarType();
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder.append(this.toString());
+    }
 }

@@ -23,6 +23,7 @@
 
 package org.dbsp.sqlCompiler.compiler.backend.jit.ir.operators;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -102,6 +103,20 @@ public abstract class JITOperator extends JITNode implements IJITId {
         }
         this.addComment(data, this.comment);
         return result;
+    }
+
+    /**
+     * Given the result returned by asJson, reach within
+     * it and return the field with name "Name", called
+     * "data" in the above function.
+     */
+    ObjectNode getInnerObject(BaseJsonNode node) {
+        if (!(node instanceof ObjectNode))
+            throw new RuntimeException("Expected an Object");
+        JsonNode result = node.get(this.name);
+        if (!(result instanceof ObjectNode))
+            throw new RuntimeException("Expected the field " + this.name + " to be an Object");
+        return (ObjectNode)result;
     }
 
     void addZSetLayout(ObjectNode parent, String label, JITRowType type) {

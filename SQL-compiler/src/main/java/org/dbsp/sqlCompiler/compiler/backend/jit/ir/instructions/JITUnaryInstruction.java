@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITType;
+import org.dbsp.util.IIndentStream;
 
 public class JITUnaryInstruction extends JITInstruction {
     public enum Operation {
@@ -38,6 +39,11 @@ public class JITUnaryInstruction extends JITInstruction {
         Operation(String text) {
             this.text = text;
         }
+
+        @Override
+        public String toString() {
+            return this.text;
+        }
     }
 
     public final Operation operation;
@@ -45,15 +51,10 @@ public class JITUnaryInstruction extends JITInstruction {
     public final JITType type;
 
     public JITUnaryInstruction(long id, Operation operation, JITInstructionReference operand, JITType type) {
-        super(id, "UnOp");
+        super(id, "UnaryOp");
         this.operation = operation;
         this.operand = operand;
         this.type = type;
-    }
-
-    @Override
-    public String toString() {
-        return this.id + " " + this.operation + "(" + this.operand + ")";
     }
 
     @Override
@@ -68,5 +69,14 @@ public class JITUnaryInstruction extends JITInstruction {
         result.put("kind", this.operation.text);
         result.put("value_ty", type.toString());
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return super.toString(builder)
+                .append(" ")
+                .append(this.operation.toString())
+                .append(" ")
+                .append(this.operand);
     }
 }

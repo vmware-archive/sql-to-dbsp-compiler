@@ -53,7 +53,7 @@ public class JITReference extends JITNode {
     }
 
     public void mustBeValid() {
-        if (this.isValid())
+        if (!this.isValid())
             throw new RuntimeException("Expected a valid reference");
     }
 

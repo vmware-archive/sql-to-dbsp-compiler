@@ -37,7 +37,8 @@ public class JITNegOperator extends JITOperator {
     @Override
     public BaseJsonNode asJson() {
         ObjectNode result = (ObjectNode)super.asJson();
-        this.addZSetLayout(result, "layout", this.type);
+        ObjectNode neg = this.getInnerObject(result);
+        this.addZSetLayout(neg, "layout", this.type);
         return result;
     }
 }

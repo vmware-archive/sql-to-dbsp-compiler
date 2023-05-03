@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITType;
+import org.dbsp.util.IIndentStream;
 
 public class JITCopyInstruction extends JITInstruction {
     public final JITInstructionReference operand;
@@ -39,15 +40,17 @@ public class JITCopyInstruction extends JITInstruction {
     }
 
     @Override
-    public String toString() {
-        return this.id + " copy(" + this.operand + ")";
-    }
-
-    @Override
     public BaseJsonNode instructionAsJson() {
         ObjectNode result = JITNode.jsonFactory().createObjectNode();
         result.put("value", this.operand.getId());
         result.put("value_ty", type.toString());
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return super.toString(builder)
+                .append(" ")
+                .append(this.operand);
     }
 }

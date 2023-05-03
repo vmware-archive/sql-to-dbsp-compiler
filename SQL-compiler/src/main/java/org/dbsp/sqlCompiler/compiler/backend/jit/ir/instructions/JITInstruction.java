@@ -30,6 +30,10 @@ import org.dbsp.sqlCompiler.compiler.backend.jit.ir.IJITId;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITReference;
 import org.dbsp.util.IIndentStream;
+import org.dbsp.util.IndentStream;
+import org.dbsp.util.StringPrintStream;
+
+import java.io.UnsupportedEncodingException;
 
 public abstract class JITInstruction extends JITNode implements IJITId {
     public final long id;
@@ -70,5 +74,18 @@ public abstract class JITInstruction extends JITNode implements IJITId {
         return builder.append(this.id)
                 .append(" ")
                 .append(this.name);
+    }
+
+    @Override
+    public String toString() {
+        StringPrintStream sps;
+        try {
+            sps = new StringPrintStream();
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        IndentStream str = new IndentStream(sps.getPrintStream());
+        this.toString(str);
+        return sps.toString();
     }
 }

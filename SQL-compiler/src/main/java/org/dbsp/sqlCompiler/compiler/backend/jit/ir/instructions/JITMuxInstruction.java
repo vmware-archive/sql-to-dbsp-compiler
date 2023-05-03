@@ -36,7 +36,7 @@ public class JITMuxInstruction extends JITInstruction {
                              JITInstructionReference condition,
                              JITInstructionReference left,
                              JITInstructionReference right) {
-        super(id, "Cond");
+        super(id, "Select");
         this.condition = condition;
         this.right = right;
         this.left = left;
@@ -46,19 +46,15 @@ public class JITMuxInstruction extends JITInstruction {
     public BaseJsonNode instructionAsJson() {
         ObjectNode result = jsonFactory().createObjectNode();
         result.put("cond", this.condition.getId());
-        result.put("lhs", this.left.getId());
-        result.put("rhs", this.right.getId());
+        result.put("if_true", this.left.getId());
+        result.put("if_false", this.right.getId());
         return result;
-    }
-
-    @Override
-    public String toString() {
-        return this.id + " " + this.condition + " ? " + this.left + " : " + this.right;
     }
 
     @Override
     public IIndentStream toString(IIndentStream builder) {
         return super.toString(builder)
+                .append(" ")
                 .append(this.condition)
                 .append(" ? ")
                 .append(this.left)

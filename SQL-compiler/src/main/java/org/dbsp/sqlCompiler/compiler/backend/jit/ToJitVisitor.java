@@ -76,8 +76,11 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         return this.program.typeCatalog;
     }
 
+    /**
+     * Eliminate the Weight type and replace it with its definition.
+     */
     @Nullable
-    public static DBSPType resolveType(@Nullable DBSPType type) {
+    public static DBSPType resolveWeightType(@Nullable DBSPType type) {
         if (type == null)
             return null;
         if (type.is(DBSPTypeUser.class)) {
@@ -167,7 +170,7 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
     }
 
     public static boolean isScalarType(@Nullable DBSPType type) {
-        type = resolveType(type);
+        type = resolveWeightType(type);
         if (type == null)
             return true;
         if (type.is(DBSPTypeBaseType.class))
@@ -198,8 +201,9 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
     @Override
     public boolean preorder(DBSPMapOperator operator) {
         OperatorConversion conversion = new OperatorConversion(operator);
-        JITRowType outputType = this.getTypeCatalog().convertType(operator.outputElementType);
-        JITOperator result = new JITMapOperator(operator.id, conversion.type, outputType,
+        JITRowType inputType = this.getTypeCatalog().convertType(
+                operator.input().getOutputZSetElementType());
+        JITOperator result = new JITMapOperator(operator.id, conversion.type, inputType,
                 conversion.inputs, conversion.getFunction());
         this.program.add(result);
         return false;
@@ -255,11 +259,13 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     @Override
     public boolean preorder(DBSPIndexOperator operator) {
-        OperatorConversion conversion = new OperatorConversion(operator);
+        DBSPExpression func = ToJitVisitor.this.resolve(operator.getFunction());
+        JITFunction function = ToJitVisitor.this.convertFunction(func.to(DBSPClosureExpression.class));
+        List<JITOperatorReference> inputs = Linq.map(operator.inputs, i -> new JITOperatorReference(i.id));
+
         JITRowType keyType = this.getTypeCatalog().convertType(operator.keyType);
         JITRowType valueType = this.getTypeCatalog().convertType(operator.elementType);
-        JITOperator result = new JITIndexWithOperator(operator.id, keyType, valueType,
-                conversion.inputs, conversion.getFunction());
+        JITOperator result = new JITIndexWithOperator(operator.id, keyType, valueType, inputs, function);
         this.program.add(result);
         return false;
     }
@@ -314,7 +320,10 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
     public boolean preorder(DBSPAggregateOperator operator) {
         if (operator.function != null)
             throw new RuntimeException("Didn't expect the Aggregate to have a function");
-        OperatorConversion conversion = new OperatorConversion(operator);
+
+        List<JITOperatorReference> inputs = Linq.map(
+                operator.inputs, i -> new JITOperatorReference(i.id));
+        JITRowType outputType = this.getTypeCatalog().convertType(operator.outputElementType);
 
         DBSPAggregate aggregate = operator.getAggregate();
         DBSPExpression initial = this.resolve(aggregate.getZero());
@@ -338,12 +347,8 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         JITRowType stepLayout = this.getTypeCatalog().convertType(
                 Objects.requireNonNull(aggregate.getIncrement().getResultType()));
         JITOperator result = new JITAggregateOperator(
-                operator.id,
-                accLayout,
-                stepLayout,
-                conversion.type,
-                conversion.inputs,
-                init, stepFn, finishFn);
+                operator.id, accLayout, stepLayout, outputType,
+                inputs, init, stepFn, finishFn);
         this.program.add(result);
 
         return false;
@@ -387,6 +392,8 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         rewriter.add(new BlockClosures());
         rewriter.add(new Simplify().circuitRewriter());
         circuit = rewriter.apply(circuit);
+        System.out.println(circuit);
+
         ToJitVisitor visitor = new ToJitVisitor();
         visitor.apply(circuit);
         return visitor.program;
@@ -394,7 +401,6 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
 
     public static void validateJson(DBSPCircuit circuit, boolean verbose) {
         try {
-            //if (verbose) System.out.println(circuit);
             JITProgram program = ToJitVisitor.circuitToJIT(circuit);
             if (verbose) {
                 IndentStream stream = new IndentStream(System.out);

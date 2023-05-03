@@ -25,10 +25,13 @@ package org.dbsp.sqlCompiler.compiler.backend.jit.ir.types;
 
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBaseType;
 import org.dbsp.util.Unimplemented;
+
+import java.util.Objects;
 
 public class JITScalarType extends JITType {
     public final String name;
@@ -48,7 +51,7 @@ public class JITScalarType extends JITType {
     }
 
     public static JITScalarType scalarType(DBSPType type) {
-        // type = Objects.requireNonNull(resolveType(type));
+        type = Objects.requireNonNull(ToJitVisitor.resolveWeightType(type));
         if (type.sameType(new DBSPTypeTuple()))
             return JITUnitType.INSTANCE;
         DBSPTypeBaseType base = type.as(DBSPTypeBaseType.class);

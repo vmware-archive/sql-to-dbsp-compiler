@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITType;
+import org.dbsp.util.IIndentStream;
 
 public class JITCastInstruction extends JITInstruction {
     public final JITInstructionReference operand;
@@ -41,11 +42,6 @@ public class JITCastInstruction extends JITInstruction {
     }
 
     @Override
-    public String toString() {
-        return this.id + " " + "(" + this.destinationType.toString() + ")" + this.operand.getId();
-    }
-
-    @Override
     public BaseJsonNode instructionAsJson() {
         // "Cast": {
         //    "value": 2,
@@ -57,5 +53,14 @@ public class JITCastInstruction extends JITInstruction {
         result.put("from", this.sourceType.toString());
         result.put("to", this.destinationType.toString());
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return super.toString(builder)
+                .append(" ")
+                .append(this.operand)
+                .append(" as ")
+                .append(this.destinationType);
     }
 }

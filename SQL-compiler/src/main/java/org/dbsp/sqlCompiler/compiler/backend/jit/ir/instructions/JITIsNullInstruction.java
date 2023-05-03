@@ -26,6 +26,7 @@ package org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITRowType;
+import org.dbsp.util.IIndentStream;
 
 public class JITIsNullInstruction extends JITInstruction {
     public final JITInstructionReference target;
@@ -46,5 +47,15 @@ public class JITIsNullInstruction extends JITInstruction {
         result.put("target_layout", this.targetType.getId());
         result.put("column", this.column);
         return result;
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return super.toString(builder)
+                .append(" ")
+                .append(this.target)
+                .append("[")
+                .append(this.column)
+                .append("]");
     }
 }

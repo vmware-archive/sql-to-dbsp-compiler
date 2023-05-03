@@ -27,26 +27,49 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.IJITId;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITReference;
 import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTupleBase;
+import org.dbsp.util.IIndentStream;
 import org.dbsp.util.Linq;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class JITRowType extends JITType implements IJITId {
+    static class NullableScalarType extends JITNode {
+        public final boolean nullable;
+        public final JITScalarType type;
+
+        NullableScalarType(boolean nullable, JITScalarType type) {
+            this.nullable = nullable;
+            this.type = type;
+        }
+
+        @Override
+        public BaseJsonNode asJson() {
+            ObjectNode result = jsonFactory().createObjectNode();
+            result.put("nullable", this.nullable);
+            result.put("ty", this.type.toString());
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return (this.nullable ? "?" : "") + this.type.toString();
+        }
+    }
+
     public final long id;
-    final List<Boolean> nullable;
-    final List<JITScalarType> fields;
+    final List<NullableScalarType> fields;
 
     public JITRowType(long id, DBSPTypeTupleBase type) {
         this.id = id;
-        this.nullable = new ArrayList<>();
         this.fields = new ArrayList<>();
         for (DBSPType colType: type.tupFields) {
-            this.nullable.add(colType.mayBeNull);
-            this.fields.add(JITScalarType.scalarType(colType));
+            JITScalarType scalarType = JITScalarType.scalarType(colType);
+            this.fields.add(new NullableScalarType(colType.mayBeNull, scalarType));
         }
     }
 
@@ -73,21 +96,20 @@ public class JITRowType extends JITType implements IJITId {
             col.put("nullable", false);
             col.put("ty", "Unit");
         } else {
-            for (int i = 0; i < this.fields.size(); i++) {
-                ObjectNode col = columns.addObject();
-                JITScalarType type = this.fields.get(i);
-                boolean nu = this.nullable.get(i);
-                col.put("nullable", nu);
-                col.put("ty", type.toString());
-                columns.add(col);
-            }
+            for (int i = 0; i < this.fields.size(); i++)
+                columns.add(this.fields.get(i).asJson());
         }
         return result;
     }
 
     @Override
     public String toString() {
-        List<String> fields = Linq.map(this.fields, JITScalarType::toString);
+        List<String> fields = Linq.map(this.fields, NullableScalarType::toString);
         return "[" + String.join(", ", fields) + "]";
+    }
+
+    @Override
+    public IIndentStream toString(IIndentStream builder) {
+        return builder.append(this.toString());
     }
 }

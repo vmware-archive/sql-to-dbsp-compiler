@@ -42,9 +42,10 @@ public class JITMapOperator extends JITOperator {
     @Override
     public BaseJsonNode asJson() {
         ObjectNode result = (ObjectNode)super.asJson();
-        ObjectNode layout = result.putObject("output_layout");
+        ObjectNode map = this.getInnerObject(result);
+        ObjectNode layout = map.putObject("output_layout");
         layout.put("Set", this.type.getId());
-        layout = result.putObject("input_layout");
+        layout = map.putObject("input_layout");
         layout.put("Set", this.inputType.getId());
         return result;
     }
