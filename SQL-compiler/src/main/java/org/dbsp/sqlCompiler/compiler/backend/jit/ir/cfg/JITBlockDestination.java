@@ -23,26 +23,18 @@
 
 package org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
-import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITReference;
 
-import java.util.ArrayList;
-import java.util.List;
+/**
+ * When jumping to a new block one has to specify both
+ * the target block and the arguments to be bound to the parameters.
+ */
+public class JITBlockDestination extends JITNode {
+    final JITBlockReference target;
+    final JITBlockArguments arguments;
 
-public class JITBlockParameters extends JITNode {
-    final List<JITReference> parameters;
-
-    public JITBlockParameters() {
-        parameters = new ArrayList<>();
-    }
-
-    @Override
-    public BaseJsonNode asJson() {
-        ArrayNode result = jsonFactory().createArrayNode();
-        for (JITReference param: this.parameters)
-            result.add(param.getId());
-        return result;
+    public JITBlockDestination(JITBlockReference target, JITBlockArguments arguments) {
+        this.target = target;
+        this.arguments = arguments;
     }
 }

@@ -23,6 +23,8 @@
 
 package org.dbsp.sqlCompiler.compiler.backend.jit;
 
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITParameter;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITParameterMapping;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg.JITBlock;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg.JITBlockReference;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg.JITBranchTerminator;
@@ -115,13 +117,6 @@ public class ToJitInnerVisitor extends InnerVisitor {
     }
 
     /**
-     * Prefix of the name of the fictitious parameters that are added to closures that return structs.
-     * The JIT only supports returning scalar values, so a closure that returns a
-     * tuple actually receives an additional parameter that is "output" (equivalent to a "mut").
-     * Moreover, a closure that returns a RawTuple will return one value for each field of the raw tuple.
-     */
-    private static final String RETURN_PARAMETER_PREFIX = "$retval";
-    /**
      * Used to allocate ids for expressions and blocks.
      */
     private long nextInstrId = 1;
@@ -150,14 +145,19 @@ public class ToJitInnerVisitor extends InnerVisitor {
      * let var1 = { let v2 = 1 + 2; v2 + 1 }
      */
     final List<String> variableAssigned;
+    /**
+     * A description how closure parameters are mapped to JIT parameters.
+     */
+    final JITParameterMapping mapping;
 
-    public ToJitInnerVisitor(List<JITBlock> blocks, TypeCatalog typeCatalog) {
+    public ToJitInnerVisitor(List<JITBlock> blocks, TypeCatalog typeCatalog, JITParameterMapping mapping) {
         super(true);
         this.blocks = blocks;
         this.typeCatalog = typeCatalog;
         this.expressionToValues = new HashMap<>();
         this.declarations = new ArrayList<>();
         this.currentBlock = null;
+        this.mapping = mapping;
         this.variableAssigned = new ArrayList<>();
     }
 
@@ -244,7 +244,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         if (ToJitVisitor.isScalarType(type)) {
             return JITScalarType.scalarType(type);
         } else {
-            return this.typeCatalog.convertType(type);
+            return this.typeCatalog.convertTupleType(type);
         }
     }
 
@@ -744,31 +744,18 @@ public class ToJitInnerVisitor extends InnerVisitor {
             DBSPIdentifierPattern identifier = param.pattern.to(DBSPIdentifierPattern.class);
             this.declare(identifier.identifier, needsNull(param.type));
         }
-        @Nullable
-        DBSPType ret = closure.getResultType();
-        int variablesToAdd = 0;
-        if (!ToJitVisitor.isScalarType(ret)) {
-            Objects.requireNonNull(ret);  // null is a scalar type.
-            // If the closure returns a RawTuple, create a variable for each field of the tuple.
-            List<DBSPTypeTuple> fields = TypeCatalog.expandToTuples(ret);
-            variablesToAdd = fields.size();
-            for (int i = 0; i < variablesToAdd; i++) {
-                DBSPType type = fields.get(i);
-                String varName = RETURN_PARAMETER_PREFIX + "_" + i;
-                // For the outermost closure this will assign the same expression
-                // ids to these variables as were assigned to the "output" parameters
-                // by ToJitVisitor.createFunction.  So assigning to these expressions
-                // will in fact assign to the "output" parameters.
-                this.declare(varName, type.mayBeNull);
-                this.variableAssigned.add(varName);
-            }
+
+        for (DBSPParameter param: this.mapping.outputParameters) {
+            DBSPIdentifierPattern identifier = param.pattern.to(DBSPIdentifierPattern.class);
+            String varName = identifier.identifier;
+            this.declare(varName, needsNull(param.type));
+            this.variableAssigned.add(varName);
         }
+
         closure.body.accept(this);
-        for (int i = 0; i < variablesToAdd; i++) {
-            String removed = Utilities.removeLast(this.variableAssigned);
-            if (!removed.startsWith(RETURN_PARAMETER_PREFIX))
-                throw new RuntimeException("Unexpected variable removed " + removed);
-        }
+
+        for (int i = 0; i < this.mapping.outputParameters.size(); i++)
+            Utilities.removeLast(this.variableAssigned);
         return false;
     }
 
@@ -777,9 +764,9 @@ public class ToJitInnerVisitor extends InnerVisitor {
         boolean isTuple = statement.type.is(DBSPTypeTuple.class);
         JITInstructionPair ids = this.declare(statement.variable, needsNull(statement.type));
         this.variableAssigned.add(statement.variable);
-        JITRowType typeId = this.typeCatalog.convertType(statement.type);
+        JITType type = this.convertType(statement.type);
         if (isTuple)
-            this.add(new JITUninitRowInstruction(ids.value.getId(), typeId));
+            this.add(new JITUninitRowInstruction(ids.value.getId(), type.to(JITRowType.class)));
         if (statement.initializer != null)
             statement.initializer.accept(this);
         Utilities.removeLast(this.variableAssigned);
@@ -788,12 +775,28 @@ public class ToJitInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPFieldExpression expression) {
+        if (expression.expression.is(DBSPParameter.class)) {
+            // check for parameter decompositions.
+            JITParameter param  = this.mapping.getParameterReference(expression.expression.to(DBSPParameter.class), expression.fieldNo);
+            if (param != null) {
+                JITInstructionReference value = new JITInstructionReference(param.getId());
+                JITInstructionReference isNullRef = new JITInstructionReference();
+                if (needsNull(expression)) {
+                    JITInstruction isNull = this.add(new JITIsNullInstruction(this.nextInstructionId(),
+                            param.getInstructionReference(), param.type, 0));
+                    isNullRef = isNull.getInstructionReference();
+                }
+                this.map(expression, new JITInstructionPair(value, isNullRef));
+                return false;
+            }
+        }
+
+        JITInstruction isNull = null;
         JITInstructionPair sourceId = this.accept(expression.expression);
-        JITRowType sourceType = this.typeCatalog.convertType(expression.expression.getNonVoidType());
+        JITRowType sourceType = this.typeCatalog.convertTupleType(expression.expression.getNonVoidType());
         JITInstruction load = this.add(new JITLoadInstruction(
                 this.nextInstructionId(), sourceId.value, sourceType,
                 expression.fieldNo, convertScalarType(expression)));
-        JITInstruction isNull = null;
         if (needsNull(expression)) {
             isNull = this.add(new JITIsNullInstruction(this.nextInstructionId(), sourceId.value,
                 sourceType, expression.fieldNo));
@@ -846,7 +849,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         // Compile this as an assignment to the currently assigned variable
         String variableAssigned = this.variableAssigned.get(this.variableAssigned.size() - 1);
         JITInstructionPair retValId = this.resolve(variableAssigned);
-        JITRowType tupleTypeId = this.typeCatalog.convertType(expression.getNonVoidType());
+        JITRowType tupleTypeId = this.typeCatalog.convertTupleType(expression.getNonVoidType());
         int index = 0;
         for (DBSPExpression field: expression.fields) {
             // Generates 1 or 2 instructions for each field (depending on nullability)
@@ -910,14 +913,16 @@ public class ToJitInnerVisitor extends InnerVisitor {
     }
 
     /**
-     * Convert the body of a closure expression to a JSON representation
+     * Convert the body of a closure expression to JIT representation.
      * @param expression  Expression to generate code for.
+     * @param parameterMapping  Mapping that describes the function parameters.
      * @param catalog     The catalog of Tuple types.
      */
-    static List<JITBlock> convertClosure(DBSPClosureExpression expression,
-                               TypeCatalog catalog) {
+    static List<JITBlock> convertClosure(
+            JITParameterMapping parameterMapping,
+            DBSPClosureExpression expression, TypeCatalog catalog) {
         List<JITBlock> blocks = new ArrayList<>();
-        ToJitInnerVisitor visitor = new ToJitInnerVisitor(blocks, catalog);
+        ToJitInnerVisitor visitor = new ToJitInnerVisitor(blocks, catalog, parameterMapping);
         visitor.newContext();
         expression.accept(visitor);
         visitor.popContext();

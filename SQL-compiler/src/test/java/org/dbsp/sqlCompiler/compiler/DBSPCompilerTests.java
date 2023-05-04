@@ -53,7 +53,7 @@ public class DBSPCompilerTests {
         Assert.assertNotNull(dbsp);
     }
 
-    // @Test
+    @Test
     public void circuitToJitTest() {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatement(ddl);

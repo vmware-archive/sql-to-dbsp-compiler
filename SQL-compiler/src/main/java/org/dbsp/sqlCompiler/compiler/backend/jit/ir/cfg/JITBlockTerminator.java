@@ -24,11 +24,17 @@
 package org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg;
 
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstructionReference;
 
 public abstract class JITBlockTerminator extends JITNode {
-    final JITBlockParameters parameters;
+    // These are called 'parameters' in Rust, but they really are arguments.
+    final JITBlockArguments arguments;
 
     protected JITBlockTerminator() {
-        this.parameters = new JITBlockParameters();
+        this.arguments = new JITBlockArguments();
+    }
+
+    public void addArgument(JITInstructionReference arg) {
+        this.arguments.addArgument(arg);
     }
 }

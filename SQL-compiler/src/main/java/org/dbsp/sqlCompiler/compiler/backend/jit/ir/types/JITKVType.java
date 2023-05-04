@@ -21,41 +21,29 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg;
+package org.dbsp.sqlCompiler.compiler.backend.jit.ir.types;
 
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstructionReference;
-import org.dbsp.util.IIndentStream;
 
-public class JITReturnTerminator extends JITBlockTerminator {
-    public final JITInstructionReference retVal;
+/**
+ * A pair type with two fields: a key type and a value type.
+ */
+public class JITKVType extends JITType {
+    final JITRowType key;
+    final JITRowType value;
 
-    public JITReturnTerminator(JITInstructionReference retVal) {
-        this.retVal = retVal;
+    public JITKVType(JITRowType key, JITRowType value) {
+        this.key = key;
+        this.value = value;
     }
 
     @Override
     public BaseJsonNode asJson() {
-        ObjectNode result = jsonFactory().createObjectNode();
-        ObjectNode ret = result.putObject("Return");
-        ObjectNode retValue = ret.putObject("value");
-        if (this.retVal.isValid()) {
-            retValue.put("Expr", this.retVal.getId());
-        } else {
-            retValue.put("Imm", "Unit");
-        }
-        return result;
+        return super.asJson();
     }
 
     @Override
-    public IIndentStream toString(IIndentStream builder) {
-        return builder.append("return ")
-                .append(this.retVal);
-    }
-
-    @Override
-    public void addArgument(JITInstructionReference arg) {
-        throw new UnsupportedOperationException("Return blocks should have no arguments");
+    public boolean isScalarType() {
+        return false;
     }
 }

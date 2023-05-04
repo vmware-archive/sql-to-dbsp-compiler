@@ -54,9 +54,10 @@ public class JITZSetLiteral extends JITNode {
     @Override
     public BaseJsonNode asJson() {
         ObjectNode result = jsonFactory().createObjectNode();
-        ObjectNode valueLayout = result.putObject("layout");
-        valueLayout.put("Set", this.rowType.getId());
-        ArrayNode set = result.putArray("Set");
+        ObjectNode layout = result.putObject("layout");
+        layout.put("Set", this.rowType.getId());
+        ObjectNode value = result.putObject("value");
+        ArrayNode set = value.putArray("Set");
         for (Map.Entry<JITTupleLiteral, Long> element : this.elements.entrySet()) {
             long weight = element.getValue();
             ArrayNode array = set.addArray();

@@ -29,7 +29,7 @@ import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstructionR
 import org.dbsp.util.IIndentStream;
 
 public class JITBranchTerminator extends JITBlockTerminator {
-    public final JITBlockParameters falseParams;
+    public final JITBlockArguments falseArguments;
     public final JITInstructionReference condition;
     public final JITBlockReference truthy;
     public final JITBlockReference falsy;
@@ -37,7 +37,8 @@ public class JITBranchTerminator extends JITBlockTerminator {
     public JITBranchTerminator(JITInstructionReference condition,
                                JITBlockReference truthy,
                                JITBlockReference falsy) {
-        this.falseParams = new JITBlockParameters();
+        this.falseArguments = new JITBlockArguments();
+        // WE use 'this.arguments' for trueArguments
         this.condition = condition;
         this.truthy = truthy;
         this.falsy = falsy;
@@ -49,8 +50,8 @@ public class JITBranchTerminator extends JITBlockTerminator {
         ObjectNode branch = result.putObject("Branch");
         ObjectNode cond = branch.putObject("cond");
         cond.put("Expr", this.condition.getId());
-        branch.set("true_params", this.parameters.asJson());  // for now empty
-        branch.set("false_params", this.falseParams.asJson());
+        branch.set("true_params", this.arguments.asJson());
+        branch.set("false_params", this.falseArguments.asJson());
         branch.put("falsy", this.falsy.getId());
         branch.put("truthy", this.truthy.getId());
         return result;

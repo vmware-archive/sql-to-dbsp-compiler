@@ -23,39 +23,36 @@
 
 package org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstructionReference;
-import org.dbsp.util.IIndentStream;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITRowType;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITScalarType;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITType;
 
-public class JITReturnTerminator extends JITBlockTerminator {
-    public final JITInstructionReference retVal;
+public class JITBlockParameter extends JITNode {
+    final JITInstructionReference argument;
+    final JITType type;
 
-    public JITReturnTerminator(JITInstructionReference retVal) {
-        this.retVal = retVal;
+    public JITBlockParameter(JITInstructionReference argument, JITType type) {
+        this.argument = argument;
+        this.type = type;
     }
 
     @Override
     public BaseJsonNode asJson() {
-        ObjectNode result = jsonFactory().createObjectNode();
-        ObjectNode ret = result.putObject("Return");
-        ObjectNode retValue = ret.putObject("value");
-        if (this.retVal.isValid()) {
-            retValue.put("Expr", this.retVal.getId());
+        ArrayNode result = jsonFactory().createArrayNode();
+        result.add(this.argument.getId());
+        ObjectNode type = result.addObject();
+        if (this.type.is(JITScalarType.class)) {
+            JITScalarType scalar = this.type.to(JITScalarType.class);
+            type.set("Column", scalar.asJson());
         } else {
-            retValue.put("Imm", "Unit");
+            JITRowType row = this.type.to(JITRowType.class);
+            type.put("Row", row.getId());
         }
         return result;
-    }
-
-    @Override
-    public IIndentStream toString(IIndentStream builder) {
-        return builder.append("return ")
-                .append(this.retVal);
-    }
-
-    @Override
-    public void addArgument(JITInstructionReference arg) {
-        throw new UnsupportedOperationException("Return blocks should have no arguments");
     }
 }

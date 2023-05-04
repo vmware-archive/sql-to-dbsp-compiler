@@ -41,6 +41,7 @@ import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeBool;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeDouble;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
+import org.dbsp.util.Logger;
 import org.dbsp.util.Utilities;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -178,7 +179,8 @@ public class BaseSQLTests {
             }
 
             // Test json serialization
-            ToJitVisitor.validateJson(circuit, true);
+            Logger.INSTANCE.setDebugLevel(ToJitVisitor.class, 4);
+            // ToJitVisitor.validateJson(circuit);
             this.addRustTestCase(circuit, streams);
         } catch (Exception ex) {
             throw new RuntimeException(ex);

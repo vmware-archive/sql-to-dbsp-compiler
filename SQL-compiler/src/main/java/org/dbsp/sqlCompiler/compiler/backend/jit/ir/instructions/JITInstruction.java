@@ -33,8 +33,6 @@ import org.dbsp.util.IIndentStream;
 import org.dbsp.util.IndentStream;
 import org.dbsp.util.StringPrintStream;
 
-import java.io.UnsupportedEncodingException;
-
 public abstract class JITInstruction extends JITNode implements IJITId {
     public final long id;
     public final String name;
@@ -78,12 +76,7 @@ public abstract class JITInstruction extends JITNode implements IJITId {
 
     @Override
     public String toString() {
-        StringPrintStream sps;
-        try {
-            sps = new StringPrintStream();
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        StringPrintStream sps = new StringPrintStream();
         IndentStream str = new IndentStream(sps.getPrintStream());
         this.toString(str);
         return sps.toString();

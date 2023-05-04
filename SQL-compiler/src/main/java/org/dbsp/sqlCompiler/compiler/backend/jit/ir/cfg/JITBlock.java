@@ -28,8 +28,11 @@ import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.IJITId;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITParameter;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITReference;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstructionReference;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITType;
 import org.dbsp.util.IIndentStream;
 
 import javax.annotation.Nullable;
@@ -38,6 +41,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class JITBlock extends JITNode implements IJITId {
+    final List<JITBlockParameter> parameters;
     final List<JITInstruction> instructions;
     @Nullable
     JITBlockTerminator terminator;
@@ -46,6 +50,7 @@ public class JITBlock extends JITNode implements IJITId {
     public JITBlock(long id) {
         this.id = id;
         this.instructions = new ArrayList<>();
+        this.parameters = new ArrayList<>();
         this.terminator = null;
     }
 
@@ -75,6 +80,10 @@ public class JITBlock extends JITNode implements IJITId {
             body.add(i.asJson());
         }
         result.set("terminator", Objects.requireNonNull(this.terminator).asJson());
+        ArrayNode params = result.putArray("parameters");
+        for (JITBlockParameter param: this.parameters) {
+            params.add(param.asJson());
+        }
         return result;
     }
 
@@ -82,6 +91,10 @@ public class JITBlock extends JITNode implements IJITId {
         if (this.terminator != null)
             throw new RuntimeException("Block already terminated while adding instruction " + instruction);
         this.instructions.add(instruction);
+    }
+
+    public void addParameter(JITInstructionReference instruction, JITType type) {
+        this.parameters.add(new JITBlockParameter(instruction, type));
     }
 
     public void terminate(JITBlockTerminator terminator) {

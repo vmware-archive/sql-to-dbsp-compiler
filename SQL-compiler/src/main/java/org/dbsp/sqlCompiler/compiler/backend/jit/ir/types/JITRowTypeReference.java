@@ -21,32 +21,12 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg;
+package org.dbsp.sqlCompiler.compiler.backend.jit.ir.types;
 
-import com.fasterxml.jackson.databind.node.BaseJsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.dbsp.util.IIndentStream;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITReference;
 
-public class JITJumpTerminator extends JITBlockTerminator {
-    public final JITBlockReference target;
-
-    public JITJumpTerminator(JITBlockReference target) {
-        this.target = target;
-        target.mustBeValid();
-    }
-
-    @Override
-    public BaseJsonNode asJson() {
-        ObjectNode result = jsonFactory().createObjectNode();
-        ObjectNode jump = result.putObject("Jump");
-        jump.put("target", target.getId());
-        jump.set("params", this.arguments.asJson());
-        return result;
-    }
-
-    @Override
-    public IIndentStream toString(IIndentStream builder) {
-        return builder.append("jump ")
-                .append(this.target);
+public class JITRowTypeReference extends JITReference {
+    public JITRowTypeReference(long id) {
+        super(id);
     }
 }

@@ -79,8 +79,10 @@ public class JITRowType extends JITType implements IJITId {
 
     @Override
     public JITReference getReference() {
-        return new JITReference(this.id);
+        return this.getRowReference();
     }
+
+    public JITRowTypeReference getRowReference() { return new JITRowTypeReference(this.id); }
 
     @Override
     public boolean isScalarType() {

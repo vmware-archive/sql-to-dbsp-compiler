@@ -25,7 +25,7 @@ public class TypeCatalog {
         this.typeId = new HashMap<>();
     }
 
-    public JITRowType convertType(DBSPType type) {
+    public JITRowType convertTupleType(DBSPType type) {
         if (type.is(DBSPTypeRef.class))
             type = type.to(DBSPTypeRef.class).type;
         DBSPTypeTupleBase tuple = type.to(DBSPTypeTupleBase.class);
@@ -35,29 +35,6 @@ public class TypeCatalog {
         JITRowType result = new JITRowType(id, tuple);
         this.typeId.put(tuple, result);
         return result;
-    }
-
-    /**
-     * We are given a type that is a Tuple or RawTuple.
-     * Expand it into a list of Tuple types as follows:
-     * - if the type is a Tuple, just return a singleton list.
-     * - if the type is a RawTuple, add all its components to the list.
-     * Each component is expected to be a Tuple.
-     * This is used for functions like stream.index_with, which
-     * take a closure that returns a tuple of values.  The JIT does
-     * not support nested tuples.
-     */
-    public static List<DBSPTypeTuple> expandToTuples(DBSPType type) {
-        List<DBSPTypeTuple> types = new ArrayList<>();
-        if (type.is(DBSPTypeRawTuple.class)) {
-            for (DBSPType field : type.to(DBSPTypeRawTuple.class).tupFields) {
-                DBSPTypeTuple tuple = ToJitVisitor.makeTupleType(field);
-                types.add(tuple);
-            }
-        } else {
-            types.add(type.to(DBSPTypeTuple.class));
-        }
-        return types;
     }
 
     public BaseJsonNode asJson() {

@@ -25,10 +25,7 @@ package org.dbsp.sqlCompiler.compiler.backend.jit.ir;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
-import org.dbsp.util.ICastable;
-import org.dbsp.util.IIndentStream;
-import org.dbsp.util.ToIndentableString;
-import org.dbsp.util.Unimplemented;
+import org.dbsp.util.*;
 
 public abstract class JITNode implements ICastable, ToIndentableString {
     public BaseJsonNode asJson() {
@@ -44,5 +41,15 @@ public abstract class JITNode implements ICastable, ToIndentableString {
     @Override
     public IIndentStream toString(IIndentStream builder) {
         return builder;
+    }
+
+    /**
+     * Convert the program into an assembly-like output.
+     */
+    public String toAssembly() {
+        StringPrintStream str = new StringPrintStream();
+        IndentStream stream = new IndentStream(str.getPrintStream());
+        stream.append(this);
+        return str.toString();
     }
 }

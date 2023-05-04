@@ -41,7 +41,7 @@ public class JITConstantOperator extends JITOperator {
     @Override
     public BaseJsonNode asJson() {
         ObjectNode result = jsonFactory().createObjectNode();
-        ObjectNode data = result.putObject("Constant");
+        ObjectNode data = result.putObject("ConstantStream");
         this.addComment(data, comment);
         ObjectNode layout = data.putObject("layout");
         long typeId = this.type.getId();
