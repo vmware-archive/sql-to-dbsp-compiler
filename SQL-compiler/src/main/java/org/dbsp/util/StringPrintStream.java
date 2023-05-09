@@ -36,9 +36,13 @@ public class StringPrintStream {
     ByteArrayOutputStream byteStream;
     boolean closed = false;
 
-    public StringPrintStream() throws UnsupportedEncodingException {
-        this.byteStream = new ByteArrayOutputStream();
-        this.stream = new PrintStream(this.byteStream, true, StandardCharsets.UTF_8.name());
+    public StringPrintStream() {
+        try {
+            this.byteStream = new ByteArrayOutputStream();
+            this.stream = new PrintStream(this.byteStream, true, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public PrintStream getPrintStream() {

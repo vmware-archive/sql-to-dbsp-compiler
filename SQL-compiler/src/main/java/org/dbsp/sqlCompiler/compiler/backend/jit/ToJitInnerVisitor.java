@@ -1,6 +1,56 @@
+/*
+ * Copyright 2023 VMware, Inc.
+ * SPDX-License-Identifier: MIT
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package org.dbsp.sqlCompiler.compiler.backend.jit;
 
-import com.fasterxml.jackson.databind.node.*;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITParameter;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITParameterMapping;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg.JITBlock;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg.JITBlockReference;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg.JITBranchTerminator;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg.JITJumpTerminator;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.cfg.JITReturnTerminator;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITBinaryInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITCastInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITConstantInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITCopyInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITFunctionCall;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstructionPair;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITInstructionReference;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITIsNullInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITLiteral;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITLoadInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITMuxInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITSetNullInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITStoreInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITUnaryInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions.JITUninitRowInstruction;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITBoolType;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITI64Type;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITRowType;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITScalarType;
+import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITType;
 import org.dbsp.sqlCompiler.ir.DBSPParameter;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.expression.*;
@@ -18,81 +68,10 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 /**
- * Generate code for the JIT compiler using a JSON representation.
+ * Generate code for the JIT compiler.
  * Handles InnerNodes - i.e., expressions, closures, statements.
  */
 public class ToJitInnerVisitor extends InnerVisitor {
-    public static boolean isLegalId(int id) {
-        return id >= 0;
-    }
-
-    /**
-     * In the JIT representation tuples can have nullable fields,
-     * but scalar variables cannot.  So we represent each scalar
-     * variable that has a nullable type as a pair of expressions,
-     * one carrying the value, and a second one, Boolean, carrying the nullness.
-     */
-    static class ExpressionIds {
-        /**
-         * Expression id.
-         */
-        public final int id;
-        /**
-         * Id of the expression carrying the nullability - if any.
-         * Otherwise -1.
-         */
-        public final int isNullId;
-
-        private ExpressionIds(int id, int isNullId) {
-            this.id = id;
-            this.isNullId = isNullId;
-        }
-
-        static ExpressionIds withNull(int id) {
-            return new ExpressionIds(id, id + 1);
-        }
-
-        static ExpressionIds noNull(int id) {
-            return new ExpressionIds(id, -1);
-        }
-
-        boolean hasNull() {
-            return isLegalId(this.isNullId);
-        }
-
-        @Override
-        public String toString() {
-            return this.id + "," + this.isNullId;
-        }
-    }
-
-    static class ExpressionJsonRepresentation {
-        /**
-         * The json instruction that computes the value of the expression.
-         */
-        public final ObjectNode instruction;
-        /**
-         * This field is also stored inside the instruction JSON node.
-         */
-        int instructionId;
-        /**
-         * The json instruction that computes the value of the null field - if needed.
-         * null otherwise.
-         */
-        public final @Nullable ObjectNode isNullInstruction;
-
-        public ExpressionJsonRepresentation(ObjectNode instruction, int id,
-                                            @Nullable ObjectNode isNullInstruction) {
-            this.instruction = instruction;
-            this.instructionId = id;
-            this.isNullInstruction = isNullInstruction;
-        }
-
-        public ObjectNode getNullObject() {
-            return Objects.requireNonNull(this.isNullInstruction);
-        }
-    }
-
     /**
      * Contexts keep track of variables defined.
      * Variable names can be redefined, as in Rust, and a context
@@ -102,14 +81,14 @@ public class ToJitInnerVisitor extends InnerVisitor {
         /**
          * Maps variable names to expression ids.
          */
-        final Map<String, ExpressionIds> variables;
+        final Map<String, JITInstructionPair> variables;
 
         public Context() {
             this.variables = new HashMap<>();
         }
 
         @Nullable
-        ExpressionIds lookup(String varName) {
+        JITInstructionPair lookup(String varName) {
             if (this.variables.containsKey(varName))
                 return this.variables.get(varName);
             return null;
@@ -117,150 +96,118 @@ public class ToJitInnerVisitor extends InnerVisitor {
 
         /**
          * Add a new variable to the current context.
-         *
          * @param varName   Variable name.
          * @param needsNull True if the variable is a scalar nullable variable.
-         *                  Then we allocate an extra expression to hold its
+         *                  Then we allocate an extra value to hold its
          *                  nullability.
          */
-        ExpressionIds addVariable(String varName, boolean needsNull) {
+        JITInstructionPair addVariable(String varName, boolean needsNull) {
             if (this.variables.containsKey(varName)) {
                 throw new RuntimeException("Duplicate declaration " + varName);
             }
-            int id = ToJitInnerVisitor.this.nextExpressionId();
-            ExpressionIds ids;
+            JITInstructionReference value = ToJitInnerVisitor.this.nextId();
+            JITInstructionReference isNull = new JITInstructionReference();
             if (needsNull) {
-                ToJitInnerVisitor.this.nextExpressionId();
-                ids = ExpressionIds.withNull(id);
-            } else {
-                ids = ExpressionIds.noNull(id);
+                isNull = ToJitInnerVisitor.this.nextId();
             }
-            this.variables.put(varName, ids);
-            return ids;
+            JITInstructionPair result = new JITInstructionPair(value, isNull);
+            this.variables.put(varName, result);
+            return result;
         }
     }
 
     /**
-     * Prefix of the name of the fictitious parameters that are added to closures that return structs.
-     * The JIT only supports returning scalar values, so a closure that returns a
-     * tuple actually receives an additional parameter that is "output" (equivalent to a "mut").
-     * Moreover, a closure that returns a RawTuple will return one value for each field of the raw tuple.
-     */
-    private static final String RETURN_PARAMETER_PREFIX = "$retval";
-    /**
      * Used to allocate ids for expressions and blocks.
      */
-    private int nextExpressionId = 1;
-    private int nextBlockId = 1;
-    final ObjectNode blocks;
+    private long nextInstrId = 1;
     /**
-     * Map expression to id.
+     * Write here the blocks generated.
      */
-    final Map<DBSPExpression, Integer> expressionId;
+    final List<JITBlock> blocks;
+    /**
+     * Maps each expression to the values that it produces.
+     */
+    final Map<DBSPExpression, JITInstructionPair> expressionToValues;
     /**
      * A context for each block expression.
      */
     public final List<Context> declarations;
-    /**
-     * JSON object representing the body of the current block expression.
-     */
+
     @Nullable
-    public ArrayNode currentBlockBody;
-    /**
-     * JSON object representing the current block.
-     */
-    @Nullable
-    public ObjectNode currentBlock;
+    JITBlock currentBlock;
     /**
      * The type catalog shared with the ToJitVisitor.
      */
-    public final ToJitVisitor.TypeCatalog typeCatalog;
+    public final TypeCatalog typeCatalog;
     /**
      * The names of the variables currently being assigned.
      * This is a stack, because we can have nested blocks:
      * let var1 = { let v2 = 1 + 2; v2 + 1 }
      */
     final List<String> variableAssigned;
+    /**
+     * A description how closure parameters are mapped to JIT parameters.
+     */
+    final JITParameterMapping mapping;
 
-    public ToJitInnerVisitor(ObjectNode blocks, ToJitVisitor.TypeCatalog typeCatalog) {
+    public ToJitInnerVisitor(List<JITBlock> blocks, TypeCatalog typeCatalog, JITParameterMapping mapping) {
         super(true);
         this.blocks = blocks;
         this.typeCatalog = typeCatalog;
-        this.expressionId = new HashMap<>();
+        this.expressionToValues = new HashMap<>();
         this.declarations = new ArrayList<>();
         this.currentBlock = null;
-        this.currentBlockBody = null;
+        this.mapping = mapping;
         this.variableAssigned = new ArrayList<>();
     }
 
-    int nextBlockId() {
-        int result = this.nextBlockId;
-        this.nextBlockId++;
+    long nextInstructionId() {
+        long result = this.nextInstrId;
+        this.nextInstrId++;
         return result;
     }
 
-    int nextExpressionId() {
-        int result = this.nextExpressionId;
-        this.nextExpressionId++;
-        return result;
+    JITInstructionReference nextId() {
+        long id = this.nextInstructionId();
+        return new JITInstructionReference(id);
     }
 
-    ExpressionIds resolve(String varName) {
+    JITInstructionPair resolve(String varName) {
         // Look in the contexts in backwards order
         for (int i = 0; i < this.declarations.size(); i++) {
             int index = this.declarations.size() - 1 - i;
             Context current = this.declarations.get(index);
-            ExpressionIds ids = current.lookup(varName);
+            JITInstructionPair ids = current.lookup(varName);
             if (ids != null)
                 return ids;
         }
         throw new RuntimeException("Could not resolve " + varName);
     }
 
-    int map(DBSPExpression expression) {
-        return Utilities.putNew(this.expressionId, expression, this.nextExpressionId());
+    void map(DBSPExpression expression, JITInstructionPair pair) {
+        Utilities.putNew(this.expressionToValues, expression, pair);
     }
 
-    int getExpressionId(DBSPExpression expression) {
-        return Utilities.getExists(this.expressionId, expression);
+    JITInstructionPair getExpressionValues(DBSPExpression expression) {
+        return Utilities.getExists(this.expressionToValues, expression);
     }
-
-    ExpressionIds accept(DBSPExpression expression) {
+    
+    JITInstructionPair accept(DBSPExpression expression) {
         expression.accept(this);
-        int id = this.getExpressionId(expression);
-        if (needsNull(expression.getNonVoidType()))
-            return ExpressionIds.withNull(id);
-        return ExpressionIds.noNull(id);
+        return this.getExpressionValues(expression);
     }
 
-    public ExpressionIds constantBool(boolean value) {
+    public JITInstructionPair constantBool(boolean value) {
         return this.accept(new DBSPBoolLiteral(value));
     }
 
-    ExpressionJsonRepresentation insertInstruction(int id, boolean needsNull) {
-        ArrayNode instruction = Objects.requireNonNull(this.currentBlockBody).addArray();
-        instruction.add(id);
-        ObjectNode isNull = null;
-        if (needsNull) {
-            ArrayNode isNullInstr = this.currentBlockBody.addArray();
-            id = this.nextExpressionId();
-            isNullInstr.add(id);
-            isNull = isNullInstr.addObject();
-        }
-        return new ExpressionJsonRepresentation(instruction.addObject(), id, isNull);
+    static JITScalarType convertScalarType(DBSPExpression expression) {
+        return JITScalarType.scalarType(expression.getNonVoidType());
     }
 
-    ExpressionJsonRepresentation insertNewInstruction() {
-        return this.insertInstruction(this.nextExpressionId(), false);
-    }
-
-    ExpressionJsonRepresentation insertInstruction(DBSPExpression expression) {
-        int id = this.map(expression);
-        return this.insertInstruction(id, needsNull(expression.getNonVoidType()));
-    }
-
-    static String baseTypeName(DBSPExpression expression) {
-        return ToJitVisitor.baseTypeName(expression.getNonVoidType());
+    JITInstruction add(JITInstruction instruction) {
+        this.getCurrentBlock().add(instruction);
+        return instruction;
     }
 
     void newContext() {
@@ -275,7 +222,7 @@ public class ToJitInnerVisitor extends InnerVisitor {
         Utilities.removeLast(this.declarations);
     }
 
-    ExpressionIds declare(String var, boolean needsNull) {
+    JITInstructionPair declare(String var, boolean needsNull) {
         return this.getCurrentContext().addVariable(var, needsNull);
     }
 
@@ -289,40 +236,88 @@ public class ToJitInnerVisitor extends InnerVisitor {
         return type.mayBeNull;
     }
 
-    void mux(ObjectNode parent, int cond, int if_true, int if_false) {
-        ObjectNode node = parent.putObject("Select");
-        node.put("cond", cond);
-        node.put("if_true", if_true);
-        node.put("if_false", if_false);
+    static boolean needsNull(DBSPExpression expression) {
+        return needsNull(expression.getNonVoidType());
     }
 
-    void unOp(ObjectNode parent, String kind, int value, String type) {
-        ObjectNode node = parent.putObject("UnaryOp");
-        node.put("value", value);
-        node.put("kind", kind);
-        node.put("value_ty", type);
+    public JITType convertType(DBSPType type) {
+        if (ToJitVisitor.isScalarType(type)) {
+            return JITScalarType.scalarType(type);
+        } else {
+            return this.typeCatalog.convertTupleType(type);
+        }
     }
 
-    @SuppressWarnings("SameParameterValue")
-    void copy(ObjectNode parent, int value, String type) {
-        ObjectNode node = parent.putObject("Copy");
-        node.put("value", value);
-        node.put("value_ty", type);
+    public JITBlock getCurrentBlock() {
+        return Objects.requireNonNull(this.currentBlock);
     }
 
-    void cast(ObjectNode parent, int value, String sourceType, String destType) {
-        ObjectNode node = parent.putObject("Cast");
-        node.put("value", value);
-        node.put("from", sourceType);
-        node.put("to", destType);
-    }
+    void createFunctionCall(String name,
+                            DBSPExpression expression,  // usually an ApplyExpression, but not always
+                            DBSPExpression... arguments) {
+        // This assumes that the function is called only if no argument is nullable,
+        // and that if any argument IS nullable the result is NULL.
+        List<JITInstructionReference> nullableArgs = new ArrayList<>();
+        List<JITType> argumentTypes = new ArrayList<>();
+        List<JITInstructionReference> args = new ArrayList<>();
+        for (DBSPExpression arg: arguments) {
+            JITInstructionPair argValues = this.accept(arg);
+            DBSPType argType = arg.getNonVoidType();
+            args.add(argValues.value);
+            argumentTypes.add(this.convertType(argType));
+            if (argValues.hasNull())
+                nullableArgs.add(argValues.isNull);
+        }
 
-    void binOp(ObjectNode parent, int lhs, int rhs, String kind, String operandType) {
-        ObjectNode node = parent.putObject("BinOp");
-        node.put("lhs", lhs);
-        node.put("rhs", rhs);
-        node.put("kind", kind);
-        node.put("operand_ty", operandType);
+        // Is any arg nullable?
+        JITInstructionReference isNull = new JITInstructionReference();
+        for (JITInstructionReference arg: nullableArgs) {
+            if (!isNull.isValid())
+                isNull = arg;
+            else  {
+                long id = this.nextInstructionId();
+                JITInstruction or = new JITBinaryInstruction(id, JITBinaryInstruction.Operation.OR,
+                        isNull, arg, JITBoolType.INSTANCE);
+                this.add(or);
+                isNull = or.getInstructionReference();
+            }
+        }
+
+        // If any operand is null we create a branch and only call the function
+        // conditionally.
+        // if (!anyNull) funcCall(args);
+        JITBlock onFalseBlock;
+        JITBlock nextBlock = null;
+        if (isNull.isValid()) {
+            onFalseBlock = this.newBlock();
+            nextBlock = this.newBlock();
+            JITBranchTerminator branch = new JITBranchTerminator(
+                    isNull, nextBlock.getBlockReference(),
+                    onFalseBlock.getBlockReference());
+            this.getCurrentBlock().terminate(branch);
+            this.currentBlock = onFalseBlock;
+            // The function call will be inserted in the onFalseBlock
+        }
+
+        JITScalarType resultType = convertScalarType(expression);
+        long id = this.nextInstructionId();
+        JITFunctionCall call = new JITFunctionCall(id, name, args, argumentTypes, resultType);
+        this.add(call);
+        JITInstructionPair result;
+
+        if (isNull.isValid()) {
+            JITBlockReference next = Objects.requireNonNull(nextBlock).getBlockReference();
+            JITJumpTerminator terminator = new JITJumpTerminator(next);
+            this.getCurrentBlock().terminate(terminator);
+
+            this.currentBlock = nextBlock;
+            JITCopyInstruction copy = new JITCopyInstruction(this.nextInstructionId(), isNull, JITBoolType.INSTANCE);
+            this.currentBlock.add(copy);
+            result = new JITInstructionPair(call, copy);
+        } else {
+            result = new JITInstructionPair(call);
+        }
+        this.map(expression, result);
     }
 
     /////////////////////////// Code generation
@@ -390,417 +385,354 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 default:
                     break;
             }
-            // { "Call": {
-            //    "function": "some.func",
-            //    "args": [100, 200],
-            //    "arg_types": [{ "Row": 10 }, { "Scalar": "U32" }],
-            //    "ret_ty": "I32"
-            // }
             if (jitFunction != null) {
-                // TODO: handle null
-                List<ExpressionIds> argIds = new ArrayList<>();
-                for (DBSPExpression arg: expression.arguments) {
-                    ExpressionIds argId = this.accept(arg);
-                    argIds.add(argId);
-                }
-
-                ExpressionJsonRepresentation ev = this.insertInstruction(expression);
-                ObjectNode call = ev.instruction.putObject("Call");
-                call.put("function", jitFunction);
-                ArrayNode args = call.putArray("args");
-                ArrayNode argTypes = call.putArray("arg_types");
-                int index = 0;
-                for (DBSPExpression arg: expression.arguments) {
-                    ObjectNode argTypeNode = argTypes.addObject();
-                    ExpressionIds argId = argIds.get(index);
-                    args.add(argId.id);
-                    DBSPType argType = arg.getNonVoidType();
-                    if (ToJitVisitor.isScalarType(argType)) {
-                        argTypeNode.put("Scalar", ToJitVisitor.baseTypeName(argType));
-                    } else {
-                        argTypeNode.put("Row", this.typeCatalog.getTypeId(argType));
-                    }
-                    index++;
-                }
-                call.put("ret_ty", baseTypeName(expression));
+                this.createFunctionCall(jitFunction, expression, expression.arguments);
                 return false;
             }
         }
         throw new Unimplemented(expression);
     }
 
-    boolean createJsonLiteral(DBSPLiteral expression, String type, BaseJsonNode value) {
-        ExpressionJsonRepresentation ev = this.insertInstruction(expression);
-        ObjectNode constant = ev.instruction.putObject("Constant");
-        constant.set(type, value);
-        if (expression.isNull) {
-            Objects.requireNonNull(ev.isNullInstruction);
-            ObjectNode n = ev.isNullInstruction.putObject("Constant");
-            n.put("Bool", true);
-        } else {
-            if (ev.isNullInstruction != null) {
-                ObjectNode n = ev.isNullInstruction.putObject("Constant");
-                n.put("Bool", true);
-            }
+    @Override
+    public boolean preorder(DBSPLiteral expression) {
+        JITLiteral literal = new JITLiteral(expression);
+        boolean mayBeNull = expression.getNonVoidType().mayBeNull;
+        JITScalarType type = convertScalarType(expression);
+        JITConstantInstruction value = new JITConstantInstruction(
+                this.nextInstructionId(), type, literal, true);
+        this.add(value);
+
+        JITInstructionReference isNull = new JITInstructionReference();
+        if (mayBeNull) {
+            JITInstructionPair nullValue = this.constantBool(expression.isNull);
+            isNull = nullValue.value;
         }
+        JITInstructionPair pair = new JITInstructionPair(value.getInstructionReference(), isNull);
+        this.map(expression, pair);
         return false;
     }
 
-    BaseJsonNode zero(DBSPType type) {
-        if (!type.mayBeNull)
-            throw new RuntimeException("Expected a nullable type");
-        if (type.sameType(DBSPTypeInteger.NULLABLE_SIGNED_32))
-            return new IntNode(0);
-        else if (type.sameType(DBSPTypeInteger.NULLABLE_SIGNED_64))
-            return new LongNode(0);
-        else if (type.sameType(DBSPTypeFloat.NULLABLE_INSTANCE))
-            return new FloatNode(0.0F);
-        else if (type.sameType(DBSPTypeDouble.NULLABLE_INSTANCE))
-            return new DoubleNode(0.0);
-        else if (type.sameType(DBSPTypeString.NULLABLE_INSTANCE))
-            return new TextNode("");
-        else if (type.sameType(DBSPTypeBool.NULLABLE_INSTANCE))
-            return BooleanNode.valueOf(false);
-        throw new Unimplemented(type);
-    }
-
-    @Override
-    public boolean preorder(DBSPLiteral literal) {
-        if (literal.isNull) {
-            return this.createJsonLiteral(literal, baseTypeName(literal),
-                    this.zero(literal.getNonVoidType()));
-        }
-        throw new Unimplemented(literal);
-    }
-
-    @Override
-    public boolean preorder(DBSPI32Literal expression) {
-        return this.createJsonLiteral(expression, "I32",
-                expression.value == null ? new IntNode(0) : new IntNode(expression.value));
-    }
-
-    @Override
-    public boolean preorder(DBSPI64Literal expression) {
-        return this.createJsonLiteral(expression, "I64",
-                expression.value == null ? new LongNode(0) : new LongNode(expression.value));
-    }
-
-    @Override
-    public boolean preorder(DBSPBoolLiteral expression) {
-        return this.createJsonLiteral(expression, "Bool",
-                expression.value == null ? BooleanNode.valueOf(false) : BooleanNode.valueOf(expression.value));
-    }
-
-    @Override
-    public boolean preorder(DBSPStringLiteral expression) {
-        return this.createJsonLiteral(expression, "String",
-                expression.value == null ? new TextNode("") : new TextNode(expression.value));
-    }
-
-    public boolean preorder(DBSPDoubleLiteral expression) {
-        return this.createJsonLiteral(expression, "F64",
-                expression.value == null ? new DoubleNode(0.0) : new DoubleNode(expression.value));
-    }
-
-    public boolean preorder(DBSPFloatLiteral expression) {
-        return this.createJsonLiteral(expression, "F32",
-                expression.value == null ? new FloatNode(0.0F) : new FloatNode(expression.value));
-    }
-
     public boolean preorder(DBSPBorrowExpression expression) {
-        ExpressionIds sourceId = this.accept(expression.expression);
-        Utilities.putNew(this.expressionId, expression, sourceId.id);
+        JITInstructionPair sourceId = this.accept(expression.expression);
+        Utilities.putNew(this.expressionToValues, expression, sourceId);
         return false;
     }
 
     @Override
     public boolean preorder(DBSPCastExpression expression) {
-        // "Cast": {
-        //    "value": 2,
-        //    "from": "I32",
-        //    "to": "I64"
-        //  }
-        ExpressionIds sourceId = this.accept(expression.source);
-        ExpressionJsonRepresentation ev = this.insertInstruction(expression);
-        this.cast(ev.instruction, sourceId.id, baseTypeName(expression.source), baseTypeName(expression));
-        if (sourceId.hasNull()) {
-            if (ev.isNullInstruction != null)
-                this.copy(ev.getNullObject(), sourceId.isNullId, "Bool");
-            else {
-                // FIXME: this needs to panic at runtime.
+        JITInstructionPair sourceId = this.accept(expression.source);
+        long id = this.nextInstructionId();
+        JITScalarType sourceType = convertScalarType(expression.source);
+        JITScalarType destinationType = convertScalarType(expression);
+        JITInstruction cast = new JITCastInstruction(id, sourceId.value, sourceType, destinationType);
+        this.add(cast);
+
+        JITInstructionReference isNull = new JITInstructionReference();
+        if (needsNull(expression)) {
+            if (needsNull(expression.source)) {
+                isNull = sourceId.isNull;
+            } else {
+                // TODO: if source is nullable and is null must panic at runtime
+                // this.createFunctionCall("dbsp.error.abort", expression);
             }
         } else {
-            if (ev.isNullInstruction != null) {
-                ObjectNode n = ev.isNullInstruction.putObject("Constant");
-                n.put("Bool", false);
+            if (needsNull(expression.source)) {
+                JITInstructionPair f = this.constantBool(false);
+                isNull = f.value;
             }
             // else nothing to do
         }
+        this.map(expression, new JITInstructionPair(cast.getInstructionReference(), isNull));
         return false;
     }
 
-    static final Map<String, String> opNames = new HashMap<>();
+    static final Map<String, JITBinaryInstruction.Operation> opNames = new HashMap<>();
 
     static {
         // https://github.com/vmware/database-stream-processor/blob/dataflow-jit/crates/dataflow-jit/src/ir/expr.rs, the BinaryOpKind enum
-        opNames.put("+", "Add");
-        opNames.put("-", "Sub");
-        opNames.put("*", "Mul");
-        opNames.put("/", "Div");
-        opNames.put("==", "Eq");
-        opNames.put("!=", "Neq");
-        opNames.put("<", "LessThan");
-        opNames.put(">", "GreaterThan");
-        opNames.put("<=", "LessThanOrEqual");
-        opNames.put(">=", "GreaterThanOrEqual");
-        opNames.put("&", "And");
-        opNames.put("&&", "And");
-        opNames.put("|", "Or");
-        opNames.put("||", "Or");
-        opNames.put("^", "Xor");
-        opNames.put("agg_max", "Max");
-        opNames.put("agg_min", "Min");
+        opNames.put("+", JITBinaryInstruction.Operation.ADD);
+        opNames.put("-", JITBinaryInstruction.Operation.SUB);
+        opNames.put("*", JITBinaryInstruction.Operation.MUL);
+        opNames.put("/", JITBinaryInstruction.Operation.DIV);
+        opNames.put("==",JITBinaryInstruction.Operation.EQ);
+        opNames.put("!=",JITBinaryInstruction.Operation.NEQ);
+        opNames.put("<", JITBinaryInstruction.Operation.LT);
+        opNames.put(">", JITBinaryInstruction.Operation.GT);
+        opNames.put("<=",JITBinaryInstruction.Operation.LTE);
+        opNames.put(">=",JITBinaryInstruction.Operation.GTE);
+        opNames.put("&", JITBinaryInstruction.Operation.AND);
+        opNames.put("&&",JITBinaryInstruction.Operation.AND);
+        opNames.put("|", JITBinaryInstruction.Operation.OR);
+        opNames.put("||",JITBinaryInstruction.Operation.OR);
+        opNames.put("^", JITBinaryInstruction.Operation.OR);
+        opNames.put("agg_max", JITBinaryInstruction.Operation.MAX);
+        opNames.put("agg_min", JITBinaryInstruction.Operation.MIN);
     }
 
     @Override
     public boolean preorder(DBSPBinaryExpression expression) {
-        // "BinOp": {
-        //   "lhs": 4,
-        //   "rhs": 5,
-        //   "operand_ty": "I64",
-        //   "kind": "GreaterThan"
-        // }
         // a || b for strings is concatenation.
         if (expression.left.getNonVoidType().is(DBSPTypeString.class) &&
                 expression.operation.equals("||")) {
+            this.createFunctionCall("dbsp.str.concat_clone", expression,
+                    expression.left, expression.right);
+            return false;
+        }
+        if (expression.operation.equals("/")) {
+            // TODO: division by 0 returns null.
             throw new Unimplemented(expression);
         }
-        ExpressionIds leftId = this.accept(expression.left);
-        ExpressionIds rightId = this.accept(expression.right);
-        ExpressionIds cf = this.constantBool(false);
-        int leftNullId;
+
+        JITInstructionPair leftId = this.accept(expression.left);
+        JITInstructionPair rightId = this.accept(expression.right);
+        JITInstructionPair cf = new JITInstructionPair(new JITInstructionReference());
+        if (needsNull(expression))
+            cf = this.constantBool(false);
+        JITInstructionReference leftNullId;
         if (leftId.hasNull())
-            leftNullId = leftId.isNullId;
+            leftNullId = leftId.isNull;
         else
             // Not nullable: use false.
-            leftNullId = cf.id;
-        int rightNullId;
+            leftNullId = cf.value;
+        JITInstructionReference rightNullId;
         if (rightId.hasNull())
-            rightNullId = rightId.isNullId;
+            rightNullId = rightId.isNull;
         else
-            rightNullId = cf.id;
+            rightNullId = cf.value;
         boolean special = expression.operation.equals("&&") ||
                 (expression.operation.equals("||") && expression.left.getNonVoidType().is(DBSPTypeBool.class));
         if (needsNull(expression.getNonVoidType()) && special) {
             if (expression.operation.equals("&&")) {
-                ExpressionJsonRepresentation result = this.insertInstruction(expression);
-
                 // Nullable bit computation
                 // (a && b).is_null = a.is_null ? (b.is_null ? true     : !b.value)
                 //                              : (b.is_null ? !a.value : false)
 
                 // !b.value
-                ExpressionJsonRepresentation notB = this.insertNewInstruction();
-                this.unOp(notB.instruction, "Not", rightId.id, "Bool");
+                JITInstruction notB = this.add(new JITUnaryInstruction(this.nextInstructionId(),
+                        JITUnaryInstruction.Operation.NOT, rightId.value, JITBoolType.INSTANCE));
                 // true
-                ExpressionIds trueLit = this.constantBool(true);
+                JITInstructionPair trueLit = this.constantBool(true);
                 // cond1 = (b.is_null ? true : !b.value)
-                ExpressionJsonRepresentation cond1 = this.insertNewInstruction();
-                this.mux(cond1.instruction, rightNullId, trueLit.id, notB.instructionId);
+                JITInstruction cond1 = this.add(new JITMuxInstruction(this.nextInstructionId(),
+                        rightNullId, trueLit.value, notB.getInstructionReference()));
                 // false
-                ExpressionIds falseLit = this.constantBool(false);
+                JITInstructionPair falseLit = this.constantBool(false);
                 // !a
-                ExpressionJsonRepresentation notA = this.insertNewInstruction();
-                this.unOp(notA.instruction, "Not", leftId.id, "Bool");
+                JITInstruction notA = this.add(new JITUnaryInstruction(this.nextInstructionId(),
+                        JITUnaryInstruction.Operation.NOT, leftId.value, JITBoolType.INSTANCE));
                 // cond2 = (b.is_null ? !a.value   : false)
-                ExpressionJsonRepresentation cond2 = this.insertNewInstruction();
-                this.mux(cond2.instruction, rightNullId, notA.instructionId, falseLit.id);
-                // Top-level condition
-                this.mux(result.getNullObject(), leftNullId, cond1.instructionId, cond2.instructionId);
+                JITInstruction cond2 = this.add(new JITMuxInstruction(this.nextInstructionId(),
+                        rightNullId, notA.getInstructionReference(), falseLit.value));
 
                 // (a && b).value = a.is_null ? b.value
                 //                            : (b.is_null ? a.value : a.value && b.value)
                 // (The value for a.is_null & b.is_null does not matter, so we can choose it to be b.value)
                 // a.value && b.value
-                ExpressionJsonRepresentation and = this.insertNewInstruction();
-                this.binOp(and.instruction, leftId.id, rightId.id, "And", baseTypeName(expression.left));
+                JITInstruction and = this.add(
+                        new JITBinaryInstruction(this.nextInstructionId(),
+                        JITBinaryInstruction.Operation.AND,
+                        leftId.value, rightId.value, convertScalarType(expression.left)));
                 // (b.is_null ? a.value : a.value && b.value)
-                ExpressionJsonRepresentation secondBranch = this.insertNewInstruction();
-                this.mux(secondBranch.instruction, rightNullId, leftId.id, and.instructionId);
+                JITInstruction secondBranch = this.add(
+                        new JITMuxInstruction(this.nextInstructionId(),
+                        rightNullId, leftId.value, and.getInstructionReference()));
                 // Final Mux
-                this.mux(result.instruction, leftNullId, rightId.id, secondBranch.instructionId);
+                JITInstruction value = this.add(
+                        new JITMuxInstruction(this.nextInstructionId(),
+                        leftNullId, rightId.value, secondBranch.getInstructionReference()));
+                JITInstruction isNull = this.add(
+                        new JITMuxInstruction(this.nextInstructionId(), leftNullId,
+                                cond1.getInstructionReference(), cond2.getInstructionReference()));
+                this.map(expression, new JITInstructionPair(value, isNull));
             } else { // Boolean ||
-                ExpressionJsonRepresentation result = this.insertInstruction(expression);
                 // Nullable bit computation
                 // (a || b).is_null = a.is_null ? (b.is_null ? true : b.value)
                 //                              : (b.is_null ? a.value : false)
                 // true
-                ExpressionIds trueLit = this.constantBool(true);
+                JITInstructionPair trueLit = this.constantBool(true);
                 // cond1 = (b.is_null ? true : b.value)
-                ExpressionJsonRepresentation cond1 = this.insertNewInstruction();
-                this.mux(cond1.instruction, rightNullId, trueLit.id, rightId.id);
+                JITInstruction cond1 = this.add(
+                        new JITMuxInstruction(this.nextInstructionId(),
+                        rightNullId, trueLit.value, rightId.value));
                 // false
-                ExpressionIds falseLit = this.constantBool(false);
+                JITInstructionPair falseLit = this.constantBool(false);
                 // cond2 = (b.is_null ? a.value : false)
-                ExpressionJsonRepresentation cond2 = this.insertNewInstruction();
-                this.mux(cond2.instruction, rightNullId, leftId.id, falseLit.id);
-                // Top-level condition
-                this.mux(result.getNullObject(), leftNullId, cond1.instructionId, cond2.instructionId);
+                JITInstruction cond2 = this.add(
+                        new JITMuxInstruction(this.nextInstructionId(),
+                                rightNullId, leftId.value, falseLit.value));
 
                 // (a || b).value = a.is_null ? b.value
                 //                            : a.value || b.value
                 // a.value || b.value
-                ExpressionJsonRepresentation or = this.insertNewInstruction();
-                this.binOp(or.instruction, leftId.id, rightId.id, "Or", baseTypeName(expression.left));
+                JITInstruction or = this.add(
+                        new JITBinaryInstruction(this.nextInstructionId(),
+                                JITBinaryInstruction.Operation.OR,
+                                leftId.value, rightId.value, convertScalarType(expression.left)));
                 // Result
-                this.mux(result.instruction, leftNullId, rightId.id, or.instructionId);
+                JITInstruction value = this.add(
+                        new JITMuxInstruction(this.nextInstructionId(), leftNullId,
+                                cond1.getInstructionReference(), cond2.getInstructionReference()));
+                JITInstruction isNull = this.add(
+                        new JITMuxInstruction(this.nextInstructionId(), leftNullId,
+                                rightId.value, or.getInstructionReference()));
+                this.map(expression, new JITInstructionPair(value, isNull));
             }
             return false;
         } else if (expression.operation.equals("agg_plus")) {
-            ExpressionJsonRepresentation er = this.insertInstruction(expression);
-            this.binOp(er.instruction, leftId.id, rightId.id,
-                    "Add", baseTypeName(expression.left));
-            if (er.isNullInstruction != null) {
+            JITInstruction value = this.add(new JITBinaryInstruction(
+                    this.nextInstructionId(), JITBinaryInstruction.Operation.ADD,
+                    leftId.value, rightId.value,
+                    convertScalarType(expression.left)));
+            JITInstruction isNull = null;
+            if (needsNull(expression)) {
                 // The result is null if both operands are null.
-                this.binOp(er.isNullInstruction, leftNullId, rightNullId,
-                        Utilities.getExists(opNames, "&&"), "Bool");
+                isNull = this.add(new JITBinaryInstruction(
+                        this.nextInstructionId(), JITBinaryInstruction.Operation.AND,
+                        leftNullId, rightNullId, JITBoolType.INSTANCE));
             }
+            this.map(expression, new JITInstructionPair(value, isNull));
             return false;
         } else if (expression.operation.equals("mul_weight")) {
             // (a * w).value = (a.value * (type_of_a)w)
             // (a * w).is_null = a.is_null
-            int left;
-            DBSPType rightType = ToJitVisitor.resolveType(expression.right.getNonVoidType());
+            JITInstructionReference left;
+            DBSPType rightType = ToJitVisitor.resolveWeightType(expression.right.getNonVoidType());
             if (expression.left.getNonVoidType().sameType(rightType)) {
-                ExpressionJsonRepresentation cast = this.insertNewInstruction();
-                this.cast(cast.instruction, rightId.id, baseTypeName(expression.right), baseTypeName(expression.left));
-                left = cast.instructionId;
+                JITInstruction cast = this.add(new JITCastInstruction(this.nextInstructionId(),
+                    rightId.value, convertScalarType(expression.right), convertScalarType(expression.left)));
+                left = cast.getInstructionReference();
             } else {
-                left = leftId.id;
+                left = leftId.value;
             }
-            ExpressionJsonRepresentation er = this.insertInstruction(expression);
-            this.binOp(er.instruction, left, rightId.id, "Mul", baseTypeName(expression.left));
-            if (er.isNullInstruction != null) {
-                this.copy(er.isNullInstruction, leftId.isNullId, "Bool");
+            JITInstruction value = this.add(new JITBinaryInstruction(this.nextInstructionId(),
+                JITBinaryInstruction.Operation.MUL, left, rightId.value, convertScalarType(expression.left)));
+            JITInstruction isNull = null;
+            if (needsNull(expression)) {
+                isNull = this.add(new JITCopyInstruction(this.nextInstructionId(),
+                        leftId.isNull, JITBoolType.INSTANCE));
             }
+            this.map(expression, new JITInstructionPair(value, isNull));
             return false;
         }
 
-        ExpressionJsonRepresentation er = this.insertInstruction(expression);
-        this.binOp(er.instruction, leftId.id, rightId.id,
-                Utilities.getExists(opNames, expression.operation), baseTypeName(expression.left));
-        if (er.isNullInstruction != null) {
+        JITInstruction value = this.add(new JITBinaryInstruction(this.nextInstructionId(),
+                Utilities.getExists(opNames, expression.operation), leftId.value, rightId.value,
+                convertScalarType(expression.left)));
+        JITInstruction isNull = null;
+        if (needsNull(expression)) {
             // The result is null if either operand is null.
-            this.binOp(er.isNullInstruction, leftNullId, rightNullId,
-                    Utilities.getExists(opNames, "||"), "Bool");
+            isNull = this.add(new JITBinaryInstruction(this.nextInstructionId(),
+                JITBinaryInstruction.Operation.OR, leftNullId, rightNullId, JITBoolType.INSTANCE));
         }
+        this.map(expression, new JITInstructionPair(value, isNull));
         return false;
     }
 
     @Override
     public boolean preorder(DBSPUnaryExpression expression) {
-        // "UnOp": {
-        //   "lhs": 4,
-        //   "operand_ty": "I64",
-        //   "kind": "Minus"
-        // }
+        JITInstructionPair source = this.accept(expression.source);
         boolean isWrapBool = expression.operation.equals("wrap_bool");
-        ExpressionIds cf = null;
+        JITInstructionPair cf = null;
         if (isWrapBool)
             cf = this.constantBool(false);
-        ExpressionIds leftId = this.accept(expression.source);
-        String kind;
+        JITUnaryInstruction.Operation kind;
         switch (expression.operation) {
             case "-":
-                kind = "Neg";
+                kind = JITUnaryInstruction.Operation.NEG;
                 break;
             case "!":
-                kind = "Not";
+                kind = JITUnaryInstruction.Operation.NOT;
                 break;
             case "wrap_bool": {
-                ExpressionJsonRepresentation er = this.insertInstruction(expression);
-                this.mux(er.instruction, leftId.isNullId, cf.id, leftId.id);
+                JITInstruction value = this.add(new JITMuxInstruction(this.nextInstructionId(),
+                        source.isNull, cf.value, source.value));
+                this.map(expression, new JITInstructionPair(value));
                 return false;
             }
             case "is_false": {
-                if (leftId.hasNull()) {
+                if (source.hasNull()) {
                     // result = left.is_null ? false : !left.value
-                    ExpressionJsonRepresentation ni = this.insertNewInstruction();
                     // ! left.value
-                    this.unOp(ni.instruction, "Not", leftId.id, baseTypeName(expression.source));
-                    ExpressionIds False = this.constantBool(false);
+                    JITInstruction ni = this.add(new JITUnaryInstruction(this.nextInstructionId(),
+                        JITUnaryInstruction.Operation.NOT, source.value, convertScalarType(expression.source)));
+                    JITInstructionPair False = this.constantBool(false);
                     // result
-                    ExpressionJsonRepresentation er = this.insertInstruction(expression);
-                    this.mux(er.instruction, leftId.isNullId, False.id, ni.instructionId);
+                    JITInstruction value = this.add(new JITMuxInstruction(this.nextInstructionId(),
+                            source.isNull, False.value, ni.getInstructionReference()));
+                    this.map(expression, new JITInstructionPair(value));
                     return false;
                 } else {
-                    kind = "Not";
+                    kind = JITUnaryInstruction.Operation.NOT;
                 }
                 break;
             }
             case "is_true": {
-                if (leftId.hasNull()) {
+                if (source.hasNull()) {
                     // result = left.is_null ? false : left.value
-                    ExpressionIds False = this.constantBool(false);
+                    JITInstructionPair False = this.constantBool(false);
                     // result
-                    ExpressionJsonRepresentation er = this.insertInstruction(expression);
-                    this.mux(er.instruction, leftId.isNullId, False.id, leftId.id);
+                    JITInstruction value = this.add(new JITMuxInstruction(this.nextInstructionId(),
+                        source.isNull, False.value, source.value));
+                    this.map(expression, new JITInstructionPair(value));
                 } else {
-                    Utilities.putNew(this.expressionId, expression, leftId.id);
+                    this.map(expression, new JITInstructionPair(source.value));
                 }
                 return false;
             }
             case "is_not_true": {
-                if (leftId.hasNull()) {
+                if (source.hasNull()) {
                     // result = left.is_null ? true : !left.value
-                    ExpressionJsonRepresentation ni = this.insertNewInstruction();
                     // ! left.value
-                    this.unOp(ni.instruction, "Not", leftId.id, baseTypeName(expression.source));
-                    ExpressionIds True = this.constantBool(true);
+                    JITInstruction ni = this.add(new JITUnaryInstruction(this.nextInstructionId(), 
+                        JITUnaryInstruction.Operation.NOT, source.value, convertScalarType(expression.source)));
+                    JITInstructionPair True = this.constantBool(true);
                     // result
-                    ExpressionJsonRepresentation er = this.insertInstruction(expression);
-                    this.mux(er.instruction, leftId.isNullId, True.id, ni.instructionId);
+                    JITInstruction value = this.add(new JITMuxInstruction(this.nextInstructionId(), 
+                        source.isNull, True.value, ni.getInstructionReference()));
+                    this.map(expression, new JITInstructionPair(value));
                     return false;
                 } else {
-                    kind = "Not";
+                    kind = JITUnaryInstruction.Operation.NOT;
                 }
                 break;
             }
             case "is_not_false": {
-                if (leftId.hasNull()) {
+                if (source.hasNull()) {
                     // result = left.is_null ? true : left.value
-                    ExpressionIds True = this.constantBool(true);
+                    JITInstructionPair True = this.constantBool(true);
                     // result
-                    ExpressionJsonRepresentation er = this.insertInstruction(expression);
-                    this.mux(er.instruction, leftId.isNullId, True.id, leftId.id);
+                    JITInstruction value = this.add(new JITMuxInstruction(this.nextInstructionId(),
+                        source.isNull, True.value, source.value));
+                    this.map(expression, new JITInstructionPair(value));
                 } else {
-                    Utilities.putNew(this.expressionId, expression, leftId.id);
+                    this.map(expression, new JITInstructionPair(source.value));
                 }
                 return false;
             }
             case "indicator": {
-                if (!leftId.hasNull())
+                if (!source.hasNull())
                     throw new RuntimeException("indicator called on non-nullable expression" + expression);
-                ExpressionJsonRepresentation er = this.insertInstruction(expression);
-                this.cast(er.instruction, leftId.isNullId, "Bool", "I64");
+                JITInstruction value = this.add(new JITCastInstruction(this.nextInstructionId(),
+                    source.isNull, JITBoolType.INSTANCE, JITI64Type.INSTANCE));
+                this.map(expression, new JITInstructionPair(value));
                 return false;
             }
             default:
                 throw new Unimplemented(expression);
         }
-        ExpressionJsonRepresentation er = this.insertInstruction(expression);
-        this.unOp(er.instruction, kind, leftId.id, baseTypeName(expression.source));
-        if (leftId.hasNull()) {
-            int leftNullId = leftId.isNullId;
-            this.copy(er.getNullObject(), leftNullId, "Bool");
-        }
+        JITInstruction value = this.add(new JITUnaryInstruction(this.nextInstructionId(),
+            kind, source.value, convertScalarType(expression.source)));
+        JITInstructionReference isNull = new JITInstructionReference();
+        if (source.hasNull())
+            isNull = source.isNull;
+        this.map(expression, new JITInstructionPair(value.getInstructionReference(), isNull));
         return false;
     }
 
     @Override
     public boolean preorder(DBSPVariablePath expression) {
-        ExpressionIds ids = this.resolve(expression.variable);
-        this.expressionId.put(expression, ids.id);
+        JITInstructionPair pair = this.resolve(expression.variable);
+        this.expressionToValues.put(expression, pair);
         // may already be there, but this may be a new variable with the same name,
         // and then we overwrite with the new definition.
         return false;
@@ -812,47 +744,29 @@ public class ToJitInnerVisitor extends InnerVisitor {
             DBSPIdentifierPattern identifier = param.pattern.to(DBSPIdentifierPattern.class);
             this.declare(identifier.identifier, needsNull(param.type));
         }
-        @Nullable
-        DBSPType ret = closure.getResultType();
-        int variablesToAdd = 0;
-        if (!ToJitVisitor.isScalarType(ret)) {
-            Objects.requireNonNull(ret);  // null is a scalar type.
-            // If the closure returns a RawTuple, create a variable for each field of the tuple.
-            List<DBSPTypeTuple> fields = ToJitVisitor.TypeCatalog.expandToTuples(ret);
-            variablesToAdd = fields.size();
-            for (int i = 0; i < variablesToAdd; i++) {
-                DBSPType type = fields.get(i);
-                String varName = RETURN_PARAMETER_PREFIX + "_" + i;
-                // For the outermost closure this will assign the same expression
-                // ids to these variables as were assigned to the "output" parameters
-                // by ToJitVisitor.createFunction.  So assigning to these expressions
-                // will in fact assign to the "output" parameters.
-                this.declare(varName, type.mayBeNull);
-                this.variableAssigned.add(varName);
-            }
+
+        for (DBSPParameter param: this.mapping.outputParameters) {
+            DBSPIdentifierPattern identifier = param.pattern.to(DBSPIdentifierPattern.class);
+            String varName = identifier.identifier;
+            this.declare(varName, needsNull(param.type));
+            this.variableAssigned.add(varName);
         }
+
         closure.body.accept(this);
-        for (int i = 0; i < variablesToAdd; i++) {
-            String removed = Utilities.removeLast(this.variableAssigned);
-            if (!removed.startsWith(RETURN_PARAMETER_PREFIX))
-                throw new RuntimeException("Unexpected variable removed " + removed);
-        }
+
+        for (int i = 0; i < this.mapping.outputParameters.size(); i++)
+            Utilities.removeLast(this.variableAssigned);
         return false;
     }
 
     @Override
     public boolean preorder(DBSPLetStatement statement) {
         boolean isTuple = statement.type.is(DBSPTypeTuple.class);
-        ExpressionIds ids = this.declare(statement.variable, needsNull(statement.type));
+        JITInstructionPair ids = this.declare(statement.variable, needsNull(statement.type));
         this.variableAssigned.add(statement.variable);
-        if (isTuple) {
-            ArrayNode instruction = Objects.requireNonNull(this.currentBlockBody).addArray();
-            instruction.add(ids.id);
-            ObjectNode uninit = instruction.addObject();
-            ObjectNode storeNode = uninit.putObject("UninitRow");
-            int typeId = this.typeCatalog.getTypeId(statement.type);
-            storeNode.put("layout", typeId);
-        }
+        JITType type = this.convertType(statement.type);
+        if (isTuple)
+            this.add(new JITUninitRowInstruction(ids.value.getId(), type.to(JITRowType.class)));
         if (statement.initializer != null)
             statement.initializer.accept(this);
         Utilities.removeLast(this.variableAssigned);
@@ -861,63 +775,54 @@ public class ToJitInnerVisitor extends InnerVisitor {
 
     @Override
     public boolean preorder(DBSPFieldExpression expression) {
-        // "Load": {
-        //   "source": 1,
-        //   "source_layout": 2,
-        //   "column": 1,
-        //   "column_type": "I32"
-        // }
-        ExpressionJsonRepresentation er = this.insertInstruction(expression);
-        ObjectNode load = er.instruction.putObject("Load");
-        ExpressionIds sourceId = this.accept(expression.expression);
-        load.put("source", sourceId.id);
-        int typeId = this.typeCatalog.getTypeId(expression.expression.getNonVoidType());
-        load.put("source_layout", typeId);
-        load.put("column", expression.fieldNo);
-        load.put("column_type", baseTypeName(expression));
-        if (er.isNullInstruction != null) {
-            ObjectNode isNull = er.isNullInstruction.putObject("IsNull");
-            isNull.put("target", sourceId.id);
-            isNull.put("target_layout", typeId);
-            isNull.put("column", expression.fieldNo);
+        if (expression.expression.is(DBSPParameter.class)) {
+            // check for parameter decompositions.
+            JITParameter param  = this.mapping.getParameterReference(expression.expression.to(DBSPParameter.class), expression.fieldNo);
+            if (param != null) {
+                JITInstructionReference value = new JITInstructionReference(param.getId());
+                JITInstructionReference isNullRef = new JITInstructionReference();
+                if (needsNull(expression)) {
+                    JITInstruction isNull = this.add(new JITIsNullInstruction(this.nextInstructionId(),
+                            param.getInstructionReference(), param.type, 0));
+                    isNullRef = isNull.getInstructionReference();
+                }
+                this.map(expression, new JITInstructionPair(value, isNullRef));
+                return false;
+            }
         }
+
+        JITInstruction isNull = null;
+        JITInstructionPair sourceId = this.accept(expression.expression);
+        JITRowType sourceType = this.typeCatalog.convertTupleType(expression.expression.getNonVoidType());
+        JITInstruction load = this.add(new JITLoadInstruction(
+                this.nextInstructionId(), sourceId.value, sourceType,
+                expression.fieldNo, convertScalarType(expression)));
+        if (needsNull(expression)) {
+            isNull = this.add(new JITIsNullInstruction(this.nextInstructionId(), sourceId.value,
+                sourceType, expression.fieldNo));
+        }
+        this.map(expression, new JITInstructionPair(load, isNull));
         return false;
     }
 
     @Override
     public boolean preorder(DBSPIsNullExpression expression) {
-        ExpressionIds sourceId = this.accept(expression.expression);
-        Utilities.putNew(this.expressionId, expression, sourceId.isNullId);
+        JITInstructionPair sourceId = this.accept(expression.expression);
+        this.map(expression, new JITInstructionPair(sourceId.isNull));
         return false;
     }
 
     @Override
     public boolean preorder(DBSPCloneExpression expression) {
         // Treat clone as a noop.
-        ExpressionIds source = this.accept(expression.expression);
-        Utilities.putNew(this.expressionId, expression, source.id);
+        JITInstructionPair source = this.accept(expression.expression);
+        this.map(expression, source);
         return false;
     }
 
     @Override
     public boolean preorder(DBSPIfExpression expression) {
-        // "Branch": {
-        //    "cond": {
-        //      "Expr": 3
-        //    },
-        //    "truthy": 3,
-        //    "falsy": 2
-        // }
-        // TODO: handle nulls
-        ExpressionIds condId = this.accept(expression.condition);
-        ExpressionJsonRepresentation er = this.insertInstruction(expression);
-        ObjectNode branch = er.instruction.putObject("Branch");
-        ObjectNode branchExpr = branch.putObject("cond");
-        branchExpr.put("Expr", condId.id);
-        ExpressionIds posId = this.accept(expression.positive);
-        ExpressionIds negId = this.accept(expression.negative);
-        branch.put("truthy", posId.id);
-        branch.put("falsy", negId.id);
+        // TODO
         return false;
     }
 
@@ -943,67 +848,43 @@ public class ToJitInnerVisitor extends InnerVisitor {
     public boolean preorder(DBSPTupleExpression expression) {
         // Compile this as an assignment to the currently assigned variable
         String variableAssigned = this.variableAssigned.get(this.variableAssigned.size() - 1);
-        ExpressionIds retValId = this.resolve(variableAssigned);
-        int tupleTypeId = this.typeCatalog.getTypeId(expression.getNonVoidType());
+        JITInstructionPair retValId = this.resolve(variableAssigned);
+        JITRowType tupleTypeId = this.typeCatalog.convertTupleType(expression.getNonVoidType());
         int index = 0;
         for (DBSPExpression field: expression.fields) {
             // Generates 1 or 2 instructions for each field (depending on nullability)
-            // "Store": {
-            //   "target": 2,
-            //   "target_layout": 3,
-            //   "column": 0,
-            //   "value": {
-            //     "Expr": 3
-            //   },
-            //   "value_type": "I32"
-            // }
-            ExpressionIds fieldId = this.accept(field);
-            ArrayNode instruction = Objects.requireNonNull(this.currentBlockBody).addArray();
-            instruction.add(this.nextExpressionId());
-            ObjectNode store = instruction.addObject();
-            ObjectNode storeNode = store.putObject("Store");
-            storeNode.put("target", retValId.id);
-            storeNode.put("target_layout", tupleTypeId);
-            storeNode.put("column", index);
-            ObjectNode value = storeNode.putObject("value");
-            value.put("Expr", fieldId.id);
-            storeNode.put("value_type", ToJitVisitor.baseTypeName(field.getNonVoidType()));
+            JITInstructionPair fieldId = this.accept(field);
+            this.add(new JITStoreInstruction(this.nextInstructionId(),
+                    retValId.value, tupleTypeId, index, fieldId.value,
+                    JITScalarType.scalarType(field.getNonVoidType())));
             if (fieldId.hasNull()) {
-                // "SetNull": {
-                //  "target": 2,
-                //  "target_layout": 3,
-                //  "column": 0,
-                //  "is_null": {
-                //    "Expr": 4 }}
-                instruction = Objects.requireNonNull(this.currentBlockBody).addArray();
-                instruction.add(this.nextExpressionId());
-                store = instruction.addObject();
-                storeNode = store.putObject("SetNull");
-                storeNode.put("target", retValId.id);
-                storeNode.put("target_layout", tupleTypeId);
-                storeNode.put("column", index);
-                ObjectNode isNull = storeNode.putObject("is_null");
-                isNull.put("Expr", fieldId.isNullId);
+                this.add(new JITSetNullInstruction(this.nextInstructionId(),
+                        retValId.value, tupleTypeId, index, fieldId.isNull));
             }
             index++;
         }
+        this.map(expression, retValId);
         return false;
+    }
+
+    JITBlock newBlock() {
+        int blockId = this.blocks.size() + 1;
+        JITBlock result = new JITBlock(blockId);
+        this.blocks.add(result);
+        return result;
     }
 
     @Override
     public boolean preorder(DBSPBlockExpression expression) {
         this.newContext();
-        ObjectNode saveBlock = this.currentBlock;
-        ArrayNode saveBody = this.currentBlockBody;
-        int blockId = this.nextBlockId();
-        this.currentBlock = this.blocks.putObject(Integer.toString(blockId));
-        this.currentBlock.put("id", blockId);
-        this.currentBlockBody = this.currentBlock.putArray("body");
+        JITBlock saveBlock = this.currentBlock;
+        JITBlock newBlock = this.newBlock();
+        this.currentBlock = newBlock;
         for (DBSPStatement stat: expression.contents)
             stat.accept(this);
 
         // TODO: handle nullability
-        ExpressionIds resultId = null;
+        JITInstructionPair resultId = new JITInstructionPair(new JITInstructionReference());
         if (expression.lastExpression != null) {
             if (ToJitVisitor.isScalarType(expression.lastExpression.getType())) {
                 resultId = this.accept(expression.lastExpression);
@@ -1014,37 +895,37 @@ public class ToJitInnerVisitor extends InnerVisitor {
                 if (ToJitVisitor.isScalarType(expression.getNonVoidType())) {
                     // Otherwise the result of the block
                     // is the result computed by the last expression
-                    int id = this.getExpressionId(expression.lastExpression);
-                    Utilities.putNew(this.expressionId, expression, id);
+                    JITInstructionPair id = this.getExpressionValues(expression.lastExpression);
+                    this.map(expression, id);
                 }
             }
         }
-        ObjectNode terminator = this.currentBlock.putObject("terminator");
-        ObjectNode ret = terminator.putObject("Return");
-        ObjectNode retValue = ret.putObject("value");
-        if (resultId != null) {
-            retValue.put("Expr", resultId.id);
-        } else {
-            retValue.put("Imm", "Unit");
-        }
+
+        JITReturnTerminator ret = new JITReturnTerminator(resultId.value);
+        this.currentBlock.terminate(ret);
         this.popContext();
         this.currentBlock = saveBlock;
-        this.currentBlockBody = saveBody;
+        if (this.currentBlock != null) {
+            JITJumpTerminator terminator = new JITJumpTerminator(newBlock.getBlockReference());
+            this.currentBlock.terminate(terminator);
+        }
         return false;
     }
 
     /**
-     * Convert the body of a closure expression to a JSON representation
+     * Convert the body of a closure expression to JIT representation.
      * @param expression  Expression to generate code for.
-     * @param blocks      Insert here the blocks of the body of the closure.
+     * @param parameterMapping  Mapping that describes the function parameters.
      * @param catalog     The catalog of Tuple types.
      */
-    static void convertClosure(DBSPClosureExpression expression,
-                               ObjectNode blocks,
-                               ToJitVisitor.TypeCatalog catalog) {
-        ToJitInnerVisitor visitor = new ToJitInnerVisitor(blocks, catalog);
+    static List<JITBlock> convertClosure(
+            JITParameterMapping parameterMapping,
+            DBSPClosureExpression expression, TypeCatalog catalog) {
+        List<JITBlock> blocks = new ArrayList<>();
+        ToJitInnerVisitor visitor = new ToJitInnerVisitor(blocks, catalog, parameterMapping);
         visitor.newContext();
         expression.accept(visitor);
         visitor.popContext();
+        return blocks;
     }
 }

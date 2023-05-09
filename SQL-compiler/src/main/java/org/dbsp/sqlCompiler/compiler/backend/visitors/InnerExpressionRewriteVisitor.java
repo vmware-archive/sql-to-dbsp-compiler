@@ -409,4 +409,12 @@ public abstract class InnerExpressionRewriteVisitor
         this.map(statement, result);
         return false;
     }
+
+    /**
+     * Given a visitor for inner nodes returns a visitor
+     * that optimizes an entire circuit.
+     */
+    public CircuitFunctionRewriter circuitRewriter() {
+        return new CircuitFunctionRewriter(this);
+    }
 }

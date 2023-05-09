@@ -73,4 +73,19 @@ public class DBSPLiteral extends DBSPExpression {
         if (!visitor.preorder(this)) return;
         visitor.postorder(this);
     }
+
+    /*
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DBSPLiteral that = (DBSPLiteral) o;
+        return isNull == that.isNull && Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isNull, value);
+    }
+     */
 }

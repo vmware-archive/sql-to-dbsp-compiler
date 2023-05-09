@@ -9,12 +9,8 @@ import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitDelegateVisitor;
 import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitFunctionRewriter;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeSemigroup;
 import org.dbsp.sqlCompiler.compiler.frontend.TypeCompiler;
-import org.dbsp.sqlCompiler.ir.DBSPAggregate;
-import org.dbsp.sqlCompiler.ir.DBSPFunction;
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeTuple;
 import org.dbsp.util.IndentStream;
 import org.dbsp.util.Linq;
@@ -256,7 +252,7 @@ public class RustFileWriter {
 
     public void write() throws FileNotFoundException, UnsupportedEncodingException {
         Simplify simplify = new Simplify();
-        CircuitFunctionRewriter simplifier = new CircuitFunctionRewriter(simplify);
+        CircuitFunctionRewriter simplifier = simplify.circuitRewriter();
         // Lower the circuits
         List<IDBSPNode> lowered = new ArrayList<>();
         for (IDBSPNode node: this.toWrite) {

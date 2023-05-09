@@ -25,9 +25,6 @@
 
 package org.dbsp.sqlCompiler.compiler;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ToJitVisitor;
@@ -57,19 +54,16 @@ public class DBSPCompilerTests {
     }
 
     @Test
-    public void circuitToJitTest() throws JsonProcessingException {
+    public void circuitToJitTest() {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatement(ddl);
         compiler.compileStatement("CREATE VIEW V AS SELECT T.COL1 FROM T WHERE COL1 > 5");
         DBSPCircuit dbsp = compiler.getFinalCircuit("circuit");
-        String json = ToJitVisitor.circuitToJson(dbsp);
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(json);
-        Assert.assertNotNull(root);
+        ToJitVisitor.validateJson(dbsp, false);
     }
 
     @Test
-    public void floatJitTest() throws JsonProcessingException {
+    public void floatJitTest() {
         String ddl = "CREATE TABLE bid (\n" +
                 "    auction BIGINT,\n" +
                 "    bidder BIGINT,\n" +
@@ -91,10 +85,7 @@ public class DBSPCompilerTests {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatements(ddl);
         DBSPCircuit circuit = compiler.getFinalCircuit("circuit");
-        String json = ToJitVisitor.circuitToJson(circuit);
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(json);
-        Assert.assertNotNull(root);
+        ToJitVisitor.validateJson(circuit, false);
     }
 
     @Test

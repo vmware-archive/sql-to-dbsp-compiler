@@ -40,7 +40,7 @@ import java.util.Map;
  * TODO: check for weight overflow?
  */
 public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
-    public final Map<DBSPExpression, Integer> data;
+    public final Map<DBSPExpression, Long> data;
     public final DBSPTypeZSet zsetType;
 
     /**
@@ -64,7 +64,7 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         }
     }
 
-    protected DBSPZSetLiteral(Map<DBSPExpression, Integer> data,
+    protected DBSPZSetLiteral(Map<DBSPExpression, Long> data,
                               DBSPTypeZSet zsetType) {
         super(null, zsetType, 0);
         this.data = data;
@@ -107,14 +107,14 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         this.add(expression, 1);
     }
 
-    public void add(DBSPExpression expression, int weight) {
+    public void add(DBSPExpression expression, long weight) {
         // We expect the expression to be a constant value (a literal)
         if (!expression.getNonVoidType().sameType(this.getElementType()))
             throw new RuntimeException("Added element type " +
                     expression.getType() + " does not match zset type " + this.getElementType());
         if (this.data.containsKey(expression)) {
-            int oldWeight = this.data.get(expression);
-            int newWeight = weight + oldWeight;
+            long oldWeight = this.data.get(expression);
+            long newWeight = weight + oldWeight;
             if (newWeight == 0)
                 this.data.remove(expression);
             else
@@ -133,7 +133,7 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
 
     public DBSPZSetLiteral negate() {
         DBSPZSetLiteral result = DBSPZSetLiteral.emptyWithType(this.zsetType);
-        for (Map.Entry<DBSPExpression, Integer> entry: data.entrySet()) {
+        for (Map.Entry<DBSPExpression, Long> entry: data.entrySet()) {
             result.add(entry.getKey(), -entry.getValue());
         }
         return result;
@@ -147,7 +147,7 @@ public class DBSPZSetLiteral extends DBSPLiteral implements IDBSPContainer {
         StringBuilder builder = new StringBuilder();
         builder.append("{ ");
         boolean first = true;
-        for (Map.Entry<DBSPExpression, Integer> e: data.entrySet()) {
+        for (Map.Entry<DBSPExpression, Long> e: data.entrySet()) {
             if (!first)
                 builder.append(", ");
             first = false;

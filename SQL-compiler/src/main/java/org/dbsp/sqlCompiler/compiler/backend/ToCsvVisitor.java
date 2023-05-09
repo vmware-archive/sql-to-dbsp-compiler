@@ -157,9 +157,9 @@ public class ToCsvVisitor extends InnerVisitor {
     @Override
     public boolean preorder(DBSPZSetLiteral literal) {
         try {
-            for (Map.Entry<DBSPExpression, Integer> entry: literal.data.entrySet()) {
+            for (Map.Entry<DBSPExpression, Long> entry: literal.data.entrySet()) {
                 DBSPExpression key = entry.getKey();
-                int value = entry.getValue();
+                long value = entry.getValue();
                 if (value < 0)
                     throw new RuntimeException("ZSet with negative weights is not representable as CSV");
                 for (; value != 0; value--) {
