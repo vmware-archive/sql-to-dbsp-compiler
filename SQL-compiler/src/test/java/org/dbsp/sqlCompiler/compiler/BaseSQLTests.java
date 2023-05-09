@@ -180,7 +180,7 @@ public class BaseSQLTests {
 
             // Test json serialization
             Logger.INSTANCE.setDebugLevel(ToJitVisitor.class, 4);
-            // ToJitVisitor.validateJson(circuit);
+            // ToJitVisitor.validateJson(circuit, true);
             this.addRustTestCase(circuit, streams);
         } catch (Exception ex) {
             throw new RuntimeException(ex);

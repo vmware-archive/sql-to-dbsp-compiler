@@ -381,7 +381,7 @@ public class DBSPExecutor extends SqlSLTTestExecutor {
         }
 
         if (this.validateJson)
-            ToJitVisitor.validateJson(dbsp);
+            ToJitVisitor.validateJson(dbsp, false);
         DBSPFunction func = createTesterCode(
                 "tester" + suffix, dbsp,
                 inputGeneratingFunction,

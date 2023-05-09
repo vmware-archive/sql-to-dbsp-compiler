@@ -59,7 +59,7 @@ public class DBSPCompilerTests {
         compiler.compileStatement(ddl);
         compiler.compileStatement("CREATE VIEW V AS SELECT T.COL1 FROM T WHERE COL1 > 5");
         DBSPCircuit dbsp = compiler.getFinalCircuit("circuit");
-        ToJitVisitor.validateJson(dbsp);
+        ToJitVisitor.validateJson(dbsp, false);
     }
 
     @Test
@@ -85,7 +85,7 @@ public class DBSPCompilerTests {
         DBSPCompiler compiler = new DBSPCompiler(options);
         compiler.compileStatements(ddl);
         DBSPCircuit circuit = compiler.getFinalCircuit("circuit");
-        ToJitVisitor.validateJson(circuit);
+        ToJitVisitor.validateJson(circuit, false);
     }
 
     @Test

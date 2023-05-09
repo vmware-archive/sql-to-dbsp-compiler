@@ -372,7 +372,12 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
         return visitor.program;
     }
 
-    public static void validateJson(DBSPCircuit circuit) {
+    /**
+     * Generate JSON for a circuit and validate it.
+     * @param circuit  Circuit to generate JSON for.
+     * @param compile  If true invoke the DBSP JIT compiler on the generated JSON.
+     */
+    public static void validateJson(DBSPCircuit circuit, boolean compile) {
         try {
             JITProgram program = ToJitVisitor.circuitToJIT(circuit);
             Logger.INSTANCE.from("ToJitVisitor", 2)
@@ -390,7 +395,8 @@ public class ToJitVisitor extends CircuitVisitor implements IModule {
             PrintWriter writer = new PrintWriter(jsonFile);
             writer.println(json);
             writer.close();
-            Utilities.compileAndTestJit("../../database-stream-processor", jsonFile);
+            if (compile)
+                Utilities.compileAndTestJit("../../database-stream-processor", jsonFile);
         } catch (IOException | InterruptedException ex) {
             throw new RuntimeException(ex);
         }
