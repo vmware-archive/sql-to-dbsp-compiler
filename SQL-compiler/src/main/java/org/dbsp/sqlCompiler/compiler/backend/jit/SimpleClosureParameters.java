@@ -125,7 +125,7 @@ public class SimpleClosureParameters
 
             List<DBSPVariablePath> newParams = new ArrayList<>();
             for (DBSPType field: tuple.tupFields) {
-                String name = this.generator.toString();
+                String name = this.generator.nextName();
                 if (field.is(DBSPTypeTupleBase.class))
                     throw new RuntimeException("Tuple types nested too deeply " + parameter);
                 DBSPVariablePath newParam = new DBSPVariablePath(name, field);

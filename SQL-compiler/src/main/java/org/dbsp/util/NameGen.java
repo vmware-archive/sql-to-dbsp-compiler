@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Every time one of these is instantiated it will generate a unique name.
+ * Used to generate new names during a program execution.
  */
 public class NameGen {
     private final String prefix;
@@ -41,6 +41,12 @@ public class NameGen {
         this.prefix = "id";
     }
 
+    /**
+     * Create a new name generator that generates names starting with the
+     * specified prefix.  Generated names will look like prefixN, where
+     * N is an increasing number.
+     * @param prefix  Prefix for all names.
+     */
     public NameGen(String prefix) {
         this.prefix = prefix;
         if (!nextId.containsKey(this.prefix))
@@ -51,18 +57,9 @@ public class NameGen {
         return nextId.get(this.prefix);
     }
 
-    @Override
-    public String toString() {
+    public String nextName() {
         int id = this.getNext();
         nextId.put(this.prefix, id+1);
         return this.prefix + id;
-    }
-
-    public static void reset() {
-        nextId.clear();
-    }
-
-    public static void reset(String prefix) {
-        nextId.put(prefix, 0);
     }
 }

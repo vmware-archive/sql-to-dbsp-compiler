@@ -93,7 +93,7 @@ public class AggregateCompiler {
     }
 
     public String genAccumulatorName() {
-        return this.generator.toString();
+        return this.generator.nextName();
     }
 
     <T> boolean process(SqlAggFunction function, Class<T> clazz, Consumer<T> method) {

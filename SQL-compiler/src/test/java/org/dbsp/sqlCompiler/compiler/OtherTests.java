@@ -41,6 +41,7 @@ import org.dbsp.sqlCompiler.circuit.DBSPCircuit;
 import org.dbsp.sqlCompiler.compiler.backend.DBSPCompiler;
 import org.dbsp.sqlCompiler.compiler.backend.ToCsvVisitor;
 import org.dbsp.sqlCompiler.compiler.backend.rust.ToRustVisitor;
+import org.dbsp.sqlCompiler.compiler.frontend.CollectIdentifiers;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
@@ -49,6 +50,7 @@ import org.dbsp.sqlCompiler.ir.statement.DBSPLetStatement;
 import org.dbsp.sqlCompiler.ir.statement.DBSPStatement;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeUser;
 import org.dbsp.sqlCompiler.ir.type.primitive.DBSPTypeInteger;
+import org.dbsp.util.FreshName;
 import org.dbsp.util.IModule;
 import org.dbsp.util.Logger;
 import org.dbsp.util.StringPrintStream;
@@ -65,14 +67,20 @@ import java.nio.file.Paths;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 public class OtherTests extends BaseSQLTests implements IModule {
-    static final CompilerOptions options = new CompilerOptions();
+    static CompilerOptions getOptions() {
+        CompilerOptions options = new CompilerOptions();
+        options.optimizerOptions.throwOnError = true;
+        return options;
+    }
 
     private DBSPCompiler compileDef() {
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = new DBSPCompiler(getOptions());
         String ddl = "CREATE TABLE T (\n" +
                 "COL1 INT NOT NULL" +
                 ", COL2 DOUBLE NOT NULL" +
@@ -162,7 +170,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
                 "    FROM\n" +
                 "        transactions JOIN demographics\n" +
                 "        ON transactions.cc_num = demographics.cc_num";
-        DBSPCompiler compiler = new DBSPCompiler(options);
+        DBSPCompiler compiler = new DBSPCompiler(getOptions());
         compiler.compileStatement(statement0);
         compiler.compileStatement(statement1);
         compiler.compileStatement(statement2);
@@ -463,6 +471,23 @@ public class OtherTests extends BaseSQLTests implements IModule {
     }
 
     @Test
+    public void testFreshName() {
+        String query = "CREATE VIEW V AS SELECT T.COL1 FROM T WHERE T.COL2 > 0";
+        DBSPCircuit circuit = this.queryToCircuit(query);
+        Set<String> used = new HashSet<>();
+        CollectIdentifiers ci = new CollectIdentifiers(used);
+        ci.getCircuitVisitor().apply(circuit);
+        Assert.assertTrue(used.contains("t")); // closure argument name
+        Assert.assertTrue(used.contains("T")); // table name
+        Assert.assertTrue(used.contains("V")); // view name
+        FreshName gen = new FreshName(used);
+        String t0 = gen.freshName("T");
+        Assert.assertEquals(t0, "T_0");
+        String t1 = gen.freshName("T");
+        Assert.assertEquals(t1, "T_1");
+    }
+
+    @Test
     public void jsonErrorTest() throws FileNotFoundException, UnsupportedEncodingException, JsonProcessingException {
         String[] statements = new String[] {
                 "CREATE VIEW V AS SELECT * FROM T"
@@ -525,6 +550,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         }
     }
 
+    @SuppressWarnings("SqlDialectInspection")
     // @Test
     public void HSQLDBDoubleNegTest() throws SQLException {
         // Reproduction for https://sourceforge.net/p/hsqldb/bugs/1680/
@@ -537,6 +563,7 @@ public class OtherTests extends BaseSQLTests implements IModule {
         }
     }
 
+    @SuppressWarnings("SqlDialectInspection")
     @Test
     public void rawCalciteTest() throws SQLException {
         Connection connection = DriverManager.getConnection("jdbc:calcite:");

@@ -21,34 +21,38 @@
  * SOFTWARE.
  */
 
-package org.dbsp.sqlCompiler.ir.expression;
+package org.dbsp.util;
 
-import org.dbsp.sqlCompiler.ir.InnerVisitor;
-import org.dbsp.sqlCompiler.ir.type.DBSPType;
-import org.dbsp.sqlCompiler.ir.type.DBSPTypeAny;
-
-import javax.annotation.Nullable;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * A base class representing a comparator used for sorting.
+ * Generates a fresh name that does not appear in a set of used names.
  */
-public abstract class DBSPComparatorExpression extends DBSPExpression {
-    protected DBSPComparatorExpression(@Nullable Object node) {
-        super(node, DBSPTypeAny.INSTANCE);
+public class FreshName {
+    final Set<String> used;
+
+    public FreshName() {
+        this.used = new HashSet<>();
     }
 
-    @Override
-    public void accept(InnerVisitor visitor) {
-        if (!visitor.preorder(this)) return;
-        visitor.postorder(this);
-    }
-
-    public DBSPComparatorExpression then(@Nullable Object node, int fieldNo, boolean ascending) {
-        return new DBSPFieldComparatorExpression(node, this, fieldNo, ascending);
+    public FreshName(Set<String> used) {
+        this.used = used;
     }
 
     /**
-     * Type of tuple that is being compared.
+     * Generate a fresh name starting with the specified prefix.
+     * Add this name to the set of used names.
+     * @param prefix  Prefix for the new name.
      */
-    public abstract DBSPType tupleType();
+    public String freshName(String prefix) {
+        String name = prefix;
+        long counter = 0;
+        while (this.used.contains(name)) {
+            name = prefix + "_" + counter;
+            counter++;
+        }
+        this.used.add(name);
+        return name;
+    }
 }
