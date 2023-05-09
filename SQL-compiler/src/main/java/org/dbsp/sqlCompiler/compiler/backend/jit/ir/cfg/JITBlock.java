@@ -43,6 +43,9 @@ import java.util.Objects;
 public class JITBlock extends JITNode implements IJITId {
     final List<JITBlockParameter> parameters;
     final List<JITInstruction> instructions;
+    /**
+     * Terminator should never be null, but it is set later.
+     */
     @Nullable
     JITBlockTerminator terminator;
     public final long id;
@@ -110,7 +113,7 @@ public class JITBlock extends JITNode implements IJITId {
                 .increase()
                 .intercalateI(System.lineSeparator(), this.instructions);
         if (this.terminator != null)
-            // This may not happen while debugging
+            // Terminator may be null while debugging
             builder.append(this.terminator);
         return builder.decrease();
     }

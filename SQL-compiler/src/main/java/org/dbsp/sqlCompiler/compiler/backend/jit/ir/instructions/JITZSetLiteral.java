@@ -26,7 +26,6 @@ package org.dbsp.sqlCompiler.compiler.backend.jit.ir.instructions;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.dbsp.sqlCompiler.compiler.backend.jit.ir.JITNode;
 import org.dbsp.sqlCompiler.compiler.backend.jit.ir.types.JITRowType;
 import org.dbsp.sqlCompiler.ir.expression.DBSPExpression;
 import org.dbsp.sqlCompiler.ir.expression.DBSPTupleExpression;
@@ -36,7 +35,7 @@ import org.dbsp.util.IIndentStream;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JITZSetLiteral extends JITNode {
+public class JITZSetLiteral extends JITValue {
     public final Map<JITTupleLiteral, Long> elements;
     public final JITRowType rowType;
 

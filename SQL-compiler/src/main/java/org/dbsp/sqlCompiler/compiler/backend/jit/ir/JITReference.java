@@ -27,13 +27,20 @@ import org.dbsp.util.IIndentStream;
 
 /**
  * An objects that refers to another one by its id.
- * In invalid reference has a negative id.
+ * An invalid reference has a negative id.
  */
 public class JITReference extends JITNode {
     public final long id;
 
     public JITReference(long id) {
         this.id = id;
+    }
+
+    /**
+     * Create an invalid reference.
+     */
+    public JITReference() {
+        this.id = -1;
     }
 
     public long getId() {

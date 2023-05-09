@@ -27,6 +27,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import org.dbsp.util.*;
 
+/**
+ * Base class for all JIT IR classes.
+ */
 public abstract class JITNode implements ICastable, ToIndentableString {
     public BaseJsonNode asJson() {
         throw new Unimplemented("Should be overridden in all subclasses");
@@ -38,6 +41,10 @@ public abstract class JITNode implements ICastable, ToIndentableString {
         return topMapper;
     }
 
+    /**
+     * Compact textual representation of the JIT element.
+     * @param builder Build the representation here.
+     */
     @Override
     public IIndentStream toString(IIndentStream builder) {
         return builder;

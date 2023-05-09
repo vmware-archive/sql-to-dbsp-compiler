@@ -37,6 +37,6 @@ public class JITInstructionReference extends JITReference {
      * Creates an invalid instruction reference.
      */
     public JITInstructionReference() {
-        super(-1);
+        super();
     }
 }

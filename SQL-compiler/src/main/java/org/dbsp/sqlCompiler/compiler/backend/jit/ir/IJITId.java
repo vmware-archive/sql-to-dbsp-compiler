@@ -23,6 +23,9 @@
 
 package org.dbsp.sqlCompiler.compiler.backend.jit.ir;
 
+/**
+ * Interface implemented by JIT objects that have a numeric id.
+ */
 public interface IJITId {
     long getId();
     JITReference getReference();
