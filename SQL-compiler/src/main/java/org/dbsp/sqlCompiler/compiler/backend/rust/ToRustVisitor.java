@@ -242,7 +242,7 @@ public class ToRustVisitor extends CircuitVisitor {
         // We generate two DBSP operator calls: partitioned_rolling_aggregate
         // and map_index
         DBSPType streamType = new DBSPTypeStream(operator.outputType);
-        String tmp = new NameGen("stream").toString();
+        String tmp = new NameGen("stream").nextName();
         this.writeComments(operator)
                 .append("let ")
                 .append(tmp)

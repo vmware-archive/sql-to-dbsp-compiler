@@ -84,7 +84,7 @@ public abstract class DBSPOperator extends DBSPNode implements IHasName, IHasTyp
                         @Nullable DBSPExpression function,
                         DBSPType outputType, boolean isMultiset) {
         this(node, operation, function, outputType, isMultiset, null,
-                new NameGen("stream").toString());
+                new NameGen("stream").nextName());
     }
 
     /**

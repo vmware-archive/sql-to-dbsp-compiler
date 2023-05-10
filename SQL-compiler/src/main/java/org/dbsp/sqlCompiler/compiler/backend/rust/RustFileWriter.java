@@ -5,8 +5,8 @@ import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
 import org.dbsp.sqlCompiler.circuit.IDBSPNode;
 import org.dbsp.sqlCompiler.compiler.backend.optimize.BetaReduction;
 import org.dbsp.sqlCompiler.compiler.backend.optimize.Simplify;
-import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitDelegateVisitor;
 import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitFunctionRewriter;
+import org.dbsp.sqlCompiler.ir.CircuitVisitor;
 import org.dbsp.sqlCompiler.ir.DBSPFunction;
 import org.dbsp.sqlCompiler.ir.InnerVisitor;
 import org.dbsp.sqlCompiler.ir.type.DBSPTypeSemigroup;
@@ -61,10 +61,10 @@ public class RustFileWriter {
      * Find resources used.
      */
     FindResources finder = new FindResources();
-    CircuitDelegateVisitor findInCircuit = new CircuitDelegateVisitor(this.finder);
+    CircuitVisitor findInCircuit = this.finder.getCircuitVisitor();
     LowerCircuitVisitor lower = new LowerCircuitVisitor();
     BetaReduction reducer = new BetaReduction();
-    CircuitFunctionRewriter circuitReducer = new CircuitFunctionRewriter(reducer);
+    CircuitFunctionRewriter circuitReducer = reducer.circuitRewriter();
 
     /**
      * If this is called with 'true' the emitted Rust code will use handles

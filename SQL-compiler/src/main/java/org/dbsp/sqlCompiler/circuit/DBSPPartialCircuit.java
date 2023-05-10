@@ -106,7 +106,7 @@ public class DBSPPartialCircuit extends DBSPNode implements IDBSPOuterNode, IMod
     }
 
     public DBSPLetStatement declareLocal(String prefix, DBSPExpression init) {
-        String name = new NameGen(prefix).toString();
+        String name = new NameGen(prefix).nextName();
         DBSPLetStatement let = new DBSPLetStatement(name, init);
         this.declare(let);
         return let;

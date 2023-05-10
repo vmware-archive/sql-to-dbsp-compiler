@@ -24,6 +24,7 @@
 package org.dbsp.sqlCompiler.ir;
 
 import org.dbsp.sqlCompiler.circuit.IDBSPInnerNode;
+import org.dbsp.sqlCompiler.compiler.backend.visitors.CircuitDelegateVisitor;
 import org.dbsp.sqlCompiler.ir.expression.*;
 import org.dbsp.sqlCompiler.ir.expression.literal.*;
 import org.dbsp.sqlCompiler.ir.path.DBSPPath;
@@ -1034,5 +1035,9 @@ public abstract class InnerVisitor {
     @Override
     public String toString() {
         return this.getClass().getSimpleName();
+    }
+
+    public CircuitVisitor getCircuitVisitor() {
+        return new CircuitDelegateVisitor(this);
     }
 }
