@@ -1,0 +1,94 @@
+# Structure has to follow the fields in Calcite's default_config.fmpp.
+
+data: {
+  parser: {
+    package: "org.dbsp.generated.parser",
+    class: "DbspParserImpl",
+
+    imports: [
+    ]
+
+    # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is
+    # not a reserved keyword, add it to the 'nonReservedKeywords' section.
+    keywords: [
+    ]
+
+    # List of keywords from "keywords" section that are not reserved.
+    nonReservedKeywords: [
+    ]
+
+    # List of non-reserved keywords to add
+    # The base Parser.jj expects at least 3 non-reserved keywords here, so
+    # this is a hack to make the build happy.
+    nonReservedKeywordsToAdd: [
+    "A",
+    "C",
+    "K"
+    ]
+
+    # List of non-reserved keywords to remove;
+    # items in this list become reserved.
+    nonReservedKeywordsToRemove: [
+    ]
+
+    # List of additional join types. Each is a method with no arguments.
+    joinTypes: [
+    ]
+
+    # List of methods for parsing custom SQL statements.
+    # Return type of method implementation should be 'SqlNode'.
+    statementParserMethods: [
+        "SqlDescribeStream()"
+    ]
+
+    # List of methods for parsing custom literals.
+    # Return type of method implementation should be "SqlNode".
+    literalParserMethods: [
+    ]
+
+    # List of methods for parsing custom data types.
+    dataTypeParserMethods: [
+    ]
+
+    # List of methods for parsing builtin function calls.
+    # Return type of method implementation should be "SqlNode".
+    builtinFunctionCallMethods: [
+    ]
+
+    # List of methods for parsing extensions to "ALTER <scope>" calls.
+    # Each must accept arguments "(SqlParserPos pos, String scope)".
+    alterStatementParserMethods: [
+    ]
+
+    # List of methods for parsing extensions to "CREATE [OR REPLACE]" calls.
+    # Each must accept arguments "(SqlParserPos pos, boolean replace)".
+    createStatementParserMethods: [
+    ]
+
+    # List of methods for parsing extensions to "DROP" calls.
+    # Each must accept arguments "(SqlParserPos pos)".
+    dropStatementParserMethods: [
+    ]
+
+    # Binary operators tokens.
+    binaryOperatorsTokens: [
+    ]
+
+    # Binary operators initialization.
+    extraBinaryExpressions: [
+    ]
+
+    includePosixOperators: false
+    includeCompoundIdentifier: true
+    includeBraces: true
+    includeAdditionalDeclarations: false
+
+    implementationFiles: [
+      "parserImpls.ftl"
+    ]
+  }
+}
+
+freemarkerLinks: {
+  includes: includes/
+}
