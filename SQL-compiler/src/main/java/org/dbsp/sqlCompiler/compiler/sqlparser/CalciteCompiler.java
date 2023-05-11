@@ -56,7 +56,6 @@ import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
 import org.apache.calcite.sql.type.*;
 import org.apache.calcite.sql.util.SqlOperatorTables;
 import org.apache.calcite.sql.util.SqlShuttle;
-import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
@@ -184,20 +183,16 @@ public class CalciteCompiler implements IModule {
         this.astRewriter = new RewriteDivision();
         this.options = options;
 
-        Properties connConfigProp = new Properties();
-        connConfigProp.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
-        connConfigProp.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        connConfigProp.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        connConfigProp.put(CalciteConnectionProperty.CONFORMANCE.camelName(), SqlConformanceEnum.BABEL.toString());
-        CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(connConfigProp);
-        SqlConformance conformance = connectionConfig.conformance();
+        CalciteConnectionConfig connectionConfig = new CalciteConnectionConfigImpl(new Properties());
         this.parserConfig = SqlParser.config()
                 .withLex(options.ioOptions.lexicalRules)
+                .withUnquotedCasing(Casing.UNCHANGED)
+                .withQuotedCasing(Casing.UNCHANGED)
+                .withConformance(SqlConformanceEnum.LENIENT)
                 // Add support for DDL language
-                .withParserFactory(SqlDdlParserImpl.FACTORY)
                 // TODO: would be nice to get DDL and BABEL at the same time...
                 //.withParserFactory(SqlBabelParserImpl.FACTORY)
-                .withConformance(conformance);
+                .withParserFactory(SqlDdlParserImpl.FACTORY);
         this.typeFactory = new SqlTypeFactoryImpl(TYPE_SYSTEM);
         this.catalog = new Catalog("schema");
         CalciteSchema rootSchema = CalciteSchema.createRootSchema(false, false);
@@ -233,9 +228,6 @@ public class CalciteCompiler implements IModule {
         );
 
         SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
-                .withLenientOperatorLookup(connectionConfig.lenientOperatorLookup())
-                .withTypeCoercionEnabled(true)
-                .withDefaultNullCollation(connectionConfig.defaultNullCollation())
                 .withIdentifierExpansion(true);
 
         this.validator = SqlValidatorUtil.newValidator(

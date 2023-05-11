@@ -537,7 +537,7 @@ public class PostgresNumericTests extends BaseSQLTests {
         DBSPZSetLiteral[] inputs = new DBSPZSetLiteral[compiler.getTableContents().tablesCreated.size()];
         int index = 0;
         for (String table: compiler.getTableContents().tablesCreated) {
-            DBSPZSetLiteral data = compiler.getTableContents().getTableContents(table.toUpperCase());
+            DBSPZSetLiteral data = compiler.getTableContents().getTableContents(table);
             inputs[index++] = data;
         }
         InputOutputPair streams = new InputOutputPair(
@@ -555,7 +555,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testAdd() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id as ID2, CAST(t1.val + t2.val AS NUMERIC(" + width + ", 10)) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS id1, t2.id as id2, CAST(t1.val + t2.val AS NUMERIC(" + width + ", 10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, t2.expected\n" +
                 "    FROM num_result t1, num_exp_add t2\n" +
@@ -566,7 +566,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testRoundAdd() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(round(t1.val + t2.val, 10) AS NUMERIC(" + width + ", 10)) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS id1, t2.id AS id2, CAST(round(t1.val + t2.val, 10) AS NUMERIC(" + width + ", 10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, round(t2.expected, 10) as expected\n" +
                 "    FROM num_result t1, num_exp_add t2\n" +
@@ -577,7 +577,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testSubtraction() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(t1.val - t2.val AS NUMERIC(" + width + ", 10)) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS id1, t2.id AS id2, CAST(t1.val - t2.val AS NUMERIC(" + width + ", 10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, t2.expected\n" +
                 "    FROM num_result t1, num_exp_sub t2\n" +
@@ -588,7 +588,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testRoundSubtraction() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(ROUND(t1.val - t2.val, 40) AS NUMERIC(" + width + ",10)) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS id1, t2.id AS id2, CAST(ROUND(t1.val - t2.val, 40) AS NUMERIC(" + width + ",10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, round(t2.expected, 40)\n" +
                 "    FROM num_result t1, num_exp_sub t2\n" +
@@ -599,7 +599,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testMultiply() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(t1.val * t2.val AS NUMERIC(" + width + ",10)) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS id1, t2.id AS id2, CAST(t1.val * t2.val AS NUMERIC(" + width + ",10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, t2.expected\n" +
                 "    FROM num_result t1, num_exp_mul t2\n" +
@@ -610,7 +610,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testRoundMultiply() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(round(t1.val * t2.val, 30) AS NUMERIC(" + width + ", 10)) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS id1, t2.id AS id2, CAST(round(t1.val * t2.val, 30) AS NUMERIC(" + width + ", 10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, round(t2.expected, 30)\n" +
                 "    FROM num_result t1, num_exp_mul t2\n" +
@@ -621,7 +621,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testDivision() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(t1.val / t2.val AS NUMERIC(" + width + ", 10)) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS id1, t2.id AS id2, CAST(t1.val / t2.val AS NUMERIC(" + width + ", 10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, t2.expected\n" +
                 "    FROM num_result t1, num_exp_div t2\n" +
@@ -632,7 +632,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void testDivisionRound() {
-        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS ID1, t2.id AS ID2, CAST(round(t1.val / t2.val, 10) AS NUMERIC(" + width + ", 10)) AS results\n" +
+        String intermediate = "CREATE VIEW num_result AS SELECT t1.id AS id1, t2.id AS id2, CAST(round(t1.val / t2.val, 10) AS NUMERIC(" + width + ", 10)) AS results\n" +
                 "    FROM num_data t1, num_data t2";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.id2, t1.results, round(t2.expected, 10)\n" +
                 "    FROM num_result t1, num_exp_div t2\n" +
@@ -643,7 +643,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void squareRootTest() {
-        String intermediate = "CREATE VIEW num_result AS SELECT id AS ID1, 0 as ID2, CAST(SQRT(ABS(val)) AS NUMERIC(" +
+        String intermediate = "CREATE VIEW num_result AS SELECT id AS id1, 0 as id2, CAST(SQRT(ABS(val)) AS NUMERIC(" +
                     width + ", 10)) AS results\n" +
                 "    FROM num_data\n";
         String last = "CREATE VIEW E AS SELECT t1.id1, t1.results, t2.expected\n" +
@@ -655,7 +655,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void logarithmTest() {
-        String intermediate = "CREATE VIEW num_result AS SELECT id AS ID1, 0, CAST(LN(ABS(val)) AS NUMERIC(" +
+        String intermediate = "CREATE VIEW num_result AS SELECT id AS id1, 0, CAST(LN(ABS(val)) AS NUMERIC(" +
                 width + ", 10)) AS results\n" +
                 "    FROM num_data\n" +
                 "    WHERE val != '0.0'";
@@ -668,7 +668,7 @@ public class PostgresNumericTests extends BaseSQLTests {
 
     @Test
     public void logarithm10Test() {
-        String intermediate = "CREATE VIEW num_result AS SELECT id AS ID1, 0, CAST(LOG10(ABS(val)) AS NUMERIC(" +
+        String intermediate = "CREATE VIEW num_result AS SELECT id AS id1, 0, CAST(LOG10(ABS(val)) AS NUMERIC(" +
                 width + ", 10)) AS results\n" +
                 "    FROM num_data\n" +
                 "    WHERE val != '0.0'";
@@ -682,7 +682,7 @@ public class PostgresNumericTests extends BaseSQLTests {
     // @Test
     // This test fails because Postgres has higher precision than we support
     public void power10Test() {
-        String intermediate = "CREATE VIEW num_result AS SELECT id AS ID1, 0, CAST(POWER(10, LN(ABS(round(val,200)))) AS NUMERIC(" +
+        String intermediate = "CREATE VIEW num_result AS SELECT id AS id1, 0, CAST(POWER(10, LN(ABS(round(val,200)))) AS NUMERIC(" +
                 width + ", 10)) AS results\n" +
                 "    FROM num_data\n" +
                 "    WHERE val != '0.0'";
