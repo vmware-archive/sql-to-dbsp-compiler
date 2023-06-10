@@ -1,5 +1,10 @@
 ![Tests](https://github.com/vmware/sql-to-dbsp-compiler/actions/workflows/ci.yml/badge.svg)
 
+# Latest News
+
+The development for this project is now done at 
+<https://github.com/feldera/dbsp>.
+
 # SQL to DBSP compiler
 
 This repository holds the source code for a compiler translating SQL
